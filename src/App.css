@@ -1,0 +1,25 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #fff8f0;
+  height: 100%;
+}
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  position: relative;
+}
+
+.page-container {
+  flex: 1;
+  overflow: hidden;
+  padding: 1rem;
+  padding-bottom: 80px;
+  box-sizing: border-box;
+  position: relative;
+}

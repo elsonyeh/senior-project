@@ -1,0 +1,122 @@
+/* --- General Layout --- */
+.motion-swiper-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff8f0;
+  z-index: 1;
+  padding: 0 5vw;
+  box-sizing: border-box;
+}
+  
+.motion-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 75vh;
+  max-height: 640px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 5vh 6vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+  
+  .options-display {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 5vh;
+  }
+  
+  .options-display .left,
+  .options-display .right {
+    width: 45%;
+    text-align: center;
+    font-weight: bold;
+  }
+  
+  /* --- Mode Selection UI --- */
+  .mode-choice-row {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 2rem;
+  }
+  
+  .mode-choice {
+    width: 45%;
+    padding: 1rem;
+  }
+  
+  .mode-choice p {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+  }
+  
+  .mode-choice small {
+    font-size: 0.9rem;
+    color: #777;
+  }
+  
+  /* --- Swipe Result Badges --- */
+  .badge {
+    position: absolute;
+    top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 8px;
+    z-index: 10;
+  }
+  
+  .like {
+    right: 20px;
+    color: #27ae60;
+    border: 2px solid #27ae60;
+  }
+  
+  .nope {
+    left: 20px;
+    color: #c0392b;
+    border: 2px solid #c0392b;
+  }
+  
+  /* --- Buttons --- */
+  .btn-start,
+  .btn-restart {
+    margin-top: 24px;
+    background-color: #ff9f68;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-start:hover,
+  .btn-restart:hover {
+    background-color: #ff7f36;
+  }
+  
+  /* --- Screens --- */
+  .welcome-screen,
+  .recommend-screen {
+    margin-top: 40px;
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
