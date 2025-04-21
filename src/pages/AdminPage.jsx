@@ -29,7 +29,7 @@ export default function AdminPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [newRestaurant, setNewRestaurant] = useState({
     name: '', type: '', address: '', tags: '', lat: 0, lng: 0,
-    priceRange: '', rating: 4.0, suggestedPeople: '1~4', isSpicy: false
+    priceRange: '$', rating: 4.0, suggestedPeople: '1~4', isSpicy: false
   });
 
   const fetchRestaurants = async () => {
@@ -60,7 +60,7 @@ export default function AdminPage() {
     });
     setNewRestaurant({
       name: '', type: '', address: '', tags: '', lat: 0, lng: 0,
-      priceRange: '', rating: 4.0, suggestedPeople: '1~4', isSpicy: false
+      priceRange: '$', rating: 4.0, suggestedPeople: '1~4', isSpicy: false
     });
     fetchRestaurants();
   };
@@ -105,7 +105,11 @@ export default function AdminPage() {
         <input placeholder="標籤（逗號分隔）" value={newRestaurant.tags} onChange={(e) => setNewRestaurant({ ...newRestaurant, tags: e.target.value })} />
         <input placeholder="緯度（可選）" value={newRestaurant.lat} onChange={(e) => setNewRestaurant({ ...newRestaurant, lat: e.target.value })} />
         <input placeholder="經度（可選）" value={newRestaurant.lng} onChange={(e) => setNewRestaurant({ ...newRestaurant, lng: e.target.value })} />
-        <input placeholder="價格區間（$、$$、$$$）" value={newRestaurant.priceRange} onChange={(e) => setNewRestaurant({ ...newRestaurant, priceRange: e.target.value })} />
+        <select value={newRestaurant.priceRange} onChange={(e) => setNewRestaurant({ ...newRestaurant, priceRange: e.target.value })}>
+          <option value="$">$</option>
+          <option value="$$">$$</option>
+          <option value="$$$">$$$</option>
+        </select>
         <input placeholder="星等（1~5）" type="number" step="0.1" value={newRestaurant.rating} onChange={(e) => setNewRestaurant({ ...newRestaurant, rating: parseFloat(e.target.value) })} />
         <select value={newRestaurant.suggestedPeople} onChange={(e) => setNewRestaurant({ ...newRestaurant, suggestedPeople: e.target.value })}>
           <option value="1~4">1~4 人</option>
@@ -151,7 +155,13 @@ export default function AdminPage() {
               <td><input value={r.tags?.join(', ') || ''} onChange={(e) => handleUpdate(r.id, 'tags', e.target.value)} /></td>
               <td><input value={r.location?.lat || 0} onChange={(e) => handleUpdate(r.id, 'lat', e.target.value)} /></td>
               <td><input value={r.location?.lng || 0} onChange={(e) => handleUpdate(r.id, 'lng', e.target.value)} /></td>
-              <td><input value={r.priceRange || ''} onChange={(e) => handleUpdate(r.id, 'priceRange', e.target.value)} /></td>
+              <td>
+                <select value={r.priceRange} onChange={(e) => handleUpdate(r.id, 'priceRange', e.target.value)}>
+                  <option value="$">$</option>
+                  <option value="$$">$$</option>
+                  <option value="$$$">$$$</option>
+                </select>
+              </td>
               <td><input type="number" step="0.1" value={r.rating || 0} onChange={(e) => handleUpdate(r.id, 'rating', e.target.value)} /></td>
               <td>
                 <select value={r.suggestedPeople} onChange={(e) => handleUpdate(r.id, 'suggestedPeople', e.target.value)}>
