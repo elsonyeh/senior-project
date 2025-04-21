@@ -47,6 +47,21 @@
   font-weight: bold;
 }
 
+.restaurant-card {
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
+
+.restaurant-overlay {
+  z-index: 2;
+  position: relative;
+  padding: 1rem;
+}
+
+
 /* --- Mode Selection UI --- */
 .mode-choice-row {
   display: flex;
