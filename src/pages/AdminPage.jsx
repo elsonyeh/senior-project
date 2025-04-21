@@ -27,7 +27,10 @@ const geocodeAddress = async (address) => {
 
 export default function AdminPage() {
   const [restaurants, setRestaurants] = useState([]);
-  const [newRestaurant, setNewRestaurant] = useState({ name: '', type: '', address: '', tags: '', lat: 0, lng: 0 });
+  const [newRestaurant, setNewRestaurant] = useState({
+    name: '', type: '', address: '', tags: '', lat: 0, lng: 0,
+    priceRange: '', rating: 4.0, suggestedPeople: '1~4', isSpicy: false
+  });
 
   const fetchRestaurants = async () => {
     const snapshot = await getDocs(collection(db, 'restaurants'));
@@ -53,10 +56,12 @@ export default function AdminPage() {
     await addDoc(collection(db, 'restaurants'), {
       ...newRestaurant,
       tags: newRestaurant.tags.split(',').map(t => t.trim()),
-      location: latlng,
-      rating: 4.0
+      location: latlng
     });
-    setNewRestaurant({ name: '', type: '', address: '', tags: '', lat: 0, lng: 0 });
+    setNewRestaurant({
+      name: '', type: '', address: '', tags: '', lat: 0, lng: 0,
+      priceRange: '', rating: 4.0, suggestedPeople: '1~4', isSpicy: false
+    });
     fetchRestaurants();
   };
 
@@ -71,7 +76,9 @@ export default function AdminPage() {
       ? value.split(',').map(t => t.trim())
       : field === 'lat' || field === 'lng'
         ? parseFloat(value)
-        : value;
+        : field === 'isSpicy'
+          ? Boolean(value)
+          : value;
     await updateDoc(ref, field === 'lat' || field === 'lng'
       ? { location: { ...restaurants.find(r => r.id === id).location, [field]: updateValue } }
       : { [field]: updateValue });
@@ -87,21 +94,35 @@ export default function AdminPage() {
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>📋 餐廳管理頁面 (含地理編碼)</h1>
+    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9' }}>
+      <h1 style={{ color: '#333' }}>📋 餐廳管理頁面 (含地理編碼)</h1>
 
-      <h3>➕ 新增餐廳</h3>
-      <input placeholder="名稱" value={newRestaurant.name} onChange={(e) => setNewRestaurant({ ...newRestaurant, name: e.target.value })} />
-      <input placeholder="類型" value={newRestaurant.type} onChange={(e) => setNewRestaurant({ ...newRestaurant, type: e.target.value })} />
-      <input placeholder="地址" value={newRestaurant.address} onChange={(e) => setNewRestaurant({ ...newRestaurant, address: e.target.value })} />
-      <input placeholder="標籤（逗號分隔）" value={newRestaurant.tags} onChange={(e) => setNewRestaurant({ ...newRestaurant, tags: e.target.value })} />
-      <input placeholder="緯度（可選）" value={newRestaurant.lat} onChange={(e) => setNewRestaurant({ ...newRestaurant, lat: e.target.value })} />
-      <input placeholder="經度（可選）" value={newRestaurant.lng} onChange={(e) => setNewRestaurant({ ...newRestaurant, lng: e.target.value })} />
-      <button onClick={handleAdd}>新增</button>
+      <div style={{ backgroundColor: '#fff', padding: '1rem', borderRadius: '8px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+        <h3>➕ 新增餐廳</h3>
+        <input placeholder="名稱" value={newRestaurant.name} onChange={(e) => setNewRestaurant({ ...newRestaurant, name: e.target.value })} />
+        <input placeholder="類型" value={newRestaurant.type} onChange={(e) => setNewRestaurant({ ...newRestaurant, type: e.target.value })} />
+        <input placeholder="地址" value={newRestaurant.address} onChange={(e) => setNewRestaurant({ ...newRestaurant, address: e.target.value })} />
+        <input placeholder="標籤（逗號分隔）" value={newRestaurant.tags} onChange={(e) => setNewRestaurant({ ...newRestaurant, tags: e.target.value })} />
+        <input placeholder="緯度（可選）" value={newRestaurant.lat} onChange={(e) => setNewRestaurant({ ...newRestaurant, lat: e.target.value })} />
+        <input placeholder="經度（可選）" value={newRestaurant.lng} onChange={(e) => setNewRestaurant({ ...newRestaurant, lng: e.target.value })} />
+        <input placeholder="價格區間（$、$$、$$$）" value={newRestaurant.priceRange} onChange={(e) => setNewRestaurant({ ...newRestaurant, priceRange: e.target.value })} />
+        <input placeholder="星等（1~5）" type="number" step="0.1" value={newRestaurant.rating} onChange={(e) => setNewRestaurant({ ...newRestaurant, rating: parseFloat(e.target.value) })} />
+        <select value={newRestaurant.suggestedPeople} onChange={(e) => setNewRestaurant({ ...newRestaurant, suggestedPeople: e.target.value })}>
+          <option value="1~4">1~4 人</option>
+          <option value="5~8">5~8 人</option>
+          <option value="8以上">8 人以上</option>
+          <option value="1~8">1~8 人</option>
+        </select>
+        <label>
+          辣嗎？
+          <input type="checkbox" checked={newRestaurant.isSpicy} onChange={(e) => setNewRestaurant({ ...newRestaurant, isSpicy: e.target.checked })} />
+        </label>
+        <button style={{ marginTop: '1rem' }} onClick={handleAdd}>新增</button>
+      </div>
 
       <h3 style={{ marginTop: '2rem' }}>📂 所有餐廳</h3>
-      <table border="1" cellPadding="6" style={{ width: '100%', marginTop: '1rem' }}>
-        <thead>
+      <table border="1" cellPadding="6" style={{ width: '100%', marginTop: '1rem', backgroundColor: '#fff', borderCollapse: 'collapse' }}>
+        <thead style={{ backgroundColor: '#efefef' }}>
           <tr>
             <th>圖片</th>
             <th>名稱</th>
@@ -110,6 +131,10 @@ export default function AdminPage() {
             <th>標籤</th>
             <th>緯度</th>
             <th>經度</th>
+            <th>價格</th>
+            <th>星等</th>
+            <th>人數</th>
+            <th>辣</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -126,6 +151,19 @@ export default function AdminPage() {
               <td><input value={r.tags?.join(', ') || ''} onChange={(e) => handleUpdate(r.id, 'tags', e.target.value)} /></td>
               <td><input value={r.location?.lat || 0} onChange={(e) => handleUpdate(r.id, 'lat', e.target.value)} /></td>
               <td><input value={r.location?.lng || 0} onChange={(e) => handleUpdate(r.id, 'lng', e.target.value)} /></td>
+              <td><input value={r.priceRange || ''} onChange={(e) => handleUpdate(r.id, 'priceRange', e.target.value)} /></td>
+              <td><input type="number" step="0.1" value={r.rating || 0} onChange={(e) => handleUpdate(r.id, 'rating', e.target.value)} /></td>
+              <td>
+                <select value={r.suggestedPeople} onChange={(e) => handleUpdate(r.id, 'suggestedPeople', e.target.value)}>
+                  <option value="1~4">1~4 人</option>
+                  <option value="5~8">5~8 人</option>
+                  <option value="8以上">8 人以上</option>
+                  <option value="1~8">1~8 人</option>
+                </select>
+              </td>
+              <td>
+                <input type="checkbox" checked={r.isSpicy || false} onChange={(e) => handleUpdate(r.id, 'isSpicy', e.target.checked)} />
+              </td>
               <td><button onClick={() => handleDelete(r.id)}>🗑️ 刪除</button></td>
             </tr>
           ))}
