@@ -28,7 +28,7 @@ const geocodeAddress = async (address) => {
 export default function AdminPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [newRestaurant, setNewRestaurant] = useState({
-    name: '', type: '', address: '', tags: '', lat: 0, lng: 0,
+    name: '', type: '', address: '', tags: '',
     priceRange: '$', rating: 4.0, suggestedPeople: '1~4', isSpicy: false
   });
 
@@ -106,9 +106,9 @@ export default function AdminPage() {
         <input placeholder="緯度（可選）" value={newRestaurant.lat} onChange={(e) => setNewRestaurant({ ...newRestaurant, lat: e.target.value })} />
         <input placeholder="經度（可選）" value={newRestaurant.lng} onChange={(e) => setNewRestaurant({ ...newRestaurant, lng: e.target.value })} />
         <select value={newRestaurant.priceRange} onChange={(e) => setNewRestaurant({ ...newRestaurant, priceRange: e.target.value })}>
-          <option value="$">$</option>
-          <option value="$$">$$</option>
-          <option value="$$$">$$$</option>
+          <option value="$">$ 1~200</option>
+          <option value="$$">$$ 200~400</option>
+          <option value="$$$">$$$ 大於400</option>
         </select>
         <input placeholder="星等（1~5）" type="number" step="0.1" value={newRestaurant.rating} onChange={(e) => setNewRestaurant({ ...newRestaurant, rating: parseFloat(e.target.value) })} />
         <select value={newRestaurant.suggestedPeople} onChange={(e) => setNewRestaurant({ ...newRestaurant, suggestedPeople: e.target.value })}>
