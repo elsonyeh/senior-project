@@ -13,13 +13,13 @@ export const basicQuestions = [
       "平價美食"
     ]
   },
-  {
+/*  {
     "question": "要附近吃還是走遠一點？",
     "options": [
       "附近吃",
       "遠一點"
     ]
-  },
+  },*/
   {
     "question": "想吃正餐還是想喝飲料？",
     "options": [

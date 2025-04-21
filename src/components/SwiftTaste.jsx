@@ -5,7 +5,8 @@ import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import RestaurantSwiperMotion from "./RestaurantSwiperMotion";   
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import { getRandomFunQuestions, recommendRestaurants } from '../logic/recommendLogic';
-import { restaurantData } from "../data/localRestaurants";
+import { getDocs, collection } from "firebase/firestore";
+import { db } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
 import "./SwiftTasteCard.css";
 
@@ -20,7 +21,19 @@ export default function SwiftTaste() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setRestaurantList(restaurantData);
+    const fetchData = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "restaurants"));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setRestaurantList(data);
+      } catch (error) {
+        console.error("Failed to fetch restaurants from Firebase:", error);
+      }
+    };
+    fetchData();
   }, []);
 
   const formatQuestionsForSwiper = (questions) =>
