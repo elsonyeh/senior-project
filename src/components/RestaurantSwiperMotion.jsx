@@ -11,12 +11,18 @@ export default function RestaurantSwiperMotion({ restaurants, onSave, onFinish }
   const [cards, setCards] = useState([]);
 
   useEffect(() => {
-    setCards(restaurants || []);
+    if (Array.isArray(restaurants)) {
+      // 過濾掉無效或缺 id 的資料
+      const validRestaurants = restaurants.filter(r => r && r.id);
+      setCards(validRestaurants);
+    } else {
+      setCards([]);
+    }
   }, [restaurants]);
 
   const handleSwipe = (direction, restaurant) => {
     if (direction === "right") {
-      onSave(restaurant);
+      onSave?.(restaurant);
     }
 
     const remaining = cards.filter((r) => r.id !== restaurant.id);
@@ -35,13 +41,15 @@ export default function RestaurantSwiperMotion({ restaurants, onSave, onFinish }
     <div className="motion-swiper-container">
       <AnimatePresence mode="wait">
         {cards.length > 0 ? (
-          cards.slice(0, 1).map((restaurant) => (
-            <SwipeRestaurantCard
-              key={restaurant.id}
-              restaurant={restaurant}
-              onSwipe={handleSwipe}
-            />
-          ))
+          cards.slice(0, 1).map((restaurant) =>
+            restaurant && typeof restaurant === "object" ? (
+              <SwipeRestaurantCard
+                key={restaurant.id}
+                restaurant={restaurant}
+                onSwipe={handleSwipe}
+              />
+            ) : null
+          )
         ) : null}
       </AnimatePresence>
     </div>
@@ -49,6 +57,10 @@ export default function RestaurantSwiperMotion({ restaurants, onSave, onFinish }
 }
 
 function SwipeRestaurantCard({ restaurant, onSwipe }) {
+  if (!restaurant || typeof restaurant !== "object") {
+    return null;
+  }
+
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 300], [-20, 20]);
   const likeOpacity = useTransform(x, [50, 150], [0, 1]);
@@ -63,7 +75,7 @@ function SwipeRestaurantCard({ restaurant, onSwipe }) {
   };
 
   const fallbackURL = "https://source.unsplash.com/400x300/?restaurant";
-  const backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${restaurant?.photoURL || fallbackURL})`;
+  const backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${restaurant.photoURL || fallbackURL})`;
 
   return (
     <motion.div
@@ -78,10 +90,10 @@ function SwipeRestaurantCard({ restaurant, onSwipe }) {
       transition={{ duration: 0.25, ease: "easeOut" }}
     >
       <div className="restaurant-overlay">
-        <h3>{restaurant?.name || "未命名餐廳"}</h3>
-        <p>{restaurant?.address || "地址未知"}</p>
-        <small>{restaurant?.type || "類型不明"}</small>
-        {restaurant?.rating && (
+        <h3>{restaurant.name || "未命名餐廳"}</h3>
+        <p>{restaurant.address || "地址未知"}</p>
+        <small>{restaurant.type || "類型不明"}</small>
+        {typeof restaurant.rating === "number" && (
           <div className="restaurant-rating">⭐ {restaurant.rating.toFixed(1)} 分</div>
         )}
       </div>
