@@ -135,3 +135,30 @@
   padding: 0 1rem;
   box-sizing: border-box;
 }
+
+/* 📱 手機版 RecommendationResult RWD 優化 */
+@media (max-width: 768px) {
+  .recommend-screen {
+    padding: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .recommend-screen h2 {
+    font-size: 1.3rem;
+  }
+
+  .recommend-screen h3 {
+    font-size: 1.1rem;
+  }
+
+  .recommend-screen img,
+  .recommend-screen .btn-start,
+  .recommend-screen .btn-restart {
+    max-width: 100%;
+  }
+
+  .recommend-screen li {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+}
