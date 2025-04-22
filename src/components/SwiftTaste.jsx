@@ -1,13 +1,15 @@
+// ✅ SwiftTaste.jsx
 import React, { useState, useEffect } from "react";
 import { basicQuestions } from '../data/basicQuestions';
 import { funQuestions } from '../data/funQuestions';
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
-import RestaurantSwiperMotion from "./RestaurantSwiperMotion";   
+import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import ModeSwiperMotion from "./ModeSwiperMotion";
+import RecommendationResult from "./RecommendationResult";
 import { getRandomFunQuestions, recommendRestaurants } from '../logic/recommendLogic';
 import { getDocs, collection } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./SwiftTasteCard.css";
 
 export default function SwiftTaste() {
@@ -19,6 +21,7 @@ export default function SwiftTaste() {
   const [allQuestions, setAllQuestions] = useState([]);
   const [userAnswers, setUserAnswers] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,6 +39,18 @@ export default function SwiftTaste() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("mode") === "buddies") {
+      const savedRecs = JSON.parse(localStorage.getItem("buddiesRecommendations"));
+      if (savedRecs?.length) {
+        setSelectedMode("buddies");
+        setRecommendations(savedRecs);
+        setPhase("recommend");
+      }
+    }
+  }, [location.search]);
+
   const formatQuestionsForSwiper = (questions) =>
     questions.map((q, index) => ({
       id: "q" + index,
@@ -51,7 +66,7 @@ export default function SwiftTaste() {
 
   const handleModeSelect = (direction) => {
     if (direction === "left") {
-      navigate("/buddies");
+      navigate("/buddies", { state: { fromSwiftTaste: true } });
     } else if (direction === "right") {
       setSelectedMode("solo");
       const randomFun = getRandomFunQuestions(funQuestions);
@@ -66,12 +81,17 @@ export default function SwiftTaste() {
     const allRecommended = recommendRestaurants(answerList, restaurantList);
     const limited = getRandomTen(allRecommended);
     setRecommendations(limited);
-    setPhase("recommend");
+    if (limited.length === 0) {
+      setSaved([]);
+      setPhase("result");
+    } else {
+      setPhase("recommend");
+    }
   };
 
   const handleSaveRestaurant = (restaurant) => {
     if (!saved.find((r) => r.id === restaurant.id)) {
-      setSaved([...saved, restaurant]);
+      setSaved((prev) => [...prev, restaurant]);
     }
   };
 
@@ -101,15 +121,11 @@ export default function SwiftTaste() {
           <h2>
             推薦餐廳 🍜（{selectedMode === "solo" ? "自己吃" : "一起選"}）
           </h2>
-          {recommendations.length === 0 ? (
-            <p>目前沒有符合條件的推薦！</p>
-          ) : (
-            <RestaurantSwiperMotion
-              restaurants={recommendations}
-              onSave={handleSaveRestaurant}
-              showAddressAndPhoto={true}
-            />
-          )}
+          <RestaurantSwiperMotion
+            restaurants={recommendations}
+            onSave={handleSaveRestaurant}
+            onFinish={() => setPhase("result")}
+          />
           <h3>已收藏餐廳 ⭐</h3>
           <ul>
             {saved.map((r) => (
@@ -121,6 +137,11 @@ export default function SwiftTaste() {
           </button>
         </>
       )}
+
+      {phase === "result" && (
+        <RecommendationResult saved={saved} onRetry={handleRestart} />
+      )}
     </div>
   );
 }
+

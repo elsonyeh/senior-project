@@ -7,7 +7,7 @@ import {
   AnimatePresence,
 } from "framer-motion";
 
-export default function RestaurantSwiperMotion({ restaurants, onSave }) {
+export default function RestaurantSwiperMotion({ restaurants, onSave, onFinish }) {
   const [cards, setCards] = useState([]);
 
   useEffect(() => {
@@ -19,29 +19,30 @@ export default function RestaurantSwiperMotion({ restaurants, onSave }) {
       onSave(restaurant);
     }
 
-    setCards((prevCards) =>
-      prevCards.filter((r) => r.id !== restaurant.id)
-    );
+    const remaining = cards.filter((r) => r.id !== restaurant.id);
+    setCards(remaining);
+
+    if (remaining.length === 0 && onFinish) {
+      setTimeout(() => onFinish(), 400);
+    }
   };
 
   if (!Array.isArray(restaurants)) {
     return <div className="motion-swiper-container">餐廳資料未準備好</div>;
   }
 
-  if (cards.length === 0) {
-    return <div className="motion-swiper-container">目前無推薦餐廳</div>;
-  }
-
   return (
     <div className="motion-swiper-container">
       <AnimatePresence mode="wait">
-        {cards.slice(0, 1).map((restaurant) => (
-          <SwipeRestaurantCard
-            key={restaurant.id}
-            restaurant={restaurant}
-            onSwipe={handleSwipe}
-          />
-        ))}
+        {cards.length > 0 ? (
+          cards.slice(0, 1).map((restaurant) => (
+            <SwipeRestaurantCard
+              key={restaurant.id}
+              restaurant={restaurant}
+              onSwipe={handleSwipe}
+            />
+          ))
+        ) : null}
       </AnimatePresence>
     </div>
   );
@@ -79,9 +80,10 @@ function SwipeRestaurantCard({ restaurant, onSwipe }) {
       <div className="restaurant-overlay">
         <h3>{restaurant?.name || "未命名餐廳"}</h3>
         <p>{restaurant?.address || "地址未知"}</p>
-        <small>
-          {restaurant?.type || "類型不明"} | {restaurant?.priceRange || "-"} | {restaurant?.suggestedPeople || "人數未填"}
-        </small>
+        <small>{restaurant?.type || "類型不明"}</small>
+        {restaurant?.rating && (
+          <div className="restaurant-rating">⭐ {restaurant.rating.toFixed(1)} 分</div>
+        )}
       </div>
 
       <motion.div className="badge like" style={{ opacity: likeOpacity }}>
