@@ -6,7 +6,7 @@ const isLocal = location.hostname === 'localhost' || location.hostname.startsWit
 const socket = io(
   isLocal
     ? 'http://localhost:4000'
-    : import.meta.env.VITE_SOCKET_URL || 'senior-project-production-e44e.up.railway.app',
+    : import.meta.env.VITE_SOCKET_URL || 'senior-project-production-ed41.up.railway.app',
   {
     transports: ['websocket'],
   }
