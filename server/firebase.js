@@ -1,7 +1,8 @@
-require('dotenv').config(); // 讀取 .env
-
+require('dotenv').config();
 const admin = require('firebase-admin');
-const serviceAccount = require('./serviceAccountKey.json'); // ⬅ 你下載的憑證 JSON 檔
+
+// ✅ 從 Railway 的環境變數讀取 JSON 字串
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
