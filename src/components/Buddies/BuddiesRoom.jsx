@@ -10,6 +10,7 @@ import { basicQuestions } from "../../data/basicQuestions";
 import { funQuestions } from "../../data/funQuestions";
 import { getRandomFunQuestions } from "../../logic/recommendLogic";
 import QuestionSwiperMotion from "../QuestionSwiperMotion";
+import QRScannerModal from "./QRScannerModal";
 
 function generateRoomCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -27,6 +28,7 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
   const [questions, setQuestions] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [votes, setVotes] = useState({});
+  const [showScanner, setShowScanner] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -72,7 +74,6 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
     if (!userName.trim()) return setError("請輸入你的名稱");
     if (!userId) return setError("登入錯誤，請重新整理");
 
-    // ✅ 將建立房號的動作交給後端
     socket.emit("createRoom", { userName }, ({ roomId }) => {
       if (!roomId) {
         setError("房號建立失敗");
@@ -172,10 +173,22 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
           />
           <button onClick={handleCreateRoom}>建立新房間</button>
           <button onClick={() => joinRoom(roomCode)}>加入房間</button>
+          {!joined && (
+            <>
+              <button onClick={() => setShowScanner(true)}>📷 掃描房號</button>
+              {showScanner && (
+                <QRScannerModal
+                  onScan={(code) => {
+                    setRoomCode(code.toUpperCase());
+                    setShowScanner(false);
+                  }}
+                  onClose={() => setShowScanner(false)}
+                />
+              )}
+            </>
+          )}
           {error && (
-            <p
-              style={{ color: "red", fontWeight: "bold", marginTop: "0.5rem" }}
-            >
+            <p style={{ color: "red", fontWeight: "bold", marginTop: "0.5rem" }}>
               ⚠️ {error}
             </p>
           )}
@@ -183,10 +196,7 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
       ) : phase === "waiting" ? (
         <>
           <h3>房號：{roomCode}</h3>
-          <QRCode
-            value={`${window.location.origin}/buddies?room=${roomCode}`}
-            size={160}
-          />
+          <QRCode value={`${window.location.origin}/buddies?room=${roomCode}`} size={160} />
           <div>
             <button onClick={copyToClipboard}>📋 複製房號</button>
             <button onClick={shareRoom}>🔗 分享連結</button>
@@ -201,11 +211,7 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
             ))}
           </ul>
           {isHost && (
-            <button
-              onClick={() =>
-                socket.emit("startQuestions", { roomId: roomCode })
-              }
-            >
+            <button onClick={() => socket.emit("startQuestions", { roomId: roomCode })}>
               👉 開始答題
             </button>
           )}
