@@ -1,8 +1,8 @@
-// BuddiesRoom.jsx（整合後，含同步答題流程）
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { db, ref, set, get, update, onValue } from '../../services/realtime';
+import { ref, get, update, set } from 'firebase/database';
+import { rtdb } from '../../services/firebase';
 import { QRCode } from 'react-qrcode-logo';
 import socket from '../../services/socket';
 import './BuddiesRoom.css';
@@ -39,28 +39,27 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const roomFromUrl = params.get("room");
-    if (roomFromUrl && userId) {
-      joinRoom(roomFromUrl);
-    }
-  }, [location.search, userId]);
+    socket.on('updateUsers', (userList) => {
+      console.log("✅ 收到 updateUsers：", userList);
+      setMembers(userList);
+    });
 
-  useEffect(() => {
-    socket.on('updateUsers', (users) => setMembers(users));
     socket.on('startQuestions', () => {
       const randomFun = getRandomFunQuestions(funQuestions);
       const all = [...basicQuestions, ...randomFun];
       setQuestions(all);
       setPhase('questions');
     });
+
     socket.on('groupRecommendations', (recs) => {
       setRecommendations(recs);
       setPhase('vote');
     });
+
     socket.on('voteUpdate', (voteData) => {
       setVotes(voteData);
     });
+
     return () => {
       socket.off('updateUsers');
       socket.off('startQuestions');
@@ -70,46 +69,65 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
   }, []);
 
   const handleCreateRoom = async () => {
-    if (!userName || !userId) return setError("請輸入名稱");
+    if (!userName.trim()) return setError("請輸入你的名稱");
+    if (!userId) return setError("登入錯誤，請重新整理");
+
     const newRoom = generateRoomCode();
-    const roomRef = ref(db, `buddiesRooms/${newRoom}`);
+    const roomRef = ref(rtdb, `buddiesRooms/${newRoom}`);
     const snapshot = await get(roomRef);
+
     if (!snapshot.exists()) {
       await set(roomRef, {
         host: userId,
-        members: {
-          [userId]: {
-            name: userName,
-            joinedAt: Date.now(),
-          },
-        },
-        stage: 'waiting',
-        createdAt: Date.now(),
+        createdAt: Date.now()
       });
+
+      await update(ref(rtdb, `buddiesRooms/${newRoom}/members/${userId}`), {
+        name: userName,
+        joinedAt: Date.now(),
+      });
+
       setRoomCode(newRoom);
       setIsHost(true);
       setJoined(true);
-      socket.emit('createRoom', { roomId: newRoom });
+
+      socket.emit('createRoom', { userName }, ({ roomId }) => {
+        console.log("✅ 房間建立成功", roomId);
+      });
+
       setPhase('waiting');
+    } else {
+      setError("房號已存在，請重新嘗試");
     }
   };
 
   const joinRoom = async (roomIdInput) => {
-    if (!userName || !userId) return setError("請輸入名稱與房號");
-    const roomRef = ref(db, `buddiesRooms/${roomIdInput}`);
+    if (!userName.trim()) return setError("請先輸入你的名稱");
+    if (!roomIdInput.trim()) return setError("請輸入正確的房號");
+    if (!userId) return setError("登入錯誤，請重新整理");
+
+    const roomRef = ref(rtdb, `buddiesRooms/${roomIdInput}`);
     const snapshot = await get(roomRef);
     if (!snapshot.exists()) {
-      setError('房間不存在');
-      return;
+      return setError('房間不存在');
     }
-    await update(ref(db, `buddiesRooms/${roomIdInput}/members/${userId}`), {
+
+    await update(ref(rtdb, `buddiesRooms/${roomIdInput}/members/${userId}`), {
       name: userName,
       joinedAt: Date.now(),
     });
+
     setRoomCode(roomIdInput);
     setJoined(true);
-    socket.emit('joinRoom', { roomId: roomIdInput });
-    setPhase('waiting');
+
+    socket.emit('joinRoom', { roomId: roomIdInput, userName }, (res) => {
+      if (!res?.success) {
+        setError(res?.error || '加入失敗');
+        setJoined(false);
+        return;
+      }
+      setPhase('waiting');
+    });
   };
 
   const copyToClipboard = async () => {
@@ -137,12 +155,12 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
 
   const submitAnswers = (answersObj) => {
     const answers = Object.values(answersObj);
-    socket.emit('submitAnswers', { roomId, answers });
+    socket.emit('submitAnswers', { roomId: roomCode, answers });
     setPhase('waitingResults');
   };
 
   const voteRestaurant = (restaurantId) => {
-    socket.emit('voteRestaurant', { roomId, restaurantId });
+    socket.emit('voteRestaurant', { roomId: roomCode, restaurantId });
   };
 
   const formatQuestionsForSwiper = (questions) =>
@@ -169,7 +187,11 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
           />
           <button onClick={handleCreateRoom}>建立新房間</button>
           <button onClick={() => joinRoom(roomCode)}>加入房間</button>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
+          {error && (
+            <p style={{ color: 'red', fontWeight: 'bold', marginTop: '0.5rem' }}>
+              ⚠️ {error}
+            </p>
+          )}
         </>
       ) : phase === 'waiting' ? (
         <>
@@ -181,12 +203,17 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
           </div>
           <h4>目前成員：</h4>
           <ul>
-            {members.map((uid) => (
-              <li key={uid}>{uid}</li>
+            {members.map((m, i) => (
+              <li key={m.uid || i}>
+                👤 {m.name || `成員 ${i + 1}`}
+                {m.uid === userId && '（你）'}
+              </li>
             ))}
           </ul>
           {isHost && (
-            <button onClick={() => socket.emit('startQuestions', { roomId })}>👉 開始答題</button>
+            <button onClick={() => socket.emit('startQuestions', { roomId: roomCode })}>
+              👉 開始答題
+            </button>
           )}
         </>
       ) : phase === 'questions' ? (
