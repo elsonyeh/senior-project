@@ -8,16 +8,20 @@ const { ref, set, get } = require('firebase-admin/database');
 const app = express();
 const server = http.createServer(app);
 
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://senior-project-ruby.vercel.app'
+];
+
 
 app.use(cors({
-  origin: CLIENT_ORIGIN,
+  origin: allowedOrigins,
   credentials: true
 }));
 
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_ORIGIN,
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST']
   }
