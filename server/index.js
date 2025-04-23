@@ -50,6 +50,7 @@ io.on('connection', (socket) => {
 
     await rtdb.ref(`buddiesRooms/${roomId}`).set({
       hostSocket: socket.id,
+      hostName: sanitizeName(userName, socket.id),
       createdAt: Date.now()
     });
 
