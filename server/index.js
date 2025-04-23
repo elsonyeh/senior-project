@@ -3,7 +3,7 @@ const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const { rtdb } = require('./firebase');
-const { ref, set } = require('firebase-admin/database');
+const { ref, set, get } = require('firebase-admin/database');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,118 +26,135 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 4000;
 const rooms = {};
 
-io.on('connection', (socket) => {
-  console.log('🟢 使用者連線:', socket.id);
+socket.on('createRoom', async ({ userName }, callback) => {
+  const roomId = generateRoomId();
 
-  socket.on('createRoom', async ({ userName }, callback) => {
-    const roomId = generateRoomId();
+  rooms[roomId] = {
+    host: socket.id,
+    members: {},
+    answers: {},
+    votes: {},
+    stage: 'waiting'
+  };
+
+  socket.join(roomId);
+  rooms[roomId].members[socket.id] = {
+    name: sanitizeName(userName, socket.id)
+  };
+
+  // ✅ 僅後端寫入房號
+  await rtdb.ref(`buddiesRooms/${roomId}`).set({
+    hostSocket: socket.id,
+    createdAt: Date.now()
+  });
+
+  if (typeof callback === 'function') {
+    callback({ roomId }); // ✅ 傳給前端
+  }
+
+  emitUserList(roomId);
+});
+
+socket.on('joinRoom', async ({ roomId, userName }, callback) => {
+  let room = rooms[roomId];
+
+  if (!room) {
+    const snap = await rtdb.ref(`buddiesRooms/${roomId}`).get();
+    if (!snap.exists()) {
+      if (typeof callback === 'function') {
+        return callback({ success: false, error: '房間不存在' });
+      }
+      return;
+    }
+
+    // ⚠️ 若 server 重啟過 → 從 Firebase 恢復最基本資料
     rooms[roomId] = {
-      host: socket.id,
+      host: snap.val().hostSocket || null,
       members: {},
       answers: {},
       votes: {},
       stage: 'waiting'
     };
 
-    socket.join(roomId);
-    rooms[roomId].members[socket.id] = { name: sanitizeName(userName, socket.id) };
+    room = rooms[roomId];
+  }
 
-    await set(ref(rtdb, `buddiesRooms/${roomId}`), {
-      hostSocket: socket.id,
-      createdAt: Date.now()
-    });
+  socket.join(roomId);
+  const name = sanitizeName(userName, socket.id);
+  room.members[socket.id] = { name };
 
-    if (typeof callback === 'function') {
-      callback({ roomId });
-    }
-    emitUserList(roomId);
-  });
+  if (typeof callback === 'function') {
+    callback({ success: true });
+  }
 
-  socket.on('joinRoom', ({ roomId, userName }, callback) => {
-    const room = rooms[roomId];
-    if (!room) {
-      if (typeof callback === 'function') {
-        callback({ success: false, error: '房間不存在' });
-      }
-      return;
-    }
+  emitUserList(roomId);
+});
 
-    socket.join(roomId);
-    const finalName = sanitizeName(userName, socket.id);
-    room.members[socket.id] = { name: finalName };
-
+socket.on('startQuestions', ({ roomId }, callback) => {
+  if (rooms[roomId]) {
+    io.to(roomId).emit('startQuestions');
     if (typeof callback === 'function') {
       callback({ success: true });
     }
-
-    emitUserList(roomId);
-  });
-
-  socket.on('startQuestions', ({ roomId }, callback) => {
-    if (rooms[roomId]) {
-      io.to(roomId).emit('startQuestions');
-      if (typeof callback === 'function') {
-        callback({ success: true });
-      }
-    } else {
-      if (typeof callback === 'function') {
-        callback({ success: false, error: '房間不存在' });
-      }
-    }
-  });
-
-  socket.on('submitAnswers', ({ roomId, answers }, callback) => {
-    const room = rooms[roomId];
-    if (!room) {
-      if (typeof callback === 'function') {
-        callback({ success: false, error: '房間不存在' });
-      }
-      return;
-    }
-
-    room.answers[socket.id] = answers;
-
-    if (Object.keys(room.answers).length === Object.keys(room.members).length) {
-      const recs = getDummyRecommendations();
-      room.stage = 'vote';
-      io.to(roomId).emit('groupRecommendations', recs);
-    }
-
+  } else {
     if (typeof callback === 'function') {
-      callback({ success: true });
+      callback({ success: false, error: '房間不存在' });
     }
-  });
+  }
+});
 
-  socket.on('voteRestaurant', ({ roomId, restaurantId }, callback) => {
-    const room = rooms[roomId];
-    if (!room) {
-      if (typeof callback === 'function') {
-        callback({ success: false, error: '房間不存在' });
-      }
-      return;
-    }
-
-    room.votes[restaurantId] = (room.votes[restaurantId] || 0) + 1;
-    io.to(roomId).emit('voteUpdate', room.votes);
-
+socket.on('submitAnswers', ({ roomId, answers }, callback) => {
+  const room = rooms[roomId];
+  if (!room) {
     if (typeof callback === 'function') {
-      callback({ success: true });
+      callback({ success: false, error: '房間不存在' });
     }
-  });
+    return;
+  }
 
-  socket.on('disconnect', () => {
-    console.log('🔴 使用者離線:', socket.id);
-    for (const [roomId, room] of Object.entries(rooms)) {
-      if (room.members[socket.id]) {
-        delete room.members[socket.id];
-        delete room.answers[socket.id];
-        emitUserList(roomId);
-        if (Object.keys(room.members).length === 0) {
-          delete rooms[roomId];
-        }
+  room.answers[socket.id] = answers;
+
+  if (Object.keys(room.answers).length === Object.keys(room.members).length) {
+    const recs = getDummyRecommendations();
+    room.stage = 'vote';
+    io.to(roomId).emit('groupRecommendations', recs);
+  }
+
+  if (typeof callback === 'function') {
+    callback({ success: true });
+  }
+});
+
+socket.on('voteRestaurant', ({ roomId, restaurantId }, callback) => {
+  const room = rooms[roomId];
+  if (!room) {
+    if (typeof callback === 'function') {
+      callback({ success: false, error: '房間不存在' });
+    }
+    return;
+  }
+
+  room.votes[restaurantId] = (room.votes[restaurantId] || 0) + 1;
+  io.to(roomId).emit('voteUpdate', room.votes);
+
+  if (typeof callback === 'function') {
+    callback({ success: true });
+  }
+});
+
+socket.on('disconnect', () => {
+  console.log('🔴 使用者離線:', socket.id);
+  for (const [roomId, room] of Object.entries(rooms)) {
+    if (room.members[socket.id]) {
+      delete room.members[socket.id];
+      delete room.answers[socket.id];
+      emitUserList(roomId);
+      if (Object.keys(room.members).length === 0) {
+        delete rooms[roomId];
       }
     }
-  });
+  }
+});
 });
 
 // 工具函式

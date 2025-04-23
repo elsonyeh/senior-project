@@ -1,29 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { ref, get, update, set } from 'firebase/database';
-import { rtdb } from '../../services/firebase';
-import { QRCode } from 'react-qrcode-logo';
-import socket from '../../services/socket';
-import './BuddiesRoom.css';
-import { basicQuestions } from '../../data/basicQuestions';
-import { funQuestions } from '../../data/funQuestions';
-import { getRandomFunQuestions } from '../../logic/recommendLogic';
-import QuestionSwiperMotion from '../QuestionSwiperMotion';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { ref, get, update, set } from "firebase/database";
+import { rtdb } from "../../services/firebase";
+import { QRCode } from "react-qrcode-logo";
+import socket from "../../services/socket";
+import "./BuddiesRoom.css";
+import { basicQuestions } from "../../data/basicQuestions";
+import { funQuestions } from "../../data/funQuestions";
+import { getRandomFunQuestions } from "../../logic/recommendLogic";
+import QuestionSwiperMotion from "../QuestionSwiperMotion";
 
 function generateRoomCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 export default function BuddiesRoom({ fromSwiftTaste }) {
-  const [roomCode, setRoomCode] = useState('');
-  const [userName, setUserName] = useState('');
+  const [roomCode, setRoomCode] = useState("");
+  const [userName, setUserName] = useState("");
   const [members, setMembers] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [joined, setJoined] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [userId, setUserId] = useState(null);
-  const [phase, setPhase] = useState('lobby');
+  const [phase, setPhase] = useState("lobby");
   const [questions, setQuestions] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [votes, setVotes] = useState({});
@@ -39,66 +39,51 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
   }, []);
 
   useEffect(() => {
-    socket.on('updateUsers', (userList) => {
+    socket.on("updateUsers", (userList) => {
       console.log("✅ 收到 updateUsers：", userList);
       setMembers(userList);
     });
 
-    socket.on('startQuestions', () => {
+    socket.on("startQuestions", () => {
       const randomFun = getRandomFunQuestions(funQuestions);
       const all = [...basicQuestions, ...randomFun];
       setQuestions(all);
-      setPhase('questions');
+      setPhase("questions");
     });
 
-    socket.on('groupRecommendations', (recs) => {
+    socket.on("groupRecommendations", (recs) => {
       setRecommendations(recs);
-      setPhase('vote');
+      setPhase("vote");
     });
 
-    socket.on('voteUpdate', (voteData) => {
+    socket.on("voteUpdate", (voteData) => {
       setVotes(voteData);
     });
 
     return () => {
-      socket.off('updateUsers');
-      socket.off('startQuestions');
-      socket.off('groupRecommendations');
-      socket.off('voteUpdate');
+      socket.off("updateUsers");
+      socket.off("startQuestions");
+      socket.off("groupRecommendations");
+      socket.off("voteUpdate");
     };
   }, []);
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = () => {
     if (!userName.trim()) return setError("請輸入你的名稱");
     if (!userId) return setError("登入錯誤，請重新整理");
 
-    const newRoom = generateRoomCode();
-    const roomRef = ref(rtdb, `buddiesRooms/${newRoom}`);
-    const snapshot = await get(roomRef);
+    // ✅ 將建立房號的動作交給後端
+    socket.emit("createRoom", { userName }, ({ roomId }) => {
+      if (!roomId) {
+        setError("房號建立失敗");
+        return;
+      }
 
-    if (!snapshot.exists()) {
-      await set(roomRef, {
-        host: userId,
-        createdAt: Date.now()
-      });
-
-      await update(ref(rtdb, `buddiesRooms/${newRoom}/members/${userId}`), {
-        name: userName,
-        joinedAt: Date.now(),
-      });
-
-      setRoomCode(newRoom);
+      setRoomCode(roomId);
       setIsHost(true);
       setJoined(true);
-
-      socket.emit('createRoom', { userName }, ({ roomId }) => {
-        console.log("✅ 房間建立成功", roomId);
-      });
-
-      setPhase('waiting');
-    } else {
-      setError("房號已存在，請重新嘗試");
-    }
+      setPhase("waiting");
+    });
   };
 
   const joinRoom = async (roomIdInput) => {
@@ -109,7 +94,7 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
     const roomRef = ref(rtdb, `buddiesRooms/${roomIdInput}`);
     const snapshot = await get(roomRef);
     if (!snapshot.exists()) {
-      return setError('房間不存在');
+      return setError("房間不存在");
     }
 
     await update(ref(rtdb, `buddiesRooms/${roomIdInput}/members/${userId}`), {
@@ -120,13 +105,13 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
     setRoomCode(roomIdInput);
     setJoined(true);
 
-    socket.emit('joinRoom', { roomId: roomIdInput, userName }, (res) => {
+    socket.emit("joinRoom", { roomId: roomIdInput, userName }, (res) => {
       if (!res?.success) {
-        setError(res?.error || '加入失敗');
+        setError(res?.error || "加入失敗");
         setJoined(false);
         return;
       }
-      setPhase('waiting');
+      setPhase("waiting");
     });
   };
 
@@ -155,12 +140,12 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
 
   const submitAnswers = (answersObj) => {
     const answers = Object.values(answersObj);
-    socket.emit('submitAnswers', { roomId: roomCode, answers });
-    setPhase('waitingResults');
+    socket.emit("submitAnswers", { roomId: roomCode, answers });
+    setPhase("waitingResults");
   };
 
   const voteRestaurant = (restaurantId) => {
-    socket.emit('voteRestaurant', { roomId: roomCode, restaurantId });
+    socket.emit("voteRestaurant", { roomId: roomCode, restaurantId });
   };
 
   const formatQuestionsForSwiper = (questions) =>
@@ -188,15 +173,20 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
           <button onClick={handleCreateRoom}>建立新房間</button>
           <button onClick={() => joinRoom(roomCode)}>加入房間</button>
           {error && (
-            <p style={{ color: 'red', fontWeight: 'bold', marginTop: '0.5rem' }}>
+            <p
+              style={{ color: "red", fontWeight: "bold", marginTop: "0.5rem" }}
+            >
               ⚠️ {error}
             </p>
           )}
         </>
-      ) : phase === 'waiting' ? (
+      ) : phase === "waiting" ? (
         <>
           <h3>房號：{roomCode}</h3>
-          <QRCode value={`${window.location.origin}/buddies?room=${roomCode}`} size={160} />
+          <QRCode
+            value={`${window.location.origin}/buddies?room=${roomCode}`}
+            size={160}
+          />
           <div>
             <button onClick={copyToClipboard}>📋 複製房號</button>
             <button onClick={shareRoom}>🔗 分享連結</button>
@@ -206,24 +196,28 @@ export default function BuddiesRoom({ fromSwiftTaste }) {
             {members.map((m, i) => (
               <li key={m.uid || i}>
                 👤 {m.name || `成員 ${i + 1}`}
-                {m.uid === userId && '（你）'}
+                {m.uid === userId && "（你）"}
               </li>
             ))}
           </ul>
           {isHost && (
-            <button onClick={() => socket.emit('startQuestions', { roomId: roomCode })}>
+            <button
+              onClick={() =>
+                socket.emit("startQuestions", { roomId: roomCode })
+              }
+            >
               👉 開始答題
             </button>
           )}
         </>
-      ) : phase === 'questions' ? (
+      ) : phase === "questions" ? (
         <QuestionSwiperMotion
           questions={formatQuestionsForSwiper(questions)}
           onComplete={submitAnswers}
         />
-      ) : phase === 'waitingResults' ? (
+      ) : phase === "waitingResults" ? (
         <p>等待其他人完成答題...</p>
-      ) : phase === 'vote' ? (
+      ) : phase === "vote" ? (
         <div>
           <h3>大家都答完啦！來投票吧 🎉</h3>
           {recommendations.map((r) => (

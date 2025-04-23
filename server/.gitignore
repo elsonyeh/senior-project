@@ -1,0 +1,9 @@
+# 不上傳憑證
+serviceAccountKey.json
+
+# 忽略 dotenv 環境變數（可選）
+.env
+
+# Node.js 一般忽略內容
+node_modules/
+npm-debug.log
