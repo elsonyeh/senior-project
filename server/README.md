@@ -1,77 +1,61 @@
-# 🧠 TasteBuddies Socket Server
+# 🍜 TasteBuddies Socket Server（適用於 Railway 部署）
 
-這是 TasteBuddies 專案的多人互動後端伺服器，使用 `express` + `socket.io` 建立。
+這是一個支援 WebSocket 的 Socket.IO 伺服器，專為 [TasteBuddies](https://github.com/你的前端專案) 專案設計，負責多人答題房間同步、投票與結果傳遞等功能。
 
----
-
-## 📁 檔案結構建議
-
-```bash
-TasteBuddies/
-├── client/            # React 前端專案（原本的 SwiftTaste）
-│   └── ...
-├── server/            # ✅ Socket server 位置
-│   └── socketServer.js
-└── README.md          # 或 socket server README
-```
+部署在 [Railway](https://railway.app) 上，可免費使用，穩定支援 WebSocket。
 
 ---
 
-## 📦 安裝後端依賴
+## 🛠️ 功能簡介
 
-請在 `server/` 資料夾下執行：
-
-```bash
-cd server
-npm init -y
-npm install express socket.io cors
-```
+- ✅ 使用 Firebase Realtime Database 儲存房間資料
+- ✅ 支援 createRoom / joinRoom / answer / vote / 結果顯示
+- ✅ 每 5 分鐘自動清理過期房間（可選）
+- ✅ 適合前端 React 專案串接使用
 
 ---
 
-## 🚀 啟動伺服器
+## 🚀 快速部署到 Railway
 
-```bash
-node socketServer.js
-```
+### ✅ 1. fork 或 clone 此專案
 
-（如果你有安裝 nodemon 也可以用）
-```bash
-npx nodemon socketServer.js
-```
+你可以將整個 `/server` 資料夾放入你的前端 GitHub 專案下，或建立獨立 Repo。
 
-伺服器將啟動於：
-```
-http://localhost:4000
-```
+### ✅ 2. 登入 Railway 並建立新專案
+
+- 前往 [https://railway.app](https://railway.app)
+- 點選「New Project」→ 選擇「Deploy from GitHub Repo」
+- 選擇你含有此專案的 GitHub 倉庫
+
+### ✅ 3. 設定環境變數
+
+| 名稱 | 值 |
+|------|----|
+| `FIREBASE_DB_URL` | `https://你的-firebase-專案.firebaseio.com` |
 
 ---
 
-## 🧪 測試連線
-React 前端請使用：
+## 🧾 檔案說明
+
+| 檔案 | 功能 |
+|------|------|
+| `index.js` | 主程式入口，包含 socket.io 伺服器邏輯 |
+| `firebase.js` | Firebase Admin SDK 初始化，連線至 RTDB |
+| `package.json` | 定義依賴與啟動命令 |
+| `Procfile` | Railway 使用的啟動配置 |
+| `.env` | ✅ 可選，本地測試時放入環境變數設定（不會上傳 Git） |
+
+---
+
+## 🔌 前端串接方式
+
+在你的前端專案中設定 socket：
+
 ```js
 import { io } from 'socket.io-client';
-const socket = io('http://localhost:4000');
-```
 
----
+const socket = io('https://你的-railway-app.up.railway.app', {
+  transports: ['websocket'],
+});
 
-## ✅ 支援的事件
-| 事件名稱           | 功能說明                         |
-|--------------------|----------------------------------|
-| `createRoom`       | 建立房間，回傳 roomId           |
-| `joinRoom`         | 加入房間並加入 socket room       |
-| `submitAnswers`    | 上傳每位使用者答題資料           |
-| `groupRecommendations` | 回傳推薦餐廳（模擬）         |
-| `voteRestaurant`   | 對特定餐廳進行投票              |
-| `updateUsers`      | 廣播當前使用者名單              |
-
----
-
-## 📌 注意
-- 本伺服器目前使用記憶體暫存房間資料，部署時可改為 Redis 等永久儲存
-- 未實作使用者名稱登入，可與 Firebase Auth 整合 UID later
-
----
-
-若需部署至遠端伺服器（如 Vercel + Render），可另外加上 proxy 設定與環境變數支持。
+export default socket;
