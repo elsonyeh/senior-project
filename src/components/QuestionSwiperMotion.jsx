@@ -21,6 +21,22 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
     setLastSwipedId(item.id);
     setLastDirection(dir);
   };
+  
+  // Format questions containing "v.s." to center the "v.s." text
+  const formatQuestionText = (q) => {
+    // Check both the text directly and the hasVS flag
+    if (q.text.includes("v.s.") || q.hasVS) {
+      const parts = q.text.split("v.s.");
+      return (
+        <div className="question-wrapper">
+          <div>{parts[0].trim()}</div>
+          <div className="vs-text">v.s.</div>
+          <div>{parts[1].trim()}</div>
+        </div>
+      );
+    }
+    return q.text;
+  };
 
   return (
     <CardStack
@@ -30,7 +46,7 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
       onLocalSwipe={handleLocalSwipe}
       renderCard={(q) => (
         <>
-          <h3 className="question-text">{q.text}</h3>
+          <h3 className="question-text">{formatQuestionText(q)}</h3>
           <div className="options-display">
             <div className={`left ${lastSwipedId === q.id && lastDirection === "left" ? "option-active" : ""}`}>
               <p className={lastSwipedId === q.id && lastDirection === "left" ? "option-highlight-text" : ""}>

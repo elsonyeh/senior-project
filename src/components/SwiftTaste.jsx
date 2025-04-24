@@ -57,6 +57,7 @@ export default function SwiftTaste() {
       text: q.question,
       leftOption: q.options[0],
       rightOption: q.options[1],
+      hasVS: q.question.includes("v.s.") // Add flag for v.s. formatting
     }));
 
   const getRandomTen = (arr) => {
@@ -144,4 +145,3 @@ export default function SwiftTaste() {
     </div>
   );
 }
-
