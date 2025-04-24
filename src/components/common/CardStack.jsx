@@ -112,8 +112,9 @@ function SwipeableCard({
   const rightArrowOpacity = useTransform(x, [0, 30, 100], [0.4, 0.7, 1]);
 
   const isTop = position === 0;
-  const topOffset = position * 14 + 20;
-  const scaleOffset = 1 - position * 0.04;
+  const topOffset = position * 18 + 20;  // 計算每張卡片的垂直位置(下一張卡片向下偏移18px)
+  const isTopCard = position === 0;     // 判斷是否為最上層的卡片
+  const scaleOffset = 1 - position * 0.04;  // 計算縮放比例，讓下方的卡片看起來更小(縮小0.04%)
   const blur = position > 0 ? 3 * position : 0;
 
   // 處理拖拽中的狀態更新

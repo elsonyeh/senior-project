@@ -47,7 +47,7 @@
 /* --- 選項樣式 --- */
 .options-display {
   display: flex;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   justify-content: space-between;
   width: 100%;
   margin-top: 2rem;
@@ -60,7 +60,7 @@
   width: 45%;
   text-align: center;
   font-weight: bold;
-  padding: 16px 8px;
+  padding: 16px 12px;
   transition: all 0.2s ease;
   background: transparent;
   /* 移除背景 */
@@ -73,7 +73,7 @@
   top: 50%;
   transform: translate(-50%, -50%);
   color: #999;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 /* --- Question card option styles --- */
@@ -272,8 +272,6 @@
 
 
 /* --- 箭頭圖標滑動指示動畫設計 --- */
-
-
 .swipe-arrow-indicator {
   width: 80px;
   height: 80px;
@@ -319,6 +317,20 @@
   }
   50% {
     transform: scale(1.05) translateX(5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  }
+  100% {
+    transform: scale(1) translateX(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+@keyframes pulseLeft {
+  0% {
+    transform: scale(1) translateX(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.05) translateX(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   }
   100% {
