@@ -199,7 +199,3 @@ function getDummyRecommendations() {
 app.get('/ping', (req, res) => {
   res.send('pong');
 });
-
-server.listen(PORT, () => {
-  console.log(`🚀 Socket server running at http://localhost:${PORT}`);
-});
