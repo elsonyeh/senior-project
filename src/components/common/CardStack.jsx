@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   motion,
   AnimatePresence,
@@ -17,9 +17,41 @@ export default function CardStack({
   badgeType = "like-nope",
 }) {
   const [visibleCards, setVisibleCards] = useState(cards);
+  // 全域狀態追蹤目前顯示哪個徽章
+  const [activeBadge, setActiveBadge] = useState(null);
+
+  // 處理卡片滑動方向顯示對應徽章
+  const handleLocalBadge = (dir) => {
+    setActiveBadge(dir);
+  };
+
+  // 重置徽章
+  const resetBadge = () => {
+    setActiveBadge(null);
+  };
 
   return (
     <div className="motion-swiper-container">
+      {/* 固定位置的徽章 */}
+      {badgeType === "like-nope" && (
+        <>
+          <div
+            className={`fixed-badge like ${
+              activeBadge === "right" ? "visible" : ""
+            }`}
+          >
+            <span className="badge-icon">✓</span> 收藏
+          </div>
+          <div
+            className={`fixed-badge nope ${
+              activeBadge === "left" ? "visible" : ""
+            }`}
+          >
+            <span className="badge-icon">✗</span> 跳過
+          </div>
+        </>
+      )}
+
       <AnimatePresence mode="popLayout">
         {visibleCards
           .slice(0, 3)
@@ -37,13 +69,22 @@ export default function CardStack({
                   );
                   setVisibleCards(remaining);
                   onSwipe?.(dir, item);
+                  resetBadge(); // 卡片消失後重置徽章
                 }}
-                onLocalSwipe={onLocalSwipe}
+                onLocalSwipe={(dir, item) => {
+                  if (dir === "reset") {
+                    resetBadge();
+                  } else {
+                    handleLocalBadge(dir);
+                  }
+                  // 同時還要調用原始 onLocalSwipe 讓選項高亮等功能正常運作
+                  onLocalSwipe?.(dir, item);
+                }}
                 render={renderCard}
                 background={background?.(item)}
                 isRestaurant={Boolean(background)}
                 centered={centered}
-                badgeType={badgeType}
+                badgeType="none" // 不使用卡片內的徽章
               />
             );
           })}
@@ -65,17 +106,13 @@ function SwipeableCard({
 }) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 300], [-20, 20]);
-  const likeOpacity = useTransform(x, [30, 100], [0, 1]);
-  const nopeOpacity = useTransform(x, [-100, -30], [1, 0]);
-  const likeScale = useTransform(x, [30, 100], [0.95, 1.1]);
-  const nopeScale = useTransform(x, [-100, -30], [1.1, 0.95]);
 
   // 從x值轉換出箭頭的透明度，實現更流暢的視覺反饋
   const leftArrowOpacity = useTransform(x, [-100, -30, 0], [1, 0.7, 0.4]);
   const rightArrowOpacity = useTransform(x, [0, 30, 100], [0.4, 0.7, 1]);
 
   const isTop = position === 0;
-  const topOffset = position * 18 + 20;
+  const topOffset = position * 14 + 20;
   const scaleOffset = 1 - position * 0.04;
   const blur = position > 0 ? 3 * position : 0;
 
@@ -84,7 +121,7 @@ function SwipeableCard({
     // 當右滑超過30px時，觸發本地樣式變化
     if (info.offset.x > 30) {
       onLocalSwipe?.("right", item);
-    } 
+    }
     // 當左滑超過30px時，觸發本地樣式變化
     else if (info.offset.x < -30) {
       onLocalSwipe?.("left", item);
@@ -130,45 +167,68 @@ function SwipeableCard({
       transition={{ duration: 0.25, ease: "easeOut" }}
     >
       {render(item)}
-      
-      {isTop && badgeType === "like-nope" && (
-        <>
-          <motion.div
-            className="badge like"
-            style={{ opacity: likeOpacity, scale: likeScale }}
-          >
-            喜歡
-          </motion.div>
-          <motion.div
-            className="badge nope"
-            style={{ opacity: nopeOpacity, scale: nopeScale }}
-          >
-            下一個
-          </motion.div>
-        </>
-      )}
-      
+
       {isTop && (
         <div className="swipe-arrows-container">
           {/* 左邊箭頭指示 */}
-          <motion.div 
+          <motion.div
             className="swipe-arrow-indicator left"
             style={{ opacity: leftArrowOpacity }}
           >
-            <div className="tinder-arrow-icon">
-              <div className="arrow-line"></div>
-              <div className="arrow-head"></div>
+            <div className="new-arrow-icon">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M19 12H5"
+                  stroke="#FF6B6B"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12 19L5 12L12 5"
+                  stroke="#FF6B6B"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </div>
           </motion.div>
-          
+
           {/* 右邊箭頭指示 */}
-          <motion.div 
+          <motion.div
             className="swipe-arrow-indicator right"
             style={{ opacity: rightArrowOpacity }}
           >
-            <div className="tinder-arrow-icon">
-              <div className="arrow-line"></div>
-              <div className="arrow-head"></div>
+            <div className="new-arrow-icon">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5 12H19"
+                  stroke="#2ECC71"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12 5L19 12L12 19"
+                  stroke="#2ECC71"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </div>
           </motion.div>
         </div>
