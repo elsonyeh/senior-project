@@ -47,9 +47,12 @@
 /* --- 選項樣式 --- */
 .options-display {
   display: flex;
+  font-size: 1.4rem;
   justify-content: space-between;
   width: 100%;
-  margin-top: 5vh;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  position: relative;
 }
 
 .options-display .left,
@@ -57,6 +60,29 @@
   width: 45%;
   text-align: center;
   font-weight: bold;
+  padding: 16px 8px;
+  transition: all 0.2s ease;
+  background: transparent;
+  /* 移除背景 */
+}
+
+.options-display::after {
+  content: "或";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #999;
+  font-size: 14px;
+}
+
+/* --- Question card option styles --- */
+.option-active {
+  background: rgba(0, 122, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 8px;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
 }
 
 /* --- 餐廳背景卡片 --- */
@@ -113,7 +139,8 @@
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  position: absolute;   /* ✅ 確保每張卡片可以疊放 */
+  position: absolute;
+  /* ✅ 確保每張卡片可以疊放 */
   transition: transform 0.3s ease, opacity 0.2s ease;
   will-change: transform;
 }
@@ -128,17 +155,24 @@
 
 .mode-choice {
   width: 45%;
-  padding: 1rem;
+  padding: 0.5rem;
+}
+
+.mode-choice-active,
+.option-active {
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+  background: transparent;
 }
 
 .mode-choice p {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: bold;
   margin-bottom: 0.3rem;
 }
 
 .mode-choice small.hint-text {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: #888;
   margin-top: 0.4rem;
   display: block;
@@ -168,6 +202,132 @@
   color: #c0392b;
   border: 2px solid #c0392b;
 }
+
+/* --- Swipe Result Text --- */
+.option-highlight-text {
+  font-weight: bold;
+  color: #007aff;
+  transform: scale(1.12);
+  transition: all 0.25s ease;
+}
+
+/* --- 滑動指示動畫 --- */
+.swipe-arrows-container {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.swipe-arrow-indicator {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 20px;
+}
+
+.swipe-arrow-indicator.left {
+  animation: pulseLeft 1.5s infinite;
+}
+
+.swipe-arrow-indicator.right {
+  animation: pulseRight 1.5s infinite;
+}
+
+@keyframes pulseLeft {
+  0% {
+    transform: scale(1) translateX(0);
+  }
+  50% {
+    transform: scale(1.05) translateX(-5px);
+  }
+  100% {
+    transform: scale(1) translateX(0);
+  }
+}
+
+@keyframes pulseRight {
+  0% {
+    transform: scale(1) translateX(0);
+  }
+  50% {
+    transform: scale(1.05) translateX(5px);
+  }
+  100% {
+    transform: scale(1) translateX(0);
+  }
+}
+
+/* 箭頭圖標設計 */
+.tinder-arrow-icon {
+  position: relative;
+  width: 30px;
+  height: 30px;
+}
+
+.swipe-arrow-indicator.left .tinder-arrow-icon {
+  transform: rotate(180deg);
+}
+
+.arrow-line {
+  position: absolute;
+  width: 22px;
+  height: 4px;
+  background: #FF6B6B;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.arrow-head {
+  position: absolute;
+  width: 0;
+  height: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 12px solid #FF6B6B;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+/* 增強顯示的箭頭 - 拖動時的變化 */
+.left-active .arrow-line,
+.left-active .arrow-head {
+  background-color: #E74C3C;
+  border-left-color: #E74C3C;
+}
+
+.right-active .arrow-line,
+.right-active .arrow-head {
+  background-color: #27AE60;
+  border-left-color: #27AE60;
+}
+
+/* 移除舊的指示器和點點 */
+.swipe-hint-container,
+.swipe-dots,
+.swipe-indicator {
+  display: none;
+}
+
+/* 確保選項文字高亮效果更明顯 */
+.option-highlight-text {
+  font-weight: bold;
+  color: #FF6B6B !important;
+  transform: scale(1.12);
+  transition: all 0.25s ease;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
 
 /* --- Buttons --- */
 .btn-start,
