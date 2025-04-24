@@ -27,6 +27,9 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => {
+  console.log(`🚀 Socket server running at http://localhost:${PORT}`);
+});
 const rooms = {};
 
 io.on('connection', (socket) => {

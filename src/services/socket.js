@@ -10,8 +10,8 @@ const SOCKET_URL = isLocal
 
 console.log('🔌 WebSocket 連線到：', SOCKET_URL);
 
-const socket = io(SOCKET_URL, {
-  transports: ['websocket'], // ✅ 僅使用 WebSocket 傳輸
+const socket = io(import.meta.env.VITE_SOCKET_URL, {
+  transports: ["websocket"]
 });
 
 export default socket;
