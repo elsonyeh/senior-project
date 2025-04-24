@@ -1,35 +1,145 @@
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    background: white;
-    border-top: 1px solid #ddd;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 100;
+/* 創意浮動式底部導航欄 */
+.floating-nav-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 8px 12px;
+  display: flex;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+.floating-bottom-nav {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(246, 246, 246, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 100px;
+  padding: 8px 8px;
+  width: 85%;
+  max-width: 320px; /* 調整為與圖片一致的窄一點的寬度 */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
+  transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+}
+
+/* 導航項目樣式 */
+.nav-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 8px 4px; /* 減少上下內邊距，使整體更緊湊 */
+  color: #777;
+  transition: all 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  flex: 1;
+  z-index: 2;
+}
+
+/* 垂直排列 */
+.pill-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.pill-icon {
+  display: flex;
+  font-size: 20px; /* 調小圖標大小 */
+  transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  margin-bottom: 2px; /* 減少與文字的間距 */
+  color: #4b4b4b; /* 更深的顏色 */
+}
+
+/* 文字標籤 */
+.pill-label {
+  font-size: 10px; /* 縮小文字 */
+  font-weight: 500; /* 減輕字重 */
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  opacity: 0.9;
+  color: #4b4b4b; /* 更深的顏色 */
+}
+
+/* 活躍項目樣式 */
+.nav-pill.active {
+  color: #fff;
+}
+
+.nav-pill.active .pill-label,
+.nav-pill.active .pill-icon {
+  color: #fff;
+  opacity: 1;
+}
+
+/* 活躍背景動畫 - 更精確的定位 */
+.nav-pill-background {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B6B, #FF9F68); /* 恢復漸變色 */
+  width: 55px;  /* 調整尺寸 */
+  height: 55px; /* 調整尺寸 */
+  top: 50%;    /* 垂直居中 */
+  transform: translateY(-50%); /* 垂直居中 */
+  z-index: 1;
+  transition: left 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  box-shadow: 0 2px 10px rgba(255, 107, 107, 0.25);
+}
+
+/* 進場動畫 */
+@keyframes slideUpNav {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.floating-bottom-nav {
+  animation: slideUpNav 0.5s ease forwards;
+}
+
+/* 適配深色模式 */
+@media (prefers-color-scheme: dark) {
+  .floating-bottom-nav {
+    background: rgba(40, 40, 40, 0.85);
+    border: 1px solid rgba(80, 80, 80, 0.2);
   }
   
-  .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-decoration: none;
-    font-size: 12px;
-    text-align: center;
-    padding: 10px;
-    flex: 1;
-    color: #666;
+  .nav-pill .pill-icon,
+  .nav-pill .pill-label {
+    color: #aaa;
   }
   
-  .nav-item span {
-    font-size: 20px;
+  .nav-pill-background {
+    background: linear-gradient(135deg, #FF9F68, #FF6B6B);
+  }
+}
+
+/* 確保在老舊瀏覽器中仍有基本功能 */
+@supports not (backdrop-filter: blur(10px)) {
+  .floating-bottom-nav {
+    background: rgba(246, 246, 246, 0.95);
   }
   
-  .nav-item.active {
-    color: #2196f3;
-    font-weight: bold;
+  @media (prefers-color-scheme: dark) {
+    .floating-bottom-nav {
+      background: rgba(40, 40, 40, 0.95);
+    }
   }
-  
+}
