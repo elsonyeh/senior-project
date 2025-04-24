@@ -15,7 +15,7 @@
 }
 
 .motion-card {
-  position: relative;
+  position: absolute;
   width: 100%;
   max-width: 420px;
   height: 75vh;
@@ -33,6 +33,18 @@
   transition: transform 0.3s ease;
 }
 
+/* 疊卡預覽用 */
+.motion-card:not(:last-child) {
+  transform: scale(0.95);
+  top: 12px;
+  z-index: 2;
+}
+
+.motion-card:last-child {
+  z-index: 3;
+}
+
+/* --- 選項樣式 --- */
 .options-display {
   display: flex;
   justify-content: space-between;
@@ -47,18 +59,65 @@
   font-weight: bold;
 }
 
-.restaurant-card {
+/* --- 餐廳背景卡片 --- */
+.restaurant-card.centered {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1.5rem 2rem;
+  color: white;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
   background-size: cover;
   background-position: center;
-  color: white;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
-  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-.restaurant-overlay {
-  z-index: 2;
-  position: relative;
+
+
+/* 📦 包住文字的模糊區塊 */
+.restaurant-info-blur {
+  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.15);
   padding: 1rem;
+  border-radius: 12px;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.restaurant-info-blur h3 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.restaurant-info-blur p {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+
+.restaurant-info-blur small {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.restaurant-rating {
+  font-size: 1rem;
+  color: gold;
+  margin-top: 0.5rem;
+}
+
+.motion-card {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  position: absolute;   /* ✅ 確保每張卡片可以疊放 */
+  transition: transform 0.3s ease, opacity 0.2s ease;
+  will-change: transform;
 }
 
 
@@ -95,6 +154,7 @@
   padding: 6px 12px;
   border-radius: 8px;
   z-index: 10;
+  background: white;
 }
 
 .like {
