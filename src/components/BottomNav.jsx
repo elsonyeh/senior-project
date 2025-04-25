@@ -39,6 +39,7 @@ export default function BottomNav() {
           }}
         ></div>
         
+        {/*
         <NavLink 
           to="/map" 
           className={({isActive}) => 
@@ -53,6 +54,7 @@ export default function BottomNav() {
             <span className="pill-label">探索</span>
           </div>
         </NavLink>
+        */}
         
         <NavLink 
           to="/swift" 
@@ -69,6 +71,7 @@ export default function BottomNav() {
           </div>
         </NavLink>
         
+        {/*
         <NavLink 
           to="/profile" 
           className={({isActive}) => 
@@ -83,6 +86,7 @@ export default function BottomNav() {
             <span className="pill-label">我的</span>
           </div>
         </NavLink>
+        */}
       </nav>
     </div>
   );
