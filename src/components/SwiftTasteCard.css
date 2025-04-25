@@ -20,7 +20,7 @@
   max-width: 420px;
   height: 75vh;
   max-height: 640px;
-  background: #fff;
+  background: #fffbe8;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   padding: 3vh 5vw;
@@ -72,7 +72,7 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  color: #999;
+  color: #71a9b4;
   font-size: 0.9rem;
 }
 
@@ -88,7 +88,7 @@
 /* 確保選項文字高亮效果更明顯 */
 .option-highlight-text {
   font-weight: bold;
-  color: #FF6B6B !important;
+  color: #c6675b !important;
   transform: scale(1.12);
   transition: all 0.25s ease;
   text-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -107,7 +107,7 @@
   display: inline-block;
   position: relative;
   font-style: italic;
-  color: #888;
+  color: #71a9b4;
   margin: 0.5rem auto;
   font-size: 0.9em;
   padding: 0 15px; /* 文字兩側的固定間距 */
@@ -119,7 +119,7 @@
   position: absolute;
   top: 50%;
   height: 1px;
-  background-color: #ddd;
+  background-color: #71a9b4;
   width: 30px; /* 線條固定長度 */
 }
 
@@ -274,7 +274,7 @@
   right: 30%;
   transform: translateX(120px) rotate(8deg);
   color: white;
-  background: linear-gradient(to right, #27ae60, #2ecc71);
+  background: linear-gradient(to right, #6ea23d, #2ecc71);
   border: none;
 }
 
@@ -283,7 +283,7 @@
   left: 30%;
   transform: translateX(-120px) rotate(-8deg);
   color: white;
-  background: linear-gradient(to right, #e74c3c, #ff6b6b);
+  background: linear-gradient(to right, #e74c3c, #c6675b);
   border: none;
 }
 
@@ -479,4 +479,90 @@
     padding: 1rem;
     font-size: 0.9rem;
   }
+}
+
+
+
+
+/* --- 鹽夏icon --- */
+/* 水平排列的圖標和文字樣式 */
+.mode-option-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* 圖標和文字間的間距 */
+  margin-bottom: 5px;
+}
+
+.icon-container-horizontal {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  margin: 0;
+}
+
+/* 調整文字樣式，使其與圖標對齊 */
+.mode-option-content p {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+/* 確保模式選擇卡片樣式正確 */
+.mode-choice {
+  width: 45%;
+  padding: 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+/* 提示文字樣式 */
+.mode-choice small.hint-text {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 8px;
+  display: block;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 確保背景圖案顯示 */
+.background-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  border-radius: 16px; /* 增加圓角，與卡片風格一致 */
+}
+
+.background-pattern img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.motion-card h2 {
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* 選項行樣式 */
+.mode-choice-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  z-index: 1;
 }
