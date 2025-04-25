@@ -1,0 +1,345 @@
+/* RecommendationResult 頁面樣式 */
+.recommend-screen {
+    padding: 1rem;
+    margin: 0 auto;
+    max-width: 600px;
+  }
+  
+  .result-title {
+    text-align: center;
+    font-size: 1.8rem;
+    color: #FF6B6B;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  
+  .empty-result {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  
+  /* 精選餐廳卡片 */
+  .featured-restaurant {
+    background-size: cover;
+    background-position: center;
+    color: white;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    position: relative;
+    height: 280px;
+    display: flex;
+    align-items: flex-end;
+    transition: transform 0.3s ease;
+  }
+  
+  .featured-restaurant:hover {
+    transform: translateY(-5px);
+  }
+  
+  .featured-content {
+    width: 100%;
+    padding: 1.5rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5) 50%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .featured-content h3 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  .restaurant-address {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .restaurant-details {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .rating-badge, .type-badge {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(4px);
+    padding: 0.3rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+  }
+  
+  .rating-badge {
+    background: rgba(255, 217, 0, 0.25);
+    color: #FFD700;
+  }
+  
+  .star {
+    margin-right: 0.25rem;
+  }
+  
+  .type-badge {
+    background: rgba(134, 142, 255, 0.25);
+    color: #BDC2FF;
+  }
+  
+  .btn-navigate {
+    background: #FF9F68;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.2rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(255, 159, 104, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .nav-icon {
+    font-size: 1.1rem;
+  }
+  
+  .btn-navigate:hover {
+    background: #FF7F36;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 127, 54, 0.5);
+  }
+  
+  /* 其他備選餐廳區塊 */
+  .alternatives-section {
+    background: white;
+    border-radius: 16px;
+    padding: 1.2rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  }
+  
+  .alternatives-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .alternatives-header h3 {
+    font-size: 1.2rem;
+    margin: 0;
+    color: #464646;
+  }
+  
+  .btn-shuffle {
+    background: transparent;
+    color: #FF6B6B;
+    border: 1px solid #FF6B6B;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-shuffle:hover {
+    background: #FFF1F1;
+  }
+  
+  .alternatives-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .alternative-item {
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 0.8rem;
+  }
+  
+  .alternative-item:last-child {
+    border-bottom: none;
+  }
+  
+  .alternative-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .alternative-info {
+    flex: 1;
+  }
+  
+  .alternative-info h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+    color: #363636;
+  }
+  
+  .alternative-info p {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0 0 0.25rem;
+  }
+  
+  .alternative-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .mini-badge.rating, .mini-badge.type {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+  }
+  
+  .mini-badge.rating {
+    background: #FFF8E0;
+    color: #D4B135;
+  }
+  
+  .mini-badge.type {
+    background: #EEF0FF;
+    color: #6874E8;
+  }
+  
+  .btn-mini-navigate {
+    background: #FF9F68;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+  }
+  
+  .btn-mini-navigate:hover {
+    background: #FF7F36;
+  }
+  
+  .more-alternatives, .no-more-alternatives {
+    text-align: center;
+    font-size: 0.8rem;
+    margin-top: 0.8rem;
+  }
+  
+  .more-alternatives {
+    color: #999;
+  }
+  
+  .no-more-alternatives {
+    color: #FF6B6B;
+    font-weight: 500;
+  }
+  
+  .retry-container {
+    text-align: center;
+    margin: 2rem 0;
+  }
+  
+  .btn-restart {
+    background: #FF9F68;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(255, 159, 104, 0.3);
+  }
+  
+  .btn-restart:hover {
+    background: #FF7F36;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 127, 54, 0.4);
+  }
+  
+  /* 五彩紙屑動畫 */
+  .confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: hidden;
+  }
+  
+  .confetti {
+    position: absolute;
+    width: 8px;
+    height: 16px;
+    top: -20px;
+    pointer-events: none;
+    transform-origin: center;
+    animation: confettiFall linear forwards;
+    opacity: 0.8;
+  }
+  
+  @keyframes confettiFall {
+    0% {
+      transform: translateY(-5vh) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+  
+  /* 媒體查詢，適配手機版 */
+  @media (max-width: 480px) {
+    .recommend-screen {
+      padding: 0.8rem;
+    }
+    
+    .result-title {
+      font-size: 1.5rem;
+    }
+    
+    .featured-restaurant {
+      height: 240px;
+    }
+    
+    .featured-content h3 {
+      font-size: 1.3rem;
+    }
+    
+    .alternatives-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    
+    .btn-navigate, .btn-restart {
+      width: 100%;
+    }
+  }
