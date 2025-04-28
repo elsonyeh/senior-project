@@ -5,10 +5,11 @@ import socket from "../services/socket";
 import "./BuddiesRoom.css";
 import { basicQuestions } from "../data/basicQuestions";
 import { funQuestions } from "../data/funQuestions";
-import { getRandomFunQuestions } from "../logic/enhancedRecommendLogic";
+import { getRandomFunQuestions } from "../logic/enhancedRecommendLogic.mjs";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import BuddiesRecommendation from "./BuddiesRecommendation";
 import QRScannerModal from "./QRScannerModal";
+import { buddiesBasicQuestions } from "../data/buddiesBasicQuestions";
 
 export default function BuddiesRoom() {
   const [roomId, setRoomId] = useState("");
@@ -97,8 +98,9 @@ export default function BuddiesRoom() {
     // 開始問答環節
     socket.on("startQuestions", () => {
       console.log("收到開始問答信號");
+      // 使用 Buddies 模式特定的基本問題集（已移除"今天是一個人還是有朋友？"問題）
       const randomFun = getRandomFunQuestions(funQuestions, 3);
-      const all = [...basicQuestions, ...randomFun];
+      const all = [...buddiesBasicQuestions, ...randomFun];
       setQuestions(all);
       setPhase("questions");
     });
@@ -338,9 +340,28 @@ export default function BuddiesRoom() {
   };
 
   // 提交答案
-  const handleSubmitAnswers = (answersObj) => {
-    const answers = Object.values(answersObj);
-    socket.emit("submitAnswers", { roomId, answers });
+  const handleSubmitAnswers = (answerData) => {
+    // 檢查是否收到結構化的答案數據（含問題文本）
+    if (answerData.answers && answerData.questionTexts) {
+      socket.emit("submitAnswers", {
+        roomId,
+        answers: answerData.answers,
+        questionTexts: answerData.questionTexts,
+        // 傳遞特定的基本問題集
+        basicQuestions: buddiesBasicQuestions,
+      });
+    } else {
+      // 向後兼容的處理方法
+      const answers = Array.isArray(answerData)
+        ? answerData
+        : Object.values(answerData);
+      socket.emit("submitAnswers", {
+        roomId,
+        answers,
+        // 即使使用舊格式，也傳遞正確的基本問題集
+        basicQuestions: buddiesBasicQuestions,
+      });
+    }
     setPhase("waiting-recommendations");
   };
 

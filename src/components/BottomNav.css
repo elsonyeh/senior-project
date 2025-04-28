@@ -23,10 +23,15 @@
   border-radius: 100px;
   padding: 8px 8px;
   width: 85%;
-  max-width: 320px; /* 調整為與圖片一致的窄一點的寬度 */
+  max-width: 320px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   pointer-events: auto;
   transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+}
+
+/* 新增初始化狀態 */
+.floating-bottom-nav.initializing {
+  opacity: 0.95; /* 幾乎完全可見但略微透明 */
 }
 
 /* 導航項目樣式 */
@@ -36,7 +41,7 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  padding: 8px 4px; /* 減少上下內邊距，使整體更緊湊 */
+  padding: 8px 4px;
   color: #777;
   transition: all 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
   flex: 1;
@@ -57,30 +62,30 @@
 
 .pill-icon {
   display: flex;
-  font-size: 20px; /* 調小圖標大小 */
+  font-size: 20px;
   transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
-  margin-bottom: 2px; /* 減少與文字的間距 */
-  color: #4b4b4b; /* 更深的顏色 */
+  margin-bottom: 2px;
+  color: #4b4b4b;
 }
 
 /* 文字標籤 */
 .pill-label {
-  font-size: 10px; /* 縮小文字 */
-  font-weight: 500; /* 減輕字重 */
+  font-size: 10px;
+  font-weight: 500;
   white-space: nowrap;
   transition: all 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
   opacity: 0.9;
-  color: #4b4b4b; /* 更深的顏色 */
+  color: #4b4b4b;
 }
 
-/* 活躍項目樣式 */
+/* 活躍項目樣式 - 增強選擇器特異性 */
 .nav-pill.active {
-  color: #fff;
+  color: #fff !important;
 }
 
 .nav-pill.active .pill-label,
 .nav-pill.active .pill-icon {
-  color: #fff;
+  color: #fff !important;
   opacity: 1;
 }
 
@@ -88,14 +93,15 @@
 .nav-pill-background {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B6B, #FF9F68); /* 恢復漸變色 */
-  width: 55px;  /* 調整尺寸 */
-  height: 55px; /* 調整尺寸 */
-  top: 50%;    /* 垂直居中 */
-  transform: translateY(-50%); /* 垂直居中 */
+  background: linear-gradient(135deg, #FF6B6B, #FF9F68);
+  width: 55px;
+  height: 55px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 1;
-  transition: left 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
   box-shadow: 0 2px 10px rgba(255, 107, 107, 0.25);
+  /* 轉場效果在JS中通過內聯樣式設置，確保初始隱藏和平滑過渡 */
+  will-change: opacity, left; /* 優化性能 */
 }
 
 /* 進場動畫 */
@@ -112,6 +118,7 @@
 
 .floating-bottom-nav {
   animation: slideUpNav 0.5s ease forwards;
+  animation-delay: 0.05s; /* 稍微延遲動畫開始，等待初始定位 */
 }
 
 /* 適配深色模式 */
@@ -124,6 +131,12 @@
   .nav-pill .pill-icon,
   .nav-pill .pill-label {
     color: #aaa;
+  }
+  
+  /* 確保深色模式下激活顏色保持白色 */
+  .nav-pill.active .pill-label,
+  .nav-pill.active .pill-icon {
+    color: #fff !important;
   }
   
   .nav-pill-background {

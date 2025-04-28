@@ -6,6 +6,15 @@ export default function BuddiesQuestionSwiper({ roomId, questions, onComplete })
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [waiting, setWaiting] = useState(false);
+  const [questionTexts, setQuestionTexts] = useState([]);
+
+  useEffect(() => {
+    // 獲取所有問題的文本，用於後續處理
+    if (Array.isArray(questions)) {
+      const texts = questions.map(q => q.question);
+      setQuestionTexts(texts);
+    }
+  }, [questions]);
 
   useEffect(() => {
     socket.on('nextQuestion', (nextIndex) => {
@@ -14,22 +23,29 @@ export default function BuddiesQuestionSwiper({ roomId, questions, onComplete })
     });
 
     socket.on('groupRecommendations', (recs) => {
-      onComplete(answers, recs);
+      // 將問題文本和答案一起傳遞給完成處理函數
+      const answersArray = Object.values(answers);
+      onComplete({ answers: answersArray, questionTexts }, recs);
     });
 
     return () => {
       socket.off('nextQuestion');
       socket.off('groupRecommendations');
     };
-  }, [answers, onComplete]);
+  }, [answers, questionTexts, onComplete]);
 
   const handleAnswer = (answer) => {
     setWaiting(true);
     setAnswers((prev) => ({ ...prev, [questionIndex]: answer }));
+    
+    // 獲取當前問題的文本
+    const questionText = questions[questionIndex]?.question || "";
+    
     socket.emit('submitAnswer', {
       roomId,
       index: questionIndex,
-      answer
+      answer,
+      questionText // 添加問題文本信息
     });
   };
 
