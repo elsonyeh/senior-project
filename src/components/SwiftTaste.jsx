@@ -6,9 +6,18 @@ import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import RecommendationResult from "./RecommendationResult";
-import { getRandomFunQuestions, recommendRestaurants } from '../logic/recommendLogic';
-import { getDocs, collection } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { 
+  getRandomFunQuestions, 
+  recommendRestaurants 
+} from '../logic/enhancedRecommendLogic';
+import { 
+  getRestaurants,
+  getRecommendationsFromFirebase, 
+  saveRecommendationsToFirebase, 
+  listenRoomRecommendations
+} from "../services/firebaseService";
+import { ref, get } from "firebase/database";
+import { rtdb } from "../services/firebase";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./SwiftTasteCard.css";
 
@@ -20,69 +29,163 @@ export default function SwiftTaste() {
   const [selectedMode, setSelectedMode] = useState(null);
   const [allQuestions, setAllQuestions] = useState([]);
   const [userAnswers, setUserAnswers] = useState([]);
+  const [roomId, setRoomId] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
+  // 從Firebase獲取餐廳資料
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const snapshot = await getDocs(collection(db, "restaurants"));
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        // 使用新的Firebase服務獲取餐廳數據
+        const data = await getRestaurants();
         setRestaurantList(data);
       } catch (error) {
         console.error("Failed to fetch restaurants from Firebase:", error);
+      } finally {
+        setLoading(false);
       }
     };
+    
     fetchData();
   }, []);
 
+  // 處理URL參數，檢查是否從多人模式進入
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+    
+    // 檢查是否是多人模式
     if (params.get("mode") === "buddies") {
-      const savedRecs = JSON.parse(localStorage.getItem("buddiesRecommendations"));
-      if (savedRecs?.length) {
+      const roomIdParam = params.get("roomId");
+      
+      if (roomIdParam) {
+        setRoomId(roomIdParam);
         setSelectedMode("buddies");
-        setRecommendations(savedRecs);
-        setPhase("recommend");
+        
+        // 檢查本地存儲中是否有餐廳推薦
+        const savedRecsJson = localStorage.getItem("buddiesRecommendations");
+        
+        if (savedRecsJson) {
+          try {
+            const savedRecs = JSON.parse(savedRecsJson);
+            if (savedRecs?.length) {
+              setRecommendations(savedRecs);
+              setPhase("recommend");
+              return;
+            }
+          } catch (e) {
+            console.error("Error parsing saved recommendations:", e);
+          }
+        }
+        
+        // 從Firebase獲取房間推薦數據
+        const fetchRoomData = async () => {
+          try {
+            const roomRecs = await getRecommendationsFromFirebase(roomIdParam);
+            
+            if (roomRecs?.length) {
+              setRecommendations(roomRecs);
+              localStorage.setItem("buddiesRecommendations", JSON.stringify(roomRecs));
+              setPhase("recommend");
+            } else {
+              // 如果沒有推薦，設置為選擇模式
+              setPhase("selectMode");
+            }
+          } catch (error) {
+            console.error("Failed to fetch room recommendations:", error);
+            setPhase("selectMode");
+          }
+        };
+        
+        fetchRoomData();
+        
+        // 監聽房間推薦變化
+        const unsubscribe = listenRoomRecommendations(roomIdParam, (updatedRecs) => {
+          if (updatedRecs?.length) {
+            setRecommendations(updatedRecs);
+            localStorage.setItem("buddiesRecommendations", JSON.stringify(updatedRecs));
+            setPhase("recommend");
+          }
+        });
+        
+        return () => {
+          // 清理監聽
+          if (typeof unsubscribe === 'function') {
+            unsubscribe();
+          }
+        };
       }
     }
   }, [location.search]);
 
+  // 格式化問題以適應滑動器
   const formatQuestionsForSwiper = (questions) =>
     questions.map((q, index) => ({
       id: "q" + index,
       text: q.question,
       leftOption: q.options[0],
       rightOption: q.options[1],
-      hasVS: q.question.includes("v.s.") // Add flag for v.s. formatting
+      hasVS: q.question.includes("v.s.") // 標記v.s.格式問題
     }));
 
+  // 隨機選取餐廳（數量限制）
   const getRandomTen = (arr) => {
-    if (arr.length <= 10) return arr;
+    if (!arr || arr.length <= 10) return arr || [];
     return [...arr].sort(() => 0.5 - Math.random()).slice(0, 10);
   };
 
+  // 處理模式選擇（單人/多人）
   const handleModeSelect = (direction) => {
     if (direction === "left") {
+      // 前往多人模式
       navigate("/buddies", { state: { fromSwiftTaste: true } });
     } else if (direction === "right") {
+      // 單人模式
       setSelectedMode("solo");
-      const randomFun = getRandomFunQuestions(funQuestions);
+      // 隨機抽取3題趣味問題
+      const randomFun = getRandomFunQuestions(funQuestions, 3);
       setAllQuestions([...basicQuestions, ...randomFun]);
       setPhase("questions");
     }
   };
 
-  const handleQuestionComplete = (answersObj) => {
+  // 處理問題回答完成
+  const handleQuestionComplete = async (answersObj) => {
+    if (loading || !restaurantList.length) {
+      console.error("餐廳數據尚未加載完成");
+      return;
+    }
+    
     const answerList = Object.values(answersObj);
     setUserAnswers(answerList);
-    const allRecommended = recommendRestaurants(answerList, restaurantList);
-    const limited = getRandomTen(allRecommended);
+    
+    let recommendedRestaurants = [];
+    
+    // 使用增強版推薦邏輯
+    recommendedRestaurants = recommendRestaurants(
+      answerList, 
+      restaurantList,
+      { 
+        basicQuestionsCount: basicQuestions.length 
+      }
+    );
+    
+    // 如果是多人模式且有房間ID，保存結果到Firebase
+    if (selectedMode === "buddies" && roomId) {
+      try {
+        await saveRecommendationsToFirebase(roomId, recommendedRestaurants);
+      } catch (error) {
+        console.error("Failed to save recommendations to Firebase:", error);
+      }
+    }
+    
+    // 限制推薦餐廳數量
+    const limited = getRandomTen(recommendedRestaurants);
     setRecommendations(limited);
-    if (limited.length === 0) {
+    
+    if (!limited || limited.length === 0) {
       setSaved([]);
       setPhase("result");
     } else {
@@ -90,19 +193,36 @@ export default function SwiftTaste() {
     }
   };
 
+  // 保存用戶喜歡的餐廳
   const handleSaveRestaurant = (restaurant) => {
+    if (!restaurant || !restaurant.id) return;
+    
     if (!saved.find((r) => r.id === restaurant.id)) {
       setSaved((prev) => [...prev, restaurant]);
     }
   };
 
+  // 重新開始
   const handleRestart = () => {
     setPhase("selectMode");
     setRecommendations([]);
     setSaved([]);
     setAllQuestions([]);
     setUserAnswers([]);
+    // 如果是多人模式，回到房間而不是回到起點
+    if (selectedMode === "buddies" && roomId) {
+      navigate(`/buddies?roomId=${roomId}`);
+    }
   };
+
+  if (loading && phase === "selectMode") {
+    return (
+      <div style={{ textAlign: 'center', padding: '20px' }}>
+        <h2>載入中...</h2>
+        <p>正在準備美食推薦</p>
+      </div>
+    );
+  }
 
   return (
     <div>

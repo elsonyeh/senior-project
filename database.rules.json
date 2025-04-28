@@ -1,15 +1,8 @@
 {
   "rules": {
     "buddiesRooms": {
-      "$roomId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
-        "members": {
-          "$uid": {
-            ".write": "auth.uid === $uid"
-          }
-        }
-      }
+      ".read": true,
+      ".write": true
     },
     "analyticsLogs": {
       ".read": false,
