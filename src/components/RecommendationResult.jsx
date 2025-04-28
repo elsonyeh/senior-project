@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import "./RecommendationResult.css"; // 假設你有一個 CSS 檔案來處理樣式
+import "./RecommendationResult.css"; 
 
-export default function RecommendationResult({ saved = [], onRetry }) {
+export default function RecommendationResult({ saved = [], onRetry, extraButton, roomMode = false }) {
   const [selected, setSelected] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [otherSaved, setOtherSaved] = useState([]);
@@ -102,6 +102,7 @@ export default function RecommendationResult({ saved = [], onRetry }) {
             >
               🔄 再試一次
             </motion.button>
+            {extraButton && extraButton}
           </motion.div>
         </div>
       </div>
@@ -118,7 +119,7 @@ export default function RecommendationResult({ saved = [], onRetry }) {
         transition={{ duration: 0.5 }}
       >
         <h2 className="result-title">
-          <span role="img" aria-label="celebration">🎉</span> 命定餐廳就是它！
+          <span role="img" aria-label="celebration">🎉</span> {roomMode ? "大家一致認為這是最好的選擇！" : "命定餐廳就是它！"}
         </h2>
       </motion.div>
       
@@ -251,6 +252,11 @@ export default function RecommendationResult({ saved = [], onRetry }) {
         >
           🔁 再試一次
         </motion.button>
+        {extraButton && (
+          <div style={{ marginTop: '0.5rem' }}>
+            {extraButton}
+          </div>
+        )}
       </motion.div>
     </div>
   );

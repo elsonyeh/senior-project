@@ -86,8 +86,8 @@ export const funQuestions = [
   {
     "question": "你是Ｉ人還是Ｅ人",
     "options": [
-      "Ｉ",
-      "Ｅ"
+      "Ｉ人",
+      "Ｅ人"
     ]
   },
   {
@@ -103,5 +103,19 @@ export const funQuestions = [
       "高腳杯",
       "低腳杯"
     ]
-  }
+  },
+  {
+    "question": "你覺得可能會有一見鍾情嗎？",
+    "options": [
+      "有",
+      "沒有"
+    ]
+  },
+  {
+    "question": "擁有永久的一字眉v.s.完全沒有眉毛",
+    "options": [
+      "一字眉",
+      "沒有眉毛"
+    ]
+  },
 ];
