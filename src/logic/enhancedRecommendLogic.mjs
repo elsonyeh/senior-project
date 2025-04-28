@@ -1,10 +1,10 @@
-// enhancedRecommendLogic.js - 伺服器版本
+// enhancedRecommendLogic.js
 // 優化版餐廳推薦邏輯 - 使用屬性匹配並支援新增問題
 
 // 常量定義 - 各種問題類型的權重基礎值
 const WEIGHT = {
   BASIC_MATCH: 10,    // 基本問題匹配的權重
-  FUN_MATCH: 4,       // 趣味問題匹配的權重
+  FUN_MATCH: 5,       // 趣味問題匹配的權重
   GROUP_CONSENSUS: 3, // 多人一致性的額外權重
   POPULARITY: 2,      // 餐廳人氣因素的權重
   DISTANCE: 2,        // 距離因素的權重
@@ -87,11 +87,10 @@ const TAG_MAPPINGS = {
  * @param {Number} count - 需要抽取的問題數量
  * @return {Array} 隨機抽取的問題
  */
-function getRandomFunQuestions(allQuestions, count = 3) {
-  if (!Array.isArray(allQuestions)) return [];
+export const getRandomFunQuestions = (allQuestions, count = 3) => {
   const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
-}
+};
 
 /**
  * 計算餐廳與用戶答案的匹配分數 - 使用屬性而非標籤進行基本問題匹配
@@ -103,7 +102,7 @@ function getRandomFunQuestions(allQuestions, count = 3) {
  * @param {Object} options - 其他選項
  * @return {Number} 匹配分數
  */
-function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswers, groupAnswerCounts = null, options = {}) {
+const calculateMatchScore = (restaurant, basicAnswers, basicQuestions, funAnswers, groupAnswerCounts = null, options = {}) => {
   let score = WEIGHT.MIN_SCORE; // 最低分數
   const userCount = options.userCount || 1;
   const strictBasicMatch = options.strictBasicMatch === true;
@@ -300,10 +299,8 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
   }
   
   // 如果有群組回答計數，加入群組一致性權重
-  if (groupAnswerCounts && typeof groupAnswerCounts === 'object') {
+  if (groupAnswerCounts) {
     Object.entries(groupAnswerCounts).forEach(([answer, count]) => {
-      if (!answer || typeof count !== 'number') return;
-      
       // 計算答案在群組中的占比
       const proportion = count / userCount;
       
@@ -466,4 +463,333 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
   }
   
   return score;
+};
+
+/**
+ * 根據用戶回答推薦餐廳
+ * @param {Array} answers - 用戶的回答
+ * @param {Array} restaurants - 所有餐廳列表
+ * @param {Object} options - 配置選項
+ * @return {Array} 排序後的推薦餐廳列表
+ */
+export const recommendRestaurants = (answers, restaurants, options = {}) => {
+  if (!Array.isArray(restaurants) || restaurants.length === 0) {
+    return [];
+  }
+  
+  // 基本問題集
+  const basicQuestions = options.basicQuestions || [];
+  
+  // 基本問題答案識別
+  let basicAnswers = [];
+  let funAnswers = [];
+  
+  // 如果提供了特定的基本問題集和答案問題映射
+  if (basicQuestions.length > 0 && options.answerQuestionMap) {
+    // 使用問題文本識別基本問題
+    const basicQuestionTexts = basicQuestions.map(q => q.question);
+    
+    // 使用映射找出基本問題的答案
+    const basicAnswerIndices = Object.entries(options.answerQuestionMap)
+      .filter(([_, question]) => basicQuestionTexts.includes(question))
+      .map(([index]) => parseInt(index));
+      
+    basicAnswers = basicAnswerIndices.map(index => answers[index]);
+    funAnswers = answers.filter((_, index) => !basicAnswerIndices.includes(index) && answers[index]);
+  } else {
+    // 傳統方法 - 使用題號識別
+    const basicQuestionsCount = options.basicQuestionsCount || basicQuestions.length || 3;
+    basicAnswers = answers.slice(0, basicQuestionsCount);
+    funAnswers = answers.slice(basicQuestionsCount);
+  }
+  
+  // 計算每個餐廳的分數
+  const scoredRestaurants = restaurants.map(restaurant => {
+    const score = calculateMatchScore(
+      restaurant, 
+      basicAnswers,
+      basicQuestions, // 傳遞基本問題集
+      funAnswers, 
+      options.groupAnswerCounts,
+      {
+        ...options,
+        strictBasicMatch: options.strictBasicMatch !== false
+      }
+    );
+    
+    return {
+      ...restaurant,
+      matchScore: score
+    };
+  });
+  
+  // 按分數降序排序
+  const sortedRestaurants = scoredRestaurants.sort((a, b) => b.matchScore - a.matchScore);
+  
+  // 返回分數大於最低門檻的餐廳 (預設最低分數的2倍)
+  const minScoreThreshold = options.minScoreThreshold || (WEIGHT.MIN_SCORE * 2);
+  const filteredRestaurants = sortedRestaurants.filter(r => r.matchScore >= minScoreThreshold);
+  
+  // 如果過濾後沒有餐廳，返回前10個得分最高的餐廳
+  if (filteredRestaurants.length === 0) {
+    return sortedRestaurants.slice(0, 10);
+  }
+  
+  return filteredRestaurants;
+};
+
+/**
+ * 根據多個用戶的答案生成群組推薦餐廳
+ * @param {Object} allUserAnswers - 所有用戶的答案 {userId: [answers]} 或 {userId: {answers, questionTexts}}
+ * @param {Array} restaurants - 所有餐廳列表
+ * @param {Object} options - 配置選項
+ * @return {Array} 排序後的推薦餐廳列表
+ */
+export const recommendForGroup = (allUserAnswers, restaurants, options = {}) => {
+  if (!allUserAnswers || Object.keys(allUserAnswers).length === 0) {
+    return [];
+  }
+  
+  // 統計每個答案被選擇的次數
+  const answerCounts = {};
+  
+  // 用於跟踪問題和答案的映射
+  const answerQuestionMap = {};
+  
+  // 處理所有用戶的答案
+  Object.values(allUserAnswers).forEach(userAnswers => {
+    // 檢查是否是結構化的答案（包含問題文本）
+    if (userAnswers && typeof userAnswers === 'object' && userAnswers.answers && userAnswers.questionTexts) {
+      // 如果提供了問題文本，使用它們來映射答案到問題
+      userAnswers.answers.forEach((answer, index) => {
+        if (answer) {
+          answerCounts[answer] = (answerCounts[answer] || 0) + 1;
+          // 保存答案索引與問題文本的映射
+          if (userAnswers.questionTexts[index]) {
+            answerQuestionMap[index] = userAnswers.questionTexts[index];
+          }
+        }
+      });
+    } else if (Array.isArray(userAnswers)) {
+      // 傳統格式 - 僅答案陣列
+      userAnswers.forEach((answer, index) => {
+        if (answer) {
+          answerCounts[answer] = (answerCounts[answer] || 0) + 1;
+        }
+      });
+    }
+  });
+  
+  // 合併所有用戶的答案
+  const mergedAnswers = [];
+  const userCount = Object.keys(allUserAnswers).length;
+  
+  // 確定基本問題
+  let basicQuestions = [];
+  if (options.basicQuestions) {
+    // 使用提供的基本問題集
+    basicQuestions = options.basicQuestions;
+  } else if (options.buddiesBasicQuestions) {
+    // 使用 Buddies 專用基本問題集
+    basicQuestions = options.buddiesBasicQuestions;
+  }
+  
+  const basicQuestionTexts = basicQuestions.map(q => q.question);
+  
+  // 針對每個基本問題，採用多數決
+  if (basicQuestionTexts.length > 0 && Object.keys(answerQuestionMap).length > 0) {
+    // 使用問題文本進行判斷
+    basicQuestionTexts.forEach(questionText => {
+      // 找到與這個問題相關的所有答案
+      const relatedAnswers = {};
+      
+      // 找出問題索引
+      const questionIndices = Object.entries(answerQuestionMap)
+        .filter(([_, text]) => text === questionText)
+        .map(([index]) => parseInt(index));
+      
+      // 收集所有用戶針對此問題的答案
+      Object.values(allUserAnswers).forEach(userAnswers => {
+        if (userAnswers && typeof userAnswers === 'object' && userAnswers.answers && userAnswers.questionTexts) {
+          // 使用問題文本映射找到答案
+          const answerIndex = userAnswers.questionTexts.findIndex(text => text === questionText);
+          if (answerIndex >= 0 && userAnswers.answers[answerIndex]) {
+            const answer = userAnswers.answers[answerIndex];
+            relatedAnswers[answer] = (relatedAnswers[answer] || 0) + 1;
+          }
+        } else if (Array.isArray(userAnswers) && questionIndices.length > 0) {
+          // 使用問題索引找到答案
+          questionIndices.forEach(index => {
+            if (userAnswers[index]) {
+              const answer = userAnswers[index];
+              relatedAnswers[answer] = (relatedAnswers[answer] || 0) + 1;
+            }
+          });
+        }
+      });
+      
+      // 找出最多人選擇的答案
+      let maxCount = 0;
+      let majorityAnswer = null;
+      
+      Object.entries(relatedAnswers).forEach(([answer, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          majorityAnswer = answer;
+        }
+      });
+      
+      if (majorityAnswer) {
+        mergedAnswers.push(majorityAnswer);
+        
+        // 如果有超過半數選擇，則提高此答案的權重
+        if (maxCount > userCount / 2) {
+          // 增加一個權重因子，表示多數人的共識
+          answerCounts[majorityAnswer] = (answerCounts[majorityAnswer] || 0) + 
+            Math.floor(maxCount / userCount * WEIGHT.GROUP_CONSENSUS);
+        }
+      }
+    });
+  } else {
+    // 傳統方法 - 使用題號
+    const basicQuestionsCount = options.basicQuestionsCount || basicQuestions.length || 3;
+    
+    for (let i = 0; i < basicQuestionsCount; i++) {
+      const answersForThisQuestion = {};
+      
+      // 收集針對此問題的所有答案
+      Object.values(allUserAnswers).forEach(userAnswers => {
+        if (Array.isArray(userAnswers) && userAnswers[i]) {
+          answersForThisQuestion[userAnswers[i]] = (answersForThisQuestion[userAnswers[i]] || 0) + 1;
+        } else if (userAnswers && typeof userAnswers === 'object' && Array.isArray(userAnswers.answers) && userAnswers.answers[i]) {
+          answersForThisQuestion[userAnswers.answers[i]] = (answersForThisQuestion[userAnswers.answers[i]] || 0) + 1;
+        }
+      });
+      
+      // 找出最多人選擇的答案
+      let maxCount = 0;
+      let majorityAnswer = null;
+      
+      Object.entries(answersForThisQuestion).forEach(([answer, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          majorityAnswer = answer;
+        }
+      });
+      
+      if (majorityAnswer) {
+        mergedAnswers.push(majorityAnswer);
+        
+        // 如果有超過半數選擇，則提高此答案的權重
+        if (maxCount > userCount / 2) {
+          // 增加一個權重因子，表示多數人的共識
+          answerCounts[majorityAnswer] = (answerCounts[majorityAnswer] || 0) + 
+            Math.floor(maxCount / userCount * WEIGHT.GROUP_CONSENSUS);
+        }
+      }
+    }
+  }
+  
+  // 處理趣味問題 - 採用興趣聚合算法
+  // 將所有趣味問題的答案按受歡迎程度排序
+  const funAnswersByPopularity = {};
+  
+  if (basicQuestionTexts.length > 0 && Object.keys(answerQuestionMap).length > 0) {
+    // 使用問題文本進行判斷
+    Object.values(allUserAnswers).forEach(userAnswers => {
+      if (userAnswers && typeof userAnswers === 'object' && userAnswers.answers && userAnswers.questionTexts) {
+        userAnswers.answers.forEach((answer, index) => {
+          if (answer && !basicQuestionTexts.includes(userAnswers.questionTexts[index])) {
+            funAnswersByPopularity[answer] = (funAnswersByPopularity[answer] || 0) + 1;
+          }
+        });
+      }
+    });
+  } else {
+    // 傳統方法 - 使用題號
+    const basicQuestionsCount = options.basicQuestionsCount || basicQuestions.length || 3;
+    
+    Object.values(allUserAnswers).forEach(userAnswers => {
+      if (Array.isArray(userAnswers)) {
+        const funAnswers = userAnswers.slice(basicQuestionsCount);
+        funAnswers.forEach(answer => {
+          if (answer) {
+            funAnswersByPopularity[answer] = (funAnswersByPopularity[answer] || 0) + 1;
+          }
+        });
+      } else if (userAnswers && typeof userAnswers === 'object' && Array.isArray(userAnswers.answers)) {
+        const funAnswers = userAnswers.answers.slice(basicQuestionsCount);
+        funAnswers.forEach(answer => {
+          if (answer) {
+            funAnswersByPopularity[answer] = (funAnswersByPopularity[answer] || 0) + 1;
+          }
+        });
+      }
+    });
+  }
+  
+  // 選擇前3個最受歡迎的趣味答案
+  const popularFunAnswers = Object.entries(funAnswersByPopularity)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(entry => entry[0]);
+  
+  // 將趣味問題答案添加到合併答案中
+  popularFunAnswers.forEach(answer => {
+    if (!mergedAnswers.includes(answer)) {
+      mergedAnswers.push(answer);
+    }
+  });
+  
+  // 使用增強的推薦邏輯，確保傳遞必要的參數
+  return recommendRestaurants(mergedAnswers, restaurants, {
+    ...options,
+    groupAnswerCounts: answerCounts,
+    userCount: userCount,
+    answerQuestionMap: answerQuestionMap,
+    basicQuestions: basicQuestions, // 傳遞基本問題集
+    // 確保嚴格匹配基本問題
+    strictBasicMatch: options.strictBasicMatch !== false
+  });
+};
+
+/**
+ * 計算兩個座標點之間的距離 (公里)
+ * @param {Object} coord1 - 第一個座標，格式 {lat, lng}
+ * @param {Object} coord2 - 第二個座標，格式 {lat, lng}
+ * @return {Number} 以公里為單位的距離
+ */
+function calculateDistance(coord1, coord2) {
+  // 如果缺少座標數據，返回一個很大的值表示無法計算
+  if (!coord1 || !coord2 || !coord1.lat || !coord1.lng || !coord2.lat || !coord2.lng) {
+    return 999999;
+  }
+  
+  // 使用球面三角法計算距離 (Haversine公式)
+  const R = 6371; // 地球半徑，單位為公里
+  const dLat = degreesToRadians(coord2.lat - coord1.lat);
+  const dLon = degreesToRadians(coord2.lng - coord1.lng);
+  
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(degreesToRadians(coord1.lat)) * Math.cos(degreesToRadians(coord2.lat)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
+
+/**
+ * 將度數轉換為弧度
+ * @param {Number} degrees - 角度值 (度)
+ * @return {Number} 弧度值
+ */
+function degreesToRadians(degrees) {
+  return degrees * (Math.PI/180);
+}
+
+// 為了與舊版推薦邏輯兼容，保留原有函數名稱和參數
+export const getRandomTen = (arr) => {
+  if (!arr || arr.length <= 10) return arr || [];
+  return [...arr].sort(() => 0.5 - Math.random()).slice(0, 10);
+};

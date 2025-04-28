@@ -1,23 +1,21 @@
-// ✅ SwiftTaste.jsx
+// SwiftTaste.jsx
 import React, { useState, useEffect } from "react";
-import { basicQuestions } from '../data/basicQuestions';
-import { funQuestions } from '../data/funQuestions';
+import { basicQuestions } from "../data/basicQuestions";
+import { funQuestions } from "../data/funQuestions";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import RecommendationResult from "./RecommendationResult";
-import { 
-  getRandomFunQuestions, 
-  recommendRestaurants 
-} from '../logic/enhancedRecommendLogic';
-import { 
+import {
+  getRandomFunQuestions,
+  recommendRestaurants,
+} from "../logic/enhancedRecommendLogic.mjs";
+import {
   getRestaurants,
-  getRecommendationsFromFirebase, 
-  saveRecommendationsToFirebase, 
-  listenRoomRecommendations
+  getRecommendationsFromFirebase,
+  saveRecommendationsToFirebase,
+  listenRoomRecommendations,
 } from "../services/firebaseService";
-import { ref, get } from "firebase/database";
-import { rtdb } from "../services/firebase";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./SwiftTasteCard.css";
 
@@ -48,25 +46,25 @@ export default function SwiftTaste() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
   // 處理URL參數，檢查是否從多人模式進入
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    
+
     // 檢查是否是多人模式
     if (params.get("mode") === "buddies") {
       const roomIdParam = params.get("roomId");
-      
+
       if (roomIdParam) {
         setRoomId(roomIdParam);
         setSelectedMode("buddies");
-        
+
         // 檢查本地存儲中是否有餐廳推薦
         const savedRecsJson = localStorage.getItem("buddiesRecommendations");
-        
+
         if (savedRecsJson) {
           try {
             const savedRecs = JSON.parse(savedRecsJson);
@@ -79,15 +77,18 @@ export default function SwiftTaste() {
             console.error("Error parsing saved recommendations:", e);
           }
         }
-        
+
         // 從Firebase獲取房間推薦數據
         const fetchRoomData = async () => {
           try {
             const roomRecs = await getRecommendationsFromFirebase(roomIdParam);
-            
+
             if (roomRecs?.length) {
               setRecommendations(roomRecs);
-              localStorage.setItem("buddiesRecommendations", JSON.stringify(roomRecs));
+              localStorage.setItem(
+                "buddiesRecommendations",
+                JSON.stringify(roomRecs)
+              );
               setPhase("recommend");
             } else {
               // 如果沒有推薦，設置為選擇模式
@@ -98,21 +99,27 @@ export default function SwiftTaste() {
             setPhase("selectMode");
           }
         };
-        
+
         fetchRoomData();
-        
+
         // 監聽房間推薦變化
-        const unsubscribe = listenRoomRecommendations(roomIdParam, (updatedRecs) => {
-          if (updatedRecs?.length) {
-            setRecommendations(updatedRecs);
-            localStorage.setItem("buddiesRecommendations", JSON.stringify(updatedRecs));
-            setPhase("recommend");
+        const unsubscribe = listenRoomRecommendations(
+          roomIdParam,
+          (updatedRecs) => {
+            if (updatedRecs?.length) {
+              setRecommendations(updatedRecs);
+              localStorage.setItem(
+                "buddiesRecommendations",
+                JSON.stringify(updatedRecs)
+              );
+              setPhase("recommend");
+            }
           }
-        });
-        
+        );
+
         return () => {
           // 清理監聽
-          if (typeof unsubscribe === 'function') {
+          if (typeof unsubscribe === "function") {
             unsubscribe();
           }
         };
@@ -127,7 +134,7 @@ export default function SwiftTaste() {
       text: q.question,
       leftOption: q.options[0],
       rightOption: q.options[1],
-      hasVS: q.question.includes("v.s.") // 標記v.s.格式問題
+      hasVS: q.question.includes("v.s."), // 標記v.s.格式問題
     }));
 
   // 隨機選取餐廳（數量限制）
@@ -157,21 +164,34 @@ export default function SwiftTaste() {
       console.error("餐廳數據尚未加載完成");
       return;
     }
-    
+
     const answerList = Object.values(answersObj);
     setUserAnswers(answerList);
-    
-    let recommendedRestaurants = [];
-    
-    // 使用增強版推薦邏輯
-    recommendedRestaurants = recommendRestaurants(
-      answerList, 
-      restaurantList,
-      { 
-        basicQuestionsCount: basicQuestions.length 
+
+    // 創建答案和問題的映射關係
+    const answerQuestionMap = {};
+    Object.entries(answersObj).forEach(([id, answer]) => {
+      // 從問題 ID 中提取索引 (假設 ID 格式為 "q0", "q1" 等)
+      const index = parseInt(id.replace("q", ""));
+      // 找到對應的問題
+      const question = allQuestions[index];
+      if (question) {
+        answerQuestionMap[index] = question.question;
       }
-    );
-    
+    });
+
+    let recommendedRestaurants = [];
+
+    // 使用增強版推薦邏輯
+    recommendedRestaurants = recommendRestaurants(answerList, restaurantList, {
+      // 傳遞基本問題集而不是數量
+      basicQuestions: basicQuestions,
+      // 傳遞答案-問題映射
+      answerQuestionMap: answerQuestionMap,
+      // 嚴格匹配基本問題
+      strictBasicMatch: true,
+    });
+
     // 如果是多人模式且有房間ID，保存結果到Firebase
     if (selectedMode === "buddies" && roomId) {
       try {
@@ -180,11 +200,11 @@ export default function SwiftTaste() {
         console.error("Failed to save recommendations to Firebase:", error);
       }
     }
-    
+
     // 限制推薦餐廳數量
     const limited = getRandomTen(recommendedRestaurants);
     setRecommendations(limited);
-    
+
     if (!limited || limited.length === 0) {
       setSaved([]);
       setPhase("result");
@@ -196,7 +216,7 @@ export default function SwiftTaste() {
   // 保存用戶喜歡的餐廳
   const handleSaveRestaurant = (restaurant) => {
     if (!restaurant || !restaurant.id) return;
-    
+
     if (!saved.find((r) => r.id === restaurant.id)) {
       setSaved((prev) => [...prev, restaurant]);
     }
@@ -217,7 +237,7 @@ export default function SwiftTaste() {
 
   if (loading && phase === "selectMode") {
     return (
-      <div style={{ textAlign: 'center', padding: '20px' }}>
+      <div style={{ textAlign: "center", padding: "20px" }}>
         <h2>載入中...</h2>
         <p>正在準備美食推薦</p>
       </div>
