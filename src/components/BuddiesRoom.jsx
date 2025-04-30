@@ -324,17 +324,23 @@ export default function BuddiesRoom() {
     }
   };
 
-  // 分享房間
+  // 分享房間 - 僅分享房號，不包含用戶資訊
   const shareRoom = async () => {
-    const url = `${window.location.origin}/buddies?room=${roomId}`;
+    // 生成只包含房號的乾淨URL
+    const cleanUrl = `${window.location.origin}/buddies?room=${roomId}`;
+    
     if (navigator.share) {
       try {
-        await navigator.share({ title: "TasteBuddies 房間邀請", url });
+        await navigator.share({ 
+          title: "TasteBuddies 房間邀請", 
+          text: "來加入我的TasteBuddies房間一起選餐廳吧！", 
+          url: cleanUrl 
+        });
       } catch (err) {
         console.error("分享失敗", err);
       }
     } else {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(cleanUrl);
       alert("已複製分享連結 ✅");
     }
   };

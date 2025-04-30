@@ -9,7 +9,6 @@ export default function BuddiesPage() {
 
   return (
     <div style={{ textAlign: "center", marginTop: "5rem" }}>
-      <h1>BuddiesPage</h1>
       <RoomManager fromSwiftTaste={fromSwiftTaste} />
     </div>
   );

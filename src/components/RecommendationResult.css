@@ -1,345 +1,558 @@
-/* RecommendationResult 頁面樣式 */
+/* 基本推薦結果頁面樣式 */
 .recommend-screen {
-    padding: 1rem;
-    margin: 0 auto;
-    max-width: 600px;
+  padding: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* 空結果頁面樣式 */
+.empty-result {
+  text-align: center;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin: 2rem 0;
+}
+
+.empty-result h2 {
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.empty-result p {
+  color: #777;
+  margin-bottom: 1.5rem;
+}
+
+/* 餐廳結果標題 */
+.result-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #555;
+  font-size: 1.5rem;
+}
+
+/* 主要推薦餐廳卡片 */
+.featured-restaurant {
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  height: 250px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: flex-end;
+}
+
+.featured-content {
+  width: 100%;
+  padding: 1.5rem;
+  color: white;
+  z-index: 2;
+}
+
+.featured-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.restaurant-address {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.restaurant-details {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.8rem 0 1.2rem;
+  flex-wrap: wrap;
+}
+
+.rating-badge, .type-badge, .votes-badge {
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rating-badge {
+  background-color: rgba(255, 183, 0, 0.2);
+  color: #FFB700;
+}
+
+.star {
+  margin-right: 0.3rem;
+}
+
+.type-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.votes-badge {
+  background-color: rgba(104, 116, 232, 0.2);
+  color: #fff;
+}
+
+.vote-icon {
+  margin-right: 0.3rem;
+}
+
+/* 導航按鈕 */
+.btn-navigate {
+  background-color: #FF6B6B;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.btn-navigate:hover {
+  background-color: #FF5252;
+}
+
+.nav-icon {
+  font-size: 1.1rem;
+}
+
+/* 備選餐廳區塊 */
+.alternatives-section {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.alternatives-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.alternatives-header h3 {
+  margin: 0;
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.btn-shuffle {
+  background-color: #7C88FF;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background-color 0.2s ease;
+}
+
+.btn-shuffle:hover {
+  background-color: #6874E8;
+}
+
+.btn-shuffle:disabled {
+  background-color: #bbc0ea;
+  cursor: not-allowed;
+}
+
+/* 備選餐廳列表 */
+.alternatives-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.alternative-item {
+  padding: 0.8rem;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  margin-bottom: 0.8rem;
+}
+
+.alternative-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alternative-info {
+  flex: 1;
+}
+
+.alternative-info h4 {
+  margin: 0 0 0.3rem 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.alternative-info p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.alternative-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mini-badge {
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.mini-badge.rating {
+  background-color: rgba(255, 183, 0, 0.1);
+  color: #FFB700;
+}
+
+.mini-badge.type {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.mini-badge.votes {
+  background-color: rgba(104, 116, 232, 0.1);
+  color: #6874E8;
+}
+
+.btn-mini-navigate {
+  background-color: #FF6B6B;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-mini-navigate:hover {
+  background-color: #FF5252;
+}
+
+.btn-mini-navigate.secondary {
+  background-color: #6874E8;
+}
+
+.btn-mini-navigate.secondary:hover {
+  background-color: #5965D9;
+}
+
+/* 更多選擇提示 */
+.more-alternatives {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0.5rem 0 0 0;
+}
+
+/* 再試一次按鈕 */
+.retry-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2rem 0 1rem;
+}
+
+.btn-restart {
+  background-color: #ff976b;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.btn-restart:hover {
+  background-color: #ff7f36;
+}
+
+/* 紙屑動畫樣式 */
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  opacity: 0.7;
+  animation: confetti-fall linear forwards;
+  transform: rotate(0deg);
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
   }
-  
-  .result-title {
-    text-align: center;
-    font-size: 1.8rem;
-    color: #FF6B6B;
-    margin-bottom: 1.5rem;
-    font-weight: 700;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
   }
-  
-  .empty-result {
-    text-align: center;
-    padding: 2rem;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  }
-  
-  /* 精選餐廳卡片 */
-  .featured-restaurant {
-    background-size: cover;
-    background-position: center;
-    color: white;
-    border-radius: 20px;
-    overflow: hidden;
-    margin: 1.5rem 0;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    position: relative;
-    height: 280px;
-    display: flex;
-    align-items: flex-end;
-    transition: transform 0.3s ease;
-  }
-  
-  .featured-restaurant:hover {
-    transform: translateY(-5px);
-  }
-  
-  .featured-content {
-    width: 100%;
-    padding: 1.5rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5) 50%, transparent);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .featured-content h3 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    margin: 0;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  
-  .restaurant-address {
-    font-size: 0.95rem;
-    opacity: 0.9;
-    margin-top: 0.25rem;
-    margin-bottom: 0.5rem;
-  }
-  
+}
+
+/* 保留原有投票排行榜樣式 */
+.vote-ranking {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.vote-ranking h3 {
+  text-align: center;
+  margin-top: 0;
+  color: #555;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.vote-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.vote-rank-item {
+  margin-bottom: 0.5rem;
+}
+
+.vote-rank-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+.vote-rank-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.vote-rank-position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #6874E8;
+  color: white;
+  font-size: 0.7rem;
+  margin-right: 0.5rem;
+}
+
+.vote-rank-count {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.vote-rank-bar-container {
+  height: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.vote-rank-bar {
+  height: 100%;
+  background-color: #FF6B6B;
+  border-radius: 5px;
+  transition: width 0.5s ease-out;
+}
+
+.vote-rank-percentage {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 0.7rem;
+  color: #888;
+}
+
+/* 其他備選餐廳樣式修改 */
+.other-alternatives {
+  background-color: #f9f9f9;
+}
+
+.other-alternatives h3 {
+  color: #555;
+}
+
+/* Buddies 模式特有的樣式 - 票數統計相關 */
+.buddies-vote-summary {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.buddies-vote-summary h3 {
+  text-align: center;
+  margin-top: 0;
+  color: #555;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.buddies-vote-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.buddies-vote-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.buddies-vote-item:last-child {
+  border-bottom: none;
+}
+
+.buddies-vote-name {
+  font-weight: 500;
+  color: #444;
+}
+
+.buddies-vote-count {
+  background-color: rgba(104, 116, 232, 0.1);
+  color: #6874E8;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.buddies-vote-count-icon {
+  margin-right: 0.3rem;
+}
+
+.buddies-vote-bar-container {
+  flex: 1;
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 1rem;
+}
+
+.buddies-vote-bar {
+  height: 100%;
+  background: linear-gradient(to right, #FF9F68, #FF6B6B);
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+/* 突出顯示最高票數 */
+.highest-vote {
+  background-color: rgba(46, 204, 113, 0.1);
+}
+
+.highest-vote .buddies-vote-count {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.highest-vote .buddies-vote-bar {
+  background: linear-gradient(to right, #2ecc71, #27ae60);
+}
+
+/* 平局情況 */
+.tied-vote .buddies-vote-count {
+  background-color: rgba(241, 196, 15, 0.2);
+  color: #f39c12;
+}
+
+.tied-vote .buddies-vote-bar {
+  background: linear-gradient(to right, #f1c40f, #f39c12);
+}
+
+/* 投票數據標記 */
+.vote-badge-container {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.vote-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 3px;
+  background-color: rgba(104, 116, 232, 0.1);
+  color: #6874E8;
+}
+
+.vote-badge.highest {
+  background-color: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+}
+
+.vote-badge.tied {
+  background-color: rgba(241, 196, 15, 0.1);
+  color: #f39c12;
+}
+
+/* 響應式設計 - 在小屏幕上的優化 */
+@media (max-width: 480px) {
   .restaurant-details {
-    display: flex;
-    gap: 0.5rem;
-    margin: 0.5rem 0 1rem;
-    flex-wrap: wrap;
-  }
-  
-  .rating-badge, .type-badge {
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(4px);
-    padding: 0.3rem 0.6rem;
-    border-radius: 100px;
-    font-size: 0.8rem;
-    display: inline-flex;
-    align-items: center;
-    font-weight: 500;
-  }
-  
-  .rating-badge {
-    background: rgba(255, 217, 0, 0.25);
-    color: #FFD700;
-  }
-  
-  .star {
-    margin-right: 0.25rem;
-  }
-  
-  .type-badge {
-    background: rgba(134, 142, 255, 0.25);
-    color: #BDC2FF;
-  }
-  
-  .btn-navigate {
-    background: #FF9F68;
-    color: white;
-    border: none;
-    padding: 0.8rem 1.2rem;
-    font-size: 1rem;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(255, 159, 104, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-  }
-  
-  .nav-icon {
-    font-size: 1.1rem;
-  }
-  
-  .btn-navigate:hover {
-    background: #FF7F36;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 127, 54, 0.5);
-  }
-  
-  /* 其他備選餐廳區塊 */
-  .alternatives-section {
-    background: white;
-    border-radius: 16px;
-    padding: 1.2rem;
-    margin: 1.5rem 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-  }
-  
-  .alternatives-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  
-  .alternatives-header h3 {
-    font-size: 1.2rem;
-    margin: 0;
-    color: #464646;
-  }
-  
-  .btn-shuffle {
-    background: transparent;
-    color: #FF6B6B;
-    border: 1px solid #FF6B6B;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .btn-shuffle:hover {
-    background: #FFF1F1;
-  }
-  
-  .alternatives-list {
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    display: flex;
     flex-direction: column;
-    gap: 0.8rem;
-  }
-  
-  .alternative-item {
-    border-bottom: 1px solid #f0f0f0;
-    padding-bottom: 0.8rem;
-  }
-  
-  .alternative-item:last-child {
-    border-bottom: none;
-  }
-  
-  .alternative-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .alternative-info {
-    flex: 1;
-  }
-  
-  .alternative-info h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 0.25rem;
-    color: #363636;
-  }
-  
-  .alternative-info p {
-    font-size: 0.8rem;
-    color: #666;
-    margin: 0 0 0.25rem;
+    align-items: flex-start;
+    gap: 0.3rem;
   }
   
   .alternative-badges {
-    display: flex;
-    gap: 0.5rem;
     flex-wrap: wrap;
   }
   
-  .mini-badge.rating, .mini-badge.type {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.4rem;
-    border-radius: 4px;
+  .buddies-vote-item {
+    flex-wrap: wrap;
   }
   
-  .mini-badge.rating {
-    background: #FFF8E0;
-    color: #D4B135;
-  }
-  
-  .mini-badge.type {
-    background: #EEF0FF;
-    color: #6874E8;
-  }
-  
-  .btn-mini-navigate {
-    background: #FF9F68;
-    color: white;
-    border: none;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 60px;
-  }
-  
-  .btn-mini-navigate:hover {
-    background: #FF7F36;
-  }
-  
-  .more-alternatives, .no-more-alternatives {
-    text-align: center;
-    font-size: 0.8rem;
-    margin-top: 0.8rem;
-  }
-  
-  .more-alternatives {
-    color: #999;
-  }
-  
-  .no-more-alternatives {
-    color: #FF6B6B;
-    font-weight: 500;
-  }
-  
-  .retry-container {
-    text-align: center;
-    margin: 2rem 0;
-  }
-  
-  .btn-restart {
-    background: #FF9F68;
-    color: white;
-    border: none;
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(255, 159, 104, 0.3);
-  }
-  
-  .btn-restart:hover {
-    background: #FF7F36;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 127, 54, 0.4);
-  }
-  
-  /* 五彩紙屑動畫 */
-  .confetti-container {
-    position: fixed;
-    top: 0;
-    left: 0;
+  .buddies-vote-bar-container {
+    margin: 0.5rem 0;
     width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1000;
-    overflow: hidden;
   }
-  
-  .confetti {
-    position: absolute;
-    width: 8px;
-    height: 16px;
-    top: -20px;
-    pointer-events: none;
-    transform-origin: center;
-    animation: confettiFall linear forwards;
-    opacity: 0.8;
-  }
-  
-  @keyframes confettiFall {
-    0% {
-      transform: translateY(-5vh) rotate(0deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(100vh) rotate(720deg);
-      opacity: 0;
-    }
-  }
-  
-  /* 媒體查詢，適配手機版 */
-  @media (max-width: 480px) {
-    .recommend-screen {
-      padding: 0.8rem;
-    }
-    
-    .result-title {
-      font-size: 1.5rem;
-    }
-    
-    .featured-restaurant {
-      height: 240px;
-    }
-    
-    .featured-content h3 {
-      font-size: 1.3rem;
-    }
-    
-    .alternatives-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-    
-    .btn-navigate, .btn-restart {
-      width: 100%;
-    }
-  }
+}
