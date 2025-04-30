@@ -196,8 +196,6 @@ io.on('connection', (socket) => {
     serverTime: new Date().toISOString()
   });
 
-  // 在 index.js 中添加以下代碼
-
   // 創建房間 - 修改版本
   socket.on('createRoom', async ({ userName }, callback) => {
     try {
@@ -696,7 +694,7 @@ io.on('connection', (socket) => {
   });
 
   // 提交答案
-  socket.on('submitAnswers', async ({ roomId, answers }, callback) => {
+  socket.on('submitAnswers', async ({ roomId, answers, index }, callback) => {
     try {
       const room = rooms[roomId];
       if (!room) {
@@ -723,7 +721,50 @@ io.on('connection', (socket) => {
         callback({ success: true });
       }
 
-      // 檢查是否所有人都已回答
+      // 檢查是否所有人都已經答完當前問題
+      if (index !== undefined) {
+        const memberIds = Object.keys(room.members);
+        let allAnswered = true;
+
+        for (const memberId of memberIds) {
+          if (!room.answers[memberId] || room.answers[memberId][index] === undefined) {
+            allAnswered = false;
+            break;
+          }
+        }
+
+        // 如果所有人都已回答，進入下一個問題
+        if (allAnswered) {
+          // 計算用於下一個問題的索引
+          const nextIndex = index + 1;
+
+          // 如果還有下一題，通知所有人進入下一題
+          if (nextIndex < room.questions.length) {
+            room.currentQuestionIndex = nextIndex;
+
+            // 更新 Firebase
+            if (firebaseOnline) {
+              const roomRef = ref(`buddiesRooms/${roomId}`);
+              await update(roomRef, {
+                currentQuestionIndex: nextIndex,
+                updatedAt: serverTimestamp()
+              });
+            }
+
+            // 標記最後一個回答的用戶
+            const isLastUser = allAnswered && (socket.id === socket.id);
+
+            // 通知所有人進入下一題
+            io.to(roomId).emit('nextQuestion', {
+              nextIndex,
+              currentVotes: room.questionVotes ? room.questionVotes[index] : null,
+              isLastUser // 標記是否為最後一個用戶
+            });
+          }
+        }
+      }
+
+      // 檢查是否所有問題都已回答完畢
       const memberCount = Object.keys(room.members).length;
       const answerCount = Object.keys(room.answers).length;
 

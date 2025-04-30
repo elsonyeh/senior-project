@@ -8,9 +8,12 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
   const [lastDirection, setLastDirection] = useState("");
 
   const handleSwipe = (dir, q) => {
+    if (!q) return;
+    
     const answer = dir === "right" ? q.rightOption : q.leftOption;
     const updated = { ...answers, [q.id]: answer };
     setAnswers(updated);
+    
     if (Object.keys(updated).length === questions.length) {
       onComplete(updated);
     }
@@ -18,14 +21,17 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
 
   // 處理滑動時的視覺反饋
   const handleLocalSwipe = (dir, item) => {
+    if (!item) return;
     setLastSwipedId(item.id);
     setLastDirection(dir);
   };
   
-  // Format questions containing "v.s." to center the "v.s." text
+  // 格式化問題文本，處理 v.s. 格式
   const formatQuestionText = (q) => {
-    // Check both the text directly and the hasVS flag
-    if (q.text.includes("v.s.") || q.hasVS) {
+    // 檢查文本和 hasVS 標記
+    if (!q) return "";
+    
+    if (q.text && (q.text.includes("v.s.") || q.hasVS)) {
       const parts = q.text.split("v.s.");
       return (
         <div className="question-wrapper">
@@ -38,9 +44,29 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
     return q.text;
   };
 
+  // 確保所有問題都有唯一ID和正確結構
+  const safeQuestions = Array.isArray(questions) ? questions.map((q, index) => ({
+    id: q.id || `q${index}`,
+    text: q.text || "",
+    leftOption: q.leftOption || "選項 A",
+    rightOption: q.rightOption || "選項 B",
+    hasVS: q.hasVS || false
+  })) : [];
+
+  // 過濾已回答的問題
+  const remainingQuestions = safeQuestions.filter(q => !answers[q.id]);
+
+  if (safeQuestions.length === 0) {
+    return <div>載入問題中...</div>;
+  }
+
+  if (remainingQuestions.length === 0) {
+    return <div>所有問題已回答，處理中...</div>;
+  }
+
   return (
     <CardStack
-      cards={questions}
+      cards={remainingQuestions}
       badgeType="none"
       onSwipe={handleSwipe}
       onLocalSwipe={handleLocalSwipe}

@@ -1,0 +1,586 @@
+/* BuddiesVoteStyles.css */
+/* 多人模式投票視覺效果樣式 */
+
+/* 問題進度指示器 - 已隱藏，但保留代碼以備需要 */
+.question-progress {
+  margin: 1rem auto;
+  width: 90%;
+  max-width: 400px;
+  display: none; /* 隱藏進度條 */
+}
+
+.question-progress-text {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.question-progress-bar {
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.question-progress-fill {
+  height: 100%;
+  background-color: #FF6B6B;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* 投票氣泡容器 */
+.vote-bubbles-container {
+  position: fixed;
+  top: 0;
+  right: 20px;
+  width: 220px; /* 固定寬度 */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+/* 投票氣泡 */
+.vote-bubble {
+  position: absolute;
+  right: 0;
+  z-index: 1000;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  will-change: transform, opacity;
+}
+
+.vote-bubble-content {
+  background-color: #6874E8;
+  color: white;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+  max-width: 200px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.vote-bubble-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 10px;
+  border-width: 8px;
+  border-style: solid;
+  border-color: #6874E8 transparent transparent transparent;
+}
+
+.vote-bubble-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+.vote-bubble-choice {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+/* 新的投票狀態顯示容器 */
+.vote-status-container {
+  margin: 1rem auto;
+  max-width: 90%;
+  background-color: white;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 5;
+}
+
+.vote-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.vote-status-icon {
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.vote-status-text {
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+  flex: 1;
+}
+
+.vote-status-total {
+  font-size: 0.8rem;
+  color: #888;
+  background-color: #f5f5f5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+}
+
+/* 新的投票分佈顯示 */
+.vote-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vote-option-item {
+  margin-bottom: 0.5rem;
+}
+
+.vote-option-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.vote-option-name {
+  font-weight: 500;
+  color: #444;
+  flex: 1;
+}
+
+.vote-percentage {
+  font-weight: 600;
+  color: #333;
+  margin: 0 0.5rem;
+}
+
+.vote-count {
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.vote-bar-container {
+  height: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+}
+
+.vote-bar-left {
+  height: 100%;
+  background: linear-gradient(to right, #6874E8, #8990FF);
+  border-radius: 5px 0 0 5px;
+}
+
+.vote-bar-right {
+  height: 100%;
+  background: linear-gradient(to right, #FF9F68, #FF6B6B);
+  border-radius: 0 5px 5px 0;
+}
+
+/* 新的單條投票進度樣式 */
+.vote-progress-single {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.vote-options-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.vote-option-label {
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.vote-option-label.left {
+  color: #6874E8;
+  font-weight: 500;
+}
+
+.vote-option-label.right {
+  color: #FF6B6B;
+  font-weight: 500;
+  text-align: right;
+}
+
+.vote-bar-container-single {
+  height: 16px;
+  background-color: #FF6B6B;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.vote-bar-left-single {
+  height: 100%;
+  background-color: #6874E8;
+  border-radius: 8px 0 0 8px;
+  position: relative;
+}
+
+.vote-percentage-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: white;
+  color: #333;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 4px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: left 0.8s ease;
+}
+
+/* 等待動畫 */
+.vote-waiting-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.vote-waiting-dots span {
+  width: 8px;
+  height: 8px;
+  background-color: #FF6B6B;
+  border-radius: 50%;
+  display: inline-block;
+  animation: dot-pulse 1.5s infinite ease-in-out;
+}
+
+.vote-waiting-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.vote-waiting-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* 滑動提示和已投票提示 */
+.swipe-hint, .vote-hint {
+  text-align: center;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  color: #777;
+  font-size: 0.9rem;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+}
+
+.vote-hint {
+  color: #6874E8;
+}
+
+/* 等待容器 */
+.waiting-container {
+  text-align: center;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.waiting-container h3 {
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+/* 完成所有問題的樣式 */
+.all-questions-done {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.done-container {
+  background-color: white;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 90%;
+  margin: 0 auto;
+}
+
+.done-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #2ECC71;
+}
+
+.done-container h3 {
+  margin-top: 0;
+  color: #444;
+}
+
+.done-container p {
+  color: #666;
+}
+
+/* 加載動畫 */
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.loading-dots span {
+  width: 10px;
+  height: 10px;
+  background-color: #FF6B6B;
+  border-radius: 50%;
+  display: inline-block;
+  animation: dot-pulse 1.5s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-pulse {
+  0%, 100% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 動畫效果 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes growWidth {
+  from {
+    width: 0;
+  }
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes popUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* 問題滑動容器 */
+.question-swiper-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* 修改卡片容器的樣式 */
+.question-swiper-container .motion-swiper-container {
+  padding-top: 0;
+  position: relative;
+  top: 0;
+}
+
+/* 投票排行榜 */
+.vote-ranking {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.vote-ranking h3 {
+  text-align: center;
+  margin-top: 0;
+  color: #555;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.vote-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.vote-rank-item {
+  margin-bottom: 0.5rem;
+}
+
+.vote-rank-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+.vote-rank-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.vote-rank-position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #6874E8;
+  color: white;
+  font-size: 0.7rem;
+  margin-right: 0.5rem;
+}
+
+.vote-rank-count {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.vote-rank-bar-container {
+  height: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.vote-rank-bar {
+  height: 100%;
+  background-color: #FF6B6B;
+  border-radius: 5px;
+  transition: width 0.5s ease-out;
+}
+
+.vote-rank-percentage {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 0.7rem;
+  color: #888;
+}
+
+/* 對於超小螢幕的優化 */
+@media (max-width: 320px) {
+  .vote-option {
+    width: 35%;
+    font-size: 0.8rem;
+  }
+  
+  .vote-count-number {
+    font-size: 0.75rem;
+  }
+  
+  .done-container {
+    padding: 1.5rem;
+  }
+  
+  .vote-bubble-content {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .vote-status-container {
+    padding: 0.8rem;
+  }
+  
+  .vote-status-text,
+  .vote-option-name {
+    font-size: 0.8rem;
+  }
+  
+  .vote-percentage,
+  .vote-count {
+    font-size: 0.7rem;
+  }
+  
+  .vote-option-label {
+    font-size: 0.8rem;
+  }
+  
+  .vote-bar-container-single {
+    height: 12px;
+  }
+  
+  .vote-percentage-indicator {
+    font-size: 0.6rem;
+    padding: 1px 3px;
+  }
+}
+
+.restaurant-details {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.8rem 0 1.2rem;
+  flex-wrap: wrap;
+}
