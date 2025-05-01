@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import socket from "../services/socket";
@@ -28,8 +28,58 @@ export default function BuddiesRecommendation({
   const [limitedRestaurants, setLimitedRestaurants] = useState([]);
   const [alternativeRestaurants, setAlternativeRestaurants] = useState([]);
   const [voteAnimation, setVoteAnimation] = useState(null);
-  const [totalMembers, setTotalMembers] = useState(0); // 添加總成員數量追蹤
+  const [totalMembers, setTotalMembers] = useState(0);
   const navigate = useNavigate();
+
+  // 處理滑動結束並計算投票結果的函數 - 用 useCallback 防止依賴循環
+  const handleFinishSwiping = useCallback(() => {
+    setPhase("vote-result");
+    
+    // 計算投票結果
+    if (Object.keys(votes).length > 0) {
+      // 找出票數最高的餐廳
+      const sortedRestaurants = Object.entries(votes)
+        .sort(([, voteA], [, voteB]) => voteB - voteA);
+      
+      // 檢查是否有多個最高票餐廳（平局情況）
+      if (sortedRestaurants.length > 1) {
+        const topVotes = sortedRestaurants[0][1];
+        const tiedRestaurants = sortedRestaurants.filter(([, voteCount]) => voteCount === topVotes);
+        
+        if (tiedRestaurants.length > 1) {
+          // 如果有平局，選擇第一個
+          const topVotedId = tiedRestaurants[0][0];
+          const topVotedRestaurant = [...limitedRestaurants, ...alternativeRestaurants]
+            .find(r => r.id === topVotedId);
+            
+          if (topVotedRestaurant) {
+            setFinalResult(topVotedRestaurant);
+          }
+        } else {
+          // 沒有平局，選擇最高票餐廳
+          const topVotedId = sortedRestaurants[0][0];
+          const topVotedRestaurant = [...limitedRestaurants, ...alternativeRestaurants]
+            .find(r => r.id === topVotedId);
+            
+          if (topVotedRestaurant) {
+            setFinalResult(topVotedRestaurant);
+          }
+        }
+      } else if (sortedRestaurants.length === 1) {
+        // 只有一個餐廳有投票
+        const topVotedId = sortedRestaurants[0][0];
+        const topVotedRestaurant = [...limitedRestaurants, ...alternativeRestaurants]
+          .find(r => r.id === topVotedId);
+          
+        if (topVotedRestaurant) {
+          setFinalResult(topVotedRestaurant);
+        }
+      }
+    } else if (saved.length > 0) {
+      // 如果沒有投票，使用首個收藏的餐廳
+      setFinalResult(saved[0]);
+    }
+  }, [votes, limitedRestaurants, alternativeRestaurants, saved]);
 
   // 限制推薦餐廳數量為10家
   useEffect(() => {
@@ -208,56 +258,6 @@ export default function BuddiesRecommendation({
     }
   };
 
-  // 滑動完所有推薦的餐廳後 - 使用 useCallback 避免依賴循環
-  const handleFinishSwiping = useCallback(() => {
-    setPhase("vote-result");
-    
-    // 計算投票結果
-    if (Object.keys(votes).length > 0) {
-      // 找出票數最高的餐廳
-      const sortedRestaurants = Object.entries(votes)
-        .sort(([, voteA], [, voteB]) => voteB - voteA);
-      
-      // 檢查是否有多個最高票餐廳（平局情況）
-      if (sortedRestaurants.length > 1) {
-        const topVotes = sortedRestaurants[0][1];
-        const tiedRestaurants = sortedRestaurants.filter(([, voteCount]) => voteCount === topVotes);
-        
-        if (tiedRestaurants.length > 1) {
-          // 如果有平局，選擇第一個
-          const topVotedId = tiedRestaurants[0][0];
-          const topVotedRestaurant = [...limitedRestaurants, ...alternativeRestaurants]
-            .find(r => r.id === topVotedId);
-            
-          if (topVotedRestaurant) {
-            setFinalResult(topVotedRestaurant);
-          }
-        } else {
-          // 沒有平局，選擇最高票餐廳
-          const topVotedId = sortedRestaurants[0][0];
-          const topVotedRestaurant = [...limitedRestaurants, ...alternativeRestaurants]
-            .find(r => r.id === topVotedId);
-            
-          if (topVotedRestaurant) {
-            setFinalResult(topVotedRestaurant);
-          }
-        }
-      } else if (sortedRestaurants.length === 1) {
-        // 只有一個餐廳有投票
-        const topVotedId = sortedRestaurants[0][0];
-        const topVotedRestaurant = [...limitedRestaurants, ...alternativeRestaurants]
-          .find(r => r.id === topVotedId);
-          
-        if (topVotedRestaurant) {
-          setFinalResult(topVotedRestaurant);
-        }
-      }
-    } else if (saved.length > 0) {
-      // 如果沒有投票，使用首個收藏的餐廳
-      setFinalResult(saved[0]);
-    }
-  }, [votes, limitedRestaurants, alternativeRestaurants, saved]);
-
   // 渲染五彩紙屑
   const renderConfetti = () => {
     return (
@@ -356,35 +356,10 @@ export default function BuddiesRecommendation({
     );
   }
 
-  // 投票動畫
-  const renderVoteAnimation = () => {
-    if (!voteAnimation) return null;
-
-    return (
-      <motion.div
-        className="vote-animation"
-        initial={{ opacity: 0, scale: 0.5, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.5, y: -20 }}
-      >
-        <div className="vote-popup">
-          <div className="vote-icon">🎉</div>
-          <div className="vote-text">
-            <span>成功為</span>
-            <span className="vote-restaurant-name">{voteAnimation.name}</span>
-            <span>投票！</span>
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
   // 推薦階段 - 使用滑動操作
   return (
     <div>
       <h2>一起選餐廳 🍜 ({userVoted ? "已投票" : "滑動選擇"})</h2>
-
-      {/* 移除投票動畫 */}
 
       {/* 投票和最愛計數顯示 */}
       <div

@@ -7,15 +7,15 @@ import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import RecommendationResult from "./RecommendationResult";
 import {
-  getRandomFunQuestions,
-  recommendRestaurants,
-} from "../logic/enhancedRecommendLogic.mjs";
-import {
   getRestaurants,
   getRecommendationsFromFirebase,
   saveRecommendationsToFirebase,
   listenRoomRecommendations,
 } from "../services/firebaseService";
+import {
+  getRandomFunQuestions,
+  recommendRestaurants
+} from "../logic/enhancedRecommendLogicFrontend.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./SwiftTasteCard.css";
 

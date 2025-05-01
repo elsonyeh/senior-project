@@ -17,12 +17,7 @@ const set = (reference, data) => reference.set(data);
 const get = (reference) => reference.once('value');
 const update = (reference, data) => reference.update(data);
 
-// 導入優化後的推薦邏輯
-const {
-  recommendForGroup,
-  recommendRestaurants,
-  getRandomFunQuestions
-} = require('./enhancedRecommendLogic');
+const enhancedLogic = require('./logic/enhancedRecommendLogicBackend.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -694,7 +689,7 @@ io.on('connection', (socket) => {
   });
 
   // 提交答案
-  socket.on('submitAnswers', async ({ roomId, answers, index }, callback) => {
+  socket.on('submitAnswers', async ({ roomId, answers, questionTexts, questionSources, index }) => {
     try {
       const room = rooms[roomId];
       if (!room) {
@@ -704,14 +699,42 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // 保存答案到內存
-      room.answers[socket.id] = answers;
+      // 保存結構化答案到內存 (支援問題文本和問題來源)
+      // 檢查是否提供了問題文本和來源
+      if (Array.isArray(answers)) {
+        if (Array.isArray(questionTexts) || Array.isArray(questionSources)) {
+          // 如果提供了結構化資料，使用新格式儲存
+          room.answers[socket.id] = {
+            answers: answers,
+            questionTexts: questionTexts || [],
+            questionSources: questionSources || []
+          };
+
+          // 如果沒有提供問題來源但有問題文本，嘗試判斷問題類型
+          if (!questionSources && questionTexts && questionTexts.length > 0) {
+            // 使用 enhancedLogic.isBasicQuestion 判斷
+            room.answers[socket.id].questionSources = questionTexts.map(
+              text => enhancedLogic.isBasicQuestion(text) ? 'basic' : 'fun'
+            );
+          }
+        } else {
+          // 兼容性處理：無結構化資料時保持舊格式
+          room.answers[socket.id] = answers;
+        }
+      } else {
+        // 答案格式錯誤，記錄錯誤日誌
+        console.error("提交答案格式錯誤:", answers);
+        if (typeof callback === 'function') {
+          callback({ success: false, error: '答案格式錯誤' });
+        }
+        return;
+      }
 
       // 如果 Firebase 在線，保存到 Firebase
       if (firebaseOnline) {
         try {
           const answersRef = ref(`buddiesRooms/${roomId}/answers/${socket.id}`);
-          await set(answersRef, answers);
+          await set(answersRef, room.answers[socket.id]);
         } catch (firebaseError) {
           console.error("保存答案到 Firebase 失敗:", firebaseError);
         }
@@ -721,50 +744,7 @@ io.on('connection', (socket) => {
         callback({ success: true });
       }
 
-      // 檢查是否所有人都已經答完當前問題
-      if (index !== undefined) {
-        const memberIds = Object.keys(room.members);
-        let allAnswered = true;
-
-        for (const memberId of memberIds) {
-          if (!room.answers[memberId] || room.answers[memberId][index] === undefined) {
-            allAnswered = false;
-            break;
-          }
-        }
-
-        // 如果所有人都已回答，進入下一個問題
-        if (allAnswered) {
-          // 計算用於下一個問題的索引
-          const nextIndex = index + 1;
-
-          // 如果還有下一題，通知所有人進入下一題
-          if (nextIndex < room.questions.length) {
-            room.currentQuestionIndex = nextIndex;
-
-            // 更新 Firebase
-            if (firebaseOnline) {
-              const roomRef = ref(`buddiesRooms/${roomId}`);
-              await update(roomRef, {
-                currentQuestionIndex: nextIndex,
-                updatedAt: serverTimestamp()
-              });
-            }
-
-            // 標記最後一個回答的用戶
-            const isLastUser = allAnswered && (socket.id === socket.id);
-
-            // 通知所有人進入下一題
-            io.to(roomId).emit('nextQuestion', {
-              nextIndex,
-              currentVotes: room.questionVotes ? room.questionVotes[index] : null,
-              isLastUser // 標記是否為最後一個用戶
-            });
-          }
-        }
-      }
-
-      // 檢查是否所有問題都已回答完畢
+      // 檢查是否所有會員都已回答完畢
       const memberCount = Object.keys(room.members).length;
       const answerCount = Object.keys(room.answers).length;
 
@@ -774,11 +754,22 @@ io.on('connection', (socket) => {
           const restaurants = await getRestaurants();
 
           if (restaurants.length > 0) {
+            // 檢查 recommendForGroup 函數是否存在
+            if (typeof enhancedLogic.recommendForGroup !== 'function') {
+              console.error('recommendForGroup 函數不存在，請檢查導入方式');
+              io.to(roomId).emit('recommendError', { error: '推薦系統暫時無法使用，請稍後再試' });
+              return;
+            }
+
             // 使用優化的推薦邏輯
-            const recommendations = recommendForGroup(
+            const recommendations = enhancedLogic.recommendForGroup(
               room.answers,
               restaurants,
-              { basicQuestionsCount: 5 } // 假設前5個是基本問題
+              {
+                basicQuestionsCount: 5,
+                debug: process.env.NODE_ENV === 'development',
+                basicQuestions: room.basicQuestions || []
+              }
             );
 
             // 保存推薦結果
@@ -802,56 +793,6 @@ io.on('connection', (socket) => {
       console.error("提交答案錯誤:", error);
       if (typeof callback === 'function') {
         callback({ success: false, error: '提交答案失敗' });
-      }
-    }
-  });
-
-  // 投票喜歡的餐廳
-  socket.on('voteRestaurant', async ({ roomId, restaurantId }, callback) => {
-    try {
-      const room = rooms[roomId];
-      if (!room) {
-        if (typeof callback === 'function') {
-          callback({ success: false, error: '房間不存在' });
-        }
-        return;
-      }
-
-      // 初始化投票計數，如果不存在
-      if (!room.votes) {
-        room.votes = {};
-      }
-
-      // 增加餐廳投票計數
-      room.votes[restaurantId] = (room.votes[restaurantId] || 0) + 1;
-
-      // 如果 Firebase 在線，同步到 Firebase
-      if (firebaseOnline) {
-        try {
-          const voteRef = ref(`buddiesRooms/${roomId}/votes/${restaurantId}`);
-          await set(voteRef, room.votes[restaurantId]);
-
-          // 記錄用戶投票
-          const userVoteRef = ref(`buddiesRooms/${roomId}/userVotes/${socket.id}`);
-          await set(userVoteRef, {
-            restaurantId,
-            timestamp: serverTimestamp()
-          });
-        } catch (firebaseError) {
-          console.error("保存投票到 Firebase 失敗:", firebaseError);
-        }
-      }
-
-      // 發送投票更新通知
-      io.to(roomId).emit('voteUpdate', room.votes);
-
-      if (typeof callback === 'function') {
-        callback({ success: true });
-      }
-    } catch (error) {
-      console.error("投票錯誤:", error);
-      if (typeof callback === 'function') {
-        callback({ success: false, error: '投票失敗' });
       }
     }
   });
