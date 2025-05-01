@@ -3,13 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { QRCode } from "react-qrcode-logo";
 import socket from "../services/socket";
 import "./BuddiesRoom.css";
-import { basicQuestions } from "../data/basicQuestions";
 import { funQuestions } from "../data/funQuestions";
-import { getRandomFunQuestions } from "../logic/enhancedRecommendLogic.mjs";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import BuddiesRecommendation from "./BuddiesRecommendation";
 import QRScannerModal from "./QRScannerModal";
 import { buddiesBasicQuestions } from "../data/buddiesBasicQuestions";
+import { getRandomFunQuestions } from '../logic/enhancedRecommendLogicFrontend.js';
 
 export default function BuddiesRoom() {
   const [roomId, setRoomId] = useState("");
@@ -29,6 +28,7 @@ export default function BuddiesRoom() {
   const [showConnectionError, setShowConnectionError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
 
   // 初始化用戶ID和處理URL參數
   useEffect(() => {
@@ -100,7 +100,19 @@ export default function BuddiesRoom() {
       console.log("收到開始問答信號");
       // 使用 Buddies 模式特定的基本問題集（已移除"今天是一個人還是有朋友？"問題）
       const randomFun = getRandomFunQuestions(funQuestions, 3);
-      const all = [...buddiesBasicQuestions, ...randomFun];
+      
+      // 為問題添加來源標記
+      const basicWithSource = buddiesBasicQuestions.map(q => ({
+        ...q,
+        source: "basic" // 標記為基本問題
+      }));
+      
+      const funWithSource = randomFun.map(q => ({
+        ...q,
+        source: "fun" // 標記為趣味問題
+      }));
+      
+      const all = [...basicWithSource, ...funWithSource];
       setQuestions(all);
       setPhase("questions");
     });
@@ -328,13 +340,13 @@ export default function BuddiesRoom() {
   const shareRoom = async () => {
     // 生成只包含房號的乾淨URL
     const cleanUrl = `${window.location.origin}/buddies?room=${roomId}`;
-    
+
     if (navigator.share) {
       try {
-        await navigator.share({ 
-          title: "TasteBuddies 房間邀請", 
-          text: "來加入我的TasteBuddies房間一起選餐廳吧！", 
-          url: cleanUrl 
+        await navigator.share({
+          title: "TasteBuddies 房間邀請",
+          text: "來加入我的TasteBuddies房間一起選餐廳吧！",
+          url: cleanUrl,
         });
       } catch (err) {
         console.error("分享失敗", err);
@@ -347,20 +359,39 @@ export default function BuddiesRoom() {
 
   // 提交答案
   const handleSubmitAnswers = (answerData) => {
-    // 檢查是否收到結構化的答案數據（含問題文本）
+    // 檢查是否收到結構化的答案數據（含問題文本和來源）
     if (answerData.answers && answerData.questionTexts) {
+      // 檢查是否有問題來源信息
+      const hasQuestionSources =
+        answerData.questionSources &&
+        Array.isArray(answerData.questionSources) &&
+        answerData.questionSources.length > 0;
+
       socket.emit("submitAnswers", {
         roomId,
         answers: answerData.answers,
         questionTexts: answerData.questionTexts,
-        // 傳遞特定的基本問題集
+        // 如果有問題來源信息，一併傳遞
+        questionSources: hasQuestionSources
+          ? answerData.questionSources
+          : undefined,
+        // 傳遞特定的基本問題集（用於服務端識別基本問題）
         basicQuestions: buddiesBasicQuestions,
+      });
+
+      console.log("提交結構化答案:", {
+        answers: answerData.answers,
+        hasQuestionTexts: Array.isArray(answerData.questionTexts),
+        hasQuestionSources: hasQuestionSources,
       });
     } else {
       // 向後兼容的處理方法
       const answers = Array.isArray(answerData)
         ? answerData
         : Object.values(answerData);
+
+      console.log("提交傳統格式答案:", answers.length);
+
       socket.emit("submitAnswers", {
         roomId,
         answers,

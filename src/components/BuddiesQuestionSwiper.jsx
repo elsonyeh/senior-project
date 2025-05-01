@@ -20,6 +20,10 @@ export default function BuddiesQuestionSwiper({
   const answersRef = useRef({});
   const isMountedRef = useRef(true);
 
+  // 新增：記錄問題文本和問題來源
+  const questionTextsRef = useRef([]);
+  const questionSourcesRef = useRef([]);
+
   // 處理安全的問題格式化（避免在render過程中重複計算）
   const safeQuestions = useRef(
     Array.isArray(questions)
@@ -29,12 +33,25 @@ export default function BuddiesQuestionSwiper({
           leftOption: q.leftOption || "選項 A",
           rightOption: q.rightOption || "選項 B",
           hasVS: q.hasVS || false,
+          source:
+            q.source ||
+            (q.text &&
+            // 基於問題文本判斷來源
+            (q.text.includes("想吃奢華點還是平價") ||
+              q.text.includes("想吃正餐還是想喝飲料") ||
+              q.text.includes("吃一點還是吃飽") ||
+              q.text.includes("附近吃還是遠一點") ||
+              q.text.includes("想吃辣的還是不辣") ||
+              q.text.includes("今天是一個人還是有朋友"))
+              ? "basic"
+              : "fun"), // 自動識別基本問題
         }))
       : []
   ).current; // 只計算一次，避免重複計算
 
-  // 從問題中提取文本
+  // 從問題中提取文本和來源
   const questionTexts = useRef(safeQuestions.map((q) => q.text)).current;
+  const questionSources = useRef(safeQuestions.map((q) => q.source)).current;
 
   // 顯示投票氣泡動畫 - 修改為支持多個氣泡往下疊加，並調整顯示時間為3秒
   const showVoteBubble = useCallback((voteData) => {
@@ -76,8 +93,13 @@ export default function BuddiesQuestionSwiper({
       answersRef.current = newAnswers;
       setAnswers(newAnswers);
 
-      // 獲取當前問題的文本
+      // 獲取當前問題的文本和來源
       const questionText = safeQuestions[questionIndex]?.text || "";
+      const questionSource = safeQuestions[questionIndex]?.source || "fun"; // 默認為趣味問題
+
+      // 保存問題文本和來源到ref中
+      questionTextsRef.current[questionIndex] = questionText;
+      questionSourcesRef.current[questionIndex] = questionSource;
 
       // 獲取用戶名
       const userName = localStorage.getItem("userName") || "用戶";
@@ -88,6 +110,7 @@ export default function BuddiesQuestionSwiper({
         index: questionIndex,
         answer,
         questionText,
+        questionSource, // 新增：發送問題來源
         userName,
       });
     },
@@ -102,7 +125,7 @@ export default function BuddiesQuestionSwiper({
     // 收到下一題信號
     const handleNextQuestion = (data) => {
       if (!isMountedRef.current) return;
-      
+
       // 如果是最後一個人完成滑動，多顯示幾秒結果
       if (data.isLastUser) {
         // 延遲3秒後切換到下一題
@@ -154,10 +177,11 @@ export default function BuddiesQuestionSwiper({
     const handleGroupRecommendations = (recs) => {
       if (!isMountedRef.current) return;
 
-      // 使用ref獲取最新狀態
+      // 使用ref獲取最新狀態，並添加問題文本和來源
       const result = {
         answers: Object.values(answersRef.current),
-        questionTexts,
+        questionTexts: questionTextsRef.current,
+        questionSources: questionSourcesRef.current,
       };
 
       // 調用完成處理函數

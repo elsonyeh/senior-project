@@ -15,7 +15,26 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
     setAnswers(updated);
     
     if (Object.keys(updated).length === questions.length) {
-      onComplete(updated);
+      // 收集問題文本和問題來源(如果有)，構建結構化數據
+      const questionTexts = questions.map(q => q.text || "");
+      const questionSources = questions.map(q => q.source || "");
+      
+      // 檢查是否有問題來源信息
+      const hasQuestionSources = questionSources.some(source => source);
+      
+      // 構建結構化答案數據
+      const structuredAnswers = {
+        answers: Object.values(updated), // 轉換為數組格式
+        questionTexts: questionTexts,
+      };
+      
+      // 如果有問題來源信息，加入返回數據
+      if (hasQuestionSources) {
+        structuredAnswers.questionSources = questionSources;
+      }
+      
+      // 將結構化數據傳遞給完成處理函數
+      onComplete(structuredAnswers);
     }
   };
 
@@ -50,7 +69,8 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
     text: q.text || "",
     leftOption: q.leftOption || "選項 A",
     rightOption: q.rightOption || "選項 B",
-    hasVS: q.hasVS || false
+    hasVS: q.hasVS || false,
+    source: q.source || "" // 增加來源屬性
   })) : [];
 
   // 過濾已回答的問題
