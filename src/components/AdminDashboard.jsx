@@ -17,7 +17,7 @@ import {
   deleteRoom,
 } from "../services/firebaseService";
 import { auth } from "../services/firebase";
-import "./AdminPage.css";
+import "./AdminDashboard.css";
 
 const geocodeAddress = async (address) => {
   const response = await fetch(
