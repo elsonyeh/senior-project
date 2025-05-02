@@ -26,15 +26,7 @@ import {
 } from "firebase/firestore";
 
 import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { db, rtdb, auth, checkIsAdmin, isAdmin as firebaseIsAdmin } from "./firebase";
-
-// 判斷是否為開發環境
-const isDevelopment = () => {
-    return process.env.NODE_ENV === 'development' ||
-        (typeof window !== 'undefined' &&
-            (window.location.hostname === 'localhost' ||
-                window.location.hostname.includes('127.0.0.1')));
-};
+import { db, rtdb, auth, checkIsAdmin } from "./firebase";
 
 // 保存一個局部的管理員狀態變數
 let localIsAdmin = false;
@@ -66,17 +58,6 @@ export const adminLogin = async (email, password) => {
     try {
         if (!email || !password) {
             return { success: false, error: '請輸入電子郵件和密碼' };
-        }
-
-        // 開發環境測試帳號處理
-        const isDevMode = isDevelopment();
-        const isTestAccount = email.endsWith('elson921121@gmail.com') && password === 'admin123';
-
-        if (isDevMode && isTestAccount) {
-            console.log('使用測試帳號登入');
-            // 臨時設置為管理員（僅測試環境有效）
-            setTempAdminStatus(true);
-            return { success: true, user: { email } };
         }
 
         // 嘗試使用電子郵件和密碼登入
@@ -138,9 +119,6 @@ export const adminLogout = async () => {
  * 檢查當前用戶是否為管理員
  * @return {Promise<boolean>} 是否為管理員
  */
-// 管理員郵箱列表
-const ADMIN_EMAILS = ["elson921121@gmail.com", "bli86327@gmail.com"];
-
 export const isAdminUser = async () => {
     try {
         // 局部變數檢查
@@ -162,57 +140,29 @@ export const isAdminUser = async () => {
             return false;
         }
 
-        // 使用郵箱列表檢查是否為管理員
-        if (ADMIN_EMAILS.includes(auth.currentUser.email)) {
-            console.log('確認是管理員:', auth.currentUser.email);
-            localStorage.setItem('isAdmin', 'true');
-            localIsAdmin = true;
-            return true;
-        }
+        // 最後嘗試檢查 Firebase 中的管理員狀態
+        try {
+            console.log('檢查 Firebase 中的管理員狀態...');
+            const isAdmin = await checkIsAdmin();
 
-        // 在開發環境中為特定郵箱提供便捷登入
-        if (isDevelopment()) {
-            const isTestEmail = auth.currentUser.email && auth.currentUser.email.endsWith('elson921121@gmail.com');
-            if (isTestEmail) {
-                console.log('開發環境: 測試郵箱自動設為管理員');
+            // 如果是管理員，更新本地存儲
+            if (isAdmin) {
+                console.log('從 Firebase 確認是管理員');
                 localStorage.setItem('isAdmin', 'true');
                 localIsAdmin = true;
-                return true;
+            } else {
+                console.log('從 Firebase 確認不是管理員');
             }
-        }
 
-        console.log('用戶不是管理員:', auth.currentUser.email);
-        return false;
+            return isAdmin;
+        } catch (error) {
+            console.error('檢查管理員狀態失敗:', error);
+            return false;
+        }
     } catch (error) {
         console.error('isAdminUser 檢查失敗:', error);
-        return isDevelopment(); // 開發環境中出錯時默認為 true
-    }
-};
-
-/**
- * 臨時設置用戶為管理員（僅用於測試）
- * 這不是安全的方法，僅用於開發和測試
- */
-export const setTempAdminStatus = (status = true) => {
-    localIsAdmin = status;
-    localStorage.setItem('isAdmin', status ? 'true' : 'false');
-    console.log(`臨時設置管理員狀態為: ${status}`);
-    return status;
-};
-
-/**
- * 僅開發環境：設定特定電子郵件為管理員
- */
-export const devSetAdminEmails = (emails = ['admin@example.com']) => {
-    if (!isDevelopment()) {
-        console.warn('此功能僅限開發環境使用');
         return false;
     }
-
-    // 設定開發環境中的管理員電子郵件
-    localStorage.setItem('dev_admin_emails', JSON.stringify(emails));
-    console.log('已設定開發環境管理員郵箱:', emails);
-    return true;
 };
 
 /**
@@ -793,21 +743,11 @@ export const getAllRooms = async () => {
             }
         }
 
-        // 判斷是否為開發環境
-        const isDevEnv = isDevelopment();
-
-        // 開發環境不強制要求是管理員
-        if (!isDevEnv) {
-            // 確認用戶是否為管理員
-            const admin = await isAdminUser();
-            if (!admin) {
-                console.error('非管理員用戶嘗試獲取所有房間');
-                return { success: false, error: '只有管理員可以查看所有房間', rooms: [] };
-            }
-        } else {
-            console.log('開發環境：允許獲取所有房間數據');
-            // 在開發環境中設置為臨時管理員，確保可以刪除房間
-            setTempAdminStatus(true);
+        // 確認用戶是否為管理員
+        const admin = await isAdminUser();
+        if (!admin) {
+            console.error('非管理員用戶嘗試獲取所有房間');
+            return { success: false, error: '只有管理員可以查看所有房間', rooms: [] };
         }
 
         // 獲取所有房間數據
@@ -858,19 +798,11 @@ export const getAllRooms = async () => {
  */
 export const deleteRoom = async (roomId) => {
     try {
-        // 判斷是否為開發環境
-        const isDevEnv = isDevelopment();
-
-        // 開發環境不強制要求是管理員
-        if (!isDevEnv) {
-            // 確認用戶是否為管理員
-            const admin = await isAdminUser();
-            if (!admin) {
-                console.error('非管理員用戶嘗試刪除房間');
-                return { success: false, error: '只有管理員可以刪除房間' };
-            }
-        } else {
-            console.log('開發環境：允許刪除房間');
+        // 確認用戶是否為管理員
+        const admin = await isAdminUser();
+        if (!admin) {
+            console.error('非管理員用戶嘗試刪除房間');
+            return { success: false, error: '只有管理員可以刪除房間' };
         }
 
         // 刪除房間

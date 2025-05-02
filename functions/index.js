@@ -1,34 +1,31 @@
-const functions = require('firebase-functions');
+// functions/index.js - 生產環境最終版本
+const {onValueWritten} = require('firebase-functions/v2/database');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
-const db = admin.database();
 
-exports.cleanExpiredRooms = functions.pubsub
-  .schedule('every 5 minutes')
-  .onRun(async () => {
-    const now = Date.now();
-    const expiration = 20 * 60 * 1000; // 20 分鐘
-
-    const roomsSnap = await db.ref('/buddiesRooms').once('value');
-    const rooms = roomsSnap.val();
-
-    if (!rooms) return console.log("✅ 沒有房間需要清除");
-
-    const tasks = Object.entries(rooms).map(async ([roomId, roomData]) => {
-      const createdAt = roomData.createdAt || 0;
-      if (now - createdAt > expiration) {
-        // 備份
-        await db.ref(`/analyticsLogs/${roomId}`).set({
-          copiedAt: now,
-          roomData
-        });
-        // 刪除原始
-        await db.ref(`/buddiesRooms/${roomId}`).remove();
-        console.log(`✅ 已清除過期房間：${roomId}`);
+// 自動同步管理員權限（當 Realtime Database 中的管理員列表變更時）
+exports.syncAdminClaims = onValueWritten({
+  ref: '/admins/{uid}',
+  region: 'asia-southeast1',
+  database: 'https://tastebuddies-demo-2-default-rtdb.asia-southeast1.firebasedatabase.app/'
+}, async (event) => {
+  const uid = event.params.uid;
+  const change = event.data;
+  
+  try {
+    if (change.after.exists()) {
+      const adminData = change.after.val();
+      if (adminData.role === 'admin') {
+        await admin.auth().setCustomUserClaims(uid, { admin: true });
+        console.log(`設置管理員權限: ${adminData.email}`);
       }
-    });
-
-    await Promise.all(tasks);
-    return null;
-  });
+    } else {
+      // 用戶從管理員列表中移除
+      await admin.auth().setCustomUserClaims(uid, { admin: false });
+      console.log(`移除管理員權限: ${uid}`);
+    }
+  } catch (error) {
+    console.error('同步管理員權限失敗:', error);
+  }
+});

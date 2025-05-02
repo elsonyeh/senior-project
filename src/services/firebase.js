@@ -87,7 +87,7 @@ try {
 }
 
 /**
- * 檢查用戶是否為管理員
+ * 檢查用戶是否為管理員 - 使用 Custom Claims
  * @param {boolean} forceRefresh - 是否強制重新檢查
  * @return {Promise<boolean>} 是否為管理員
  */
@@ -120,46 +120,23 @@ export const checkIsAdmin = async (forceRefresh = false) => {
         return;
       }
       
-      const userId = auth.currentUser.uid;
-      const userEmail = auth.currentUser.email;
+      // 獲取用戶的 ID Token 結果，包含 Custom Claims
+      const tokenResult = await auth.currentUser.getIdTokenResult();
       
-      // 檢查是否為預設的管理員帳號
-      // 注意：這只是一個臨時解決方案，實際應用應從後端進行驗證
-      const defaultAdminEmails = ['admin@example.com']; // 可以添加預設的管理員郵箱
-      
-      if (defaultAdminEmails.includes(userEmail)) {
-        console.log('檢測到預設管理員郵箱');
+      // 檢查 Claims 中是否包含 admin: true
+      if (tokenResult.claims.admin === true) {
         isAdmin = true;
         localStorage.setItem(ADMIN_STORAGE_KEY, 'true');
-        resolve(true);
-        return;
-      }
-      
-      // 嘗試從 Realtime Database 中的管理員列表檢查
-      try {
-        const adminRef = ref(rtdb, `admins/${userId}`);
-        const adminSnapshot = await get(adminRef);
-        
-        if (adminSnapshot.exists()) {
-          isAdmin = true;
-          localStorage.setItem(ADMIN_STORAGE_KEY, 'true');
-          console.log('用戶確認為管理員');
-        } else {
-          isAdmin = false;
-          localStorage.removeItem(ADMIN_STORAGE_KEY);
-          console.log('用戶不是管理員');
-        }
-      } catch (dbError) {
-        console.error('從 Realtime Database 獲取管理員狀態失敗:', dbError);
-        // 如果是權限問題，我們假設用戶不是管理員
+        console.log('用戶是管理員（Custom Claims）');
+      } else {
         isAdmin = false;
         localStorage.removeItem(ADMIN_STORAGE_KEY);
+        console.log('用戶不是管理員（Custom Claims）');
       }
       
       resolve(isAdmin);
     } catch (error) {
       console.error('檢查管理員狀態失敗:', error);
-      // 發生錯誤時，假設用戶不是管理員
       isAdmin = false;
       localStorage.removeItem(ADMIN_STORAGE_KEY);
       resolve(false);
@@ -172,16 +149,6 @@ export const checkIsAdmin = async (forceRefresh = false) => {
   return adminCheckPromise;
 };
 
-/**
- * 臨時設置用戶為管理員（僅用於測試）
- * 這不是安全的方法，僅用於開發和測試
- */
-export const setTempAdminStatus = (status = true) => {
-  isAdmin = status;
-  localStorage.setItem(ADMIN_STORAGE_KEY, status ? 'true' : 'false');
-  console.log(`臨時設置管理員狀態為: ${status}`);
-  return status;
-};
 
 // 監聽用戶登入狀態變化
 if (auth) {
