@@ -138,6 +138,9 @@ export const adminLogout = async () => {
  * 檢查當前用戶是否為管理員
  * @return {Promise<boolean>} 是否為管理員
  */
+// 管理員郵箱列表
+const ADMIN_EMAILS = ["elson921121@gmail.com", "bli86327@gmail.com"];
+
 export const isAdminUser = async () => {
     try {
         // 局部變數檢查
@@ -159,6 +162,14 @@ export const isAdminUser = async () => {
             return false;
         }
 
+        // 使用郵箱列表檢查是否為管理員
+        if (ADMIN_EMAILS.includes(auth.currentUser.email)) {
+            console.log('確認是管理員:', auth.currentUser.email);
+            localStorage.setItem('isAdmin', 'true');
+            localIsAdmin = true;
+            return true;
+        }
+
         // 在開發環境中為特定郵箱提供便捷登入
         if (isDevelopment()) {
             const isTestEmail = auth.currentUser.email && auth.currentUser.email.endsWith('elson921121@gmail.com');
@@ -170,40 +181,8 @@ export const isAdminUser = async () => {
             }
         }
 
-        // 檢查是否有手動設定的臨時管理員狀態
-        if (isDevelopment() && firebaseIsAdmin) {
-            console.log('使用臨時設定的管理員狀態');
-            return true;
-        }
-
-        // 最後嘗試檢查 Firebase 中的管理員狀態
-        try {
-            console.log('檢查 Firebase 中的管理員狀態...');
-            const isAdmin = await checkIsAdmin();
-
-            // 如果是管理員，更新本地存儲
-            if (isAdmin) {
-                console.log('從 Firebase 確認是管理員');
-                localStorage.setItem('isAdmin', 'true');
-                localIsAdmin = true;
-            } else {
-                console.log('從 Firebase 確認不是管理員');
-            }
-
-            return isAdmin;
-        } catch (error) {
-            console.error('檢查管理員狀態失敗:', error);
-
-            // 如果是開發環境，允許直接通過（方便開發測試）
-            if (isDevelopment()) {
-                console.log('開發環境: 錯誤情況下默認為管理員');
-                localStorage.setItem('isAdmin', 'true');
-                localIsAdmin = true;
-                return true;
-            }
-
-            return false;
-        }
+        console.log('用戶不是管理員:', auth.currentUser.email);
+        return false;
     } catch (error) {
         console.error('isAdminUser 檢查失敗:', error);
         return isDevelopment(); // 開發環境中出錯時默認為 true
