@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { isAdminUser } from "../services/firebaseService";
-import AdminDashboard from "../components/AdminDashBoard";
+import AdminDashboard from "../components/AdminDashboard";
 
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
