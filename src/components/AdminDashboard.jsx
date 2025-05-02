@@ -34,9 +34,6 @@ const geocodeAddress = async (address) => {
   }
 };
 
-// 管理員郵箱列表
-const ADMIN_EMAILS = ["elson921121@gmail.com", "bli86327@gmail.com"];
-
 export default function AdminDashboard() {
   const [restaurants, setRestaurants] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -55,32 +52,6 @@ export default function AdminDashboard() {
   });
 
   const navigate = useNavigate();
-
-  // 檢查用戶身份驗證狀態
-  useEffect(() => {
-    const checkAuthState = () => {
-      const user = auth.currentUser;
-      if (user) {
-        console.log("當前登入用戶 email:", user.email);
-        console.log("是否為管理員:", ADMIN_EMAILS.includes(user.email));
-        
-        // 獲取 token 並檢查 claims
-        user.getIdToken().then(token => {
-          console.log("用戶 token 已獲取");
-          return user.getIdTokenResult();
-        }).then(tokenResult => {
-          console.log("Token 詳細信息:", tokenResult);
-          console.log("Token claims:", tokenResult.claims);
-        }).catch(err => {
-          console.error("獲取 token 失敗:", err);
-        });
-      } else {
-        console.log("沒有登入用戶");
-      }
-    };
-    
-    checkAuthState();
-  }, []);
 
   // 從 Firestore 讀取餐廳資料
   const fetchRestaurants = async () => {
@@ -225,7 +196,7 @@ export default function AdminDashboard() {
         rating: restaurant.rating || 0,
         suggestedPeople: restaurant.suggestedPeople,
         isSpicy: restaurant.isSpicy || false,
-      }
+      },
     });
   };
 
@@ -235,8 +206,8 @@ export default function AdminDashboard() {
       ...editingData,
       [id]: {
         ...editingData[id],
-        [field]: value
-      }
+        [field]: value,
+      },
     });
   };
 
@@ -247,7 +218,7 @@ export default function AdminDashboard() {
       if (!editData) return;
 
       const restaurantRef = doc(db, "restaurants", id);
-      
+
       // 處理不同欄位的數據類型
       const updateData = {
         name: editData.name,
@@ -263,13 +234,13 @@ export default function AdminDashboard() {
 
       await updateDoc(restaurantRef, updateData);
       fetchRestaurants();
-      
+
       // 清除編輯狀態
-      const newEditingData = {...editingData};
+      const newEditingData = { ...editingData };
       delete newEditingData[id];
       setEditingData(newEditingData);
-      
-      alert('儲存成功！');
+
+      alert("儲存成功！");
     } catch (error) {
       console.error("更新餐廳資料失敗：", error);
       alert("更新餐廳資料失敗：" + error.message);
@@ -278,7 +249,7 @@ export default function AdminDashboard() {
 
   // 取消編輯
   const cancelEdit = (id) => {
-    const newEditingData = {...editingData};
+    const newEditingData = { ...editingData };
     delete newEditingData[id];
     setEditingData(newEditingData);
   };
@@ -313,23 +284,36 @@ export default function AdminDashboard() {
       </div>
 
       {/* 顯示當前用戶狀態 */}
-      <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#f0f0f0', borderRadius: '4px' }}>
+      <div
+        style={{
+          marginBottom: "1rem",
+          padding: "0.5rem",
+          background: "#f0f0f0",
+          borderRadius: "4px",
+        }}
+      >
         <small>
-          當前用戶：{auth.currentUser?.email || '未登入'}
-          {ADMIN_EMAILS.includes(auth.currentUser?.email) && <span> ✓ 管理員</span>}
+          當前用戶：{auth.currentUser?.email || "未登入"}
+          <span> ✓ 管理員</span>
         </small>
       </div>
 
       {/* 切換頁籤 */}
       <div className="tab-container">
         <button
-          className={`tab-button ${activeTab === "restaurants" ? "active-restaurants" : "inactive-restaurants"}`}
+          className={`tab-button ${
+            activeTab === "restaurants"
+              ? "active-restaurants"
+              : "inactive-restaurants"
+          }`}
           onClick={() => setActiveTab("restaurants")}
         >
           餐廳資料 (Firestore)
         </button>
         <button
-          className={`tab-button ${activeTab === "rooms" ? "active-rooms" : "inactive-rooms"}`}
+          className={`tab-button ${
+            activeTab === "rooms" ? "active-rooms" : "inactive-rooms"
+          }`}
           onClick={() => setActiveTab("rooms")}
         >
           房間管理 (Realtime DB)
@@ -458,7 +442,9 @@ export default function AdminDashboard() {
           </div>
 
           <div className="restaurant-list-container">
-            <h3 className="restaurant-list-header">📂 所有餐廳 ({restaurants.length})</h3>
+            <h3 className="restaurant-list-header">
+              📂 所有餐廳 ({restaurants.length})
+            </h3>
             <div className="restaurant-table-container">
               <table className="restaurant-table">
                 <colgroup>
@@ -521,9 +507,13 @@ export default function AdminDashboard() {
                           <td>
                             <input
                               className="restaurant-input"
-                              value={isEditing ? editingData[r.id].name : r.name}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "name", e.target.value) : startEdit(r)
+                              value={
+                                isEditing ? editingData[r.id].name : r.name
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(r.id, "name", e.target.value)
+                                  : startEdit(r)
                               }
                               readOnly={!isEditing}
                             />
@@ -531,9 +521,13 @@ export default function AdminDashboard() {
                           <td>
                             <input
                               className="restaurant-input"
-                              value={isEditing ? editingData[r.id].type : r.type}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "type", e.target.value) : startEdit(r)
+                              value={
+                                isEditing ? editingData[r.id].type : r.type
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(r.id, "type", e.target.value)
+                                  : startEdit(r)
                               }
                               readOnly={!isEditing}
                             />
@@ -541,9 +535,19 @@ export default function AdminDashboard() {
                           <td>
                             <input
                               className="restaurant-input"
-                              value={isEditing ? editingData[r.id].address : r.address || ""}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "address", e.target.value) : startEdit(r)
+                              value={
+                                isEditing
+                                  ? editingData[r.id].address
+                                  : r.address || ""
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(
+                                      r.id,
+                                      "address",
+                                      e.target.value
+                                    )
+                                  : startEdit(r)
                               }
                               readOnly={!isEditing}
                             />
@@ -551,9 +555,15 @@ export default function AdminDashboard() {
                           <td>
                             <input
                               className="restaurant-input"
-                              value={isEditing ? editingData[r.id].tags : r.tags?.join(", ") || ""}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "tags", e.target.value) : startEdit(r)
+                              value={
+                                isEditing
+                                  ? editingData[r.id].tags
+                                  : r.tags?.join(", ") || ""
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(r.id, "tags", e.target.value)
+                                  : startEdit(r)
                               }
                               readOnly={!isEditing}
                             />
@@ -561,9 +571,19 @@ export default function AdminDashboard() {
                           <td>
                             <select
                               className="restaurant-input"
-                              value={isEditing ? editingData[r.id].priceRange : r.priceRange}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "priceRange", e.target.value) : startEdit(r)
+                              value={
+                                isEditing
+                                  ? editingData[r.id].priceRange
+                                  : r.priceRange
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(
+                                      r.id,
+                                      "priceRange",
+                                      e.target.value
+                                    )
+                                  : startEdit(r)
                               }
                               disabled={!isEditing}
                             >
@@ -579,9 +599,19 @@ export default function AdminDashboard() {
                               step="0.1"
                               min="1"
                               max="5"
-                              value={isEditing ? editingData[r.id].rating : r.rating || 0}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "rating", e.target.value) : startEdit(r)
+                              value={
+                                isEditing
+                                  ? editingData[r.id].rating
+                                  : r.rating || 0
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(
+                                      r.id,
+                                      "rating",
+                                      e.target.value
+                                    )
+                                  : startEdit(r)
                               }
                               readOnly={!isEditing}
                             />
@@ -589,9 +619,19 @@ export default function AdminDashboard() {
                           <td>
                             <select
                               className="restaurant-input"
-                              value={isEditing ? editingData[r.id].suggestedPeople : r.suggestedPeople}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "suggestedPeople", e.target.value) : startEdit(r)
+                              value={
+                                isEditing
+                                  ? editingData[r.id].suggestedPeople
+                                  : r.suggestedPeople
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(
+                                      r.id,
+                                      "suggestedPeople",
+                                      e.target.value
+                                    )
+                                  : startEdit(r)
                               }
                               disabled={!isEditing}
                             >
@@ -604,16 +644,26 @@ export default function AdminDashboard() {
                           <td className="center">
                             <input
                               type="checkbox"
-                              checked={isEditing ? editingData[r.id].isSpicy : r.isSpicy || false}
-                              onChange={(e) => 
-                                isEditing ? updateEditData(r.id, "isSpicy", e.target.checked) : startEdit(r)
+                              checked={
+                                isEditing
+                                  ? editingData[r.id].isSpicy
+                                  : r.isSpicy || false
+                              }
+                              onChange={(e) =>
+                                isEditing
+                                  ? updateEditData(
+                                      r.id,
+                                      "isSpicy",
+                                      e.target.checked
+                                    )
+                                  : startEdit(r)
                               }
                               disabled={!isEditing}
                             />
                           </td>
                           <td className="center">
                             {isEditing ? (
-                              <div style={{ display: 'flex', gap: '5px' }}>
+                              <div style={{ display: "flex", gap: "5px" }}>
                                 <button
                                   className="save-button"
                                   onClick={() => handleSave(r.id)}
@@ -646,7 +696,7 @@ export default function AdminDashboard() {
                                 </button>
                               </div>
                             ) : (
-                              <div style={{ display: 'flex', gap: '5px' }}>
+                              <div style={{ display: "flex", gap: "5px" }}>
                                 <button
                                   className="edit-button"
                                   onClick={() => startEdit(r)}
@@ -728,7 +778,9 @@ export default function AdminDashboard() {
                     <tr key={room.id}>
                       <td className="center room-id">{room.id}</td>
                       <td>{room.hostName || "未知"}</td>
-                      <td className="center">{room.members ? Object.keys(room.members).length : 0}</td>
+                      <td className="center">
+                        {room.members ? Object.keys(room.members).length : 0}
+                      </td>
                       <td className="center">
                         <span
                           className={`room-status ${
@@ -752,23 +804,23 @@ export default function AdminDashboard() {
                       </td>
                       <td className="center">
                         {room.createdAt
-                          ? new Date(room.createdAt).toLocaleString('zh-TW', { 
-                              year: 'numeric', 
-                              month: '2-digit', 
-                              day: '2-digit', 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
+                          ? new Date(room.createdAt).toLocaleString("zh-TW", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
                             })
                           : "未知"}
                       </td>
                       <td className="center">
                         {room.lastUpdated
-                          ? new Date(room.lastUpdated).toLocaleString('zh-TW', { 
-                              year: 'numeric', 
-                              month: '2-digit', 
-                              day: '2-digit', 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
+                          ? new Date(room.lastUpdated).toLocaleString("zh-TW", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
                             })
                           : "未知"}
                       </td>

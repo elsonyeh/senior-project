@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { isAdminUser } from "../services/firebaseService";
-import AdminDashboard from "../components/AdminDashboard";
+import AdminDashboard from "../components/AdminDashBoard";
 
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -13,20 +13,6 @@ export default function AdminPage() {
     const checkAdminStatus = async () => {
       try {
         console.log("AdminPage: 開始檢查管理員權限...");
-
-        // 判斷是否為開發環境
-        const isDevelopment =
-          process.env.NODE_ENV === "development" ||
-          window.location.hostname === "localhost" ||
-          window.location.hostname.includes("127.0.0.1");
-
-        // 開發環境下提供更寬鬆的權限檢查
-        if (isDevelopment && localStorage.getItem("isAdmin") === "true") {
-          console.log("AdminPage: 開發環境，本地存儲顯示是管理員");
-          setIsAdmin(true);
-          setLoading(false);
-          return;
-        }
 
         // 標準環境下的管理員檢查
         const adminStatus = await isAdminUser();
@@ -42,15 +28,6 @@ export default function AdminPage() {
         console.log("AdminPage: 確認是管理員");
       } catch (error) {
         console.error("AdminPage: 檢查管理員狀態失敗:", error);
-
-        // 開發環境下出錯時允許訪問
-        if (process.env.NODE_ENV === "development") {
-          console.log("AdminPage: 開發環境，權限檢查錯誤時默認通過");
-          setIsAdmin(true);
-          setLoading(false);
-          return;
-        }
-
         navigate("/admin-login");
       } finally {
         setLoading(false);

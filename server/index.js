@@ -3,8 +3,6 @@ const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const { rtdb, isOfflineMode, isConnected } = require('./firebase');
-// 移除有問題的引入方式
-// const { ref, set, get, update, serverTimestamp } = require('firebase-admin/database');
 require('dotenv').config(); // 確保加載 .env 檔案
 
 // 使用 Firebase Admin SDK 的數據庫操作
@@ -86,7 +84,7 @@ setInterval(() => {
       });
     }
   }
-}, 10000); // 每10秒檢查一次
+}, 600000); // 每10分鐘檢查一次
 
 // 從Firestore獲取餐廳數據
 async function getRestaurants() {
@@ -1045,10 +1043,10 @@ setInterval(async () => {
     if (emptySnapshot.exists()) {
       const roomsData = emptySnapshot.val();
       const now = Date.now();
-      const oneDay = 24 * 60 * 60 * 1000; // 24小時
+      const oneDay = 2 * 60 * 60 * 1000; // 2小時
 
       for (const [roomId, room] of Object.entries(roomsData)) {
-        // 如果房間被標記為空並且超過24小時
+        // 如果房間被標記為空並且超過2小時
         if (room.meta && room.meta.empty) {
           const emptyTime = new Date(room.meta.empty).getTime();
           if (!isNaN(emptyTime) && now - emptyTime > oneDay) {

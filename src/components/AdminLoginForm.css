@@ -1,0 +1,183 @@
+/* AdminLoginForm.css */
+
+.admin-login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f3f4f6;
+    padding: 20px;
+  }
+  
+  .admin-login-container {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 40px;
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  
+  .admin-login-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  
+  .admin-logo {
+    margin: 0 auto 24px auto;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .admin-login-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+  
+  .welcome-text {
+    color: #6B7280;
+    font-size: 14px;
+  }
+  
+  .admin-login-form {
+    margin-bottom: 24px;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .input-wrapper {
+    position: relative;
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 10px 40px 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #D1D5DB;
+    background-color: white;
+    font-size: 14px;
+    color: #111827;
+    transition: border-color 0.15s ease-in-out;
+    box-sizing: border-box;
+  }
+  
+  .form-group input:focus {
+    outline: none;
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+  
+  .form-group input.error {
+    border-color: #F87171;
+  }
+  
+  .input-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  
+  .error-message {
+    background-color: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .error-message svg {
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+  
+  .error-message p {
+    color: #EF4444;
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .login-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4F46E5;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease-in-out;
+  }
+  
+  .login-button:hover {
+    background-color: #4338CA;
+  }
+  
+  .login-button:disabled {
+    background-color: #9CA3AF;
+    cursor: not-allowed;
+  }
+  
+  .login-button.loading {
+    background-color: #9CA3AF;
+  }
+  
+  .loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid white;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .login-footer {
+    text-align: center;
+    margin-top: 24px;
+    border-top: 1px solid #E5E7EB;
+    padding-top: 24px;
+  }
+  
+  .help-text {
+    color: #6B7280;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .forgot-link {
+    color: #4F46E5;
+    font-size: 14px;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s ease-in-out;
+  }
+  
+  .forgot-link:hover {
+    color: #4338CA;
+  }
