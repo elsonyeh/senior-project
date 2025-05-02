@@ -201,8 +201,3 @@ if (auth) {
 
 // 導出初始化的服務
 export { app, analytics, db, auth, rtdb, storage, isAdmin };
-
-// 提供一個檢查連接的函數
-export const isFirebaseConnected = () => {
-  return !!rtdb; // 如果 rtdb 初始化成功則返回 true
-};
