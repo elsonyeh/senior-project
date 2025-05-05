@@ -1,10 +1,15 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import CardStack from "./common/CardStack";
 import "./SwiftTasteCard.css";
 
 // 單題同步答題組件 - 專為多人模式設計（移除點擊投票功能）
-export default function QuestionSwiperMotionSingle({ question, onAnswer, voteStats, disableClickToVote = false }) {
+export default function QuestionSwiperMotionSingle({ 
+  question, 
+  onAnswer, 
+  voteStats, 
+  disableClickToVote = false 
+}) {
   const [lastDirection, setLastDirection] = useState("");
   const [hasVoted, setHasVoted] = useState(false);
   const [voteData, setVoteData] = useState({ left: 0, right: 0 });
@@ -13,15 +18,22 @@ export default function QuestionSwiperMotionSingle({ question, onAnswer, voteSta
   const voteStatsRef = useRef(voteStats);
 
   // 只有當實際值改變時才更新state，避免不必要的渲染
-  React.useEffect(() => {
+  useEffect(() => {
     if (voteStats && JSON.stringify(voteStats) !== JSON.stringify(voteStatsRef.current)) {
       voteStatsRef.current = voteStats;
-      setVoteData({
-        left: voteStats.left || 0,
-        right: voteStats.right || 0
-      });
+      
+      // 提取左右選項的票數
+      if (question) {
+        const leftCount = voteStats[question.leftOption] || 0;
+        const rightCount = voteStats[question.rightOption] || 0;
+        
+        setVoteData({
+          left: leftCount,
+          right: rightCount
+        });
+      }
     }
-  }, [voteStats]);
+  }, [voteStats, question]);
 
   // 處理滑動時的視覺反饋
   const handleLocalSwipe = (dir) => {
@@ -73,6 +85,11 @@ export default function QuestionSwiperMotionSingle({ question, onAnswer, voteSta
     return <div>無法載入問題...</div>;
   }
 
+  // 計算投票百分比
+  const totalVotes = voteData.left + voteData.right;
+  const leftPercentage = totalVotes > 0 ? Math.round((voteData.left / totalVotes) * 100) : 50;
+  const rightPercentage = 100 - leftPercentage;
+
   return (
     <div className="question-swiper-container">
       {/* 使用CardStack來實現滑動效果 */}
@@ -85,23 +102,33 @@ export default function QuestionSwiperMotionSingle({ question, onAnswer, voteSta
           <>
             <h3 className="question-text">{formatQuestionText(q)}</h3>
             
-            {/* 選項顯示 - 移除點擊功能 */}
+            {/* 選項顯示 */}
             <div className="options-display">
               <div className={`left ${lastDirection === "left" ? "option-active" : ""}`}>
                 <p className={lastDirection === "left" ? "option-highlight-text" : ""}>
                   {q.leftOption}
                 </p>
+                {voteData.left > 0 && !hasVoted && (
+                  <div className="live-vote-count">
+                    {voteData.left} 票
+                  </div>
+                )}
               </div>
               
               <div className={`right ${lastDirection === "right" ? "option-active" : ""}`}>
                 <p className={lastDirection === "right" ? "option-highlight-text" : ""}>
                   {q.rightOption}
                 </p>
+                {voteData.right > 0 && !hasVoted && (
+                  <div className="live-vote-count">
+                    {voteData.right} 票
+                  </div>
+                )}
               </div>
             </div>
             
             {hasVoted && (
-              <motion.div 
+              <motion.div   
                 className="vote-hint"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -124,6 +151,14 @@ export default function QuestionSwiperMotionSingle({ question, onAnswer, voteSta
                 transition={{ delay: 0.5 }}
               >
                 <p>左右滑動卡片進行選擇</p>
+                
+                {/* 實時投票人數顯示 */}
+                {totalVotes > 0 && (
+                  <div className="live-votes-indicator">
+                    <span className="live-votes-icon">👥</span> 
+                    <span className="live-votes-text">{totalVotes} 人已投票</span>
+                  </div>
+                )}
               </motion.div>
             )}
           </>
