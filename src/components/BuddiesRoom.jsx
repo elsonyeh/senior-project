@@ -8,7 +8,8 @@ import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import BuddiesRecommendation from "./BuddiesRecommendation";
 import QRScannerModal from "./QRScannerModal";
 import { buddiesBasicQuestions } from "../data/buddiesBasicQuestions";
-import { getRandomFunQuestions } from '../logic/enhancedRecommendLogicFrontend.js';
+import { getRandomFunQuestions } from "../logic/enhancedRecommendLogicFrontend.js";
+import BuddiesQuestionSwiper from "./BuddiesQuestionSwiper";
 
 export default function BuddiesRoom() {
   const [roomId, setRoomId] = useState("");
@@ -28,7 +29,26 @@ export default function BuddiesRoom() {
   const [showConnectionError, setShowConnectionError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    type: "success",
+  });
+  const [copyingRoom, setCopyingRoom] = useState(false);
 
+  function ToastNotification({ message, type, visible, onHide }) {
+    if (!visible) return null;
+
+    return (
+      <div
+        className={`toast-notification ${type || "success"}`}
+        onClick={onHide}
+      >
+        <div className="toast-icon">{type === "error" ? "✖" : "✓"}</div>
+        <div className="toast-message">{message}</div>
+      </div>
+    );
+  }
 
   // 初始化用戶ID和處理URL參數
   useEffect(() => {
@@ -100,21 +120,33 @@ export default function BuddiesRoom() {
       console.log("收到開始問答信號");
       // 使用 Buddies 模式特定的基本問題集（已移除"今天是一個人還是有朋友？"問題）
       const randomFun = getRandomFunQuestions(funQuestions, 3);
-      
+
       // 為問題添加來源標記
-      const basicWithSource = buddiesBasicQuestions.map(q => ({
+      const basicWithSource = buddiesBasicQuestions.map((q) => ({
         ...q,
-        source: "basic" // 標記為基本問題
+        source: "basic", // 標記為基本問題
       }));
-      
-      const funWithSource = randomFun.map(q => ({
+
+      const funWithSource = randomFun.map((q) => ({
         ...q,
-        source: "fun" // 標記為趣味問題
+        source: "fun", // 標記為趣味問題
       }));
-      
+
       const all = [...basicWithSource, ...funWithSource];
       setQuestions(all);
       setPhase("questions");
+    });
+
+    // 接收新投票事件
+    socket.on("newVote", (voteData) => {
+      console.log("收到新投票:", voteData);
+      // 不需要處理，BuddiesQuestionSwiper 組件會自動處理
+    });
+
+    // 接收投票統計信息
+    socket.on("voteStats", (stats) => {
+      console.log("收到投票統計:", stats);
+      // 不需要處理，BuddiesQuestionSwiper 組件會自動處理
     });
 
     // 接收餐廳推薦
@@ -138,6 +170,8 @@ export default function BuddiesRoom() {
       socket.off("disconnect", handleDisconnect);
       socket.off("updateUsers");
       socket.off("startQuestions");
+      socket.off("newVote");
+      socket.off("voteStats");
       socket.off("groupRecommendations");
       socket.off("recommendError");
     };
@@ -328,16 +362,55 @@ export default function BuddiesRoom() {
 
   // 複製房號到剪貼簿
   const copyToClipboard = async () => {
+    // 防止重複點擊
+    if (copyingRoom) return;
+
+    // 設置按鈕狀態為復制中
+    setCopyingRoom(true);
+
     try {
       await navigator.clipboard.writeText(roomId);
-      alert("房號已複製 ✅");
+
+      // 顯示成功通知
+      setToast({
+        visible: true,
+        message: "房號已複製",
+        type: "success",
+      });
+
+      // 2 秒後自動關閉通知
+      setTimeout(() => {
+        setToast((prev) => ({ ...prev, visible: false }));
+        // 重置按鈕狀態
+        setCopyingRoom(false);
+      }, 2000);
     } catch (err) {
-      alert("複製失敗，請手動複製");
+      // 顯示錯誤通知
+      setToast({
+        visible: true,
+        message: "複製失敗，請手動複製",
+        type: "error",
+      });
+
+      // 1.5 秒後自動關閉通知
+      setTimeout(() => {
+        setToast((prev) => ({ ...prev, visible: false }));
+        // 重置按鈕狀態
+        setCopyingRoom(false);
+      }, 1500);
     }
   };
 
+  const [sharing, setSharing] = useState(false);
+
   // 分享房間 - 僅分享房號，不包含用戶資訊
   const shareRoom = async () => {
+    // 防止重複點擊
+    if (sharing) return;
+
+    // 設置按鈕狀態為分享中
+    setSharing(true);
+
     // 生成只包含房號的乾淨URL
     const cleanUrl = `${window.location.origin}/buddies?room=${roomId}`;
 
@@ -348,12 +421,52 @@ export default function BuddiesRoom() {
           text: "來加入我的TasteBuddies房間一起選餐廳吧！",
           url: cleanUrl,
         });
+
+        // 即使分享成功，也設置一個計時器來重置按鈕狀態
+        setTimeout(() => {
+          setSharing(false);
+        }, 2000);
       } catch (err) {
-        console.error("分享失敗", err);
+        // 忽略用戶取消分享的錯誤
+        if (err.name !== "AbortError") {
+          console.error("分享失敗", err);
+          setToast({
+            visible: true,
+            message: "分享失敗",
+            type: "error",
+          });
+        }
+
+        // 重置按鈕狀態
+        setSharing(false);
       }
     } else {
-      await navigator.clipboard.writeText(cleanUrl);
-      alert("已複製分享連結 ✅");
+      try {
+        await navigator.clipboard.writeText(cleanUrl);
+        setToast({
+          visible: true,
+          message: "分享連結已複製",
+          type: "success",
+        });
+
+        // 2秒後關閉通知並重置按鈕狀態
+        setTimeout(() => {
+          setToast((prev) => ({ ...prev, visible: false }));
+          setSharing(false);
+        }, 2000);
+      } catch (err) {
+        setToast({
+          visible: true,
+          message: "複製連結失敗",
+          type: "error",
+        });
+
+        // 2秒後關閉通知並重置按鈕狀態
+        setTimeout(() => {
+          setToast((prev) => ({ ...prev, visible: false }));
+          setSharing(false);
+        }, 2000);
+      }
     }
   };
 
@@ -438,8 +551,20 @@ export default function BuddiesRoom() {
               includeMargin={false}
             />
             <div style={{ margin: "1rem 0" }}>
-              <button onClick={copyToClipboard}>📋 複製房號</button>
-              <button onClick={shareRoom}>🔗 分享連結</button>
+              <button
+                onClick={copyToClipboard}
+                disabled={copyingRoom}
+                className={copyingRoom ? "copy-button-active" : "copy-button"}
+              >
+                {copyingRoom ? "複製中..." : "📋 複製房號"}
+              </button>
+              <button
+                onClick={shareRoom}
+                disabled={sharing}
+                className={sharing ? "share-button-active" : "share-button"}
+              >
+                {sharing ? "分享中..." : "🔗 分享連結"}
+              </button>
             </div>
             <h4>目前成員：</h4>
             <ul>
@@ -494,7 +619,8 @@ export default function BuddiesRoom() {
 
       case "questions":
         return (
-          <QuestionSwiperMotion
+          <BuddiesQuestionSwiper
+            roomId={roomId}
             questions={formatQuestionsForSwiper(questions)}
             onComplete={handleSubmitAnswers}
           />
@@ -546,6 +672,13 @@ export default function BuddiesRoom() {
 
   return (
     <div className="buddies-room">
+      {/* 通知元件 */}
+      <ToastNotification
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
       {!joined ? (
         <>
           <h2>TasteBuddies - 一起選餐廳</h2>

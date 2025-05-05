@@ -1,4 +1,4 @@
-/* BuddiesRoom.css - 更新版本 */
+/* BuddiesRoom.css - 優化版本 */
 .buddies-room {
   padding: 2rem;
   max-width: 600px;
@@ -34,7 +34,10 @@
   box-shadow: 0 0 0 2px rgba(255, 159, 104, 0.2);
 }
 
-.buddies-room button {
+/* 統一按鈕樣式 */
+.buddies-room button,
+.copy-button,
+.share-button {
   margin: 0.5rem;
   padding: 12px 20px;
   background-color: #ff9f68;
@@ -48,7 +51,9 @@
   box-shadow: 0 4px 10px rgba(255, 159, 104, 0.2);
 }
 
-.buddies-room button:hover {
+.buddies-room button:hover,
+.copy-button:hover,
+.share-button:hover {
   background-color: #ff7f36;
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(255, 127, 54, 0.3);
@@ -59,6 +64,41 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* 按鈕活動狀態 */
+.copy-button-active,
+.share-button-active {
+  margin: 0.5rem;
+  padding: 12px 20px;
+  background-color: #FF6B6B !important;
+  border: none;
+  color: white;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.copy-button-active:after,
+.share-button-active:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: copyingShimmer 1.5s infinite;
 }
 
 .buddies-room ul {
@@ -235,6 +275,245 @@
   color: #333;
 }
 
+/* 優化版 Toast 通知樣式 */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 85%;
+  background-color: #fff;
+  color: #333;
+  padding: 14px 20px;
+  border-radius: 50px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 1000;
+  animation: toastFadeInFromTop 0.3s ease-out, toastFloatFromTop 0.5s ease-in-out 0.3s;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+}
+
+.toast-notification.success {
+  background-color: #f0fff4;
+  border-left: 6px solid #4CAF50;
+}
+
+.toast-notification.error {
+  background-color: #fff5f5;
+  border-left: 6px solid #F44336;
+}
+
+.toast-icon {
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.toast-notification.success .toast-icon {
+  color: #4CAF50;
+}
+
+.toast-notification.error .toast-icon {
+  color: #F44336;
+}
+
+.toast-message {
+  flex: 1;
+  text-align: left;
+  line-height: 1.4;
+}
+
+@keyframes toastFadeInFromTop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toastFloatFromTop {
+  0% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 5px);
+  }
+  100% {
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes copyingShimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* 投票趨勢指示器 */
+.vote-trend-indicator {
+  margin-top: 0.8rem;
+  text-align: center;
+}
+
+.vote-trend-text {
+  font-size: 0.85rem;
+  color: #444;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.vote-trend-bar {
+  height: 4px;
+  background-color: #f0f0f0;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.vote-trend-progress {
+  height: 100%;
+  width: 0;
+  transition: width 1s ease-in-out;
+}
+
+/* 投票參與者頭像 */
+.vote-participants {
+  margin-top: 1.2rem;
+  text-align: center;
+}
+
+.vote-participants-title {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.vote-participants-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 0.5rem;
+}
+
+.vote-participant-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  animation: popIn 0.5s ease-out;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 等待動畫優化 */
+.waiting-animation {
+  margin-top: 0;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.waiting-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 0 auto 0.6rem;
+}
+
+.waiting-dots span {
+  width: 15px; /* 放大動畫點 */
+  height: 15px;
+  background-color: #FF6B6B;
+  border-radius: 50%;
+  display: inline-block;
+  animation: dotBounce 1.5s infinite ease-in-out;
+}
+
+
+.waiting-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+  background-color: #FF9F68;
+}
+
+.waiting-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+  background-color: #6874E8;
+}
+
+@keyframes dotBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.waiting-text {
+  color: #444;
+  font-size: 1.1rem; /* 放大等待文字 */
+  font-weight: 500;
+  margin-top: 0.4rem;
+}
+
+/* 投票狀態標題優化 */
+.vote-status-title {
+  display: flex;
+  align-items: center;
+}
+
+/* 優化等待容器 */
+.waiting-container {
+  text-align: center;
+  margin: 1rem auto;
+  padding: 1rem;
+  max-width: 90%;
+}
+
+.waiting-container h3 {
+  color: #555;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+}
+
 /* 媒體查詢，適配移動設備 */
 @media (max-width: 480px) {
   .buddies-room {
@@ -252,5 +531,33 @@
   .buddies-room button {
     width: 100%;
     margin: 0.3rem 0;
+  }
+  
+  .toast-notification {
+    top: 10px;
+    max-width: 90%;
+    font-size: 0.9rem;
+    padding: 12px 16px;
+  }
+  
+  .toast-icon {
+    font-size: 1.1rem;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .vote-status-container {
+    padding: 1rem;
+    margin: 1rem auto;
+  }
+  
+  .vote-participants-avatars {
+    gap: 4px;
+  }
+  
+  .vote-participant-avatar {
+    width: 25px;
+    height: 25px;
+    font-size: 0.8rem;
   }
 }
