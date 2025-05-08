@@ -480,6 +480,8 @@ export default function BuddiesRoom() {
         Array.isArray(answerData.questionSources) &&
         answerData.questionSources.length > 0;
 
+      console.log(`提交答案，基本問題數量: ${buddiesBasicQuestions.length}`);
+
       socket.emit("submitAnswers", {
         roomId,
         answers: answerData.answers,
@@ -496,6 +498,7 @@ export default function BuddiesRoom() {
         answers: answerData.answers,
         hasQuestionTexts: Array.isArray(answerData.questionTexts),
         hasQuestionSources: hasQuestionSources,
+        basicQuestionsCount: buddiesBasicQuestions.length,
       });
     } else {
       // 向後兼容的處理方法
@@ -503,7 +506,9 @@ export default function BuddiesRoom() {
         ? answerData
         : Object.values(answerData);
 
-      console.log("提交傳統格式答案:", answers.length);
+      console.log(
+        `提交傳統格式答案，長度: ${answers.length}，基本問題數量: ${buddiesBasicQuestions.length}`
+      );
 
       socket.emit("submitAnswers", {
         roomId,

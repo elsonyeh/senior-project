@@ -15,10 +15,14 @@ export default function BuddiesQuestionSwiper({
   const [waiting, setWaiting] = useState(false);
   const [voteStats, setVoteStats] = useState({});
   const [voteBubbles, setVoteBubbles] = useState([]); // 改為數組，存儲多個氣泡
+  const [waitingText, setWaitingText] = useState("等待其他人回答...");
+  // 新增：追蹤是否顯示結果倒計時
+  const [showingResults, setShowingResults] = useState(false);
 
   // Refs - 不會觸發重新渲染
   const answersRef = useRef({});
   const isMountedRef = useRef(true);
+  const timeoutRef = useRef(null);
 
   // 新增：記錄問題文本和問題來源
   const questionTextsRef = useRef([]);
@@ -53,6 +57,14 @@ export default function BuddiesQuestionSwiper({
   const questionTexts = useRef(safeQuestions.map((q) => q.text)).current;
   const questionSources = useRef(safeQuestions.map((q) => q.source)).current;
 
+  // 清理所有計時器的函數
+  const clearAllTimeouts = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
   // 顯示投票氣泡動畫 - 修改為支持多個氣泡往下疊加，並調整顯示時間為3秒
   const showVoteBubble = useCallback((voteData) => {
     if (!isMountedRef.current) return;
@@ -86,10 +98,12 @@ export default function BuddiesQuestionSwiper({
   }, []);
 
   // 處理答案提交
+  // 處理答案提交
   const handleAnswer = useCallback(
     (answer) => {
       if (!isMountedRef.current) return;
 
+      console.log(`提交答案: ${answer}, 題目 ${questionIndex}`);
       setWaiting(true);
 
       // 保存答案，同時更新ref
@@ -108,18 +122,36 @@ export default function BuddiesQuestionSwiper({
       // 獲取用戶名
       const userName = localStorage.getItem("userName") || "用戶";
 
-      // 發送答案到服務器
-      socket.emit("submitAnswer", {
-        roomId,
-        index: questionIndex,
-        answer,
-        questionText,
-        questionSource, // 新增：發送問題來源
-        userName,
-      });
+      // 構建完整答案數據
+      const answersArray = Object.values(newAnswers);
+      const questionTextsArray = [...questionTextsRef.current];
+      const questionSourcesArray = [...questionSourcesRef.current];
+
+      // 發送答案到服務器，確保使用正確的事件名稱 "submitAnswers"
+      console.log(
+        `發送答案到服務器: roomId=${roomId}, index=${questionIndex}, answersLength=${answersArray.length}`
+      );
+
+      socket.emit(
+        "submitAnswers",
+        {
+          roomId,
+          answers: answersArray,
+          questionTexts: questionTextsArray,
+          questionSources: questionSourcesArray,
+          index: questionIndex,
+        },
+        (response) => {
+          // 處理服務器響應
+          if (response && !response.success) {
+            console.error(`答案提交回調錯誤: ${response.error}`);
+          } else {
+            console.log("答案提交成功");
+          }
+        }
+      );
 
       // 模擬本地投票狀態更新
-      // 這樣用戶在等待其他人答題時就能立即看到自己的投票
       setVoteStats((prev) => {
         const updated = { ...prev };
         updated[answer] = (updated[answer] || 0) + 1;
@@ -131,14 +163,25 @@ export default function BuddiesQuestionSwiper({
 
   // 處理Socket事件監聽 - 這是主要的useEffect
   useEffect(() => {
+    console.log("初始化Socket事件監聽，當前題目:", questionIndex);
+
     // 設置組件已掛載標記
     isMountedRef.current = true;
 
-    // 收到下一題信號
+    // 在組件內部創建timeoutRef，確保每個實例都有自己的引用
+    const timeoutRef = { current: null };
+
+    // 收到下一題信號 - 重新設計此函數
     const handleNextQuestion = (data) => {
-      console.log("收到下一題信號:", data); // 添加日誌
+      console.log(`收到下一題信號: ${JSON.stringify(data)}`);
 
       if (!isMountedRef.current) return;
+
+      // 先清理任何現有的計時器
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
 
       // 重要：強制確保數據轉換為數字類型
       const nextIndex =
@@ -146,28 +189,49 @@ export default function BuddiesQuestionSwiper({
           ? Number(data.nextIndex)
           : questionIndex + 1;
 
-      // 如果是最後一個人完成滑動，多顯示幾秒結果
-      if (data && data.isLastUser) {
-        console.log("最後一位用戶完成，延遲3秒後切換到題目:", nextIndex);
+      // 防止退步，確保新題目索引大於當前索引
+      if (nextIndex <= questionIndex) {
+        console.warn(
+          `收到的題目索引 ${nextIndex} 不大於當前索引 ${questionIndex}，忽略`
+        );
+        return;
+      }
 
-        // 延遲3秒後切換到下一題
-        setTimeout(() => {
+      // 檢查是否為最後一個用戶完成的信號
+      if (data && data.isLastUser) {
+        console.log("所有用戶已完成選擇，將在2秒後切換到題目:", nextIndex);
+
+        // 更新等待文本
+        const waitingElement = document.querySelector(".waiting-text");
+        if (waitingElement) {
+          waitingElement.textContent = "所有人都完成了！即將進入下一題...";
+        }
+
+        // 延遲2秒後再切換題目，讓用戶看到結果
+        timeoutRef.current = setTimeout(() => {
           if (isMountedRef.current) {
-            // 再次檢查組件是否掛載
-            console.log("執行延遲切換:", nextIndex);
-            setWaiting(false);
+            console.log("2秒後切換到題目:", nextIndex);
             setQuestionIndex(nextIndex);
-            // 清空投票統計
             setVoteStats({});
+            setWaiting(false);
+
+            // 重置等待文本 (如果使用DOM操作的話)
+            const waitingElement = document.querySelector(".waiting-text");
+            if (waitingElement) {
+              waitingElement.textContent = "等待其他人回答...";
+            }
           }
-        }, 3000);
+        }, 2000);
       } else {
-        // 立即切換到下一題
-        console.log("立即切換到題目:", nextIndex);
-        setWaiting(false);
-        setQuestionIndex(nextIndex);
-        // 清空投票統計
-        setVoteStats({});
+        // 如果不是最後一個用戶，仍然添加少量延遲以避免同步問題
+        timeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current) {
+            console.log("立即切換到題目:", nextIndex);
+            setQuestionIndex(nextIndex);
+            setVoteStats({});
+            setWaiting(false);
+          }
+        }, 100);
       }
     };
 
@@ -219,6 +283,12 @@ export default function BuddiesQuestionSwiper({
     const handleGroupRecommendations = (recs) => {
       if (!isMountedRef.current) return;
 
+      // 清理所有計時器
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
       // 使用ref獲取最新狀態，並添加問題文本和來源
       const result = {
         answers: Object.values(answersRef.current),
@@ -253,17 +323,24 @@ export default function BuddiesQuestionSwiper({
     // 重新連接時也發送就緒信號
     socket.on("connect", sendReadySignal);
 
-    // 清理函數 - 移除所有事件監聽
+    // 清理函數 - 移除所有事件監聽和計時器
     return () => {
+      console.log("清理Socket事件監聽");
       isMountedRef.current = false;
       socket.off("nextQuestion", handleNextQuestion);
       socket.off("voteStats", handleVoteStats);
       socket.off("newVote", handleNewVote);
       socket.off("groupRecommendations", handleGroupRecommendations);
       socket.off("connect", sendReadySignal);
+
+      // 清理計時器
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
-  }, [onComplete, questionIndex, roomId, showVoteBubble]);
-  
+  }, [questionIndex, roomId, showVoteBubble]);
+
   // 如果所有問題都回答完了，顯示等待結果畫面
   if (questionIndex >= safeQuestions.length) {
     return (
@@ -333,7 +410,7 @@ export default function BuddiesQuestionSwiper({
               <span></span>
               <span></span>
             </div>
-            <div className="waiting-text">等待其他人回答...</div>
+            <div className="waiting-text">{waitingText}</div>
           </div>
 
           {/* 投票統計視覺化 - 修復顯示邏輯 */}
@@ -395,7 +472,9 @@ export default function BuddiesQuestionSwiper({
                       // 總是返回 motion.div，即使百分比為 0
                       return (
                         <motion.div
-                          className="vote-bar-left-single"
+                          className={`vote-bar-left-single ${
+                            showingResults ? "vote-pulse" : ""
+                          }`}
                           initial={{ width: "0%" }}
                           animate={{ width: `${leftPercentage}%` }}
                           transition={{
