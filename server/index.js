@@ -686,19 +686,19 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 提交答案
-  socket.on('submitAnswers', async ({ roomId, answers, questionTexts, questionSources, index }) => {
+  // 提交答案 - 修改版本，修復直接跳到推薦的問題
+  socket.on("submitAnswers", async ({ roomId, answers, questionTexts, questionSources, index, basicQuestions }, callback) => {
     try {
+      console.log(`[${roomId}] 收到答案提交 - 用戶 ${socket.id}，題目 ${index}/${answers?.length || 0}`);
+
       const room = rooms[roomId];
       if (!room) {
-        if (typeof callback === 'function') {
-          callback({ success: false, error: '房間不存在' });
-        }
+        console.error(`[${roomId}] 房間不存在!`);
+        if (typeof callback === 'function') callback({ success: false, error: '房間不存在' });
         return;
       }
 
-      // 保存結構化答案到內存 (支援問題文本和問題來源)
-      // 檢查是否提供了問題文本和來源
+      // 保存結構化答案到內存
       if (Array.isArray(answers)) {
         if (Array.isArray(questionTexts) || Array.isArray(questionSources)) {
           // 如果提供了結構化資料，使用新格式儲存
@@ -710,7 +710,6 @@ io.on('connection', (socket) => {
 
           // 如果沒有提供問題來源但有問題文本，嘗試判斷問題類型
           if (!questionSources && questionTexts && questionTexts.length > 0) {
-            // 使用 enhancedLogic.isBasicQuestion 判斷
             room.answers[socket.id].questionSources = questionTexts.map(
               text => enhancedLogic.isBasicQuestion(text) ? 'basic' : 'fun'
             );
@@ -720,13 +719,20 @@ io.on('connection', (socket) => {
           room.answers[socket.id] = answers;
         }
       } else {
-        // 答案格式錯誤，記錄錯誤日誌
         console.error("提交答案格式錯誤:", answers);
         if (typeof callback === 'function') {
           callback({ success: false, error: '答案格式錯誤' });
         }
         return;
       }
+
+      // 如果提供了 basicQuestions，保存到房間對象中供推薦算法使用
+      if (basicQuestions) {
+        room.basicQuestions = basicQuestions;
+      }
+
+      // 保存當前題目索引，供clientReady事件使用
+      room.currentQuestionIndex = index;
 
       // 如果 Firebase 在線，保存到 Firebase
       if (firebaseOnline) {
@@ -743,55 +749,151 @@ io.on('connection', (socket) => {
       }
 
       // 檢查是否所有會員都已回答完畢
-      const memberCount = Object.keys(room.members).length;
-      const answerCount = Object.keys(room.answers).length;
+      const memberCount = Object.keys(room.members || {}).length;
+      const answerCount = Object.keys(room.answers || {}).length;
+
+      console.log(`[${roomId}] 答題進度 ${answerCount}/${memberCount}, 當前題目: ${index}`);
+
+      // 獲取所有基本問題和趣味問題的總數（總題數）
+      // 重要：從客戶端傳來的 basicQuestions 獲取基礎題數量
+      const basicQuestionsCount = room.basicQuestions ? room.basicQuestions.length : 5;
+      const funQuestionsCount = 3; // 預設有3個趣味問題
+      const totalQuestionsCount = basicQuestionsCount + funQuestionsCount;
+
+      console.log(`[${roomId}] 總題數: ${totalQuestionsCount} (基本: ${basicQuestionsCount}, 趣味: ${funQuestionsCount})`);
+
+      // 重要修改：只有在最後一題且所有成員都已回答時，才生成推薦
+      const isLastQuestion = parseInt(index) >= totalQuestionsCount - 1;
 
       if (answerCount >= memberCount) {
-        try {
-          // 獲取餐廳數據
-          const restaurants = await getRestaurants();
+        // 所有成員已提交當前題目的答案
+        console.log(`[${roomId}] 所有成員已提交第 ${index} 題答案`);
 
-          if (restaurants.length > 0) {
-            // 檢查 recommendForGroup 函數是否存在
-            if (typeof enhancedLogic.recommendForGroup !== 'function') {
-              console.error('recommendForGroup 函數不存在，請檢查導入方式');
-              io.to(roomId).emit('recommendError', { error: '推薦系統暫時無法使用，請稍後再試' });
-              return;
-            }
+        // 發送下一題信號
+        const currentIndex = parseInt(index || 0);
+        const nextIndex = currentIndex + 1;
 
-            // 使用優化的推薦邏輯
-            const recommendations = enhancedLogic.recommendForGroup(
-              room.answers,
-              restaurants,
-              {
-                basicQuestionsCount: 5,
-                debug: process.env.NODE_ENV === 'development',
-                basicQuestions: room.basicQuestions || []
+        // 如果是最後一題，準備生成推薦
+        if (isLastQuestion) {
+          console.log(`[${roomId}] 這是最後一題，將生成推薦結果`);
+
+          // 先發送下一題信號（這個將不會被使用，但為了完整性）
+          io.to(roomId).emit('nextQuestion', {
+            nextIndex: nextIndex,
+            isLastUser: true
+          });
+
+          // 延遲處理推薦結果
+          setTimeout(async () => {
+            try {
+              const restaurants = await getRestaurants();
+
+              if (restaurants.length > 0) {
+                if (typeof enhancedLogic.recommendForGroup !== 'function') {
+                  console.error('recommendForGroup 函數不存在，請檢查導入方式');
+                  io.to(roomId).emit('recommendError', { error: '推薦系統暫時無法使用，請稍後再試' });
+                  return;
+                }
+
+                console.log(`[${roomId}] 使用 ${basicQuestionsCount} 個基本問題進行推薦`);
+
+                const recommendations = enhancedLogic.recommendForGroup(
+                  room.answers,
+                  restaurants,
+                  {
+                    basicQuestionsCount: basicQuestionsCount,
+                    debug: process.env.NODE_ENV === 'development',
+                    basicQuestions: room.basicQuestions || []
+                  }
+                );
+
+                await saveRecommendationsToFirebase(roomId, recommendations);
+                room.stage = 'vote';
+                io.to(roomId).emit('groupRecommendations', recommendations);
+                console.log(`[${roomId}] 已發送推薦結果，共 ${recommendations.length} 家餐廳`);
+              } else {
+                throw new Error('未獲取到餐廳數據');
               }
-            );
+            } catch (recError) {
+              console.error(`[${roomId}] 生成推薦結果錯誤:`, recError);
+              io.to(roomId).emit('recommendError', { error: '生成推薦失敗，請重試' });
+            }
+          }, 3000); // 延遲3秒處理推薦結果
+        } else {
+          // 如果不是最後一題，只發送下一題信號
+          console.log(`[${roomId}] 發送下一題信號: nextIndex=${nextIndex}, isLastUser=true`);
+          io.to(roomId).emit('nextQuestion', {
+            nextIndex: nextIndex,
+            isLastUser: true
+          });
+        }
+      } else {
+        // 不是所有成員都已提交答案
+        console.log(`[${roomId}] 仍有 ${memberCount - answerCount} 成員未提交答案`);
 
-            // 保存推薦結果
-            await saveRecommendationsToFirebase(roomId, recommendations);
+        // 發送投票統計
+        const currentQuestion = index || 0;
+        const questionStats = {};
 
-            // 更新房間狀態
-            room.stage = 'vote';
-
-            // 發送推薦結果給所有房間成員
-            io.to(roomId).emit('groupRecommendations', recommendations);
-          } else {
-            throw new Error('未獲取到餐廳數據');
+        // 收集該題的答案統計
+        Object.entries(room.answers).forEach(([userId, userData]) => {
+          let answer;
+          if (typeof userData === 'object' && Array.isArray(userData.answers)) {
+            answer = userData.answers[currentQuestion];
+          } else if (Array.isArray(userData)) {
+            answer = userData[currentQuestion];
           }
-        } catch (recError) {
-          console.error("生成推薦結果錯誤:", recError);
-          // 通知用戶推薦失敗
-          io.to(roomId).emit('recommendError', { error: '生成推薦失敗，請重試' });
+
+          if (answer) {
+            questionStats[answer] = (questionStats[answer] || 0) + 1;
+          }
+        });
+
+        io.to(roomId).emit('voteStats', questionStats);
+
+        // 發送新投票通知
+        const userName = room.members[socket.id]?.name || "匿名用戶";
+        const userAnswer = Array.isArray(answers) ? answers[answers.length - 1] : null;
+
+        if (userAnswer) {
+          io.to(roomId).emit('newVote', {
+            option: userAnswer,
+            senderId: socket.id,
+            userName: userName
+          });
         }
       }
     } catch (error) {
-      console.error("提交答案錯誤:", error);
+      console.error(`[${roomId}] 處理答案錯誤:`, error);
       if (typeof callback === 'function') {
-        callback({ success: false, error: '提交答案失敗' });
+        callback({ success: false, error: `處理答案錯誤: ${error.message}` });
       }
+    }
+  });
+
+  // 添加一個新的事件處理函數，用於客戶端準備就緒信號
+  socket.on("clientReady", ({ roomId, currentIndex }) => {
+    console.log(`[${roomId}] 用戶 ${socket.id} 已準備好題目 ${currentIndex}`);
+
+    const room = rooms[roomId];
+    if (!room) {
+      console.error(`[${roomId}] 客戶端準備失敗: 房間不存在`);
+      return;
+    }
+
+    // 檢查是否所有成員已回答當前題目
+    const memberCount = Object.keys(room.members || {}).length;
+    const answerCount = Object.keys(room.answers || {}).length;
+
+    // 如果客戶端問了一個所有人都已經回答完的題目，立即發送下一題信號
+    if (answerCount >= memberCount && currentIndex === parseInt(room.currentQuestionIndex || 0)) {
+      console.log(`[${roomId}] 用戶 ${socket.id} 請求的題目已全部回答，發送下一題信號`);
+
+      // 發送下一題信號給請求的客戶端
+      socket.emit('nextQuestion', {
+        nextIndex: currentIndex + 1,
+        isLastUser: false
+      });
     }
   });
 
