@@ -172,7 +172,7 @@
 }
 
 .restaurant-info-blur h3 {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: bold;
   margin-bottom: 1.5rem;
 }
@@ -424,26 +424,6 @@
     height: 60px;
     gap: 120px;
   }
-}
-
-
-/* --- Buttons --- */
-.btn-start,
-.btn-restart {
-  margin-top: 24px;
-  background-color: #ff9f68;
-  color: #fff;
-  border: none;
-  padding: 12px 24px;
-  font-size: 16px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.btn-start:hover,
-.btn-restart:hover {
-  background-color: #ff7f36;
 }
 
 /* --- Screens --- */

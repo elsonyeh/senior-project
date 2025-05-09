@@ -3,6 +3,8 @@
   padding: 1rem;
   max-width: 800px;
   margin: 0 auto;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* 空結果頁面樣式 */
@@ -11,17 +13,17 @@
   padding: 2rem;
   background-color: white;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   margin: 2rem 0;
 }
 
 .empty-result h2 {
-  color: #555;
+  color: #330609;
   margin-bottom: 1rem;
 }
 
 .empty-result p {
-  color: #777;
+  color: #666;
   margin-bottom: 1.5rem;
 }
 
@@ -29,8 +31,9 @@
 .result-title {
   text-align: center;
   margin-bottom: 1.5rem;
-  color: #555;
+  color: #330609;
   font-size: 1.5rem;
+  font-weight: 600;
 }
 
 /* 主要推薦餐廳卡片 */
@@ -74,15 +77,16 @@
 }
 
 .rating-badge, .type-badge, .votes-badge {
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   display: inline-flex;
   align-items: center;
+  font-weight: 500;
 }
 
 .rating-badge {
-  background-color: rgba(255, 183, 0, 0.2);
+  background-color: rgba(255, 183, 0, 0.25);
   color: #FFB700;
 }
 
@@ -91,12 +95,12 @@
 }
 
 .type-badge {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 .votes-badge {
-  background-color: rgba(104, 116, 232, 0.2);
-  color: #fff;
+  background-color: rgba(102, 204, 153, 0.25);
+  color: #6ea;
 }
 
 .vote-icon {
@@ -105,7 +109,7 @@
 
 /* 導航按鈕 */
 .btn-navigate {
-  background-color: #FF6B6B;
+  background-color: #FD963D;
   color: white;
   border: none;
   padding: 0.6rem 1.2rem;
@@ -119,7 +123,7 @@
 }
 
 .btn-navigate:hover {
-  background-color: #FF5252;
+  background-color: #F5883F;
 }
 
 .nav-icon {
@@ -144,12 +148,13 @@
 
 .alternatives-header h3 {
   margin: 0;
-  color: #555;
-  font-size: 1.1rem;
+  color: #330609;
+  font-size: 1.15rem;
+  font-weight: 600;
 }
 
 .btn-shuffle {
-  background-color: #7C88FF;
+  background-color: #ff976b;
   color: white;
   border: none;
   padding: 0.4rem 0.8rem;
@@ -163,11 +168,11 @@
 }
 
 .btn-shuffle:hover {
-  background-color: #6874E8;
+  background-color: #ff7f36;
 }
 
 .btn-shuffle:disabled {
-  background-color: #bbc0ea;
+  background-color: #ffcdba;
   cursor: not-allowed;
 }
 
@@ -179,10 +184,16 @@
 }
 
 .alternative-item {
-  padding: 0.8rem;
-  border-radius: 8px;
+  padding: 1rem;
+  border-radius: 12px;
   background-color: #f9f9f9;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.9rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.alternative-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
 .alternative-content {
@@ -196,14 +207,15 @@
 }
 
 .alternative-info h4 {
-  margin: 0 0 0.3rem 0;
-  font-size: 1rem;
-  color: #333;
+  margin: 0 0 0.4rem 0;
+  font-size: 1.05rem;
+  color: #330609;
+  font-weight: 600;
 }
 
 .alternative-info p {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.85rem;
+  margin: 0 0 0.6rem 0;
+  font-size: 0.9rem;
   color: #666;
 }
 
@@ -214,14 +226,15 @@
 }
 
 .mini-badge {
-  padding: 0.2rem 0.4rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .mini-badge.rating {
-  background-color: rgba(255, 183, 0, 0.1);
-  color: #FFB700;
+  background-color: rgba(255, 183, 0, 0.15);
+  color: #d99c16;
 }
 
 .mini-badge.type {
@@ -230,12 +243,12 @@
 }
 
 .mini-badge.votes {
-  background-color: rgba(104, 116, 232, 0.1);
-  color: #6874E8;
+  background-color: rgba(102, 204, 153, 0.15);
+  color: #5da;
 }
 
 .btn-mini-navigate {
-  background-color: #FF6B6B;
+  background-color: #FD963D;
   color: white;
   border: none;
   padding: 0.3rem 0.6rem;
@@ -246,7 +259,7 @@
 }
 
 .btn-mini-navigate:hover {
-  background-color: #FF5252;
+  background-color: #F5883F;
 }
 
 .btn-mini-navigate.secondary {
@@ -260,9 +273,10 @@
 /* 更多選擇提示 */
 .more-alternatives {
   text-align: center;
-  font-size: 0.85rem;
-  color: #888;
-  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0.8rem 0 0.3rem;
+  font-style: italic;
 }
 
 /* 再試一次按鈕 */
@@ -270,14 +284,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 2rem 0 1rem;
+  justify-content: center;
+  margin: 0;
 }
 
 .btn-restart {
   background-color: #ff976b;
   color: white;
   border: none;
-  padding: 0.6rem 1.2rem;
+  padding: 0.8rem 1.2rem;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
@@ -305,16 +320,16 @@
 
 .confetti {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  opacity: 0.7;
+  width: 12px;
+  height: 12px;
+  opacity: 0.8;
   animation: confetti-fall linear forwards;
   transform: rotate(0deg);
 }
 
 @keyframes confetti-fall {
   0% {
-    transform: translateY(-10px) rotate(0deg);
+    transform: translateY(-15px) rotate(0deg);
     opacity: 1;
   }
   100% {
@@ -323,216 +338,13 @@
   }
 }
 
-/* 保留原有投票排行榜樣式 */
-.vote-ranking {
-  background-color: white;
-  border-radius: 12px;
-  padding: 1rem;
-  margin: 1rem 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.vote-ranking h3 {
-  text-align: center;
-  margin-top: 0;
-  color: #555;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-}
-
-.vote-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.vote-rank-item {
-  margin-bottom: 0.5rem;
-}
-
-.vote-rank-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.3rem;
-}
-
-.vote-rank-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #333;
-  display: flex;
-  align-items: center;
-}
-
-.vote-rank-position {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: #6874E8;
-  color: white;
-  font-size: 0.7rem;
-  margin-right: 0.5rem;
-}
-
-.vote-rank-count {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.vote-rank-bar-container {
-  height: 10px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-  overflow: hidden;
-  position: relative;
-}
-
-.vote-rank-bar {
-  height: 100%;
-  background-color: #FF6B6B;
-  border-radius: 5px;
-  transition: width 0.5s ease-out;
-}
-
-.vote-rank-percentage {
-  position: absolute;
-  right: 0;
-  top: -18px;
-  font-size: 0.7rem;
-  color: #888;
-}
-
 /* 其他備選餐廳樣式修改 */
 .other-alternatives {
-  background-color: #f9f9f9;
+  background-color: #f8f8f8;
 }
 
 .other-alternatives h3 {
-  color: #555;
-}
-
-/* Buddies 模式特有的樣式 - 票數統計相關 */
-.buddies-vote-summary {
-  background-color: white;
-  border-radius: 12px;
-  padding: 1rem;
-  margin: 1.5rem 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.buddies-vote-summary h3 {
-  text-align: center;
-  margin-top: 0;
-  color: #555;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-}
-
-.buddies-vote-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.buddies-vote-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.buddies-vote-item:last-child {
-  border-bottom: none;
-}
-
-.buddies-vote-name {
-  font-weight: 500;
-  color: #444;
-}
-
-.buddies-vote-count {
-  background-color: rgba(104, 116, 232, 0.1);
-  color: #6874E8;
-  padding: 0.2rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-}
-
-.buddies-vote-count-icon {
-  margin-right: 0.3rem;
-}
-
-.buddies-vote-bar-container {
-  flex: 1;
-  height: 8px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 0 1rem;
-}
-
-.buddies-vote-bar {
-  height: 100%;
-  background: linear-gradient(to right, #FF9F68, #FF6B6B);
-  border-radius: 4px;
-  transition: width 0.5s ease-out;
-}
-
-/* 突出顯示最高票數 */
-.highest-vote {
-  background-color: rgba(46, 204, 113, 0.1);
-}
-
-.highest-vote .buddies-vote-count {
-  background-color: rgba(46, 204, 113, 0.2);
-  color: #2ecc71;
-}
-
-.highest-vote .buddies-vote-bar {
-  background: linear-gradient(to right, #2ecc71, #27ae60);
-}
-
-/* 平局情況 */
-.tied-vote .buddies-vote-count {
-  background-color: rgba(241, 196, 15, 0.2);
-  color: #f39c12;
-}
-
-.tied-vote .buddies-vote-bar {
-  background: linear-gradient(to right, #f1c40f, #f39c12);
-}
-
-/* 投票數據標記 */
-.vote-badge-container {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  margin-top: 0.25rem;
-}
-
-.vote-badge {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.3rem;
-  border-radius: 3px;
-  background-color: rgba(104, 116, 232, 0.1);
-  color: #6874E8;
-}
-
-.vote-badge.highest {
-  background-color: rgba(46, 204, 113, 0.1);
-  color: #2ecc71;
-}
-
-.vote-badge.tied {
-  background-color: rgba(241, 196, 15, 0.1);
-  color: #f39c12;
+  color: #330609;
 }
 
 /* 響應式設計 - 在小屏幕上的優化 */
@@ -547,12 +359,8 @@
     flex-wrap: wrap;
   }
   
-  .buddies-vote-item {
-    flex-wrap: wrap;
-  }
-  
-  .buddies-vote-bar-container {
-    margin: 0.5rem 0;
+  .btn-navigate, .btn-restart {
     width: 100%;
+    justify-content: center;
   }
 }
