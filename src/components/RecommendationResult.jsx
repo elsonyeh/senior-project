@@ -243,7 +243,7 @@ export default function RecommendationResult({
               <span role="img" aria-label="eyes">
                 👀
               </span>{" "}
-              其他備選餐廳
+              其他收藏的餐廳
             </h3>
             <motion.button
               className="btn-shuffle"
@@ -307,7 +307,7 @@ export default function RecommendationResult({
 
           {alternativesPool.length > 0 && (
             <p className="more-alternatives">
-              還有 {alternativesPool.length} 家其他選擇...
+              還有 {alternativesPool.length} 家其他選擇 ...
             </p>
           )}
         </motion.div>
