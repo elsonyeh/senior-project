@@ -18,6 +18,7 @@ export default function BuddiesQuestionSwiper({
   const [waitingText, setWaitingText] = useState("等待其他人回答...");
   // 新增：追蹤是否顯示結果倒計時
   const [showingResults, setShowingResults] = useState(false);
+  const hasCompletedRef = useRef(false);
 
   // Refs - 不會觸發重新渲染
   const answersRef = useRef({});
@@ -280,24 +281,49 @@ export default function BuddiesQuestionSwiper({
     };
 
     // 收到結束信號和餐廳推薦結果
+    // 在 BuddiesQuestionSwiper.jsx 中改進推薦接收處理
     const handleGroupRecommendations = (recs) => {
       if (!isMountedRef.current) return;
 
-      // 清理所有計時器
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
+      // 防止重複調用 onComplete
+      if (hasCompletedRef.current) {
+        console.log("已經處理過推薦結果，忽略重複事件");
+        return;
       }
 
-      // 使用ref獲取最新狀態，並添加問題文本和來源
+      console.log(
+        "收到餐廳推薦結果:",
+        recs ? recs.length : 0,
+        "當前題目:",
+        questionIndex
+      );
+
+      // 確保接收到有效數據
+      if (!recs || !Array.isArray(recs) || recs.length === 0) {
+        console.error("收到的推薦結果無效:", recs);
+        return;
+      }
+
+      // 使用ref獲取最新狀態
       const result = {
         answers: Object.values(answersRef.current),
         questionTexts: questionTextsRef.current,
         questionSources: questionSourcesRef.current,
       };
 
-      // 調用完成處理函數
-      onComplete(result, recs);
+      // 標記為已完成，防止重複調用
+      hasCompletedRef.current = true;
+
+      // 關鍵：確保一定調用onComplete
+      console.log("準備調用onComplete函數");
+      try {
+        onComplete(result, recs);
+        console.log("已調用onComplete函數");
+      } catch (error) {
+        console.error("調用onComplete出錯:", error);
+        // 重新設置標記，允許再次嘗試
+        hasCompletedRef.current = false;
+      }
     };
 
     // 註冊事件監聽
