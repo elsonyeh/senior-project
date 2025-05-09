@@ -23,10 +23,10 @@
   background: #fff;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  padding: 3vh 5vw;
+  padding: 12vh 5vw 3vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   box-sizing: border-box;
   text-align: center;
@@ -50,7 +50,7 @@
   font-size: 1.2rem;
   justify-content: space-between;
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 0.5rem;
   margin-bottom: 2rem;
   position: relative;
 }
@@ -334,7 +334,7 @@
 
 .swipe-arrows-container {
   position: absolute;
-  bottom: 40px;
+  bottom: 220px;
   left: 0;
   width: 100%;
   display: flex;
