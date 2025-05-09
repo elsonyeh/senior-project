@@ -334,7 +334,7 @@
 
 .swipe-arrows-container {
   position: absolute;
-  bottom: 220px;
+  bottom: 24vh;
   left: 0;
   width: 100%;
   display: flex;
