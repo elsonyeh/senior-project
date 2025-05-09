@@ -14,7 +14,8 @@ import {
 } from "../services/firebaseService";
 import {
   getRandomFunQuestions,
-  recommendRestaurants
+  recommendRestaurants,
+  getRandomTen
 } from "../logic/enhancedRecommendLogicFrontend.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./SwiftTasteCard.css";
@@ -136,12 +137,6 @@ export default function SwiftTaste() {
       rightOption: q.options[1],
       hasVS: q.question.includes("v.s."), // 標記v.s.格式問題
     }));
-
-  // 隨機選取餐廳（數量限制）
-  const getRandomTen = (arr) => {
-    if (!arr || arr.length <= 10) return arr || [];
-    return [...arr].sort(() => 0.5 - Math.random()).slice(0, 10);
-  };
 
   // 處理模式選擇（單人/多人）
   const handleModeSelect = (direction) => {

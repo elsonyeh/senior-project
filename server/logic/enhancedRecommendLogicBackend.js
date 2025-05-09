@@ -79,7 +79,9 @@ const WEIGHT = {
     let basicMatchCount = 0;
     let basicMismatchCount = 0;
   
-    const tagMatch = (targets) => normalizedTags.some(tag => targets.some(t => tag && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase() && tag.toLowerCase() && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase && tag.toLowerCase));
+    const tagMatch = (targets) => normalizedTags.some(tag => 
+      targets.some(t => typeof t === 'string' && tag.includes(t.toLowerCase()))
+    );
   
     if (Array.isArray(basicAnswers) && Array.isArray(basicQuestions)) {
       basicAnswers.forEach((answer, index) => {
