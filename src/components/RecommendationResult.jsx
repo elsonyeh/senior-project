@@ -12,47 +12,75 @@ export default function RecommendationResult({
 }) {
   const [selected, setSelected] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [otherSaved, setOtherSaved] = useState([]);
-  const [displayedRestaurants, setDisplayedRestaurants] = useState([]);
   const [displayedAlternatives, setDisplayedAlternatives] = useState([]); // 備選餐廳列表
+  const [alternativesPool, setAlternativesPool] = useState([]); // 儲存所有尚未顯示的備選餐廳
+  const [noMoreAlternatives, setNoMoreAlternatives] = useState(false); // 是否還有更多備選餐廳
 
   // 初始化時選擇第一個餐廳並設置動畫效果
   useEffect(() => {
     if (saved.length > 0) {
-      // 防止透過Object.is比較相同的餐廳而造成無限循環
-      const selectedRestaurant = saved[0];
+      // 按照分數排序已保存的餐廳（如果有matchScore屬性）
+      const sortedSaved = [...saved].sort((a, b) => {
+        // 如果有matchScore屬性，按照分數排序
+        if (a.matchScore !== undefined && b.matchScore !== undefined) {
+          return b.matchScore - a.matchScore;
+        }
+        // 否則保持原有順序
+        return 0;
+      });
+      
+      // 選擇分數最高的餐廳作為主選餐廳
+      const selectedRestaurant = sortedSaved[0];
 
       // 只有當selected不存在或id不同時才更新，避免無限循環
       if (!selected || selected.id !== selectedRestaurant.id) {
-        // 使用第一個作為主選餐廳（可能是投票最高的）
+        // 使用第一個作為主選餐廳（分數最高的）
         setSelected(selectedRestaurant);
 
-        // 移除與所選餐廳相同的項目
-        const remainingRestaurants = saved.filter(
-          (r) => r && r.id && r.id !== selectedRestaurant.id
-        );
-        setOtherSaved(remainingRestaurants);
+        // 合併其他餐廳（除了主選餐廳外）
+        const allAlternativeRestaurants = [
+          ...sortedSaved.filter(r => r && r.id && r.id !== selectedRestaurant.id),
+          ...alternatives.filter(r => r && r.id && r.id !== selectedRestaurant.id)
+        ];
 
-        // 設置初始顯示的餐廳（最多顯示3家）
-        setDisplayedRestaurants(remainingRestaurants.slice(0, 3));
+        // 根據 matchScore 或投票數排序所有備選餐廳
+        const sortedAlternatives = [...allAlternativeRestaurants].sort((a, b) => {
+          // 優先按照 matchScore 排序
+          if (a.matchScore !== undefined && b.matchScore !== undefined) {
+            return b.matchScore - a.matchScore;
+          }
+          // 次要排序依據：投票數
+          const votesA = votes[a.id] || 0;
+          const votesB = votes[b.id] || 0;
+          return votesB - votesA;
+        });
 
-        // 設置顯示的備選餐廳（最多顯示5家），按投票數排序
-        if (Array.isArray(alternatives)) {
-          // 根據投票數排序備選餐廳
-          const sortedAlternatives = [...alternatives].sort((a, b) => {
-            const votesA = votes[a.id] || 0;
-            const votesB = votes[b.id] || 0;
-            return votesB - votesA; // 降序排列
-          });
-
-          setDisplayedAlternatives(sortedAlternatives.slice(0, 5));
-        }
+        // 移除重複的餐廳（根據 ID）
+        const uniqueAlternatives = [];
+        const seenIds = new Set();
+        
+        sortedAlternatives.forEach(r => {
+          if (r && r.id && !seenIds.has(r.id)) {
+            seenIds.add(r.id);
+            uniqueAlternatives.push(r);
+          }
+        });
+        
+        // 設置初始顯示的備選餐廳（最多2家）
+        const initialDisplayed = uniqueAlternatives.slice(0, 2);
+        
+        // 剩餘未顯示的備選餐廳
+        const initialPool = uniqueAlternatives.slice(2);
+        
+        setDisplayedAlternatives(initialDisplayed);
+        setAlternativesPool(initialPool);
+        setNoMoreAlternatives(initialPool.length === 0);
 
         // 首次選擇餐廳時才啟動紙屑動畫效果
         setShowConfetti(true);
       }
     }
-  }, [saved, votes]); // 添加votes作為依賴項，以便在投票更新時重新排序
+  }, [saved, alternatives, votes]); // 添加 alternatives 和 votes 作為依賴項
 
   // 當showConfetti為true時，設置定時器關閉它
   useEffect(() => {
@@ -72,35 +100,25 @@ export default function RecommendationResult({
 
   // 選擇另一家餐廳
   const selectAnother = () => {
-    if (otherSaved.length === 0 || displayedRestaurants.length === 0) return;
-
-    // 從當前顯示的餐廳中選第一家作為新的精選餐廳
-    const newSelected = displayedRestaurants[0];
-
-    // 將當前精選餐廳加入剩餘餐廳列表末尾（如果存在）
-    const newOtherSaved = [
-      ...otherSaved.filter((r) => r.id !== newSelected.id),
-    ];
-    if (selected) {
-      newOtherSaved.push(selected);
+    if (alternativesPool.length === 0) {
+      setNoMoreAlternatives(true);
+      return;
     }
 
-    // 更新已顯示的餐廳列表 - 移除第一家並添加一家新的（如果有的話）
-    const newDisplayed = [...displayedRestaurants.slice(1)];
-
-    // 如果剩餘餐廳中有下一家可顯示，則添加到顯示列表中
-    const remainingForDisplay = newOtherSaved.filter(
-      (r) => !newDisplayed.some((d) => d.id === r.id) && r.id !== newSelected.id
-    );
-
-    if (remainingForDisplay.length > 0 && newDisplayed.length < 3) {
-      newDisplayed.push(remainingForDisplay[0]);
-    }
-
+    // 從顯示餐廳中移除第一家
+    const updatedDisplayed = [...displayedAlternatives.slice(1)];
+    
+    // 添加一家尚未顯示的餐廳到顯示列表末尾
+    const newRestaurantToDisplay = alternativesPool[0];
+    updatedDisplayed.push(newRestaurantToDisplay);
+    
+    // 更新剩餘的備選餐廳池
+    const updatedPool = alternativesPool.slice(1);
+    
     // 更新狀態
-    setSelected(newSelected);
-    setOtherSaved(newOtherSaved);
-    setDisplayedRestaurants(newDisplayed);
+    setDisplayedAlternatives(updatedDisplayed);
+    setAlternativesPool(updatedPool);
+    setNoMoreAlternatives(updatedPool.length === 0);
   };
 
   // 渲染小型五彩紙屑
@@ -212,8 +230,8 @@ export default function RecommendationResult({
         </div>
       </motion.div>
 
-      {/* 收藏餐廳列表 */}
-      {displayedRestaurants.length > 0 && (
+      {/* 合併顯示所有備選餐廳 */}
+      {displayedAlternatives.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -225,16 +243,16 @@ export default function RecommendationResult({
               <span role="img" aria-label="eyes">
                 👀
               </span>{" "}
-              其他收藏的餐廳
+              其他備選餐廳
             </h3>
             <motion.button
               className="btn-shuffle"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={selectAnother}
-              disabled={displayedRestaurants.length === 0}
+              disabled={noMoreAlternatives}
             >
-              🔀 換一家試試
+              {noMoreAlternatives ? "沒有其他餐廳了" : "🔀 換一家試試"}
             </motion.button>
           </div>
 
@@ -245,9 +263,9 @@ export default function RecommendationResult({
               animate={{ opacity: 1 }}
               transition={{ staggerChildren: 0.1 }}
             >
-              {displayedRestaurants.map((r, index) => (
+              {displayedAlternatives.map((r, index) => (
                 <motion.li
-                  key={r.id}
+                  key={r.id || `alt-${index}`}
                   className="alternative-item"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -287,80 +305,11 @@ export default function RecommendationResult({
             </motion.ul>
           </AnimatePresence>
 
-          {otherSaved.length > displayedRestaurants.length && (
+          {alternativesPool.length > 0 && (
             <p className="more-alternatives">
-              還有 {otherSaved.length - displayedRestaurants.length}{" "}
-              家其他選擇...
+              還有 {alternativesPool.length} 家其他選擇...
             </p>
           )}
-        </motion.div>
-      )}
-
-      {/* 備選餐廳列表 - 新增 */}
-      {displayedAlternatives.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="alternatives-section other-alternatives"
-        >
-          <div className="alternatives-header">
-            <h3>
-              <span role="img" aria-label="magnifier">
-                🔍
-              </span>{" "}
-              其他備選餐廳
-            </h3>
-          </div>
-
-          <AnimatePresence>
-            <motion.ul
-              className="alternatives-list"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ staggerChildren: 0.1 }}
-            >
-              {displayedAlternatives.map((r, index) => (
-                <motion.li
-                  key={r.id || `alt-${index}`}
-                  className="alternative-item"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div className="alternative-content">
-                    <div className="alternative-info">
-                      <h4>{r.name || "未命名"}</h4>
-                      <p>{r.address || "地址未知"}</p>
-                      <div className="alternative-badges">
-                        {typeof r.rating === "number" && (
-                          <span className="mini-badge rating">
-                            ⭐ {r.rating.toFixed(1)}
-                          </span>
-                        )}
-                        {r.type && (
-                          <span className="mini-badge type">{r.type}</span>
-                        )}
-                        {votes && votes[r.id] && (
-                          <span className="mini-badge votes">
-                            🗳️ {votes[r.id]} 票
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <motion.button
-                      className="btn-mini-navigate secondary"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => goToGoogleMaps(r.address || r.name)}
-                    >
-                      🧭 出發
-                    </motion.button>
-                  </div>
-                </motion.li>
-              ))}
-            </motion.ul>
-          </AnimatePresence>
         </motion.div>
       )}
 
