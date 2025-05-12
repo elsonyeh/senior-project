@@ -339,7 +339,7 @@
   width: 100%;
   display: flex;
   justify-content: center; /* 改為置中對齊 */
-  gap: 120px; /* 使用固定間距控制兩個箭頭的距離 */
+  gap: 20vw; /* 使用固定間距控制兩個箭頭的距離 */
   pointer-events: none;
 }
 
@@ -364,7 +364,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   50% {
-    transform: scale(1.05) translateX(5px);
+    transform: scale(1.05) translateX(45px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   }
   100% {
@@ -378,7 +378,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   50% {
-    transform: scale(1.05) translateX(-5px);
+    transform: scale(1.05) translateX(-45px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   }
   100% {
