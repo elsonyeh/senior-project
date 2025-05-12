@@ -445,6 +445,22 @@ export default function AdminDashboard() {
             <h3 className="restaurant-list-header">
               📂 所有餐廳 ({restaurants.length})
             </h3>
+            <button
+              className="export-button"
+              onClick={() => {
+                // 導出餐廳資料為 JSON 檔案
+                const blob = new Blob([JSON.stringify(restaurants, null, 2)], {
+                  type: "application/json",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.download = "restaurants.json";
+                a.href = url;
+                a.click();
+              }}
+            >
+              📥 導出餐廳數據
+            </button>
             <div className="restaurant-table-container">
               <table className="restaurant-table">
                 <colgroup>

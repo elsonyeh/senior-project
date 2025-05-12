@@ -6,6 +6,18 @@ export const basicQuestions = [
       "多人"
     ]
   },
+    
+   // 暫時停用距離相關問題
+  /*
+  {
+    "question": "附近吃還是遠一點？",
+    "options": [
+      "附近吃",
+      "遠一點"
+    ]
+  },
+  */
+
   {
     "question": "想吃奢華點還是平價？",
     "options": [
@@ -32,17 +44,14 @@ export const basicQuestions = [
     }
   },
   {
-    "question": "附近吃還是遠一點？",
-    "options": [
-      "附近吃",
-      "遠一點"
-    ]
-  },
-  {
     "question": "想吃辣的還是不辣？",
     "options": [
       "辣",
       "不辣"
-    ]
+    ],
+    "dependsOn": {
+      "question": "想吃正餐還是想喝飲料？",
+      "answer": "吃"
+    }
   }
 ];

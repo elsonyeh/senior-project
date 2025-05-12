@@ -977,29 +977,56 @@ io.on('connection', (socket) => {
                   console.log(`[${roomId}] 用戶答案範例:`,
                     firstUser ? typeof room.answers[firstUser] : '沒有答案');
 
+                  // 在調用 recommendForGroup 前，構建 answerQuestionMap
+                  const answerQuestionMap = {};
+                  let questionTexts = [];
+
+                  // 從用戶答案中提取問題文本
+                  Object.values(room.answers).forEach(userAnswer => {
+                    if (userAnswer.questionTexts && userAnswer.questionTexts.length > 0) {
+                      questionTexts = userAnswer.questionTexts;
+                      return;
+                    }
+                  });
+
+                  // 構建 answerQuestionMap
+                  questionTexts.forEach((text, index) => {
+                    answerQuestionMap[index] = text;
+                  });
+
                   // 嘗試不同的推薦生成方式
                   let recommendations;
                   try {
                     console.log(`[${roomId}] 使用 ${basicQuestionsCount} 個基本問題進行推薦`);
-                    // 生成推薦
+                    // 生成推薦 - 結合嚴格匹配與調整權重
                     recommendations = enhancedLogic.recommendForGroup(
                       room.answers,
                       restaurants,
                       {
                         basicQuestionsCount: basicQuestionsCount,
                         debug: process.env.NODE_ENV === 'development',
-                        basicQuestions: room.basicQuestions || []
+                        basicQuestions: room.basicQuestions || [],
+                        strictBasicMatch: true,  // 保持嚴格匹配開啟
+                        minBasicMatchRatio: 0.5, // 要求至少50%的基本問題匹配
+                        basicMatchWeight: enhancedLogic.WEIGHT.BASIC_MATCH * 1.5, // 增加基本問題匹配的權重
+                        answerQuestionMap: answerQuestionMap // 確保傳遞答案-問題映射
                       }
                     );
+
+                    // 添加調試日誌
+                    console.log(`[${roomId}] 推薦函數參數:`, {
+                      answerCount: Object.keys(room.answers).length,
+                      hasAnswerQuestionMap: Object.keys(answerQuestionMap).length > 0,
+                      basicQuestionsCount
+                    });
+
+                    console.log(`[${roomId}] 前5家推薦餐廳的分數:`, recommendations.slice(0, 5).map(r => ({
+                      name: r.name,
+                      score: r.matchScore
+                    })));
                   } catch (recError) {
                     console.error(`[${roomId}] 推薦生成錯誤，使用備用方案:`, recError);
                     // 備用方案：直接返回全部餐廳或隨機選擇
-                    recommendations = restaurants.slice(0, 20);
-                  }
-
-                  // 確保推薦結果不為空
-                  if (!recommendations || recommendations.length === 0) {
-                    console.warn(`[${roomId}] 推薦結果為空，使用備用方案`);
                     recommendations = restaurants.slice(0, 20);
                   }
 
@@ -1187,15 +1214,42 @@ io.on('connection', (socket) => {
                 const basicQuestionsCount = rooms[roomId].basicQuestions ? rooms[roomId].basicQuestions.length : 5;
 
                 // 嘗試生成推薦
+                const answerQuestionMap = {};
+                let questionTexts = [];
+
+                // 從用戶答案中提取問題文本
+                Object.values(rooms[roomId].answers).forEach(userAnswer => {
+                  if (userAnswer.questionTexts && userAnswer.questionTexts.length > 0) {
+                    questionTexts = userAnswer.questionTexts;
+                    return;
+                  }
+                });
+
+                // 構建 answerQuestionMap
+                questionTexts.forEach((text, index) => {
+                  answerQuestionMap[index] = text;
+                });
+
+                // 調用推薦函數
                 const newRecommendations = enhancedLogic.recommendForGroup(
                   rooms[roomId].answers,
                   restaurants,
                   {
                     basicQuestionsCount: basicQuestionsCount,
                     debug: process.env.NODE_ENV === 'development',
-                    basicQuestions: rooms[roomId].basicQuestions || []
+                    basicQuestions: rooms[roomId].basicQuestions || [],
+                    strictBasicMatch: true,  // 保持嚴格匹配開啟
+                    minBasicMatchRatio: 0.5, // 要求至少50%的基本問題匹配
+                    basicMatchWeight: enhancedLogic.WEIGHT.BASIC_MATCH * 1.5, // 增加基本問題匹配的權重
+                    answerQuestionMap: answerQuestionMap // 確保傳遞答案-問題映射
                   }
                 );
+
+                // 添加調試日誌
+                console.log(`[${roomId}] 即時生成推薦函數參數:`, {
+                  answerCount: Object.keys(rooms[roomId].answers).length,
+                  hasAnswerQuestionMap: Object.keys(answerQuestionMap).length > 0
+                });
 
                 // 如果成功生成，保存並設置狀態
                 if (newRecommendations.length > 0) {
@@ -1467,6 +1521,16 @@ app.get('/api/debug/room/:roomId', function (req, res) {
                     basicQuestions: room.basicQuestions || []
                   }
                 );
+
+                // 添加調試信息，但不修改返回結果
+                console.log(`[${roomId}] 推薦結果（前3家）：`, recommendations.slice(0, 3).map(r => ({
+                  name: r.name,
+                  matchScore: r.matchScore,
+                  hasScore: typeof r.matchScore === 'number'
+                })));
+
+                // 確保匹配分數被保留
+                console.log(`[${roomId}] 推薦結果是否包含匹配分數：`, recommendations.some(r => typeof r.matchScore === 'number'));
 
                 // 發送推薦結果
                 io.to(roomId).emit('groupRecommendations', recommendations);

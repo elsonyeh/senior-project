@@ -480,17 +480,26 @@ export default function BuddiesRoom() {
         Array.isArray(answerData.questionSources) &&
         answerData.questionSources.length > 0;
 
-      console.log(`提交答案，基本問題數量: ${buddiesBasicQuestions.length}`);
+      // 如果沒有問題來源信息，根據 buddiesBasicQuestions 生成
+      const generatedSources = !hasQuestionSources
+        ? answerData.questionTexts.map((text) => {
+            // 使用 buddiesBasicQuestions 判斷問題類型
+            const isBasic = buddiesBasicQuestions.some(
+              (q) => q.question === text
+            );
+            return isBasic ? "basic" : "fun";
+          })
+        : null;
 
       socket.emit("submitAnswers", {
         roomId,
         answers: answerData.answers,
         questionTexts: answerData.questionTexts,
-        // 如果有問題來源信息，一併傳遞
+        // 優先使用現有問題來源，否則使用生成的來源
         questionSources: hasQuestionSources
           ? answerData.questionSources
-          : undefined,
-        // 傳遞特定的基本問題集（用於服務端識別基本問題）
+          : generatedSources,
+        // 傳遞特定的基本問題集
         basicQuestions: buddiesBasicQuestions,
       });
 
@@ -506,14 +515,25 @@ export default function BuddiesRoom() {
         ? answerData
         : Object.values(answerData);
 
-      console.log(
-        `提交傳統格式答案，長度: ${answers.length}，基本問題數量: ${buddiesBasicQuestions.length}`
+      // 為舊格式生成問題來源（根據順序判斷）
+      // 假設前 buddiesBasicQuestions.length 個答案是基本問題的答案
+      const generatedSources = answers.map((_, index) =>
+        index < buddiesBasicQuestions.length ? "basic" : "fun"
       );
 
       socket.emit("submitAnswers", {
         roomId,
         answers,
-        // 即使使用舊格式，也傳遞正確的基本問題集
+        // 添加問題文本數組（如果可能的話）
+        questionTexts: [
+          ...buddiesBasicQuestions.map((q) => q.question),
+          ...Array(answers.length - buddiesBasicQuestions.length).fill(
+            "趣味問題"
+          ),
+        ],
+        // 添加生成的問題來源
+        questionSources: generatedSources,
+        // 傳遞正確的基本問題集
         basicQuestions: buddiesBasicQuestions,
       });
     }

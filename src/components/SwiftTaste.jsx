@@ -15,7 +15,7 @@ import {
 import {
   getRandomFunQuestions,
   recommendRestaurants,
-  getRandomTen
+  getRandomTen,
 } from "../logic/enhancedRecommendLogicFrontend.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./SwiftTasteCard.css";
@@ -136,6 +136,7 @@ export default function SwiftTaste() {
       leftOption: q.options[0],
       rightOption: q.options[1],
       hasVS: q.question.includes("v.s."), // 標記v.s.格式問題
+      dependsOn: q.dependsOn // 保留問題依賴關係
     }));
 
   // 處理模式選擇（單人/多人）
@@ -160,34 +161,71 @@ export default function SwiftTaste() {
       return;
     }
 
-    const answerList = Object.values(answersObj);
+    console.log("收到的答案對象:", answersObj);
+
+    // 1. 提取答案列表 - 支援多種格式
+    let answerList = [];
+
+    // 如果答案是一個結構化對象，正確提取
+    if (answersObj && typeof answersObj === "object") {
+      if (Array.isArray(answersObj.answers)) {
+        // 新格式：使用 answers 陣列
+        answerList = answersObj.answers;
+      } else if (answersObj.rawAnswers) {
+        // 使用原始答案對象
+        answerList = Object.values(answersObj.rawAnswers);
+      } else {
+        // 舊格式：直接是答案對象
+        answerList = Object.values(answersObj);
+      }
+    }
+
+    console.log("處理後的答案列表:", answerList);
+    console.log("包含喝選項:", answerList.includes("喝"));
+    
+    // 保存用戶回答
     setUserAnswers(answerList);
 
-    // 創建答案和問題的映射關係
+    // 2. 創建問題-答案映射關係
     const answerQuestionMap = {};
-    Object.entries(answersObj).forEach(([id, answer]) => {
-      // 從問題 ID 中提取索引 (假設 ID 格式為 "q0", "q1" 等)
-      const index = parseInt(id.replace("q", ""));
-      // 找到對應的問題
-      const question = allQuestions[index];
-      if (question) {
-        answerQuestionMap[index] = question.question;
-      }
-    });
+    const questionTexts = [];
+    
+    // 從 questionTexts 提取問題文本
+    if (answersObj.questionTexts && Array.isArray(answersObj.questionTexts)) {
+      answersObj.questionTexts.forEach((text, index) => {
+        if (index < answerList.length) {
+          answerQuestionMap[index] = text;
+          questionTexts.push(text);
+        }
+      });
+    }
+    // 從問題ID-答案映射中提取
+    else {
+      // 直接從 answerObj 提取 (q0, q1, q2...)
+      Object.entries(answersObj).forEach(([id, answer]) => {
+        if (id.startsWith('q')) {
+          const index = parseInt(id.replace("q", ""));
+          const question = allQuestions[index];
+          if (question) {
+            answerQuestionMap[index] = question.text || question.question;
+            questionTexts[index] = question.text || question.question;
+          }
+        }
+      });
+    }
 
-    let recommendedRestaurants = [];
+    console.log("問題-答案映射:", answerQuestionMap);
+    console.log("問題文本列表:", questionTexts);
 
-    // 使用增強版推薦邏輯
-    recommendedRestaurants = recommendRestaurants(answerList, restaurantList, {
-      // 傳遞基本問題集而不是數量
+    // 3. 使用增強版推薦邏輯
+    const recommendedRestaurants = recommendRestaurants(answerList, restaurantList, {
       basicQuestions: basicQuestions,
-      // 傳遞答案-問題映射
       answerQuestionMap: answerQuestionMap,
-      // 嚴格匹配基本問題
-      strictBasicMatch: true,
+      questionTexts: questionTexts,
+      strictBasicMatch: true
     });
 
-    // 如果是多人模式且有房間ID，保存結果到Firebase
+    // 4. 如果是多人模式且有房間ID，保存結果到Firebase
     if (selectedMode === "buddies" && roomId) {
       try {
         await saveRecommendationsToFirebase(roomId, recommendedRestaurants);
@@ -196,10 +234,11 @@ export default function SwiftTaste() {
       }
     }
 
-    // 限制推薦餐廳數量
+    // 5. 限制推薦餐廳數量
     const limited = getRandomTen(recommendedRestaurants);
     setRecommendations(limited);
 
+    // 6. 設置下一階段
     if (!limited || limited.length === 0) {
       setSaved([]);
       setPhase("result");

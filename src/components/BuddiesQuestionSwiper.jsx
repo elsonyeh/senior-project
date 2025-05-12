@@ -3,6 +3,7 @@ import socket from "../services/socket";
 import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
 import { motion, AnimatePresence } from "framer-motion";
 import "./BuddiesVoteStyles.css";
+import { buddiesBasicQuestions } from "../data/buddiesBasicQuestions";
 
 export default function BuddiesQuestionSwiper({
   roomId,
@@ -29,7 +30,17 @@ export default function BuddiesQuestionSwiper({
   const questionTextsRef = useRef([]);
   const questionSourcesRef = useRef([]);
 
-  // 處理安全的問題格式化（避免在render過程中重複計算）
+  // 創建基本問題文本列表，用於判斷
+  const basicQuestionTexts = useRef(
+    buddiesBasicQuestions.map((q) => q.question)
+  ).current;
+
+  // 基於 buddiesBasicQuestions 判斷問題類型
+  const isBuddiesBasicQuestion = (text) => {
+    return basicQuestionTexts.includes(text);
+  };
+
+  // 處理安全的問題格式化
   const safeQuestions = useRef(
     Array.isArray(questions)
       ? questions.map((q, index) => ({
@@ -38,21 +49,13 @@ export default function BuddiesQuestionSwiper({
           leftOption: q.leftOption || "選項 A",
           rightOption: q.rightOption || "選項 B",
           hasVS: q.hasVS || false,
+          // 使用 buddies 專用的基本問題判斷
           source:
             q.source ||
-            (q.text &&
-            // 基於問題文本判斷來源
-            (q.text.includes("想吃奢華點還是平價") ||
-              q.text.includes("想吃正餐還是想喝飲料") ||
-              q.text.includes("吃一點還是吃飽") ||
-              q.text.includes("附近吃還是遠一點") ||
-              q.text.includes("想吃辣的還是不辣") ||
-              q.text.includes("今天是一個人還是有朋友"))
-              ? "basic"
-              : "fun"), // 自動識別基本問題
+            (q.text && isBuddiesBasicQuestion(q.text) ? "basic" : "fun"),
         }))
       : []
-  ).current; // 只計算一次，避免重複計算
+  ).current;
 
   // 從問題中提取文本和來源
   const questionTexts = useRef(safeQuestions.map((q) => q.text)).current;
@@ -99,7 +102,6 @@ export default function BuddiesQuestionSwiper({
   }, []);
 
   // 處理答案提交
-  // 處理答案提交
   const handleAnswer = useCallback(
     (answer) => {
       if (!isMountedRef.current) return;
@@ -114,8 +116,11 @@ export default function BuddiesQuestionSwiper({
 
       // 獲取當前問題的文本和來源
       const questionText = safeQuestions[questionIndex]?.text || "";
-      const questionSource = safeQuestions[questionIndex]?.source || "fun"; // 默認為趣味問題
-
+      // 使用一致的判斷邏輯
+      const questionSource =
+        safeQuestions[questionIndex]?.source ||
+        (isBuddiesBasicQuestion(questionText) ? "basic" : "fun");
+        
       // 保存問題文本和來源到ref中
       questionTextsRef.current[questionIndex] = questionText;
       questionSourcesRef.current[questionIndex] = questionSource;
@@ -141,6 +146,7 @@ export default function BuddiesQuestionSwiper({
           questionTexts: questionTextsArray,
           questionSources: questionSourcesArray,
           index: questionIndex,
+          basicQuestions: buddiesBasicQuestions,
         },
         (response) => {
           // 處理服務器響應
