@@ -2,10 +2,10 @@
 
 /* 主容器 */
 .admin-container {
-  padding: 2rem;
+  padding: 0 2rem;
   font-family: Arial, sans-serif;
   background-color: #f9f9f9;
-  min-height: 100vh;
+  min-height: 170vh;
   overflow: auto;
 }
 
@@ -110,6 +110,25 @@
   cursor: pointer;
 }
 
+/* 導出按鈕樣式 */
+.export-button {
+  background-color: #4a69bd;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.export-button:hover {
+  background-color: #3c5aa6;
+}
+
 /* 餐廳列表 */
 .restaurant-list-container {
   overflow-x: auto;
@@ -121,11 +140,18 @@
 .restaurant-list-header {
   padding: 1rem;
   margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.restaurant-list-header h3 {
+  margin: 0;
 }
 
 .restaurant-table-container {
   overflow-y: auto;
-  max-height: calc(100vh - 400px);
+  max-height: calc(100vh - 100px);
   position: relative;
 }
 
