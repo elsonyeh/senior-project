@@ -42,7 +42,7 @@ export const funQuestions = [
     ]
   },
   {
-    "question": "會飛 v.s. 力大無窮",
+    "question": "如果可以獲得超能力，我想......",
     "options": [
       "會飛",
       "力大無窮"
