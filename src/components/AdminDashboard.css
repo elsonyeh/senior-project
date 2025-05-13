@@ -1,9 +1,32 @@
-/* AdminPage.css */
+/* 適用於標籤的textarea樣式 */
+.restaurant-table textarea.restaurant-input {
+  resize: none;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  height: auto;
+  min-height: 70px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  line-height: 1.5;
+  padding: 8px;
+}
+
+.restaurant-table textarea.restaurant-input:focus {
+  border-color: #2196F3;
+  outline: none;
+  background-color: #fff;
+}
+
+.restaurant-table textarea.restaurant-input:not(:focus) {
+  background-color: transparent;
+  border-color: transparent;
+}/* AdminDashboard.css */
 
 /* 主容器 */
 .admin-container {
   padding: 0 2rem;
-  font-family: Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   background-color: #f9f9f9;
   min-height: 170vh;
   overflow: auto;
@@ -15,12 +38,27 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
 }
 
 .admin-header h1 {
   color: #333;
+  margin: 0;
+  font-size: 1.8rem;
 }
 
+.user-status {
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+.user-status span {
+  color: #4CAF50;
+  font-weight: 500;
+}
+
+/* 登出按鈕 */
 .logout-button {
   background-color: #f44336;
   color: white;
@@ -28,100 +66,470 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
 }
 
-/* 頁籤 */
+.logout-button:hover {
+  background-color: #d32f2f;
+}
+
+/* 主頁籤 */
 .tab-container {
   display: flex;
   margin-bottom: 1rem;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .tab-button {
   padding: 10px 20px;
   border: none;
   cursor: pointer;
+  flex: 1;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 }
 
 .tab-button.active-restaurants {
   background-color: #4CAF50;
   color: white;
-  border-radius: 4px 0 0 4px;
 }
 
 .tab-button.inactive-restaurants {
   background-color: #e0e0e0;
-  color: black;
-  border-radius: 4px 0 0 4px;
+  color: #333;
 }
 
 .tab-button.active-rooms {
   background-color: #2196F3;
   color: white;
-  border-radius: 0 4px 4px 0;
 }
 
 .tab-button.inactive-rooms {
   background-color: #e0e0e0;
-  color: black;
-  border-radius: 0 4px 4px 0;
+  color: #333;
 }
 
-/* 新增餐廳區塊 */
+/* 餐廳子頁籤 */
+.restaurant-subtab-container {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  width: fit-content;
+}
+
+.restaurant-subtab-button {
+  padding: 8px 20px;
+  border: none;
+  cursor: pointer;
+  background-color: white;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.restaurant-subtab-button.active-subtab {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.restaurant-subtab-button.inactive-subtab {
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+/* 新增餐廳表單區域 */
 .add-restaurant-container {
   background-color: #fff;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.add-restaurant-form {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .add-restaurant-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .add-restaurant-input {
-  padding: 8px;
-  border-radius: 4px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.add-restaurant-input:focus {
+  border-color: #2196F3;
+  outline: none;
 }
 
 .add-restaurant-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 1rem;
+  margin: 1rem 0;
 }
 
 .add-restaurant-label {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .add-restaurant-button {
   background-color: #4CAF50;
   color: white;
-  padding: 10px 15px;
+  padding: 10px 20px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease;
 }
 
-/* 導出按鈕樣式 */
-.export-button {
-  background-color: #4a69bd;
-  color: white;
+.add-restaurant-button:hover {
+  background-color: #43a047;
+}
+
+/* 標籤管理區域 */
+.tags-management-container {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.tags-management-section {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.tags-search-box {
+  margin-bottom: 1rem;
+  position: relative;
+  display: flex;
+}
+
+.tag-search-input {
+  width: 100%;
   padding: 8px 12px;
-  border: none;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.clear-tag-search {
+  background: none;
+  border: none;
+  color: #f44336;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.clear-tag-search:hover {
+  background-color: #ffebee;
+}
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+  position: relative;
+}
+
+/* 已選標籤顯示區域 */
+.selected-tags-container {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.selected-tags-header {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.selected-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selected-tag-pill {
+  background-color: #2196F3;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.remove-tag {
+  cursor: pointer;
+  opacity: 0.8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  font-size: 0.7rem;
+}
+
+.remove-tag:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 標籤項目樣式 */
+.tag-item {
+  background-color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.tag-item:hover {
+  background-color: #f1f3f5;
+  border-color: #adb5bd;
+}
+
+.tag-item.highlighted {
+  background-color: #e3f2fd;
+  border-color: #2196F3;
+}
+
+.tag-item.active {
+  background-color: #2196F3;
+  border-color: #1976d2;
+  color: white;
+}
+
+.tag-item.active .tag-name-text {
+  color: white;
+  font-weight: 500;
+}
+
+.tag-item.active:hover {
+  background-color: #1976d2;
+}
+
+.tag-item.editing {
+  z-index: 10;
+  padding: 8px;
+  height: auto;
+}
+
+.tag-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.tag-name-text {
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.tag-name-text:hover {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.tag-actions {
+  display: none;
+  gap: 4px;
+}
+
+.tag-item:hover .tag-actions {
+  display: flex;
+}
+
+.tag-edit-button,
+.tag-delete-button {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.tag-edit-button:hover {
+  background-color: #2196F3;
+  color: white;
+}
+
+.tag-delete-button:hover {
+  background-color: #f44336;
+  color: white;
+}
+
+/* 編輯標籤容器 */
+.tag-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  width: 100%;
+}
+
+.tag-edit-input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #2196F3;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.tag-edit-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.tag-save-button,
+.tag-cancel-button {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  min-width: 24px;
+}
+
+.tag-save-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.tag-cancel-button {
+  background-color: #f44336;
+  color: white;
+}
+
+/* 篩選餐廳預覽 */
+.filtered-restaurants-preview {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.preview-list {
+  margin-top: 0.5rem;
+}
+
+.preview-item {
+  padding: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.preview-more {
+  padding: 0.5rem;
+  color: #757575;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* 餐廳列表 */
+.restaurant-list-container {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin-top: 2rem;
+}
+
+.restaurant-list-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.restaurant-list-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.restaurant-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.clear-search-button {
+  background-color: #f44336;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.clear-search-button:hover {
+  background-color: #d32f2f;
+}
+
+.export-button {
+  background-color: #4a69bd;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   transition: background-color 0.2s ease;
 }
 
@@ -129,53 +537,26 @@
   background-color: #3c5aa6;
 }
 
-/* 餐廳列表 */
-.restaurant-list-container {
-  overflow-x: auto;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.restaurant-list-header {
-  padding: 1rem;
-  margin: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.restaurant-list-header h3 {
-  margin: 0;
-}
-
 .restaurant-table-container {
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
-  position: relative;
+  overflow-x: auto;
+  max-height: calc(100vh - 400px);
 }
 
 .restaurant-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
-  position: relative;
-}
-
-.restaurant-table thead tr {
-  background-color: #efefef;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
 }
 
 .restaurant-table th {
-  padding: 8px;
-  border-bottom: 2px solid #ddd;
-  white-space: nowrap;
-  position: relative;
-  z-index: 101;
+  background-color: #f8f9fa;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .restaurant-table th.center {
@@ -186,75 +567,123 @@
   text-align: left;
 }
 
-.restaurant-table tbody tr {
-  border-bottom: 1px solid #eee;
-}
-
 .restaurant-table td {
   padding: 8px;
+  border-bottom: 1px solid #eee;
 }
 
 .restaurant-table td.center {
   text-align: center;
 }
 
-.restaurant-table .empty-message {
-  text-align: center;
-  padding: 20px;
+.restaurant-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background-color: transparent;
 }
 
-/* 餐廳圖片欄位 */
+/* 改進標籤欄位顯示 */
+.restaurant-table td:nth-child(5) {
+  max-width: 200px;
+  position: relative;
+}
+
+.restaurant-table td:nth-child(5) .restaurant-input {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-height: 60px;
+  line-height: 1.5;
+  text-align: left;
+  background-color: #ffffff;
+  display: block;
+  overflow-y: auto;
+  max-height: 120px;
+  padding: 8px;
+  margin: 0;
+}
+
+/* 當非編輯模式時提供更好的標籤顯示 */
+.restaurant-table td:nth-child(5) .restaurant-input:not(:focus) {
+  white-space: pre-wrap;
+}
+
+/* 編輯模式下的標籤輸入框樣式 */
+.restaurant-table td:nth-child(5) .restaurant-input:focus {
+  border: 1px solid #2196F3;
+  background-color: #fff;
+  position: relative;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.restaurant-input:focus {
+  border-color: #2196F3;
+  background-color: #fff;
+  outline: none;
+}
+
 .restaurant-image {
   width: 60px;
   height: 60px;
   object-fit: cover;
   border-radius: 4px;
-  margin-bottom: 5px;
 }
 
 .restaurant-no-image {
-  color: #888;
-  margin-bottom: 5px;
+  width: 60px;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: #f1f3f5;
+  border-radius: 4px;
+  color: #adb5bd;
+  font-size: 0.8rem;
 }
 
 .restaurant-image-upload {
-  max-width: 120px;
-  font-size: 12px;
+  margin-top: 4px;
+  font-size: 0.8rem;
 }
 
-/* 餐廳表格輸入框 */
-.restaurant-input {
-  width: 100%;
-  padding: 4px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  position: relative;
-  z-index: 1;
+.button-group {
+  display: flex;
+  gap: 4px;
 }
 
-/* 下拉選單 */
-.restaurant-table select {
-  width: 100%;
-  padding: 4px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  position: relative;
-  z-index: 5;
-}
-
-/* 刪除按鈕 */
-.delete-button {
-  background-color: #f44336;
-  color: white;
-  padding: 5px 10px;
+.edit-button,
+.delete-button,
+.save-button,
+.cancel-button {
+  padding: 4px 8px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.8rem;
+  transition: background-color 0.2s ease;
+}
+
+.edit-button {
+  background-color: #2196F3;
+  color: white;
+}
+
+.delete-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.cancel-button {
+  background-color: #757575;
+  color: white;
 }
 
 /* 房間管理 */
@@ -262,6 +691,7 @@
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  overflow: hidden;
 }
 
 .room-management-header {
@@ -275,10 +705,6 @@
   align-items: center;
 }
 
-.room-management-controls h3 {
-  margin: 0;
-}
-
 .refresh-button {
   background-color: #2196F3;
   color: white;
@@ -286,6 +712,15 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: #1976d2;
 }
 
 .room-table-container {
@@ -295,15 +730,15 @@
 .room-table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.room-table thead tr {
-  background-color: #e3f2fd;
+  font-size: 0.9rem;
 }
 
 .room-table th {
+  background-color: #f8f9fa;
   padding: 12px 8px;
-  border-bottom: 2px solid #ddd;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
 }
 
 .room-table th.center {
@@ -314,12 +749,9 @@
   text-align: left;
 }
 
-.room-table tbody tr {
-  border-bottom: 1px solid #eee;
-}
-
 .room-table td {
   padding: 8px;
+  border-bottom: 1px solid #eee;
 }
 
 .room-table td.center {
@@ -328,13 +760,15 @@
 
 .room-id {
   font-family: monospace;
+  color: #666;
 }
 
 .room-status {
-  padding: 4px 12px;
+  display: inline-block;
+  padding: 4px 8px;
   border-radius: 12px;
-  font-size: 0.9em;
-  font-weight: bold;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .room-status.waiting {
@@ -348,57 +782,92 @@
 }
 
 .room-status.completed {
-  background-color: #eeeeee;
-  color: #757575;
-}
-
-.room-status.default {
-  background-color: #e0e0e0;
+  background-color: #f5f5f5;
   color: #757575;
 }
 
 .room-delete-button {
   background-color: #f44336;
   color: white;
-  padding: 6px 12px;
+  padding: 4px 8px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 0.8rem;
+  transition: background-color 0.2s ease;
 }
 
-/* 載入中狀態 */
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+.room-delete-button:hover {
+  background-color: #d32f2f;
 }
 
-/* 無權限狀態 */
-.no-permission-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+/* 空數據提示 */
+.empty-message {
+  padding: 1rem;
+  text-align: center;
+  color: #757575;
+  font-style: italic;
 }
 
-/* 標籤輸入框 */
-.tag-input {
-  width: 100%;
-  padding: 4px;
+/* 響應式設計 */
+@media (max-width: 1024px) {
+  .admin-container {
+    padding: 0 1rem;
+  }
+
+  .restaurant-table-container {
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .restaurant-table {
+    font-size: 0.8rem;
+  }
+
+  .add-restaurant-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tags-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  
+  .restaurant-subtab-container {
+    width: 100%;
+  }
+  
+  .restaurant-subtab-button {
+    flex: 1;
+  }
+}
+
+/* 工具提示 */
+[title] {
+  position: relative;
+}
+
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
   border-radius: 4px;
-  border: 1px solid #ddd;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
 }
 
-/* 表格欄寬 */
-.col-image { width: 120px; }
-.col-name { width: 15%; }
-.col-type { width: 10%; }
-.col-address { width: 20%; }
-.col-tags { width: 25%; }
-.col-price { width: 80px; }
-.col-rating { width: 80px; }
-.col-people { width: 100px; }
-.col-spicy { width: 60px; }
-.col-action { width: 80px; }
+/* 動畫效果 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
