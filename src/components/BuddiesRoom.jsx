@@ -35,6 +35,7 @@ export default function BuddiesRoom() {
     type: "success",
   });
   const [copyingRoom, setCopyingRoom] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   function ToastNotification({ message, type, visible, onHide }) {
     if (!visible) return null;
@@ -151,18 +152,180 @@ export default function BuddiesRoom() {
 
     // 接收餐廳推薦
     socket.on("groupRecommendations", (recs) => {
-      console.log("收到餐廳推薦:", recs.length);
-      setRecommendations(recs);
-      setPhase("recommend");
-      localStorage.setItem("buddiesRecommendations", JSON.stringify(recs));
+      console.log("收到餐廳推薦:", recs?.length, "家餐廳");
+
+      if (!recs || !Array.isArray(recs) || recs.length === 0) {
+        console.error("收到無效的推薦數據");
+        setError("推薦生成失敗，請重試");
+        setPhase("waiting");
+        return;
+      }
+
+      // 確保推薦結果有效
+      const validRecommendations = recs.filter((r) => r && r.id);
+
+      if (validRecommendations.length === 0) {
+        console.error("推薦結果無效");
+        setError("推薦結果無效，請重試");
+        setPhase("waiting");
+        return;
+      }
+
+      // 強制更新狀態
+      setRecommendations([]);
+      setPhase("waiting");
+
+      // 使用 setTimeout 確保狀態更新順序
+      setTimeout(() => {
+        setRecommendations(validRecommendations);
+        setPhase("recommend");
+        console.log(
+          "已切換到推薦階段，推薦餐廳數量:",
+          validRecommendations.length
+        );
+      }, 100);
     });
 
     // 推薦錯誤處理
     socket.on("recommendError", ({ error }) => {
-      setError(`推薦失敗: ${error}`);
-      // 回到等待狀態，讓用戶可以重試
+      console.error("推薦生成錯誤:", error);
+      setError(error || "推薦生成失敗，請重試");
       setPhase("waiting");
     });
+
+    // 提交答案
+    socket.on(
+      "submitAnswers",
+      function (
+        {
+          roomId,
+          answers,
+          questionTexts,
+          questionSources,
+          index,
+          basicQuestions,
+        },
+        callback
+      ) {
+        // ... 其他代碼 ...
+
+        // 確保 room.questionUserData 已初始化
+        if (!room.questionUserData) {
+          room.questionUserData = {};
+        }
+        if (!room.questionUserData[currentIndex]) {
+          room.questionUserData[currentIndex] = [];
+        }
+
+        // 初始化問題統計
+        const questionStats = {
+          userData: [],
+        };
+
+        // 添加當前用戶的投票數據
+        if (userAnswer) {
+          const userInfo = {
+            id: socket.id,
+            name: userName,
+            option: userAnswer,
+            timestamp: Date.now(),
+          };
+
+          // 檢查是否已經投票
+          const existingVoteIndex = room.questionUserData[
+            currentIndex
+          ].findIndex((vote) => vote.id === socket.id);
+
+          if (existingVoteIndex === -1) {
+            // 新投票
+            room.questionUserData[currentIndex].push(userInfo);
+          } else {
+            // 更新現有投票
+            room.questionUserData[currentIndex][existingVoteIndex] = userInfo;
+          }
+        }
+
+        // 重新計算所有票數
+        const voteCounts = {};
+        room.questionUserData[currentIndex].forEach((vote) => {
+          voteCounts[vote.option] = (voteCounts[vote.option] || 0) + 1;
+        });
+
+        // 更新統計對象
+        questionStats.userData = [...room.questionUserData[currentIndex]];
+        Object.assign(questionStats, voteCounts);
+
+        // 立即發送更新的投票統計
+        io.to(roomId).emit("voteStats", questionStats);
+
+        // 發送新投票通知
+        if (userAnswer) {
+          io.to(roomId).emit("newVote", {
+            option: userAnswer,
+            senderId: socket.id,
+            userName: userName,
+          });
+        }
+
+        // 檢查是否所有用戶都已完成答題
+        const memberCount = Object.keys(room.members || {}).length;
+        const answerCount = Object.keys(room.answers || {}).length;
+
+        if (answerCount >= memberCount) {
+          console.log(`[${roomId}] 所有用戶已完成答題，生成推薦`);
+
+          // 更新房間狀態
+          room.status = "generating_recommendations";
+
+          // 獲取餐廳數據
+          getRestaurants()
+            .then((restaurants) => {
+              if (!restaurants || restaurants.length === 0) {
+                throw new Error("無法獲取餐廳數據");
+              }
+
+              // 生成推薦
+              const recommendations = enhancedLogic.recommendForGroup(
+                room.answers,
+                restaurants,
+                {
+                  basicQuestions: room.basicQuestions || [],
+                  strictBasicMatch: true,
+                  minBasicMatchRatio: 0.5,
+                  basicMatchWeight: enhancedLogic.WEIGHT.BASIC_MATCH * 1.5,
+                  answerQuestionMap: room.answerQuestionMap || {},
+                }
+              );
+
+              if (!recommendations || recommendations.length === 0) {
+                throw new Error("無法生成推薦結果");
+              }
+
+              // 保存推薦結果
+              room.recommendations = recommendations;
+              room.stage = "vote";
+              room.status = "recommendation_ready";
+
+              // 先保存到 Firebase
+              return saveRecommendationsToFirebase(
+                roomId,
+                recommendations
+              ).then(() => {
+                // 發送推薦結果給所有用戶
+                io.to(roomId).emit("groupRecommendations", recommendations);
+                console.log(
+                  `[${roomId}] 已發送 ${recommendations.length} 家餐廳推薦`
+                );
+              });
+            })
+            .catch((error) => {
+              console.error(`[${roomId}] 生成推薦失敗:`, error);
+              io.to(roomId).emit("recommendError", { error: error.message });
+              room.status = "questions"; // 重置狀態
+            });
+        }
+      }
+    );
 
     // 清理函數
     return () => {
@@ -648,6 +811,7 @@ export default function BuddiesRoom() {
             roomId={roomId}
             questions={formatQuestionsForSwiper(questions)}
             onComplete={handleSubmitAnswers}
+            members={members} //傳遞成員數據
           />
         );
 
@@ -694,6 +858,34 @@ export default function BuddiesRoom() {
       }
     }, 5000);
   };
+
+  const handleRetryRecommendation = () => {
+    if (retryCount >= 3) {
+      setError("多次嘗試失敗，請重新開始");
+      return;
+    }
+
+    setRetryCount((prev) => prev + 1);
+    setPhase("waiting");
+
+    // 重新請求推薦
+    socket.emit("getBuddiesRecommendations", { roomId }, (response) => {
+      if (response.success && response.recommendations) {
+        setRecommendations(response.recommendations);
+        setPhase("recommend");
+      } else {
+        setError(response.error || "推薦生成失敗");
+      }
+    });
+  };
+
+  useEffect(() => {
+    console.log("推薦狀態更新:", {
+      phase,
+      recommendationsCount: recommendations.length,
+      hasError: !!error,
+    });
+  }, [phase, recommendations, error]);
 
   return (
     <div className="buddies-room">

@@ -9,16 +9,13 @@ export default function BuddiesQuestionSwiper({
   roomId,
   questions,
   onComplete,
+  members = [], // 添加這個參數並設置默認值
 }) {
   // 主要狀態
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
   const [waiting, setWaiting] = useState(false);
   const [voteStats, setVoteStats] = useState({});
   const [voteBubbles, setVoteBubbles] = useState([]); // 改為數組，存儲多個氣泡
-  const [waitingText, setWaitingText] = useState("等待其他人回答...");
-  // 新增：追蹤是否顯示結果倒計時
-  const [showingResults, setShowingResults] = useState(false);
   const hasCompletedRef = useRef(false);
 
   // Refs - 不會觸發重新渲染
@@ -36,9 +33,12 @@ export default function BuddiesQuestionSwiper({
   ).current;
 
   // 基於 buddiesBasicQuestions 判斷問題類型
-  const isBuddiesBasicQuestion = (text) => {
-    return basicQuestionTexts.includes(text);
-  };
+  const isBuddiesBasicQuestion = useCallback(
+    (text) => {
+      return basicQuestionTexts.includes(text);
+    },
+    [basicQuestionTexts]
+  );
 
   // 處理安全的問題格式化
   const safeQuestions = useRef(
@@ -49,7 +49,6 @@ export default function BuddiesQuestionSwiper({
           leftOption: q.leftOption || "選項 A",
           rightOption: q.rightOption || "選項 B",
           hasVS: q.hasVS || false,
-          // 使用 buddies 專用的基本問題判斷
           source:
             q.source ||
             (q.text && isBuddiesBasicQuestion(q.text) ? "basic" : "fun"),
@@ -69,7 +68,7 @@ export default function BuddiesQuestionSwiper({
     }
   }, []);
 
-  // 顯示投票氣泡動畫 - 修改為支持多個氣泡往下疊加，並調整顯示時間為3秒
+  // 顯示投票氣泡動畫
   const showVoteBubble = useCallback((voteData) => {
     if (!isMountedRef.current) return;
 
@@ -78,7 +77,7 @@ export default function BuddiesQuestionSwiper({
 
     // 創建新的投票氣泡
     const newBubble = {
-      id: Date.now() + Math.random(), // 確保唯一ID
+      id: Date.now() + Math.random(),
       option: voteData.option,
       userName: voteData.userName || "有人",
       timestamp: Date.now(),
@@ -86,7 +85,6 @@ export default function BuddiesQuestionSwiper({
 
     // 添加新氣泡到數組
     setVoteBubbles((prev) => {
-      // 限制最多顯示5個氣泡，新的排在上面
       const newBubbles = [newBubble, ...prev].slice(0, 5);
       return newBubbles;
     });
@@ -112,30 +110,25 @@ export default function BuddiesQuestionSwiper({
       // 保存答案，同時更新ref
       const newAnswers = { ...answersRef.current, [questionIndex]: answer };
       answersRef.current = newAnswers;
-      setAnswers(newAnswers);
 
       // 獲取當前問題的文本和來源
       const questionText = safeQuestions[questionIndex]?.text || "";
-      // 使用一致的判斷邏輯
       const questionSource =
         safeQuestions[questionIndex]?.source ||
         (isBuddiesBasicQuestion(questionText) ? "basic" : "fun");
-        
+
       // 保存問題文本和來源到ref中
       questionTextsRef.current[questionIndex] = questionText;
       questionSourcesRef.current[questionIndex] = questionSource;
-
-      // 獲取用戶名
-      const userName = localStorage.getItem("userName") || "用戶";
 
       // 構建完整答案數據
       const answersArray = Object.values(newAnswers);
       const questionTextsArray = [...questionTextsRef.current];
       const questionSourcesArray = [...questionSourcesRef.current];
 
-      // 發送答案到服務器，確保使用正確的事件名稱 "submitAnswers"
+      // 發送答案到服務器
       console.log(
-        `發送答案到服務器: roomId=${roomId}, index=${questionIndex}, answersLength=${answersArray.length}`
+        `發送答案到服務器: roomId=${roomId}, index=${questionIndex}, answersLength=${answersArray.length}, totalQuestions=${safeQuestions.length}`
       );
 
       socket.emit(
@@ -146,26 +139,24 @@ export default function BuddiesQuestionSwiper({
           questionTexts: questionTextsArray,
           questionSources: questionSourcesArray,
           index: questionIndex,
+          totalQuestions: safeQuestions.length,
+          currentAnswerCount: Object.keys(newAnswers).length,
           basicQuestions: buddiesBasicQuestions,
         },
         (response) => {
-          // 處理服務器響應
           if (response && !response.success) {
             console.error(`答案提交回調錯誤: ${response.error}`);
           } else {
-            console.log("答案提交成功");
+            console.log(
+              `答案提交成功，當前題目：${questionIndex}/${
+                safeQuestions.length - 1
+              }`
+            );
           }
         }
       );
-
-      // 模擬本地投票狀態更新
-      setVoteStats((prev) => {
-        const updated = { ...prev };
-        updated[answer] = (updated[answer] || 0) + 1;
-        return updated;
-      });
     },
-    [questionIndex, roomId, safeQuestions]
+    [questionIndex, roomId, safeQuestions, isBuddiesBasicQuestion]
   );
 
   // 處理Socket事件監聽 - 這是主要的useEffect
@@ -242,45 +233,45 @@ export default function BuddiesQuestionSwiper({
       }
     };
 
-    // 收到投票統計信息
     const handleVoteStats = (stats) => {
       if (!isMountedRef.current) return;
 
-      // 只在數據真正不同時更新
-      setVoteStats((prevStats) => {
-        // 避免不必要的狀態更新
-        if (JSON.stringify(prevStats) === JSON.stringify(stats)) {
-          return prevStats;
-        }
-        return stats;
-      });
+      // 直接更新狀態，不進行比較
+      setVoteStats(stats);
+
+      // 添加調試日誌
+      console.log("更新投票統計:", stats);
     };
 
     // 收到新投票事件 - 保存投票用戶資訊
     const handleNewVote = (voteData) => {
       if (!isMountedRef.current) return;
 
-      // 顯示投票氣泡效果
-      showVoteBubble(voteData);
+      // 驗證投票數據
+      if (!voteData || typeof voteData !== "object") {
+        console.error("無效的投票數據格式");
+        return;
+      }
 
-      // 更新投票統計，使用函數式更新避免閉包問題
+      // 更新投票統計
       setVoteStats((prev) => {
         const newStats = { ...prev };
-        const option = voteData.option;
-        newStats[option] = (newStats[option] || 0) + 1;
-
-        // 保存投票用戶資訊
         if (!newStats.userData) {
           newStats.userData = [];
         }
 
-        // 添加用戶資訊到列表
-        newStats.userData.push({
-          id: voteData.senderId || `user-${Date.now()}`,
-          name: voteData.userName || "匿名用戶",
-          option: option,
-          timestamp: Date.now(),
-        });
+        // 確保不重複添加
+        const existingVote = newStats.userData.find(
+          (u) => u.id === voteData.senderId
+        );
+        if (!existingVote) {
+          newStats.userData.push({
+            id: voteData.senderId || `user-${Date.now()}`,
+            name: voteData.userName || "匿名用戶",
+            option: voteData.option,
+            timestamp: Date.now(),
+          });
+        }
 
         return newStats;
       });
@@ -291,18 +282,16 @@ export default function BuddiesQuestionSwiper({
     const handleGroupRecommendations = (recs) => {
       if (!isMountedRef.current) return;
 
-      // 防止重複調用 onComplete
-      if (hasCompletedRef.current) {
-        console.log("已經處理過推薦結果，忽略重複事件");
+      // 檢查是否真的完成了所有問題
+      const answeredQuestionsCount = Object.keys(answersRef.current).length;
+      if (answeredQuestionsCount < safeQuestions.length) {
+        console.warn(
+          `收到推薦結果，但尚未完成所有問題 (${answeredQuestionsCount}/${safeQuestions.length})`
+        );
         return;
       }
 
-      console.log(
-        "收到餐廳推薦結果:",
-        recs ? recs.length : 0,
-        "當前題目:",
-        questionIndex
-      );
+      console.log("收到餐廳推薦結果:", recs?.length, "家餐廳");
 
       // 確保接收到有效數據
       if (!recs || !Array.isArray(recs) || recs.length === 0) {
@@ -310,25 +299,19 @@ export default function BuddiesQuestionSwiper({
         return;
       }
 
-      // 使用ref獲取最新狀態
+      // 使用 ref 獲取最新狀態
       const result = {
         answers: Object.values(answersRef.current),
         questionTexts: questionTextsRef.current,
         questionSources: questionSourcesRef.current,
       };
 
-      // 標記為已完成，防止重複調用
-      hasCompletedRef.current = true;
-
-      // 關鍵：確保一定調用onComplete
-      console.log("準備調用onComplete函數");
+      // 調用 onComplete
       try {
         onComplete(result, recs);
-        console.log("已調用onComplete函數");
+        console.log("已調用 onComplete 函數");
       } catch (error) {
-        console.error("調用onComplete出錯:", error);
-        // 重新設置標記，允許再次嘗試
-        hasCompletedRef.current = false;
+        console.error("調用 onComplete 出錯:", error);
       }
     };
 
@@ -373,6 +356,17 @@ export default function BuddiesQuestionSwiper({
     };
   }, [questionIndex, roomId, showVoteBubble]);
 
+  // 清理組件時的副作用
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // 如果所有問題都回答完了，顯示等待結果畫面
   if (questionIndex >= safeQuestions.length) {
     return (
@@ -401,6 +395,20 @@ export default function BuddiesQuestionSwiper({
   if (!currentQuestion) {
     return <div>載入問題中...</div>;
   }
+
+  const updateVoteBar = () => {
+    const leftCount = parseInt(voteStats[currentQuestion.leftOption]) || 0;
+    const rightCount = parseInt(voteStats[currentQuestion.rightOption]) || 0;
+    const totalVotes = leftCount + rightCount;
+
+    // 確保數值有效
+    if (isNaN(leftCount) || isNaN(rightCount)) {
+      console.error("無效的投票數據:", voteStats);
+      return 0;
+    }
+
+    return totalVotes > 0 ? Math.round((leftCount / totalVotes) * 100) : 50; // 預設顯示 50%
+  };
 
   return (
     <div className="question-container">
@@ -442,7 +450,7 @@ export default function BuddiesQuestionSwiper({
               <span></span>
               <span></span>
             </div>
-            <div className="waiting-text">{waitingText}</div>
+            <div className="waiting-text">等待其他人回答...</div>
           </div>
 
           {/* 投票統計視覺化 - 修復顯示邏輯 */}
@@ -458,7 +466,7 @@ export default function BuddiesQuestionSwiper({
                     ([key, value]) =>
                       key !== "userData" && typeof value === "number"
                   )
-                  .reduce((sum, [_, count]) => sum + count, 0)}{" "}
+                  .reduce((sum, [, count]) => sum + count, 0)}{" "}
                 票
               </div>
             </div>
@@ -494,28 +502,42 @@ export default function BuddiesQuestionSwiper({
                       const rightCount = voteStats[rightOption] || 0;
                       const totalVotes = leftCount + rightCount;
 
-                      // 計算百分比，確保總和為100%
-                      let leftPercentage =
+                      // 計算百分比
+                      const leftPercentage =
                         totalVotes > 0
                           ? Math.round((leftCount / totalVotes) * 100)
                           : 0;
-                      let rightPercentage = 100 - leftPercentage;
 
-                      // 總是返回 motion.div，即使百分比為 0
+                      // 調試信息直接顯示在UI上
+                      console.log(
+                        `計算比例條: 左側=${leftCount}, 右側=${rightCount}, 總計=${totalVotes}, 百分比=${leftPercentage}%`
+                      );
+
                       return (
-                        <motion.div
-                          className={`vote-bar-left-single ${
-                            showingResults ? "vote-pulse" : ""
-                          }`}
-                          initial={{ width: "0%" }}
-                          animate={{ width: `${leftPercentage}%` }}
-                          transition={{
-                            duration: 0.8,
-                            type: "spring",
-                            stiffness: 80,
-                            damping: 15,
-                          }}
-                        />
+                        <>
+                          {/* 可以臨時添加這行顯示調試信息 */}
+                          <div
+                            style={{
+                              fontSize: "10px",
+                              color: "#999",
+                              marginBottom: "5px",
+                            }}
+                          >
+                            {`調試: 左=${leftCount}, 右=${rightCount}, 總=${totalVotes}, ${leftPercentage}%`}
+                          </div>
+
+                          <motion.div
+                            className="vote-bar-left-single"
+                            initial={{ width: "0%" }}
+                            animate={{ width: `${leftPercentage}%` }}
+                            transition={{
+                              duration: 0.8,
+                              type: "spring",
+                              stiffness: 80,
+                              damping: 15,
+                            }}
+                          />
+                        </>
                       );
                     })()}
                   </div>
@@ -528,58 +550,63 @@ export default function BuddiesQuestionSwiper({
               <div className="vote-participants-title">投票中的成員</div>
               <div className="vote-participants-avatars">
                 {(() => {
-                  if (!currentQuestion) return null;
-
-                  const leftOption = currentQuestion.leftOption;
-                  const rightOption = currentQuestion.rightOption;
-                  const leftCount = voteStats[leftOption] || 0;
-                  const rightCount = voteStats[rightOption] || 0;
-                  const voterAvatars = [];
-
-                  // 為左側選項創建頭像
-                  for (let i = 0; i < leftCount; i++) {
-                    voterAvatars.push(
+                  // 檢查是否有用戶數據
+                  if (voteStats.userData && Array.isArray(voteStats.userData)) {
+                    return voteStats.userData.map((user, i) => (
                       <div
-                        key={`left-voter-${i}`}
+                        key={`voter-${user.id || i}`}
                         className="vote-participant-avatar"
                         style={{
-                          backgroundColor: "#6874E8",
+                          backgroundColor:
+                            user.option === currentQuestion?.leftOption
+                              ? "#6874E8"
+                              : "#FF6B6B",
                           animationDelay: `${i * 0.1}s`,
                         }}
                       >
                         👤
                         <span className="vote-participant-name">
-                          {`選擇${leftOption}`}
+                          {user.name || "用戶"}
                         </span>
                       </div>
-                    );
+                    ));
                   }
 
-                  // 為右側選項創建頭像
-                  for (let i = 0; i < rightCount; i++) {
-                    voterAvatars.push(
+                  return (
+                    <div className="no-voters-message">等待成員投票...</div>
+                  );
+                })()}
+              </div>
+            </div>
+            {/* 未投票用戶顯示 */}
+            <div className="vote-participants">
+              <div className="vote-participants-title">尚未作答</div>
+              <div className="vote-participants-avatars">
+                {members.length > 0 &&
+                voteStats.userData &&
+                Array.isArray(voteStats.userData) ? (
+                  members
+                    .filter(
+                      (m) => !voteStats.userData.some((u) => u.id === m.id)
+                    )
+                    .map((user, i) => (
                       <div
-                        key={`right-voter-${i}`}
+                        key={`waiting-${user.id || i}`}
                         className="vote-participant-avatar"
                         style={{
-                          backgroundColor: "#FF6B6B",
-                          animationDelay: `${(i + leftCount) * 0.1}s`,
+                          backgroundColor: "#ccc", // 灰色表示等待中
+                          animationDelay: `${i * 0.1}s`,
                         }}
                       >
                         👤
                         <span className="vote-participant-name">
-                          {`選擇${rightOption}`}
+                          {user.name || "用戶"}
                         </span>
                       </div>
-                    );
-                  }
-
-                  return voterAvatars.length > 0 ? (
-                    voterAvatars
-                  ) : (
-                    <div className="no-voters-message">等待成員投票...</div>
-                  );
-                })()}
+                    ))
+                ) : (
+                  <div className="no-voters-message">所有成員都已投票</div>
+                )}
               </div>
             </div>
           </div>
