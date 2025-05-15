@@ -5,16 +5,28 @@
   margin: 0 auto;
   text-align: center;
   font-family: sans-serif;
+  padding-top: 4rem;
 }
 
 .buddies-room h2 {
   color: #FF6B6B;
-  margin-bottom: 1.5rem;
+  margin: 4rem 0 3rem;
+  font-size: 1.6rem;
 }
 
 .buddies-room h4 {
   color: #666;
-  margin: 1rem 0 0.5rem;
+  margin: 2rem 0 1rem;
+  font-size: 1.1rem;
+}
+
+/* Buddies 模式卡片標題樣式 */
+.card-title {
+  color: #333;
+  margin: 1.5rem 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 .buddies-room input {
@@ -22,23 +34,35 @@
   margin: 1rem auto;
   padding: 12px 15px;
   width: 80%;
+  max-width: 300px;
   border: 1px solid #ddd;
   border-radius: 12px;
   font-size: 1rem;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .buddies-room input:focus {
   border-color: #FF9F68;
   outline: none;
   box-shadow: 0 0 0 2px rgba(255, 159, 104, 0.2);
+  transform: translateY(-1px);
+}
+
+/* 按鈕容器 */
+.buddies-room .button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 2rem auto;
+  width: 80%;
+  max-width: 300px;
 }
 
 /* 統一按鈕樣式 */
 .buddies-room button,
 .copy-button,
 .share-button {
-  margin: 0.5rem;
+  margin: 0;
   padding: 12px 20px;
   background-color: #ff9f68;
   border: none;
@@ -47,8 +71,9 @@
   border-radius: 12px;
   cursor: pointer;
   font-size: 1rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 4px 10px rgba(255, 159, 104, 0.2);
+  width: 100%;
 }
 
 .buddies-room button:hover,
@@ -64,6 +89,15 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* 掃描按鈕特殊樣式 */
+.scan-button {
+  background-color: #6874E8 !important;
+}
+
+.scan-button:hover {
+  background-color: #5563d7 !important;
 }
 
 /* 按鈕活動狀態 */
@@ -92,12 +126,10 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
   animation: copyingShimmer 1.5s infinite;
 }
 
@@ -165,9 +197,11 @@
   0% {
     box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
   }
@@ -195,9 +229,17 @@
 }
 
 @keyframes fadeInOut {
-  0% { opacity: 0.7; }
-  50% { opacity: 1; }
-  100% { opacity: 0.7; }
+  0% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.7;
+  }
 }
 
 /* 加載動畫 */
@@ -218,8 +260,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 錯誤提示 */
@@ -341,6 +388,7 @@
     opacity: 0;
     transform: translate(-50%, -50px);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, 0);
@@ -351,9 +399,11 @@
   0% {
     transform: translate(-50%, 0);
   }
+
   50% {
     transform: translate(-50%, 5px);
   }
+
   100% {
     transform: translate(-50%, 0);
   }
@@ -363,6 +413,7 @@
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
   }
@@ -433,9 +484,11 @@
     transform: scale(0);
     opacity: 0;
   }
+
   60% {
     transform: scale(1.2);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -459,7 +512,8 @@
 }
 
 .waiting-dots span {
-  width: 15px; /* 放大動畫點 */
+  width: 15px;
+  /* 放大動畫點 */
   height: 15px;
   background-color: #FF6B6B;
   border-radius: 50%;
@@ -479,9 +533,12 @@
 }
 
 @keyframes dotBounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-15px);
   }
@@ -489,7 +546,8 @@
 
 .waiting-text {
   color: #444;
-  font-size: 1.1rem; /* 放大等待文字 */
+  font-size: 1.1rem;
+  /* 放大等待文字 */
   font-weight: 500;
   margin-top: 0.4rem;
 }
@@ -517,47 +575,82 @@
 /* 媒體查詢，適配移動設備 */
 @media (max-width: 480px) {
   .buddies-room {
-    padding: 1rem;
+    padding: 0 1rem 1rem;
   }
-  
+
   .buddies-room input {
     width: 90%;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .buddies-room button {
     width: 100%;
     margin: 0.3rem 0;
   }
-  
+
   .toast-notification {
     top: 10px;
     max-width: 90%;
     font-size: 0.9rem;
     padding: 12px 16px;
   }
-  
+
   .toast-icon {
     font-size: 1.1rem;
     width: 24px;
     height: 24px;
   }
-  
+
   .vote-status-container {
     padding: 1rem;
     margin: 1rem auto;
   }
-  
+
   .vote-participants-avatars {
     gap: 4px;
   }
-  
+
   .vote-participant-avatar {
     width: 25px;
     height: 25px;
     font-size: 0.8rem;
   }
+}
+
+/* 房間內按鈕容器 */
+.room-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem auto;
+  width: 80%;
+  max-width: 300px;
+}
+
+.room-actions button {
+  flex: 1;
+  margin: 0;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.room-actions .copy-button,
+.room-actions .share-button {
+  margin: 0;
+  width: 100%;
+}
+
+.room-actions .copy-button-active,
+.room-actions .share-button-active {
+  margin: 0;
+  width: 100%;
 }

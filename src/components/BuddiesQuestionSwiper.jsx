@@ -442,182 +442,178 @@ export default function BuddiesQuestionSwiper({
       </div>
 
       {waiting ? (
-        <div className="waiting-container">
-          {/* 等待動畫移至頂部並放大 */}
-          <div className="waiting-animation">
-            <div className="waiting-dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <div className="waiting-text">等待其他人回答...</div>
-          </div>
-
-          {/* 投票統計視覺化 - 修復顯示邏輯 */}
-          <div className="vote-status-container">
-            <div className="vote-status-header">
-              <div className="vote-status-title">
-                <span className="vote-status-icon">🗳️</span>
-                <span className="vote-status-text">大家的選擇</span>
+        <div className="waiting-overlay">
+          <div className="waiting-container">
+            {/* 等待動畫 */}
+            <div className="waiting-animation">
+              <div className="waiting-dots">
+                <span></span>
+                <span></span>
+                <span></span>
               </div>
-              <div className="vote-status-total">
-                {Object.entries(voteStats)
-                  .filter(
-                    ([key, value]) =>
-                      key !== "userData" && typeof value === "number"
-                  )
-                  .reduce((sum, [, count]) => sum + count, 0)}{" "}
-                票
-              </div>
+              <div className="waiting-text">等待其他人回答...</div>
             </div>
 
-            <div className="vote-distribution">
-              {/* 直接顯示問題的兩個選項 */}
-              {currentQuestion && (
-                <div className="vote-progress-single">
-                  <div className="vote-options-labels">
-                    <div className="vote-option-label left">
-                      <span className="vote-option-name">
-                        {currentQuestion.leftOption}
-                      </span>
-                      <span className="vote-count">
-                        {voteStats[currentQuestion.leftOption] || 0}
-                      </span>
-                    </div>
-                    <div className="vote-option-label right">
-                      <span className="vote-option-name">
-                        {currentQuestion.rightOption}
-                      </span>
-                      <span className="vote-count">
-                        {voteStats[currentQuestion.rightOption] || 0}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="vote-bar-container-single">
-                    {(() => {
-                      const leftOption = currentQuestion.leftOption;
-                      const rightOption = currentQuestion.rightOption;
-                      const leftCount = voteStats[leftOption] || 0;
-                      const rightCount = voteStats[rightOption] || 0;
-                      const totalVotes = leftCount + rightCount;
-
-                      // 計算百分比
-                      const leftPercentage =
-                        totalVotes > 0
-                          ? Math.round((leftCount / totalVotes) * 100)
-                          : 0;
-
-                      // 調試信息直接顯示在UI上
-                      console.log(
-                        `計算比例條: 左側=${leftCount}, 右側=${rightCount}, 總計=${totalVotes}, 百分比=${leftPercentage}%`
-                      );
-
-                      return (
-                        <>
-                          {/* 可以臨時添加這行顯示調試信息 */}
-                          <div
-                            style={{
-                              fontSize: "10px",
-                              color: "#999",
-                              marginBottom: "5px",
-                            }}
-                          >
-                            {`調試: 左=${leftCount}, 右=${rightCount}, 總=${totalVotes}, ${leftPercentage}%`}
-                          </div>
-
-                          <motion.div
-                            className="vote-bar-left-single"
-                            initial={{ width: "0%" }}
-                            animate={{ width: `${leftPercentage}%` }}
-                            transition={{
-                              duration: 0.8,
-                              type: "spring",
-                              stiffness: 80,
-                              damping: 15,
-                            }}
-                          />
-                        </>
-                      );
-                    })()}
-                  </div>
+            {/* 投票統計視覺化 */}
+            <div className="vote-status-container">
+              <div className="vote-status-header">
+                <div className="vote-status-title">
+                  <span className="vote-status-icon">🗳️</span>
+                  <span className="vote-status-text">大家的選擇</span>
                 </div>
-              )}
-            </div>
-
-            {/* 投票人員頭像顯示 */}
-            <div className="vote-participants">
-              <div className="vote-participants-title">投票中的成員</div>
-              <div className="vote-participants-avatars">
-                {(() => {
-                  // 檢查是否有用戶數據
-                  if (voteStats.userData && Array.isArray(voteStats.userData)) {
-                    return voteStats.userData.map((user, i) => (
-                      <div
-                        key={`voter-${user.id || i}`}
-                        className="vote-participant-avatar"
-                        style={{
-                          backgroundColor:
-                            user.option === currentQuestion?.leftOption
-                              ? "#6874E8"
-                              : "#FF6B6B",
-                          animationDelay: `${i * 0.1}s`,
-                        }}
-                      >
-                        👤
-                        <span className="vote-participant-name">
-                          {user.name || "用戶"}
-                        </span>
-                      </div>
-                    ));
-                  }
-
-                  return (
-                    <div className="no-voters-message">等待成員投票...</div>
-                  );
-                })()}
-              </div>
-            </div>
-            {/* 未投票用戶顯示 */}
-            <div className="vote-participants">
-              <div className="vote-participants-title">尚未作答</div>
-              <div className="vote-participants-avatars">
-                {members.length > 0 &&
-                voteStats.userData &&
-                Array.isArray(voteStats.userData) ? (
-                  members
+                <div className="vote-status-total">
+                  {Object.entries(voteStats)
                     .filter(
-                      (m) => !voteStats.userData.some((u) => u.id === m.id)
+                      ([key, value]) =>
+                        key !== "userData" && typeof value === "number"
                     )
-                    .map((user, i) => (
-                      <div
-                        key={`waiting-${user.id || i}`}
-                        className="vote-participant-avatar"
-                        style={{
-                          backgroundColor: "#ccc", // 灰色表示等待中
-                          animationDelay: `${i * 0.1}s`,
-                        }}
-                      >
-                        👤
-                        <span className="vote-participant-name">
-                          {user.name || "用戶"}
+                    .reduce((sum, [, count]) => sum + count, 0)}{" "}
+                  票
+                </div>
+              </div>
+
+              <div className="vote-distribution">
+                {/* 直接顯示問題的兩個選項 */}
+                {currentQuestion && (
+                  <div className="vote-progress-single">
+                    <div className="vote-options-labels">
+                      <div className="vote-option-label left">
+                        <span className="vote-option-name">
+                          {currentQuestion.leftOption}
+                        </span>
+                        <span className="vote-count">
+                          {voteStats[currentQuestion.leftOption] || 0}
                         </span>
                       </div>
-                    ))
-                ) : (
-                  <div className="no-voters-message">所有成員都已投票</div>
+                      <div className="vote-option-label right">
+                        <span className="vote-option-name">
+                          {currentQuestion.rightOption}
+                        </span>
+                        <span className="vote-count">
+                          {voteStats[currentQuestion.rightOption] || 0}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="vote-bar-container-single">
+                      {(() => {
+                        const leftOption = currentQuestion.leftOption;
+                        const rightOption = currentQuestion.rightOption;
+                        const leftCount = voteStats[leftOption] || 0;
+                        const rightCount = voteStats[rightOption] || 0;
+                        const totalVotes = leftCount + rightCount;
+
+                        // 計算百分比
+                        const leftPercentage =
+                          totalVotes > 0
+                            ? Math.round((leftCount / totalVotes) * 100)
+                            : 0;
+
+                        // 調試信息直接顯示在UI上
+                        console.log(
+                          `計算比例條: 左側=${leftCount}, 右側=${rightCount}, 總計=${totalVotes}, 百分比=${leftPercentage}%`
+                        );
+
+                        return (
+                          <>
+                            <motion.div
+                              className="vote-bar-left-single"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${leftPercentage}%` }}
+                              transition={{
+                                duration: 0.8,
+                                type: "spring",
+                                stiffness: 80,
+                                damping: 15,
+                              }}
+                            />
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 )}
+              </div>
+
+              {/* 投票人員頭像顯示 */}
+              <div className="vote-participants">
+                <div className="vote-participants-title">投票中的成員</div>
+                <div className="vote-participants-avatars">
+                  {(() => {
+                    // 檢查是否有用戶數據
+                    if (
+                      voteStats.userData &&
+                      Array.isArray(voteStats.userData)
+                    ) {
+                      return voteStats.userData.map((user, i) => (
+                        <div
+                          key={`voter-${user.id || i}`}
+                          className="vote-participant-avatar"
+                          style={{
+                            backgroundColor:
+                              user.option === currentQuestion?.leftOption
+                                ? "#6874E8"
+                                : "#FF6B6B",
+                            animationDelay: `${i * 0.1}s`,
+                          }}
+                        >
+                          👤
+                          <span className="vote-participant-name">
+                            {user.name || "用戶"}
+                          </span>
+                        </div>
+                      ));
+                    }
+
+                    return (
+                      <div className="no-voters-message">等待成員投票...</div>
+                    );
+                  })()}
+                </div>
+              </div>
+              {/* 未投票用戶顯示 */}
+              <div className="vote-participants">
+                <div className="vote-participants-title">尚未作答</div>
+                <div className="vote-participants-avatars">
+                  {members.length > 0 &&
+                  voteStats.userData &&
+                  Array.isArray(voteStats.userData) ? (
+                    members
+                      .filter(
+                        (m) => !voteStats.userData.some((u) => u.id === m.id)
+                      )
+                      .map((user, i) => (
+                        <div
+                          key={`waiting-${user.id || i}`}
+                          className="vote-participant-avatar"
+                          style={{
+                            backgroundColor: "#ccc", // 灰色表示等待中
+                            animationDelay: `${i * 0.1}s`,
+                          }}
+                        >
+                          👤
+                          <span className="vote-participant-name">
+                            {user.name || "用戶"}
+                          </span>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="no-voters-message">所有成員都已投票</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <QuestionSwiperMotionSingle
-          question={currentQuestion}
-          onAnswer={handleAnswer}
-          voteStats={voteStats}
-          disableClickToVote={true}
-        />
+        <div className="question-active-container">
+          <QuestionSwiperMotionSingle
+            question={currentQuestion}
+            onAnswer={handleAnswer}
+            voteStats={voteStats}
+            disableClickToVote={true}
+          />
+        </div>
       )}
     </div>
   );

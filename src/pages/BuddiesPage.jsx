@@ -8,7 +8,7 @@ export default function BuddiesPage() {
   const fromSwiftTaste = location.state?.fromSwiftTaste || false;
 
   return (
-    <div style={{ textAlign: "center", marginTop: "5rem" }}>
+    <div style={{ textAlign: "center" }}>
       <RoomManager fromSwiftTaste={fromSwiftTaste} />
     </div>
   );

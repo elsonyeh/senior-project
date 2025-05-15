@@ -102,7 +102,7 @@ export default function BuddiesRecommendation({
         id: r.id,
       }))
     );
-    
+
     // 檢查餐廳是否已排序（檢查是否有 matchScore 屬性）
     const hasMatchScores = restaurants.some(
       (r) => typeof r.matchScore === "number"
@@ -410,192 +410,182 @@ export default function BuddiesRecommendation({
 
   // 推薦階段 - 使用滑動操作
   return (
-    <div>
-      <h2>一起選餐廳 🍜 ({userVoted ? "已投票" : "滑動選擇"})</h2>
+    <div className="swift-taste-container">
+      <div className="swift-taste-card">
+        <h3 className="card-title">
+          一起選餐廳 🍜 ({userVoted ? "已投票" : "滑動選擇"})
+        </h3>
 
-      {/* 投票和最愛計數顯示 */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-around",
-          margin: "0.5rem 0 1rem",
-          padding: "0.5rem",
-          background: "rgba(255,255,255,0.7)",
-          borderRadius: "12px",
-        }}
-      >
-        <div>
-          <span role="img" aria-label="vote">
-            🗳️
-          </span>{" "}
-          總票數: {Object.values(votes).reduce((sum, count) => sum + count, 0)}
-        </div>
-        <div>
-          <span role="img" aria-label="favorite">
-            ⭐
-          </span>{" "}
-          已收藏: {saved.length}
-        </div>
-      </div>
-
-      {/* 投票排行顯示 - 新增 */}
-      {Object.keys(votes).length > 0 && (
-        <div className="vote-ranking">
-          <h3>實時投票排行</h3>
-          <div className="vote-bars">
-            {Object.entries(votes)
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 3)
-              .map(([restaurantId, voteCount], index) => {
-                const restaurant = [
-                  ...limitedRestaurants,
-                  ...alternativeRestaurants,
-                ].find((r) => r.id === restaurantId);
-
-                if (!restaurant) return null;
-
-                const total = Object.values(votes).reduce(
-                  (sum, count) => sum + count,
-                  0
-                );
-                const percentage = Math.round((voteCount / total) * 100);
-
-                return (
-                  <div key={restaurantId} className="vote-rank-item">
-                    <div className="vote-rank-header">
-                      <div className="vote-rank-name">
-                        <span className="vote-rank-position">{index + 1}</span>
-                        {restaurant.name}
-                      </div>
-                      <div className="vote-rank-count">{voteCount} 票</div>
-                    </div>
-                    <div className="vote-rank-bar-container">
-                      <div
-                        className="vote-rank-bar"
-                        style={{
-                          width: `${percentage}%`,
-                          backgroundColor:
-                            index === 0
-                              ? "#FF6B6B"
-                              : index === 1
-                              ? "#FF9F68"
-                              : "#FFC175",
-                        }}
-                      ></div>
-                      <span className="vote-rank-percentage">
-                        {percentage}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* 投票和最愛計數顯示 */}
+        <div className="vote-stats">
+          <div>
+            <span role="img" aria-label="vote">
+              🗳️
+            </span>{" "}
+            總票數:{" "}
+            {Object.values(votes).reduce((sum, count) => sum + count, 0)}
+          </div>
+          <div>
+            <span role="img" aria-label="favorite">
+              ⭐
+            </span>{" "}
+            已收藏: {saved.length}
           </div>
         </div>
-      )}
 
-      {/* 使用與單人模式相同的滑動組件 */}
-      <RestaurantSwiperMotion
-        restaurants={limitedRestaurants}
-        onSave={handleSaveRestaurant}
-        onFinish={handleFinishSwiping}
-      />
+        {/* 投票排行顯示 */}
+        {Object.keys(votes).length > 0 && (
+          <div className="vote-ranking">
+            <h3>實時投票排行</h3>
+            <div className="vote-bars">
+              {Object.entries(votes)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 3)
+                .map(([restaurantId, voteCount], index) => {
+                  const restaurant = [
+                    ...limitedRestaurants,
+                    ...alternativeRestaurants,
+                  ].find((r) => r.id === restaurantId);
 
-      {saved.length > 0 && (
-        <>
-          <h3>已收藏餐廳 ⭐</h3>
-          <ul className="saved-restaurant-list">
-            {saved.map((r) => (
-              <li key={r.id} className="saved-restaurant-item">
-                <div className="saved-restaurant-info">
-                  <span className="saved-restaurant-name">{r.name}</span>
-                  <span className="saved-restaurant-votes">
-                    {votes[r.id] ? `🗳️ ${votes[r.id]} 票` : ""}
-                  </span>
-                </div>
-                {!userVoted && (
-                  <button
-                    className="vote-button"
-                    onClick={() => handleVote(r.id)}
-                  >
-                    投票
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                  if (!restaurant) return null;
 
-      {/* 備選餐廳顯示 - 新增 */}
-      {alternativeRestaurants.length > 0 && (
-        <>
-          <h3>可能也適合的餐廳 🔍</h3>
-          <ul className="alternative-restaurant-list">
-            {alternativeRestaurants.map((r) => (
-              <li key={r.id} className="alternative-restaurant-item">
-                <div className="alternative-restaurant-info">
-                  <div className="alternative-restaurant-name">{r.name}</div>
-                  <div className="alternative-restaurant-details">
-                    {r.type && (
-                      <span className="restaurant-type">{r.type}</span>
-                    )}
-                    {r.rating && (
-                      <span className="restaurant-rating">
-                        ⭐ {r.rating.toFixed(1)}
-                      </span>
-                    )}
+                  const total = Object.values(votes).reduce(
+                    (sum, count) => sum + count,
+                    0
+                  );
+                  const percentage = Math.round((voteCount / total) * 100);
+
+                  return (
+                    <div key={restaurantId} className="vote-rank-item">
+                      <div className="vote-rank-header">
+                        <div className="vote-rank-name">
+                          <span className="vote-rank-position">
+                            {index + 1}
+                          </span>
+                          {restaurant.name}
+                        </div>
+                        <div className="vote-rank-count">{voteCount} 票</div>
+                      </div>
+                      <div className="vote-rank-bar-container">
+                        <div
+                          className="vote-rank-bar"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor:
+                              index === 0
+                                ? "#FF6B6B"
+                                : index === 1
+                                ? "#FF9F68"
+                                : "#FFC175",
+                          }}
+                        ></div>
+                        <span className="vote-rank-percentage">
+                          {percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* 使用與單人模式相同的滑動組件 */}
+        <div className="swiper-container">
+          <RestaurantSwiperMotion
+            restaurants={limitedRestaurants}
+            onSave={handleSaveRestaurant}
+            onFinish={handleFinishSwiping}
+          />
+        </div>
+
+        {saved.length > 0 && (
+          <div className="saved-section">
+            <h3>已收藏餐廳 ⭐</h3>
+            <ul className="saved-restaurant-list">
+              {saved.map((r) => (
+                <li key={r.id} className="saved-restaurant-item">
+                  <div className="saved-restaurant-info">
+                    <span className="saved-restaurant-name">{r.name}</span>
+                    <span className="saved-restaurant-votes">
+                      {votes[r.id] ? `🗳️ ${votes[r.id]} 票` : ""}
+                    </span>
                   </div>
-                </div>
-                {!userVoted ? (
-                  <button
-                    className="vote-button alternative"
-                    onClick={() => handleVote(r.id)}
-                  >
-                    投票
-                  </button>
-                ) : (
-                  <div className="vote-count">
-                    {votes[r.id] ? `${votes[r.id]} 票` : "0 票"}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                  {!userVoted && (
+                    <button
+                      className="vote-button"
+                      onClick={() => handleVote(r.id)}
+                    >
+                      投票
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      <div
-        style={{ display: "flex", justifyContent: "center", margin: "1rem 0" }}
-      >
-        <button
-          className="btn-restart"
-          style={{ marginRight: "0.5rem" }}
-          onClick={handleRestart}
-        >
-          🔄 回到首頁
-        </button>
-        <button
-          className="btn-restart"
-          style={{ background: "#6874E8" }}
-          onClick={handleBackToRoom}
-        >
-          👥 回到房間
-        </button>
+        {/* 備選餐廳顯示 */}
+        {alternativeRestaurants.length > 0 && (
+          <div className="alternatives-section">
+            <h3>可能也適合的餐廳 🔍</h3>
+            <ul className="alternative-restaurant-list">
+              {alternativeRestaurants.map((r) => (
+                <li key={r.id} className="alternative-restaurant-item">
+                  <div className="alternative-restaurant-info">
+                    <div className="alternative-restaurant-name">{r.name}</div>
+                    <div className="alternative-restaurant-details">
+                      {r.type && (
+                        <span className="restaurant-type">{r.type}</span>
+                      )}
+                      {r.rating && (
+                        <span className="restaurant-rating">
+                          ⭐ {r.rating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {!userVoted ? (
+                    <button
+                      className="vote-button alternative"
+                      onClick={() => handleVote(r.id)}
+                    >
+                      投票
+                    </button>
+                  ) : (
+                    <div className="vote-count">
+                      {votes[r.id] ? `${votes[r.id]} 票` : "0 票"}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="action-buttons">
+          <button
+            className="btn-restart"
+            style={{ marginRight: "0.5rem" }}
+            onClick={handleRestart}
+          >
+            🔄 回到首頁
+          </button>
+          <button
+            className="btn-restart"
+            style={{ background: "#6874E8" }}
+            onClick={handleBackToRoom}
+          >
+            👥 回到房間
+          </button>
+        </div>
+
+        {saved.length > 0 && (
+          <button className="btn-finalize" onClick={handleFinalize}>
+            ✨ 確認選擇 ({saved.length > 0 ? saved[0].name : ""})
+          </button>
+        )}
       </div>
-
-      {saved.length > 0 && (
-        <button
-          className="btn-restart"
-          style={{
-            background: "#FF6B6B",
-            width: "100%",
-            marginTop: "0.5rem",
-          }}
-          onClick={handleFinalize}
-        >
-          ✨ 確認選擇 ({saved.length > 0 ? saved[0].name : ""})
-        </button>
-      )}
     </div>
   );
 }
