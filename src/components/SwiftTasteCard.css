@@ -91,7 +91,7 @@
   color: #FF6B6B !important;
   transform: scale(1.12);
   transition: all 0.25s ease;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Styling for the v.s. text in questions */
@@ -110,7 +110,8 @@
   color: #888;
   margin: 0.5rem auto;
   font-size: 0.9em;
-  padding: 0 15px; /* 文字兩側的固定間距 */
+  padding: 0 15px;
+  /* 文字兩側的固定間距 */
 }
 
 .vs-text::before,
@@ -120,17 +121,22 @@
   top: 50%;
   height: 1px;
   background-color: #ddd;
-  width: 30px; /* 線條固定長度 */
+  width: 30px;
+  /* 線條固定長度 */
 }
 
 .vs-text::before {
-  right: 100%; /* 緊貼文字左側 */
-  margin-right: 5px; /* 線條與文字的固定間距 */
+  right: 100%;
+  /* 緊貼文字左側 */
+  margin-right: 5px;
+  /* 線條與文字的固定間距 */
 }
 
 .vs-text::after {
-  left: 100%; /* 緊貼文字右側 */
-  margin-left: 5px; /* 線條與文字的固定間距 */
+  left: 100%;
+  /* 緊貼文字右側 */
+  margin-left: 5px;
+  /* 線條與文字的固定間距 */
 }
 
 /* Ensure the question text has proper spacing for v.s. centered format */
@@ -247,7 +253,7 @@
   font-weight: bold;
   padding: 10px 20px;
   border-radius: 50px;
-  z-index: 100; 
+  z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   transform-origin: center center;
   backdrop-filter: blur(5px);
@@ -297,15 +303,31 @@
 
 /* 徽章脈動動畫 */
 @keyframes badgePulse {
-  0% { transform: translateX(120px) scale(1) rotate(8deg); }
-  50% { transform: translateX(120px) scale(1.08) rotate(8deg); }
-  100% { transform: translateX(120px) scale(1) rotate(8deg); }
+  0% {
+    transform: translateX(120px) scale(1) rotate(8deg);
+  }
+
+  50% {
+    transform: translateX(120px) scale(1.08) rotate(8deg);
+  }
+
+  100% {
+    transform: translateX(120px) scale(1) rotate(8deg);
+  }
 }
 
 @keyframes badgePulseNope {
-  0% { transform: translateX(-120px) scale(1) rotate(-8deg); }
-  50% { transform: translateX(-120px) scale(1.08) rotate(-8deg); }
-  100% { transform: translateX(-120px) scale(1) rotate(-8deg); }
+  0% {
+    transform: translateX(-120px) scale(1) rotate(-8deg);
+  }
+
+  50% {
+    transform: translateX(-120px) scale(1.08) rotate(-8deg);
+  }
+
+  100% {
+    transform: translateX(-120px) scale(1) rotate(-8deg);
+  }
 }
 
 /* 右側徽章動畫 */
@@ -339,8 +361,10 @@
   left: 0;
   width: 100%;
   display: flex;
-  justify-content: center; /* 改為置中對齊 */
-  gap: 20vw; /* 使用固定間距控制兩個箭頭的距離 */
+  justify-content: center;
+  /* 改為置中對齊 */
+  gap: 20vw;
+  /* 使用固定間距控制兩個箭頭的距離 */
   pointer-events: none;
 }
 
@@ -348,7 +372,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transform: scale(1.2); /* 直接放大整個圖標 */
+  transform: scale(1.2);
+  /* 直接放大整個圖標 */
 }
 
 .swipe-arrow-indicator.left {
@@ -364,24 +389,29 @@
     transform: scale(1) translateX(0);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
+
   50% {
     transform: scale(1.05) translateX(45px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   }
+
   100% {
     transform: scale(1) translateX(0);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 }
+
 @keyframes pulseLeft {
   0% {
     transform: scale(1) translateX(0);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
+
   50% {
     transform: scale(1.05) translateX(-45px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   }
+
   100% {
     transform: scale(1) translateX(0);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -395,31 +425,47 @@
     font-size: 16px;
     padding: 8px 16px;
   }
-  
+
   .badge-icon {
     font-size: 18px;
   }
-  
+
   .fixed-badge.like {
     transform: translateX(90px) rotate(8deg);
   }
-  
+
   .fixed-badge.nope {
     transform: translateX(-90px) rotate(-8deg);
   }
-  
+
   @keyframes badgePulse {
-    0% { transform: translateX(90px) scale(1) rotate(8deg); }
-    50% { transform: translateX(90px) scale(1.08) rotate(8deg); }
-    100% { transform: translateX(90px) scale(1) rotate(8deg); }
+    0% {
+      transform: translateX(90px) scale(1) rotate(8deg);
+    }
+
+    50% {
+      transform: translateX(90px) scale(1.08) rotate(8deg);
+    }
+
+    100% {
+      transform: translateX(90px) scale(1) rotate(8deg);
+    }
   }
-  
+
   @keyframes badgePulseNope {
-    0% { transform: translateX(-90px) scale(1) rotate(-8deg); }
-    50% { transform: translateX(-90px) scale(1.08) rotate(-8deg); }
-    100% { transform: translateX(-90px) scale(1) rotate(-8deg); }
+    0% {
+      transform: translateX(-90px) scale(1) rotate(-8deg);
+    }
+
+    50% {
+      transform: translateX(-90px) scale(1.08) rotate(-8deg);
+    }
+
+    100% {
+      transform: translateX(-90px) scale(1) rotate(-8deg);
+    }
   }
-  
+
   .swipe-arrow-indicator {
     width: 60px;
     height: 60px;

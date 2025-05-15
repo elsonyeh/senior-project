@@ -729,16 +729,16 @@ export default function BuddiesRoom() {
       case "waiting":
         return (
           <>
-            <h3>房號：{roomId}</h3>
+            <h3 className="buddies-title">房號：{roomId}</h3>
             <QRCode
               value={`${window.location.origin}/buddies?room=${roomId}`}
-              size={160}
+              size={190}
               fgColor="#333"
               bgColor="#fff"
               level="M"
               includeMargin={false}
             />
-            <div style={{ margin: "1rem 0" }}>
+            <div className="room-actions">
               <button
                 onClick={copyToClipboard}
                 disabled={copyingRoom}
@@ -946,7 +946,7 @@ export default function BuddiesRoom() {
             onChange={(e) => setRoomId(e.target.value.toUpperCase())}
             disabled={loading || connectingToServer}
           />
-          <div>
+          <div className="button-group">
             <button
               onClick={handleCreateRoom}
               disabled={loading || connectingToServer}
@@ -959,36 +959,35 @@ export default function BuddiesRoom() {
             >
               {loading ? "處理中..." : "加入房間"}
             </button>
-          </div>
-          {!joined && (
-            <>
+            {!joined && (
               <button
                 onClick={() => setShowScanner(true)}
                 disabled={loading || connectingToServer}
+                className="scan-button"
               >
                 📷 掃描房號
               </button>
-              {showScanner && (
-                <QRScannerModal
-                  onScan={(code) => {
-                    // 檢查掃描結果是否是完整URL
-                    if (code.includes("room=")) {
-                      // 從URL中提取房號
-                      const match = code.match(/[?&]room=([A-Z0-9]+)/i);
-                      if (match && match[1]) {
-                        setRoomId(match[1].toUpperCase());
-                      } else {
-                        setRoomId(code.toUpperCase());
-                      }
-                    } else {
-                      setRoomId(code.toUpperCase());
-                    }
-                    setShowScanner(false);
-                  }}
-                  onClose={() => setShowScanner(false)}
-                />
-              )}
-            </>
+            )}
+          </div>
+          {showScanner && (
+            <QRScannerModal
+              onScan={(code) => {
+                // 檢查掃描結果是否是完整URL
+                if (code.includes("room=")) {
+                  // 從URL中提取房號
+                  const match = code.match(/[?&]room=([A-Z0-9]+)/i);
+                  if (match && match[1]) {
+                    setRoomId(match[1].toUpperCase());
+                  } else {
+                    setRoomId(code.toUpperCase());
+                  }
+                } else {
+                  setRoomId(code.toUpperCase());
+                }
+                setShowScanner(false);
+              }}
+              onClose={() => setShowScanner(false)}
+            />
           )}
           {error && !connectingToServer && (
             <div className="error-message">⚠️ {error}</div>
