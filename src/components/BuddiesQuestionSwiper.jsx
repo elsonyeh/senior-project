@@ -473,7 +473,6 @@ export default function BuddiesQuestionSwiper({
               </div>
 
               <div className="vote-distribution">
-                {/* 直接顯示問題的兩個選項 */}
                 {currentQuestion && (
                   <div className="vote-progress-single">
                     <div className="vote-options-labels">
@@ -508,11 +507,10 @@ export default function BuddiesQuestionSwiper({
                           totalVotes > 0
                             ? Math.round((leftCount / totalVotes) * 100)
                             : 0;
-
-                        // 調試信息直接顯示在UI上
-                        console.log(
-                          `計算比例條: 左側=${leftCount}, 右側=${rightCount}, 總計=${totalVotes}, 百分比=${leftPercentage}%`
-                        );
+                        const rightPercentage =
+                          totalVotes > 0
+                            ? Math.round((rightCount / totalVotes) * 100)
+                            : 0;
 
                         return (
                           <>
@@ -527,6 +525,35 @@ export default function BuddiesQuestionSwiper({
                                 damping: 15,
                               }}
                             />
+                            <motion.div
+                              className="vote-bar-right-single"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${rightPercentage}%` }}
+                              transition={{
+                                duration: 0.8,
+                                type: "spring",
+                                stiffness: 80,
+                                damping: 15,
+                              }}
+                            />
+                            {totalVotes > 0 && (
+                              <motion.div
+                                className="vote-percentage-indicator"
+                                initial={{ opacity: 0 }}
+                                animate={{
+                                  opacity: 1,
+                                  left: `${leftPercentage}%`,
+                                }}
+                                transition={{
+                                  duration: 0.8,
+                                  type: "spring",
+                                  stiffness: 80,
+                                  damping: 15,
+                                }}
+                              >
+                                {leftPercentage}%
+                              </motion.div>
+                            )}
                           </>
                         );
                       })()}
@@ -535,46 +562,55 @@ export default function BuddiesQuestionSwiper({
                 )}
               </div>
 
-              {/* 投票人員頭像顯示 */}
-              <div className="vote-participants">
-                <div className="vote-participants-title">投票中的成員</div>
-                <div className="vote-participants-avatars">
+              {/* 等待人員顯示 */}
+              <div className="vote-members-section">
+                <div className="vote-members-title">
+                  <span role="img" aria-label="voted">
+                    🗳️
+                  </span>
+                  等待中的成員
+                </div>
+                <div className="vote-members-list">
                   {(() => {
                     // 檢查是否有用戶數據
                     if (
                       voteStats.userData &&
                       Array.isArray(voteStats.userData)
                     ) {
-                      return voteStats.userData.map((user, i) => (
-                        <div
-                          key={`voter-${user.id || i}`}
-                          className="vote-participant-avatar"
-                          style={{
-                            backgroundColor:
-                              user.option === currentQuestion?.leftOption
-                                ? "#6874E8"
-                                : "#FF6B6B",
-                            animationDelay: `${i * 0.1}s`,
-                          }}
-                        >
-                          👤
-                          <span className="vote-participant-name">
-                            {user.name || "用戶"}
-                          </span>
-                        </div>
-                      ));
+                      return voteStats.userData.map((user) => {
+                        // 從 members 數組中找到對應的用戶資訊
+                        const memberInfo = members.find(
+                          (m) => m.id === user.id
+                        );
+                        return (
+                          <div
+                            key={`voter-${user.id}`}
+                            className="vote-member-item voted"
+                          >
+                            <span className="vote-member-icon">👤</span>
+                            <span className="vote-member-name">
+                              {memberInfo?.name || user.name || "用戶"}
+                            </span>
+                          </div>
+                        );
+                      });
                     }
-
                     return (
                       <div className="no-voters-message">等待成員投票...</div>
                     );
                   })()}
                 </div>
               </div>
+
               {/* 未投票用戶顯示 */}
-              <div className="vote-participants">
-                <div className="vote-participants-title">尚未作答</div>
-                <div className="vote-participants-avatars">
+              <div className="vote-members-section">
+                <div className="vote-members-title">
+                  <span role="img" aria-label="waiting">
+                    ⏳
+                  </span>
+                  尚未作答
+                </div>
+                <div className="vote-members-list">
                   {members.length > 0 &&
                   voteStats.userData &&
                   Array.isArray(voteStats.userData) ? (
@@ -582,18 +618,14 @@ export default function BuddiesQuestionSwiper({
                       .filter(
                         (m) => !voteStats.userData.some((u) => u.id === m.id)
                       )
-                      .map((user, i) => (
+                      .map((member) => (
                         <div
-                          key={`waiting-${user.id || i}`}
-                          className="vote-participant-avatar"
-                          style={{
-                            backgroundColor: "#ccc", // 灰色表示等待中
-                            animationDelay: `${i * 0.1}s`,
-                          }}
+                          key={`waiting-${member.id}`}
+                          className="vote-member-item waiting"
                         >
-                          👤
-                          <span className="vote-participant-name">
-                            {user.name || "用戶"}
+                          <span className="vote-member-icon">👤</span>
+                          <span className="vote-member-name">
+                            {member.name || "用戶"}
                           </span>
                         </div>
                       ))

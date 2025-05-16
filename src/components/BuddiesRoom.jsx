@@ -769,19 +769,7 @@ export default function BuddiesRoom() {
                     <span style={{ marginLeft: "0.5rem" }}>（你）</span>
                   )}
                   {m.isHost && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        right: "10px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        fontSize: "0.7rem",
-                        background: "#ff9f68",
-                        color: "white",
-                        padding: "2px 6px",
-                        borderRadius: "10px",
-                      }}
-                    >
+                    <span className="host-badge">
                       主持人
                     </span>
                   )}
