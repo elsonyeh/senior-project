@@ -119,8 +119,16 @@ export default function BuddiesRoom() {
     // 開始問答環節
     socket.on("startQuestions", () => {
       console.log("收到開始問答信號");
-      // 使用 Buddies 模式特定的基本問題集（已移除"今天是一個人還是有朋友？"問題）
-      const randomFun = getRandomFunQuestions(funQuestions, 3);
+
+      // 使用房間ID作為種子，確保同一房間生成相同的問題
+      const seed = roomId
+        .split("")
+        .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      console.log("使用房間ID生成固定問題序列，種子值:", seed);
+
+      // 使用種子來創建一個固定的問題序列
+      const shuffledQuestions = getSeededShuffledArray(funQuestions, seed);
+      const randomFun = shuffledQuestions.slice(0, 3);
 
       // 為問題添加來源標記
       const basicWithSource = buddiesBasicQuestions.map((q) => ({
@@ -137,6 +145,27 @@ export default function BuddiesRoom() {
       setQuestions(all);
       setPhase("questions");
     });
+
+    // 添加基於種子的數組打亂函數 (在組件內部或外部都可以)
+    function getSeededShuffledArray(array, seed) {
+      // 創建一個新數組，避免修改原始數組
+      const arrayCopy = [...array];
+
+      // 簡單的種子隨機數生成器
+      let currentSeed = seed;
+      const random = function () {
+        currentSeed = (currentSeed * 9301 + 49297) % 233280;
+        return currentSeed / 233280;
+      };
+
+      // Fisher-Yates 洗牌算法
+      for (let i = arrayCopy.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
+      }
+
+      return arrayCopy;
+    }
 
     // 接收新投票事件
     socket.on("newVote", (voteData) => {
@@ -768,11 +797,7 @@ export default function BuddiesRoom() {
                   {m.id === socket.id && (
                     <span style={{ marginLeft: "0.5rem" }}>（你）</span>
                   )}
-                  {m.isHost && (
-                    <span className="host-badge">
-                      主持人
-                    </span>
-                  )}
+                  {m.isHost && <span className="host-badge">主持人</span>}
                 </li>
               ))}
             </ul>
