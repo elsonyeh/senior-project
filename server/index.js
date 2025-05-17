@@ -299,7 +299,7 @@ io.on('connection', (socket) => {
     serverTime: new Date().toISOString()
   });
 
-  // 創建房間 - 修改版本
+  // 創建房間時初始化問題集
   socket.on('createRoom', function ({ userName }, callback) {
     try {
       if (!userName || typeof userName !== 'string') {
@@ -510,6 +510,26 @@ io.on('connection', (socket) => {
         };
 
         console.log(`用戶 ${sanitizedName} 成功加入房間 ${roomId}`);
+
+        // 發送房間的問題集給加入的用戶
+        if (room.questions && Array.isArray(room.questions)) {
+          socket.emit('syncQuestions', {
+            questions: room.questions,
+            basicQuestions: room.basicQuestions || [],
+            currentPhase: room.stage // 包含當前階段信息
+          });
+        }
+
+        // 返回成功結果，包含是否為房主的信息
+        if (typeof callback === 'function') {
+          callback({
+            success: true,
+            isHost: isHost
+          });
+        }
+
+        // 通知房間成員
+        emitUserList(roomId);
 
         // 如果 Firebase 在線，保存成員信息
         if (firebaseOnline) {
@@ -795,28 +815,31 @@ io.on('connection', (socket) => {
   });
 
   // 開始問答環節
-  socket.on('startQuestions', function ({ roomId }, callback) {
+  socket.on('startQuestions', function ({ roomId, questions }, callback) {
     try {
       const room = rooms[roomId];
       if (!room) {
         if (typeof callback === 'function') {
           callback({ success: false, error: '房間不存在' });
         }
-        return callback?.({
-          success: false,
-          error: '推薦正在生成中，請稍候'
-        });
+        return;
       }
 
       // 更新房間狀態
       room.stage = 'questions';
       room.status = 'questions';
 
+      // 儲存問題集到房間狀態中
+      if (questions && Array.isArray(questions)) {
+        room.questions = questions;
+      }
+
       // 如果 Firebase 在線，更新狀態
       if (firebaseOnline) {
         const roomRef = ref(`buddiesRooms/${roomId}`);
         update(roomRef, {
           status: 'questions',
+          questions: questions || [], // 儲存問題集
           updatedAt: serverTimestamp()
         })
           .then(() => {
@@ -827,8 +850,10 @@ io.on('connection', (socket) => {
           });
       }
 
-      // 通知所有房間成員開始問答
-      io.to(roomId).emit('startQuestions');
+      // 通知所有房間成員開始問答，並附帶問題集
+      io.to(roomId).emit('startQuestions', {
+        questions: room.questions
+      });
 
       if (typeof callback === 'function') {
         callback({ success: true });
@@ -940,7 +965,7 @@ io.on('connection', (socket) => {
                 throw new Error("無法獲取餐廳數據");
               }
 
-              // 生成推薦
+              // 生成推薦 - 添加房主ID
               const recommendations = enhancedLogic.recommendForGroup(
                 room.answers,
                 restaurants,
@@ -950,6 +975,7 @@ io.on('connection', (socket) => {
                   minBasicMatchRatio: 0.5,
                   basicMatchWeight: enhancedLogic.WEIGHT.BASIC_MATCH * 1.5,
                   answerQuestionMap: room.answerQuestionMap || {},
+                  hostId: room.host // 添加房主ID
                 }
               );
 
@@ -1048,7 +1074,7 @@ io.on('connection', (socket) => {
   });
 
   // 獲取多人模式推薦餐廳 - 修改版本
-  socket.on('getBuddiesRecommendations', function ({ roomId }, callback) {
+  socket.on('getBuddiesRecommendations', function ({ roomId, hostId }, callback) {
     try {
       console.log(`[${roomId}] 收到獲取推薦餐廳請求`);
       // 首先嘗試從內存獲取
@@ -1109,7 +1135,7 @@ io.on('connection', (socket) => {
 
       // 如果仍然沒有推薦結果，嘗試即時生成
       function generateRecommendations() {
-        if (recommendations.length === 0 && rooms[roomId] && rooms[roomId].answers) {
+        if (rooms[roomId] && rooms[roomId].answers) {
           console.log(`[${roomId}] 沒有找到推薦結果，嘗試即時生成`);
 
           getRestaurants()
@@ -1117,24 +1143,11 @@ io.on('connection', (socket) => {
               if (restaurants.length > 0) {
                 const basicQuestionsCount = rooms[roomId].basicQuestions ? rooms[roomId].basicQuestions.length : 5;
 
-                // 嘗試生成推薦
-                const answerQuestionMap = {};
-                let questionTexts = [];
+                // 獲取房主ID（如果未提供則從房間中獲取）
+                const actualHostId = hostId || (rooms[roomId].host || null);
+                console.log(`[${roomId}] 使用房主ID: ${actualHostId}`);
 
-                // 從用戶答案中提取問題文本
-                Object.values(rooms[roomId].answers).forEach(userAnswer => {
-                  if (userAnswer.questionTexts && userAnswer.questionTexts.length > 0) {
-                    questionTexts = userAnswer.questionTexts;
-                    return;
-                  }
-                });
-
-                // 構建 answerQuestionMap
-                questionTexts.forEach((text, index) => {
-                  answerQuestionMap[index] = text;
-                });
-
-                // 調用推薦函數
+                // 調用推薦函數，添加房主信息
                 const newRecommendations = enhancedLogic.recommendForGroup(
                   rooms[roomId].answers,
                   restaurants,
@@ -1142,17 +1155,19 @@ io.on('connection', (socket) => {
                     basicQuestionsCount: basicQuestionsCount,
                     debug: process.env.NODE_ENV === 'development',
                     basicQuestions: rooms[roomId].basicQuestions || [],
-                    strictBasicMatch: true,  // 保持嚴格匹配開啟
-                    minBasicMatchRatio: 0.5, // 要求至少50%的基本問題匹配
-                    basicMatchWeight: enhancedLogic.WEIGHT.BASIC_MATCH * 1.5, // 增加基本問題匹配的權重
-                    answerQuestionMap: answerQuestionMap // 確保傳遞答案-問題映射
+                    strictBasicMatch: true,
+                    minBasicMatchRatio: 0.5,
+                    basicMatchWeight: enhancedLogic.WEIGHT.BASIC_MATCH * 1.5,
+                    answerQuestionMap: rooms[roomId].answerQuestionMap || {},
+                    hostId: actualHostId // 添加房主ID
                   }
                 );
 
                 // 添加調試日誌
                 console.log(`[${roomId}] 即時生成推薦函數參數:`, {
                   answerCount: Object.keys(rooms[roomId].answers).length,
-                  hasAnswerQuestionMap: Object.keys(answerQuestionMap).length > 0
+                  hasAnswerQuestionMap: Object.keys(rooms[roomId].answerQuestionMap || {}).length > 0,
+                  hostId: actualHostId
                 });
 
                 // 如果成功生成，保存並設置狀態

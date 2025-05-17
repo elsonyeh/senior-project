@@ -27,6 +27,9 @@ export const buddiesBasicQuestions = [
       "answer": "吃"
     }
   },
+  
+  // 暫時停用距離相關問題
+  /*
   {
     "question": "附近吃還是遠一點？",
     "options": [
@@ -34,6 +37,8 @@ export const buddiesBasicQuestions = [
       "遠一點"
     ]
   },
+  */
+  
   {
     "question": "想吃辣的還是不辣？",
     "options": [

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import socket from "../services/socket";
 import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,21 +15,20 @@ export default function BuddiesQuestionSwiper({
   roomId,
   questions,
   onComplete,
-  members = [], // 添加這個參數並設置默認值
+  members = [],
+  onQuestionsSync,
 }) {
   // 主要狀態
   const [questionIndex, setQuestionIndex] = useState(0);
   const [waiting, setWaiting] = useState(false);
   const [voteStats, setVoteStats] = useState({});
   const [voteBubbles, setVoteBubbles] = useState([]); // 改為數組，存儲多個氣泡
-  const hasCompletedRef = useRef(false);
 
   // Refs - 不會觸發重新渲染
+  const hasCompletedRef = useRef(false);
   const answersRef = useRef({});
   const isMountedRef = useRef(true);
   const timeoutRef = useRef(null);
-
-  // 新增：記錄問題文本和問題來源
   const questionTextsRef = useRef([]);
   const questionSourcesRef = useRef([]);
 
@@ -40,25 +45,99 @@ export default function BuddiesQuestionSwiper({
     [basicQuestionTexts]
   );
 
-  // 處理安全的問題格式化
-  const safeQuestions = useRef(
-    Array.isArray(questions)
-      ? questions.map((q, index) => ({
-          id: q.id || `q${index}`,
-          text: q.text || "",
-          leftOption: q.leftOption || "選項 A",
-          rightOption: q.rightOption || "選項 B",
-          hasVS: q.hasVS || false,
-          source:
-            q.source ||
-            (q.text && isBuddiesBasicQuestion(q.text) ? "basic" : "fun"),
-        }))
-      : []
-  ).current;
+  // 處理安全的問題格式化 - 必須先初始化
+  const safeQuestions = useMemo(
+    () =>
+      Array.isArray(questions)
+        ? questions.map((q, index) => ({
+            id: q.id || `q${index}`,
+            text: q.text || "",
+            leftOption: q.leftOption || "選項 A",
+            rightOption: q.rightOption || "選項 B",
+            hasVS: q.hasVS || false,
+            source:
+              q.source ||
+              (q.text && isBuddiesBasicQuestion(q.text) ? "basic" : "fun"),
+          }))
+        : [],
+    [questions, isBuddiesBasicQuestion]
+  );
 
-  // 從問題中提取文本和來源
-  const questionTexts = useRef(safeQuestions.map((q) => q.text)).current;
-  const questionSources = useRef(safeQuestions.map((q) => q.source)).current;
+  // 從問題中提取文本和來源 - 依賴於safeQuestions
+  const questionTexts = useMemo(
+    () => safeQuestions.map((q) => q.text),
+    [safeQuestions]
+  );
+
+  const questionSources = useMemo(
+    () => safeQuestions.map((q) => q.source),
+    [safeQuestions]
+  );
+
+  // 新增: 根據已有答案過濾問題
+  const getVisibleQuestions = useCallback((allQuestions, currentAnswers) => {
+    return allQuestions.filter((question, index) => {
+      // 檢查依賴條件
+      if (question.dependsOn) {
+        const { question: dependsOnQ, answer: dependsOnA } = question.dependsOn;
+
+        // 找到依賴問題的索引
+        const dependsOnIndex = allQuestions.findIndex(
+          (q) => q.text === dependsOnQ || q.question === dependsOnQ
+        );
+
+        // 如果找到依賴問題且已回答
+        if (dependsOnIndex !== -1 && dependsOnIndex < index) {
+          const dependsOnId = allQuestions[dependsOnIndex].id;
+
+          // 檢查依賴問題的答案
+          if (
+            // 檢查 answersRef 中的答案
+            (answersRef.current[dependsOnIndex] &&
+              answersRef.current[dependsOnIndex] !== dependsOnA) ||
+            // 或檢查傳入的當前答案
+            (currentAnswers &&
+              currentAnswers[dependsOnId] &&
+              currentAnswers[dependsOnId] !== dependsOnA)
+          ) {
+            return false; // 如果依賴條件不滿足，不顯示此問題
+          }
+        }
+      }
+
+      // 特殊處理「喝」相關的依賴
+      if (
+        question.text &&
+        (question.text.includes("吃一點") || question.text.includes("辣的"))
+      ) {
+        // 找「想吃正餐還是想喝飲料」問題
+        const eatOrDrinkIndex = allQuestions.findIndex(
+          (q) => q.text && q.text.includes("想吃正餐還是想喝飲料")
+        );
+
+        // 如果找到且已回答為「喝」
+        if (
+          eatOrDrinkIndex !== -1 &&
+          answersRef.current[eatOrDrinkIndex] === "喝"
+        ) {
+          return false; // 不顯示這些問題
+        }
+      }
+
+      return true; // 其他問題都顯示
+    });
+  }, []);
+
+  // 使用 useMemo 獲取當前應該顯示的問題
+  const currentQuestion = useMemo(() => {
+    // 首先獲取所有可能顯示的問題
+    const visibleQuestions = getVisibleQuestions(safeQuestions, {});
+
+    // 返回當前索引的問題，如果索引超出範圍則返回 null
+    return questionIndex < visibleQuestions.length
+      ? visibleQuestions[questionIndex]
+      : null;
+  }, [safeQuestions, questionIndex, getVisibleQuestions]);
 
   // 清理所有計時器的函數
   const clearAllTimeouts = useCallback(() => {
@@ -99,6 +178,87 @@ export default function BuddiesQuestionSwiper({
     }, 3000);
   }, []);
 
+  // 處理新投票
+  const handleNewVote = useCallback(
+    (data) => {
+      if (!isMountedRef.current) return;
+
+      // 顯示投票氣泡
+      showVoteBubble(data);
+
+      // 更新投票統計
+      setVoteStats((prev) => {
+        const option = data.option;
+        return {
+          ...prev,
+          [option]: (prev[option] || 0) + 1,
+        };
+      });
+    },
+    [showVoteBubble]
+  );
+
+  // 處理投票統計更新
+  const handleVoteStats = useCallback((stats) => {
+    if (!isMountedRef.current) return;
+    console.log("收到投票統計:", stats);
+    setVoteStats(stats);
+  }, []);
+
+  // 處理推薦結果
+  const handleGroupRecommendations = useCallback(
+    (recommendations) => {
+      if (!isMountedRef.current || hasCompletedRef.current) return;
+
+      console.log("收到推薦結果:", recommendations.length);
+      hasCompletedRef.current = true;
+
+      // 清理計時器
+      clearAllTimeouts();
+
+      // 調用完成回調
+      if (typeof onComplete === "function") {
+        onComplete(recommendations);
+      }
+    },
+    [onComplete, clearAllTimeouts]
+  );
+
+  useEffect(() => {
+    console.log("初始化問題同步監聽");
+
+    // 監聽問題同步事件
+    const handleSyncQuestions = (data) => {
+      if (!isMountedRef.current) return;
+
+      if (data && data.questions && Array.isArray(data.questions)) {
+        console.log("收到房間同步問題集:", data.questions.length);
+
+        // 如果使用 props 管理問題集，可以通過回調通知父組件
+        if (typeof onQuestionsSync === "function") {
+          onQuestionsSync(data.questions);
+        }
+
+        // 重置答案和問題進度
+        answersRef.current = {};
+        questionTextsRef.current = [];
+        questionSourcesRef.current = [];
+
+        // 重置為第一題
+        setQuestionIndex(0);
+        setWaiting(false);
+        setVoteStats({});
+        setVoteBubbles([]);
+      }
+    };
+
+    socket.on("syncQuestions", handleSyncQuestions);
+
+    return () => {
+      socket.off("syncQuestions", handleSyncQuestions);
+    };
+  }, []);
+
   // 處理答案提交
   const handleAnswer = useCallback(
     (answer) => {
@@ -126,11 +286,16 @@ export default function BuddiesQuestionSwiper({
       const questionTextsArray = [...questionTextsRef.current];
       const questionSourcesArray = [...questionSourcesRef.current];
 
-      // 發送答案到服務器
-      console.log(
-        `發送答案到服務器: roomId=${roomId}, index=${questionIndex}, answersLength=${answersArray.length}, totalQuestions=${safeQuestions.length}`
-      );
+      // 計算所有可見問題（考慮依賴關係）
+      const visibleQuestions = getVisibleQuestions(safeQuestions, newAnswers);
 
+      // 日誌可見問題數量，幫助調試
+      console.log(
+        `可見問題數量: ${visibleQuestions.length}，總問題數: ${safeQuestions.length}`
+      );
+      console.log(`當前已回答: ${Object.keys(newAnswers).length} 題`);
+
+      // 發送答案到服務器
       socket.emit(
         "submitAnswers",
         {
@@ -139,7 +304,7 @@ export default function BuddiesQuestionSwiper({
           questionTexts: questionTextsArray,
           questionSources: questionSourcesArray,
           index: questionIndex,
-          totalQuestions: safeQuestions.length,
+          totalQuestions: visibleQuestions.length, // 使用可見問題數量而非所有問題
           currentAnswerCount: Object.keys(newAnswers).length,
           basicQuestions: buddiesBasicQuestions,
         },
@@ -149,14 +314,20 @@ export default function BuddiesQuestionSwiper({
           } else {
             console.log(
               `答案提交成功，當前題目：${questionIndex}/${
-                safeQuestions.length - 1
+                visibleQuestions.length - 1
               }`
             );
           }
         }
       );
     },
-    [questionIndex, roomId, safeQuestions, isBuddiesBasicQuestion]
+    [
+      questionIndex,
+      roomId,
+      safeQuestions,
+      isBuddiesBasicQuestion,
+      getVisibleQuestions,
+    ]
   );
 
   // 處理Socket事件監聽 - 這是主要的useEffect
@@ -166,10 +337,7 @@ export default function BuddiesQuestionSwiper({
     // 設置組件已掛載標記
     isMountedRef.current = true;
 
-    // 在組件內部創建timeoutRef，確保每個實例都有自己的引用
-    const timeoutRef = { current: null };
-
-    // 收到下一題信號 - 重新設計此函數
+    // 收到下一題信號 - 重新設計此函數，考慮問題依賴關係
     const handleNextQuestion = (data) => {
       console.log(`收到下一題信號: ${JSON.stringify(data)}`);
 
@@ -181,11 +349,47 @@ export default function BuddiesQuestionSwiper({
         timeoutRef.current = null;
       }
 
-      // 重要：強制確保數據轉換為數字類型
-      const nextIndex =
-        data && typeof data.nextIndex !== "undefined"
-          ? Number(data.nextIndex)
-          : questionIndex + 1;
+      // 獲取考慮依賴關係後可見的問題列表
+      const visibleQuestions = getVisibleQuestions(
+        safeQuestions,
+        answersRef.current
+      );
+      console.log(
+        "可見問題列表:",
+        visibleQuestions.map((q) => q.text)
+      );
+
+      // 找到當前問題在可見問題列表中的索引
+      const currentVisibleIndex = visibleQuestions.findIndex(
+        (q) => q.id === safeQuestions[questionIndex].id
+      );
+
+      // 計算下一個應該顯示的問題索引
+      let nextIndex;
+
+      // 如果數據中提供了下一個索引，使用它
+      if (data && typeof data.nextIndex !== "undefined") {
+        nextIndex = Number(data.nextIndex);
+        console.log(`使用服務器提供的下一題索引: ${nextIndex}`);
+      } else {
+        // 否則計算下一個可見問題的索引
+        const nextVisibleIndex = currentVisibleIndex + 1;
+
+        // 如果還有下一個可見問題
+        if (nextVisibleIndex < visibleQuestions.length) {
+          // 找到下一個可見問題在原始問題列表中的索引
+          nextIndex = safeQuestions.findIndex(
+            (q) => q.id === visibleQuestions[nextVisibleIndex].id
+          );
+          console.log(
+            `計算出的下一題索引: ${nextIndex} (可見索引: ${nextVisibleIndex})`
+          );
+        } else {
+          // 如果沒有更多可見問題，就進入下一個問題索引
+          nextIndex = questionIndex + 1;
+          console.log(`沒有更多可見問題，使用索引+1: ${nextIndex}`);
+        }
+      }
 
       // 防止退步，確保新題目索引大於當前索引
       if (nextIndex <= questionIndex) {
@@ -233,89 +437,7 @@ export default function BuddiesQuestionSwiper({
       }
     };
 
-    const handleVoteStats = (stats) => {
-      if (!isMountedRef.current) return;
-
-      // 直接更新狀態，不進行比較
-      setVoteStats(stats);
-
-      // 添加調試日誌
-      console.log("更新投票統計:", stats);
-    };
-
-    // 收到新投票事件 - 保存投票用戶資訊
-    const handleNewVote = (voteData) => {
-      if (!isMountedRef.current) return;
-
-      // 驗證投票數據
-      if (!voteData || typeof voteData !== "object") {
-        console.error("無效的投票數據格式");
-        return;
-      }
-
-      // 更新投票統計
-      setVoteStats((prev) => {
-        const newStats = { ...prev };
-        if (!newStats.userData) {
-          newStats.userData = [];
-        }
-
-        // 確保不重複添加
-        const existingVote = newStats.userData.find(
-          (u) => u.id === voteData.senderId
-        );
-        if (!existingVote) {
-          newStats.userData.push({
-            id: voteData.senderId || `user-${Date.now()}`,
-            name: voteData.userName || "匿名用戶",
-            option: voteData.option,
-            timestamp: Date.now(),
-          });
-        }
-
-        return newStats;
-      });
-    };
-
-    // 收到結束信號和餐廳推薦結果
-    // 在 BuddiesQuestionSwiper.jsx 中改進推薦接收處理
-    const handleGroupRecommendations = (recs) => {
-      if (!isMountedRef.current) return;
-
-      // 檢查是否真的完成了所有問題
-      const answeredQuestionsCount = Object.keys(answersRef.current).length;
-      if (answeredQuestionsCount < safeQuestions.length) {
-        console.warn(
-          `收到推薦結果，但尚未完成所有問題 (${answeredQuestionsCount}/${safeQuestions.length})`
-        );
-        return;
-      }
-
-      console.log("收到餐廳推薦結果:", recs?.length, "家餐廳");
-
-      // 確保接收到有效數據
-      if (!recs || !Array.isArray(recs) || recs.length === 0) {
-        console.error("收到的推薦結果無效:", recs);
-        return;
-      }
-
-      // 使用 ref 獲取最新狀態
-      const result = {
-        answers: Object.values(answersRef.current),
-        questionTexts: questionTextsRef.current,
-        questionSources: questionSourcesRef.current,
-      };
-
-      // 調用 onComplete
-      try {
-        onComplete(result, recs);
-        console.log("已調用 onComplete 函數");
-      } catch (error) {
-        console.error("調用 onComplete 出錯:", error);
-      }
-    };
-
-    // 註冊事件監聽
+    // 原有的事件監聽器註冊
     socket.on("nextQuestion", handleNextQuestion);
     socket.on("voteStats", handleVoteStats);
     socket.on("newVote", handleNewVote);
@@ -338,7 +460,7 @@ export default function BuddiesQuestionSwiper({
     // 重新連接時也發送就緒信號
     socket.on("connect", sendReadySignal);
 
-    // 清理函數 - 移除所有事件監聽和計時器
+    // 清理函數
     return () => {
       console.log("清理Socket事件監聽");
       isMountedRef.current = false;
@@ -354,7 +476,17 @@ export default function BuddiesQuestionSwiper({
         timeoutRef.current = null;
       }
     };
-  }, [questionIndex, roomId, showVoteBubble]);
+  }, [
+    questionIndex,
+    roomId,
+    showVoteBubble,
+    handleGroupRecommendations,
+    handleVoteStats,
+    handleNewVote,
+    getVisibleQuestions,
+    safeQuestions,
+    clearAllTimeouts,
+  ]);
 
   // 清理組件時的副作用
   useEffect(() => {
@@ -390,8 +522,7 @@ export default function BuddiesQuestionSwiper({
     );
   }
 
-  // 確保當前問題是有效的
-  const currentQuestion = safeQuestions[questionIndex] || null;
+  // 確保當前問題有效
   if (!currentQuestion) {
     return <div>載入問題中...</div>;
   }
