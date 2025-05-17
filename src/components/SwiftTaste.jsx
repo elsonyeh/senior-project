@@ -6,7 +6,7 @@ import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import RecommendationResult from "./RecommendationResult";
-import { getRandomFunQuestions, recommendRestaurants } from '../logic/recommendLogic';
+import { getRandomFunQuestions, recommendRestaurants } from '../logic/enhancedRecommendLogicFrontend';
 import { getDocs, collection } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useNavigate, useLocation } from "react-router-dom";

@@ -37,12 +37,17 @@ export default function RestaurantSwiperMotion({
     })`;
 
   return (
-    <CardStack
-      cards={restaurants.filter((r) => r && r.id && !seen.includes(r.id))}
-      onSwipe={handleSwipe}
-      renderCard={renderCard}
-      background={background}
-      centered
-    />
+    <div
+      className="restaurant-swiper-container"
+      style={{ height: "70vh", position: "relative" }}
+    >
+      <CardStack
+        cards={restaurants.filter((r) => r && r.id && !seen.includes(r.id))}
+        onSwipe={handleSwipe}
+        renderCard={renderCard}
+        background={background}
+        centered
+      />
+    </div>
   );
 }
