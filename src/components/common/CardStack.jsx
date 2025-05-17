@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   motion,
   AnimatePresence,
@@ -8,7 +8,7 @@ import {
 import "../SwiftTasteCard.css";
 
 export default function CardStack({
-  cards,
+  cards = [], // 提供默認空陣列
   onSwipe,
   onLocalSwipe,
   renderCard,
@@ -16,9 +16,35 @@ export default function CardStack({
   centered,
   badgeType = "like-nope",
 }) {
-  const [visibleCards, setVisibleCards] = useState(cards);
+  const [visibleCards, setVisibleCards] = useState([]);
   // 全域狀態追蹤目前顯示哪個徽章
   const [activeBadge, setActiveBadge] = useState(null);
+  
+  // 使用ref來追蹤上一次的cards，避免不必要的重新渲染
+  const prevCardsRef = useRef([]);
+
+  // 只有當cards真正改變時才更新visibleCards
+  useEffect(() => {
+    // 創建一個簡單的比較函數，僅檢查ID是否相同
+    const areCardArraysEqual = (prev, curr) => {
+      if (!prev || !curr) return false;
+      if (prev.length !== curr.length) return false;
+      
+      // 只比較id，避免無限循環
+      for (let i = 0; i < prev.length; i++) {
+        if (!prev[i] || !curr[i] || prev[i].id !== curr[i].id) {
+          return false;
+        }
+      }
+      return true;
+    };
+    
+    // 只有當cards真正改變時才更新state
+    if (!areCardArraysEqual(prevCardsRef.current, cards)) {
+      prevCardsRef.current = cards;
+      setVisibleCards(cards || []);
+    }
+  }, [cards]);
 
   // 處理卡片滑動方向顯示對應徽章
   const handleLocalBadge = (dir) => {
@@ -53,19 +79,23 @@ export default function CardStack({
       )}
 
       <AnimatePresence mode="popLayout">
-        {visibleCards
+        {(visibleCards || [])
           .slice(0, 3)
           .reverse()
           .map((item, index, arr) => {
+            if (!item) return null; // 防止 undefined 項目
             const position = arr.length - index - 1;
+            const itemKey = item.id || `card-${index}`; // 使用回退值作為 key
+            
             return (
               <SwipeableCard
-                key={item.id}
+                key={itemKey}
                 item={item}
                 position={position}
                 onSwipe={(dir, item) => {
+                  if (!item) return;
                   const remaining = visibleCards.filter(
-                    (c) => c.id !== item.id
+                    (c) => c && c.id !== item.id
                   );
                   setVisibleCards(remaining);
                   onSwipe?.(dir, item);

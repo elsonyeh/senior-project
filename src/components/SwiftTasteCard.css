@@ -23,10 +23,10 @@
   background: #fffbe8;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  padding: 3vh 5vw;
+  padding: 12vh 5vw 3vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   box-sizing: border-box;
   text-align: center;
@@ -50,7 +50,6 @@
   font-size: 1.2rem;
   justify-content: space-between;
   width: 100%;
-  margin-top: 2rem;
   margin-bottom: 2rem;
   position: relative;
 }
@@ -204,12 +203,6 @@
 }
 
 /* --- Mode Selection UI --- */
-.mode-choice-row {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  margin-top: 2rem;
-}
 
 .mode-choice {
   width: 45%;
@@ -333,14 +326,14 @@
 }
 
 .swipe-arrows-container {
-  position: absolute;
-  bottom: 40px;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: center; /* 改為置中對齊 */
-  gap: 120px; /* 使用固定間距控制兩個箭頭的距離 */
-  pointer-events: none;
+    position: absolute;
+    bottom: 24vh;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 20vw;
+    pointer-events: none;
 }
 
 .new-arrow-icon {
@@ -364,7 +357,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   50% {
-    transform: scale(1.05) translateX(5px);
+    transform: scale(1.05) translateX(45px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   }
   100% {
@@ -378,7 +371,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   50% {
-    transform: scale(1.05) translateX(-5px);
+    transform: scale(1.05) translateX(-45px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   }
   100% {
@@ -553,9 +546,10 @@
 }
 
 .motion-card h2 {
-  margin-bottom: 2rem;
+  margin: 0;
   position: relative;
   z-index: 1;
+  top: 10vh;
 }
 
 /* 選項行樣式 */
@@ -564,5 +558,5 @@
   justify-content: space-between;
   width: 100%;
   position: relative;
-  z-index: 1;
+  top: 10vh;
 }
