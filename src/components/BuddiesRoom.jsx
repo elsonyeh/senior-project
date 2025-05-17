@@ -7,8 +7,7 @@ import { funQuestions } from "../data/funQuestions";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import BuddiesRecommendation from "./BuddiesRecommendation";
 import QRScannerModal from "./QRScannerModal";
-import { buddiesBasicQuestions } from "../data/buddiesBasicQuestions";
-import { getRandomFunQuestions } from "../logic/enhancedRecommendLogicFrontend.js";
+import { buddiesBasicQuestions } from "../data/buddiesBasicQuestions.js";
 import BuddiesQuestionSwiper from "./BuddiesQuestionSwiper";
 
 export default function BuddiesRoom() {
@@ -36,6 +35,13 @@ export default function BuddiesRoom() {
   });
   const [copyingRoom, setCopyingRoom] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [currentQuestions, setCurrentQuestions] = useState([]);
+
+  // 在組件內部定義隨機問題選擇函數
+  function getRandomFunQuestions(allQuestions, count = 3) {
+    if (!Array.isArray(allQuestions) || allQuestions.length === 0) return [];
+    return [...allQuestions].sort(() => 0.5 - Math.random()).slice(0, count);
+  }
 
   function ToastNotification({ message, type, visible, onHide }) {
     if (!visible) return null;
@@ -117,55 +123,32 @@ export default function BuddiesRoom() {
     });
 
     // 開始問答環節
-    socket.on("startQuestions", () => {
+    socket.on("startQuestions", (data) => {
       console.log("收到開始問答信號");
 
-      // 使用房間ID作為種子，確保同一房間生成相同的問題
-      const seed = roomId
-        .split("")
-        .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-      console.log("使用房間ID生成固定問題序列，種子值:", seed);
+      // 如果服務器發送了問題集，則使用服務器的問題集
+      if (data && data.questions && Array.isArray(data.questions)) {
+        console.log("從服務器接收問題集:", data.questions.length);
+        setQuestions(data.questions);
+      } else {
+        console.log("未收到問題集，使用默認問題");
+      }
 
-      // 使用種子來創建一個固定的問題序列
-      const shuffledQuestions = getSeededShuffledArray(funQuestions, seed);
-      const randomFun = shuffledQuestions.slice(0, 3);
-
-      // 為問題添加來源標記
-      const basicWithSource = buddiesBasicQuestions.map((q) => ({
-        ...q,
-        source: "basic", // 標記為基本問題
-      }));
-
-      const funWithSource = randomFun.map((q) => ({
-        ...q,
-        source: "fun", // 標記為趣味問題
-      }));
-
-      const all = [...basicWithSource, ...funWithSource];
-      setQuestions(all);
       setPhase("questions");
     });
 
-    // 添加基於種子的數組打亂函數 (在組件內部或外部都可以)
-    function getSeededShuffledArray(array, seed) {
-      // 創建一個新數組，避免修改原始數組
-      const arrayCopy = [...array];
+    // 新增：問題集同步事件 - 用於新加入的用戶同步當前房間的問題集
+    socket.on("syncQuestions", (data) => {
+      if (data && data.questions && Array.isArray(data.questions)) {
+        console.log("收到房間同步問題集:", data.questions.length);
+        setQuestions(data.questions);
 
-      // 簡單的種子隨機數生成器
-      let currentSeed = seed;
-      const random = function () {
-        currentSeed = (currentSeed * 9301 + 49297) % 233280;
-        return currentSeed / 233280;
-      };
-
-      // Fisher-Yates 洗牌算法
-      for (let i = arrayCopy.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
+        // 如果當前已經在問答階段，確保狀態正確
+        if (phase === "waiting" && data.currentPhase === "questions") {
+          setPhase("questions");
+        }
       }
-
-      return arrayCopy;
-    }
+    });
 
     // 接收新投票事件
     socket.on("newVote", (voteData) => {
@@ -362,6 +345,7 @@ export default function BuddiesRoom() {
       socket.off("disconnect", handleDisconnect);
       socket.off("updateUsers");
       socket.off("startQuestions");
+      socket.off("syncQuestions");
       socket.off("newVote");
       socket.off("voteStats");
       socket.off("groupRecommendations");
@@ -734,7 +718,31 @@ export default function BuddiesRoom() {
 
   // 開始問答
   const handleStartQuestions = () => {
-    socket.emit("startQuestions", { roomId });
+    // 隨機選擇趣味問題
+    const randomFun = getRandomFunQuestions(funQuestions, 3);
+    console.log("已隨機選取3個趣味問題");
+
+    // 為問題添加來源標記
+    const basicWithSource = buddiesBasicQuestions.map((q) => ({
+      ...q,
+      source: "basic", // 標記為基本問題
+    }));
+
+    const funWithSource = randomFun.map((q) => ({
+      ...q,
+      source: "fun", // 標記為趣味問題
+    }));
+
+    const allQuestions = [...basicWithSource, ...funWithSource];
+
+    // 更新本地狀態
+    setQuestions(allQuestions);
+
+    // 發送開始問答信號和問題集給服務器，由服務器分發給所有房間成員
+    socket.emit("startQuestions", {
+      roomId,
+      questions: allQuestions,
+    });
   };
 
   // 返回首頁
@@ -882,14 +890,21 @@ export default function BuddiesRoom() {
     setPhase("waiting");
 
     // 重新請求推薦
-    socket.emit("getBuddiesRecommendations", { roomId }, (response) => {
-      if (response.success && response.recommendations) {
-        setRecommendations(response.recommendations);
-        setPhase("recommend");
-      } else {
-        setError(response.error || "推薦生成失敗");
+    socket.emit(
+      "getBuddiesRecommendations",
+      {
+        roomId,
+        hostId: room.host, // 添加房主ID
+      },
+      (response) => {
+        if (response.success && response.recommendations) {
+          setRecommendations(response.recommendations);
+          setPhase("recommend");
+        } else {
+          setError(response.error || "推薦生成失敗");
+        }
       }
-    });
+    );
   };
 
   useEffect(() => {

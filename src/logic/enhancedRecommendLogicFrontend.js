@@ -80,12 +80,6 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
       !normalizedTags.includes("飽足")) {
       return WEIGHT.MIN_SCORE;
     }
-
-    // 優先排除同時選「吃」且有「喝」標籤的餐廳
-    if (basicAnswers.includes("吃") && normalizedTags.includes("喝") &&
-      !normalizedTags.includes("吃一點") && !normalizedTags.includes("飽足")) {
-      return WEIGHT.MIN_SCORE;
-    }
   }
 
   const answersMap = {};
