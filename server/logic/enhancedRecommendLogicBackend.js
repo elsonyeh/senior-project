@@ -55,6 +55,21 @@ function getRandomFunQuestions(allQuestions, count = 3) {
   return [...allQuestions].sort(() => 0.5 - Math.random()).slice(0, count);
 }
 
+// 創建基於種子的隨機數生成器
+function createSeededRandom(seed) {
+  let s = seed || 1;
+  return function () {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+// 基於種子的隨機排序函數
+function seededShuffle(array, seed) {
+  const random = createSeededRandom(seed);
+  return [...array].sort(() => random() - 0.5);
+}
+
 // 修改 calculateMatchScore 函數，與前端邏輯保持一致
 function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswers, groupAnswerCounts = null, options = {}) {
   let score = WEIGHT.MIN_SCORE;
@@ -423,284 +438,118 @@ function recommendRestaurants(answers, restaurants, options = {}) {
   if (options.strictBasicMatch &&
     (basicAnswers.includes("喝") || basicAnswers.includes("吃") ||
       basicAnswers.includes("吃一點") || basicAnswers.includes("吃飽"))) {
+    // 如果有種子參數，應用確定性排序，但保持分數排序
+    if (options.seed && filteredRestaurants.length > 1) {
+      // 先按分數排序，然後在分數相同的情況下使用確定性隨機排序
+      return [...filteredRestaurants].sort((a, b) => {
+        // 如果分數差距很小(小於0.5)，使用種子隨機排序
+        if (Math.abs(a.matchScore - b.matchScore) < 0.5) {
+          const seededRandom = createSeededRandom(options.seed);
+          return seededRandom() - 0.5;
+        }
+        // 否則依然按分數排序
+        return b.matchScore - a.matchScore;
+      });
+    }
     return filteredRestaurants; // 不回退到排序列表，寧可返回空
   }
 
   // 如果沒有符合條件的餐廳，退回到分數最高的10家
-  return filteredRestaurants.length > 0 ? filteredRestaurants : sortedRestaurants.slice(0, 10);
+  if (filteredRestaurants.length > 0) {
+    // 如果有種子參數，應用確定性排序，但保持分數排序
+    if (options.seed && filteredRestaurants.length > 1) {
+      // 先按分數排序，然後在分數相同的情況下使用確定性隨機排序
+      return [...filteredRestaurants].sort((a, b) => {
+        // 如果分數差距很小(小於0.5)，使用種子隨機排序
+        if (Math.abs(a.matchScore - b.matchScore) < 0.5) {
+          const seededRandom = createSeededRandom(options.seed);
+          return seededRandom() - 0.5;
+        }
+        // 否則依然按分數排序
+        return b.matchScore - a.matchScore;
+      });
+    }
+    return filteredRestaurants;
+  } else {
+    // 取排序後的前10家
+    const top10 = sortedRestaurants.slice(0, 10);
+    // 如果有種子參數，應用確定性排序，但保持分數排序
+    if (options.seed && top10.length > 1) {
+      // 先按分數排序，然後在分數相同的情況下使用確定性隨機排序
+      return [...top10].sort((a, b) => {
+        // 如果分數差距很小(小於0.5)，使用種子隨機排序
+        if (Math.abs(a.matchScore - b.matchScore) < 0.5) {
+          const seededRandom = createSeededRandom(options.seed);
+          return seededRandom() - 0.5;
+        }
+        // 否則依然按分數排序
+        return b.matchScore - a.matchScore;
+      });
+    }
+    return top10;
+  }
 }
 
-// 保持之前修改的 recommendForGroup 函數不變，已包含房主優先和投票機制
+// 修改 recommendForGroup 函數中的投票處理邏輯
 function recommendForGroup(allUserAnswers, restaurants, options = {}) {
-  if (!allUserAnswers || Object.keys(allUserAnswers).length === 0) return [];
+  if (!Array.isArray(allUserAnswers) || allUserAnswers.length === 0) return [];
+  if (!Array.isArray(restaurants) || restaurants.length === 0) return [];
 
-  // 獲取用戶數量和房主ID
-  const userCount = Object.keys(allUserAnswers).length;
-  const hostId = options.hostId || null; // 從 options 中獲取房主ID
+  const basicQuestions = options.basicQuestions || [];
+  const isHost = options.isHost || false;
+  const hostAnswers = options.hostAnswers || [];
 
-  // 統計每個答案的出現次數和對應的用戶
-  const answerCounts = {}; // 記錄每個答案的出現次數
-  const answerUsers = {}; // 記錄選擇每個答案的用戶
-  const questionSources = {}; // 記錄問題來源（基本問題還是趣味問題）
-  const answerQuestionMap = {}; // 記錄答案對應的問題文本
+  // 處理每個基本問題的答案
+  const processedAnswers = basicQuestions.map((question, qIndex) => {
+    // 收集所有用戶對這個問題的答案
+    const answers = allUserAnswers.map(userAnswers => userAnswers[qIndex]);
 
-  // 記錄每個用戶的選擇
-  const userSelections = {}; // 用於記錄每個用戶選擇了哪些答案
-
-  // 處理所有用戶的答案
-  Object.entries(allUserAnswers).forEach(([userId, user]) => {
-    userSelections[userId] = []; // 初始化用戶選擇數組
-
-    // 處理結構化答案（包含問題文本和來源）
-    if (user.answers && Array.isArray(user.answers) && user.questionTexts) {
-      user.answers.forEach((ans, i) => {
-        if (!ans) return;
-        // 記錄答案出現次數
-        answerCounts[ans] = (answerCounts[ans] || 0) + 1;
-        // 記錄選擇此答案的用戶
-        if (!answerUsers[ans]) answerUsers[ans] = [];
-        answerUsers[ans].push(userId);
-        // 記錄問題來源
-        if (user.questionSources && user.questionSources[i]) {
-          questionSources[i] = user.questionSources[i];
-        } else {
-          // 根據問題文本猜測來源
-          const isBasic = isBasicQuestion(user.questionTexts[i]);
-          questionSources[i] = isBasic ? 'basic' : 'fun';
-        }
-        // 記錄答案對應的問題
-        answerQuestionMap[i] = user.questionTexts[i];
-        // 記錄用戶選擇
-        userSelections[userId].push(ans);
-      });
-    }
-    // 處理簡單的答案數組 
-    else if (Array.isArray(user)) {
-      user.forEach((ans, i) => {
-        if (!ans) return;
-        answerCounts[ans] = (answerCounts[ans] || 0) + 1;
-        if (!answerUsers[ans]) answerUsers[ans] = [];
-        answerUsers[ans].push(userId);
-        // 根據索引猜測問題來源
-        questionSources[i] = i < options.basicQuestionsCount ? 'basic' : 'fun';
-        // 記錄用戶選擇
-        userSelections[userId].push(ans);
-      });
-    }
-  });
-
-  // 區分基本問題和趣味問題索引
-  const basicIndices = [];
-  const funIndices = [];
-  Object.entries(questionSources).forEach(([i, source]) => {
-    if (source === 'basic') basicIndices.push(Number(i));
-    else funIndices.push(Number(i));
-  });
-
-  // 處理基本問題的投票結果
-  // 對每個基本問題，選取票數最高的選項
-  const mergedAnswers = [];
-  basicIndices.forEach(index => {
-    const counts = {};
-    let hostChoice = null;
-
-    // 統計所有用戶的選擇
-    Object.entries(allUserAnswers).forEach(([userId, user]) => {
-      let answer;
-      if (user.answers && Array.isArray(user.answers)) {
-        answer = user.answers[index];
-      } else if (Array.isArray(user)) {
-        answer = user[index];
-      }
-
+    // 計算每個選項的票數，考慮房主權重
+    const voteCount = {};
+    answers.forEach((answer, userIndex) => {
       if (answer) {
-        counts[answer] = (counts[answer] || 0) + 1;
-        // 記錄房主的選擇
-        if (userId === hostId) {
-          hostChoice = answer;
-        }
+        // 如果是房主的答案，給予雙倍權重
+        const weight = (isHost && userIndex === 0) ? 2 : 1;
+        voteCount[answer] = (voteCount[answer] || 0) + weight;
       }
     });
 
-    // 找出最高票數的選項
-    let majorityChoice = null;
-    let maxVotes = 0;
+    // 找出最高票數
+    const maxVotes = Math.max(...Object.values(voteCount));
 
-    Object.entries(counts).forEach(([choice, votes]) => {
-      if (votes > maxVotes) {
-        majorityChoice = choice;
-        maxVotes = votes;
-      }
-      // 如果出現平票且其中一個是房主選擇的，優先選擇房主的
-      else if (votes === maxVotes && choice === hostChoice) {
-        majorityChoice = choice;
-      }
-    });
+    // 找出獲得最高票數的選項
+    const maxVotedOptions = Object.entries(voteCount)
+      .filter(([_, count]) => count === maxVotes)
+      .map(([option]) => option);
 
-    // 如果有最高票選項，添加到合併答案中
-    if (majorityChoice) {
-      mergedAnswers.push(majorityChoice);
+    // 如果只有一個最高票選項，直接使用
+    if (maxVotedOptions.length === 1) {
+      return maxVotedOptions[0];
     }
-  });
 
-  // 處理趣味問題的投票結果
-  // 選取前3個最受歡迎的選項
-  const funCounts = {};
-  funIndices.forEach(index => {
-    Object.entries(allUserAnswers).forEach(([userId, user]) => {
-      let answer;
-      if (user.answers && Array.isArray(user.answers)) {
-        answer = user.answers[index];
-      } else if (Array.isArray(user)) {
-        answer = user[index];
-      }
-
-      if (answer) {
-        funCounts[answer] = (funCounts[answer] || 0) + 1;
-      }
-    });
-  });
-
-  // 對趣味問題答案按票數排序，優先考慮房主的選擇
-  const sortedFunChoices = Object.entries(funCounts).sort((a, b) => {
-    // 如果票數相同且其中一個是房主選擇的，優先選擇房主的
-    if (a[1] === b[1]) {
-      const aIsHostChoice = hostId && answerUsers[a[0]] && answerUsers[a[0]].includes(hostId);
-      const bIsHostChoice = hostId && answerUsers[b[0]] && answerUsers[b[0]].includes(hostId);
-      if (aIsHostChoice && !bIsHostChoice) return -1;
-      if (!aIsHostChoice && bIsHostChoice) return 1;
+    // 如果有多個最高票選項（平票），優先使用房主的選擇
+    if (isHost && hostAnswers[qIndex] && maxVotedOptions.includes(hostAnswers[qIndex])) {
+      return hostAnswers[qIndex];
     }
-    return b[1] - a[1]; // 仍然以票數排序
+
+    // 如果房主沒有選擇或房主的選擇不在最高票選項中，使用第一個最高票選項
+    return maxVotedOptions[0];
   });
 
-  // 選取前3個最受歡迎的趣味選項
-  const topFunChoices = sortedFunChoices.slice(0, 3).map(([choice]) => choice);
-  topFunChoices.forEach(choice => {
-    if (!mergedAnswers.includes(choice)) {
-      mergedAnswers.push(choice);
-    }
+  // 根據處理後的答案過濾餐廳
+  const filteredRestaurants = restaurants.filter(restaurant => {
+    const score = calculateMatchScore(restaurant, processedAnswers, basicQuestions, [], null, options);
+    return score > WEIGHT.MIN_SCORE;
   });
 
-  // 設置增強的選項
-  const enhancedOptions = {
-    ...options,
-    groupAnswerCounts: answerCounts,
-    userCount,
-    answerQuestionMap,
-    basicQuestions: options.basicQuestions || [],
-    questionSources: mergedAnswers.map((_, i) =>
-      i < basicIndices.length ? 'basic' : 'fun'
-    ),
-    // 添加房主信息，用於後續處理
-    hostId,
-    hostSelections: hostId && userSelections[hostId] ? userSelections[hostId] : [],
-    // 添加用戶選擇信息
-    userSelections,
-    // 添加答案用戶映射
-    answerUsers
-  };
+  // 計算每個餐廳的推薦分數
+  const scoredRestaurants = filteredRestaurants.map(restaurant => ({
+    ...restaurant,
+    score: calculateMatchScore(restaurant, processedAnswers, basicQuestions, [], null, options)
+  }));
 
-  // 使用 recommendRestaurants 生成推薦
-  let recommendedRestaurants = recommendRestaurants(mergedAnswers, restaurants, enhancedOptions);
-
-  // 如果有房主，根據房主選擇進一步優化排序
-  if (hostId && userSelections[hostId] && userSelections[hostId].length > 0 && recommendedRestaurants.length > 0) {
-    // 定義一個更精確的函數來計算與房主偏好的匹配度
-    const calculateHostPreferenceScore = (restaurant, hostSelections) => {
-      // 參數驗證
-      if (!restaurant || !hostSelections || !Array.isArray(hostSelections) || hostSelections.length === 0) {
-        return 0;
-      }
-
-      // 獲取餐廳標籤 - 包括類型和標籤
-      const restaurantTags = [];
-
-      // 從餐廳類型獲取標籤
-      if (restaurant.type) {
-        restaurantTags.push(...restaurant.type.split(/[,、，]/).map(t => t.trim().toLowerCase()));
-      }
-
-      // 從餐廳標籤獲取標籤
-      if (restaurant.tags) {
-        const tags = Array.isArray(restaurant.tags) ? restaurant.tags : [restaurant.tags];
-        restaurantTags.push(...tags.map(t => typeof t === 'string' ? t.toLowerCase() : ''));
-      }
-
-      // 如果沒有標籤則返回0
-      if (restaurantTags.length === 0) return 0;
-
-      // 計算精確匹配分數
-      let hostMatchScore = 0;
-
-      // 針對房主的每個選擇進行評分
-      hostSelections.forEach(hostChoice => {
-        if (!hostChoice) return; // 跳過無效選擇
-
-        const lowerHostChoice = typeof hostChoice === 'string' ? hostChoice.toLowerCase() : '';
-
-        // 檢查餐廳標籤是否精確匹配房主選擇
-        if (restaurantTags.some(tag => tag === lowerHostChoice)) {
-          hostMatchScore += 2.0; // 精確匹配給予較高分數
-        }
-        // 檢查是否部分匹配
-        else if (restaurantTags.some(tag => tag.includes(lowerHostChoice) || lowerHostChoice.includes(tag))) {
-          hostMatchScore += 1.0; // 部分匹配給予中等分數
-        }
-
-        // 檢查標籤映射表中是否有相關映射
-        if (funQuestionTagsMap[hostChoice]) {
-          const mappedTags = funQuestionTagsMap[hostChoice];
-
-          // 遍歷映射標籤
-          mappedTags.forEach(mappedTag => {
-            if (!mappedTag) return; // 跳過無效標籤
-
-            const lowerMappedTag = typeof mappedTag === 'string' ? mappedTag.toLowerCase() : '';
-
-            // 檢查精確匹配
-            if (restaurantTags.some(tag => tag === lowerMappedTag)) {
-              hostMatchScore += 1.0; // 映射標籤精確匹配
-            }
-            // 檢查部分匹配
-            else if (restaurantTags.some(tag => tag.includes(lowerMappedTag) || lowerMappedTag.includes(tag))) {
-              hostMatchScore += 0.5; // 映射標籤部分匹配
-            }
-          });
-        }
-      });
-
-      // 對分數進行歸一化處理，避免極端值
-      return Math.min(hostMatchScore, 10); // 設置上限為10分
-    };
-
-    // 增加一個小的優化，優先展示與房主選擇匹配的餐廳
-    recommendedRestaurants = recommendedRestaurants.map(restaurant => {
-      const hostPreferenceScore = calculateHostPreferenceScore(restaurant);
-      return {
-        ...restaurant,
-        hostPreferenceScore
-      };
-    });
-
-    // 重新排序，考慮原始匹配分數和房主偏好分數
-    recommendedRestaurants.sort((a, b) => {
-      // 如果匹配分數接近（差距小於2分），優先考慮房主偏好
-      if (Math.abs(a.matchScore - b.matchScore) < 2) {
-        return b.hostPreferenceScore - a.hostPreferenceScore;
-      }
-      // 如果匹配分數相差不大（差距小於5分），部分考慮房主偏好
-      else if (Math.abs(a.matchScore - b.matchScore) < 5) {
-        // 綜合考慮匹配分數和房主偏好，權重比例為7:3
-        return (b.matchScore * 0.7 + b.hostPreferenceScore * 0.3) -
-          (a.matchScore * 0.7 + a.hostPreferenceScore * 0.3);
-      }
-      // 否則仍按原始匹配分數排序
-      return b.matchScore - a.matchScore;
-    });
-
-  }
-
-  return recommendedRestaurants;
+  // 根據分數排序
+  return scoredRestaurants.sort((a, b) => b.score - a.score);
 }
 
 module.exports = {

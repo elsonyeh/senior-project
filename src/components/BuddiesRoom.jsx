@@ -163,8 +163,19 @@ export default function BuddiesRoom() {
     });
 
     // 接收餐廳推薦
-    socket.on("groupRecommendations", (recs) => {
-      console.log("收到餐廳推薦:", recs?.length, "家餐廳");
+    socket.on("groupRecommendations", (data) => {
+      console.log("收到餐廳推薦");
+
+      // 適應新的數據格式
+      let recs = data;
+      let timestamp = null;
+
+      // 檢查是否是新格式（包含時間戳的對象）
+      if (data && typeof data === "object" && data.recommendations) {
+        recs = data.recommendations;
+        timestamp = data.timestamp;
+        console.log("推薦時間戳:", timestamp);
+      }
 
       if (!recs || !Array.isArray(recs) || recs.length === 0) {
         console.error("收到無效的推薦數據");
@@ -181,6 +192,14 @@ export default function BuddiesRoom() {
         setError("推薦結果無效，請重試");
         setPhase("waiting");
         return;
+      }
+
+      // 儲存時間戳（如果有）
+      if (timestamp) {
+        localStorage.setItem(
+          `recommendations_timestamp_${roomId}`,
+          timestamp.toString()
+        );
       }
 
       // 強制更新狀態

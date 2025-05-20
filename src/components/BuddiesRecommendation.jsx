@@ -31,7 +31,28 @@ export default function BuddiesRecommendation({
   const [totalMembers, setTotalMembers] = useState(0);
   const navigate = useNavigate();
 
-  // 處理滑動結束並計算投票結果的函數 - 用 useCallback 防止依賴循環
+  // 使用房間ID創建一個確定性的種子
+  const generateSeedFromRoomId = (roomId) => {
+    if (!roomId) return 12345; // 默認種子
+    return roomId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  };
+
+  // 使用基於種子的隨機排序函數
+  const seededShuffle = (array, seed) => {
+    // 創建確定性的隨機數生成器
+    const seededRandom = (() => {
+      let s = seed;
+      return () => {
+        s = (s * 9301 + 49297) % 233280;
+        return s / 233280;
+      };
+    })();
+
+    // 使用確定性隨機數進行排序
+    return [...array].sort(() => seededRandom() - 0.5);
+  };
+
+  // 處理滑動結束並計算投票結果的函數
   const handleFinishSwiping = useCallback(() => {
     setPhase("vote-result");
 
@@ -50,8 +71,10 @@ export default function BuddiesRecommendation({
         );
 
         if (tiedRestaurants.length > 1) {
-          // 如果有平局，選擇第一個
-          const topVotedId = tiedRestaurants[0][0];
+          // 如果有平局，使用確定性隨機選擇（基於房間ID作為種子）
+          const seed = generateSeedFromRoomId(roomId);
+          const shuffledTied = seededShuffle(tiedRestaurants, seed);
+          const topVotedId = shuffledTied[0][0];
           const topVotedRestaurant = [
             ...limitedRestaurants,
             ...alternativeRestaurants,
@@ -88,9 +111,9 @@ export default function BuddiesRecommendation({
       // 如果沒有投票，使用首個收藏的餐廳
       setFinalResult(saved[0]);
     }
-  }, [votes, limitedRestaurants, alternativeRestaurants, saved]);
+  }, [votes, limitedRestaurants, alternativeRestaurants, saved, roomId]);
 
-  // 限制推薦餐廳數量為10家
+  // 限制推薦餐廳數量為10家 - 修改以使用確定性排序
   useEffect(() => {
     // 打印接收到的餐廳數據的前3家，檢查是否有 matchScore
     console.log(
@@ -98,7 +121,7 @@ export default function BuddiesRecommendation({
       restaurants.slice(0, 3).map((r) => ({
         name: r.name,
         hasMatchScore: typeof r.matchScore === "number",
-        matchScore: r.matchScore, // 僅用於調試，不顯示給用戶
+        matchScore: r.matchScore,
         id: r.id,
       }))
     );
@@ -108,22 +131,23 @@ export default function BuddiesRecommendation({
       (r) => typeof r.matchScore === "number"
     );
 
+    // 生成一個基於房間ID的固定種子
+    const roomSeed = generateSeedFromRoomId(roomId);
+    console.log("房間種子值:", roomSeed);
+
     if (hasMatchScores) {
       console.log("餐廳帶有匹配分數，根據分數選取前十間");
 
-      // 1. 根據 matchScore 排序
+      // 1. 根據 matchScore 排序（保留這步，不使用隨機排序）
       const sortedByScore = [...restaurants].sort(
         (a, b) => (b.matchScore || 0) - (a.matchScore || 0)
       );
 
-      // 2. 取分數最高的前10間
+      // 2. 取分數最高的前10間，不再隨機打亂順序
       const topTen = sortedByScore.slice(0, 10);
 
-      // 3. 打亂這10間餐廳的順序
-      const shuffledTopTen = [...topTen].sort(() => 0.5 - Math.random());
-
-      // 設置限制後的餐廳列表
-      setLimitedRestaurants(shuffledTopTen);
+      // 設置限制後的餐廳列表 - 不再隨機排序
+      setLimitedRestaurants(topTen);
 
       // 保留其餘餐廳作為備選（仍按照評分排序）
       if (sortedByScore.length > 10) {
@@ -131,29 +155,28 @@ export default function BuddiesRecommendation({
         setAlternativeRestaurants(alternatives);
       }
     } else {
-      // 處理沒有匹配分數的情況
-      console.warn("警告：餐廳未包含匹配分數，使用隨機選擇");
+      // 處理沒有匹配分數的情況，使用確定性排序
+      console.warn("警告：餐廳未包含匹配分數，使用確定性選擇");
 
-      // 隨機選取10間（舊的方法）
-      const getRandomTen = (arr) => {
-        if (!arr || arr.length <= 10) return arr || [];
-        return [...arr].sort(() => 0.5 - Math.random()).slice(0, 10);
-      };
+      // 確保餐廳有一個穩定的排序（例如按名稱）
+      const stabilizedList = [...restaurants].sort((a, b) =>
+        a.name && b.name ? a.name.localeCompare(b.name) : 0
+      );
 
-      // 設置限制後的餐廳列表
-      const limitedList = getRandomTen(restaurants);
+      // 使用確定性洗牌（基於房間ID）
+      const shuffled = seededShuffle(stabilizedList, roomSeed);
+
+      // 選取前10個
+      const limitedList = shuffled.slice(0, 10);
       setLimitedRestaurants(limitedList);
 
       // 保留其餘餐廳作為備選
-      if (restaurants.length > 10) {
-        const remaining = restaurants.filter(
-          (r) => !limitedList.some((l) => l.id === r.id)
-        );
-        const alternatives = remaining.slice(0, 5);
+      if (shuffled.length > 10) {
+        const alternatives = shuffled.slice(10, 15);
         setAlternativeRestaurants(alternatives);
       }
     }
-  }, [restaurants]);
+  }, [restaurants, roomId]);
 
   // 監聽投票和最終結果
   useEffect(() => {

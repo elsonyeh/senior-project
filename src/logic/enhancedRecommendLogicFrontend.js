@@ -245,49 +245,49 @@ function recommendRestaurants(answers, restaurants, options = {}) {
 
   // 獲取基本問題和識別符
   const basicQuestions = options.basicQuestions || [];
-  
+
   // 保證有識別基本問題的方法（多層次回退機制）
-  const basicQuestionIdentifiers = basicQuestions.length > 0 ? 
-    basicQuestions.map(q => q.question) : 
+  const basicQuestionIdentifiers = basicQuestions.length > 0 ?
+    basicQuestions.map(q => q.question) :
     BASIC_QUESTION_IDENTIFIERS; // 使用預設識別符作為備用
-  
+
   // 基於問題-答案映射來分類
   let basicAnswers = [];
   let funAnswers = [];
-  
+
   // 記錄處理方式以便調試
   let processingMethod = "";
-  
+
   // 處理方式1: 使用 answerQuestionMap 映射關係（優先級最高）
   if (options.answerQuestionMap && Object.keys(options.answerQuestionMap).length > 0) {
     processingMethod = "使用答案-問題映射";
-    
+
     Object.entries(options.answerQuestionMap).forEach(([index, questionText]) => {
       const answerIndex = parseInt(index);
       if (!isNaN(answerIndex) && answerIndex < answers.length) {
         // 完整匹配或部分匹配基本問題標識符
-        if (basicQuestionIdentifiers.includes(questionText) || 
-            basicQuestionIdentifiers.some(q => questionText && 
-                                         typeof questionText === 'string' && 
-                                         questionText.includes(q))) {
+        if (basicQuestionIdentifiers.includes(questionText) ||
+          basicQuestionIdentifiers.some(q => questionText &&
+            typeof questionText === 'string' &&
+            questionText.includes(q))) {
           basicAnswers.push(answers[answerIndex]);
         } else {
           funAnswers.push(answers[answerIndex]);
         }
       }
     });
-  } 
+  }
   // 處理方式2: 使用問題文本陣列（第二優先級）
   else if (options.questionTexts && options.questionTexts.length > 0) {
     processingMethod = "使用問題文本陣列";
-    
+
     options.questionTexts.forEach((questionText, index) => {
       if (index < answers.length) {
         // 檢查問題是否是基本問題
-        if (basicQuestionIdentifiers.includes(questionText) || 
-            basicQuestionIdentifiers.some(q => questionText && 
-                                         typeof questionText === 'string' && 
-                                         questionText.includes(q))) {
+        if (basicQuestionIdentifiers.includes(questionText) ||
+          basicQuestionIdentifiers.some(q => questionText &&
+            typeof questionText === 'string' &&
+            questionText.includes(q))) {
           basicAnswers.push(answers[index]);
         } else {
           funAnswers.push(answers[index]);
@@ -298,20 +298,20 @@ function recommendRestaurants(answers, restaurants, options = {}) {
   // 處理方式3: 使用基本問題數量（最基本回退機制）
   else {
     processingMethod = "使用基本問題數量";
-    
+
     const basicQuestionsCount = basicQuestions.length || 6; // 預設 6 個基本問題
     basicAnswers = answers.slice(0, Math.min(basicQuestionsCount, answers.length));
     funAnswers = answers.slice(Math.min(basicQuestionsCount, answers.length));
   }
-  
+
   console.log("問題處理方式:", processingMethod);
   console.log("基本問題答案:", basicAnswers);
   console.log("是否包含喝:", basicAnswers.includes("喝"));
   console.log("趣味問題答案:", funAnswers);
-  
+
   // 儲存原始餐廳列表
   const originalRestaurants = [...restaurants];
-  
+
   // 添加前置過濾邏輯
   if (basicAnswers.includes("喝")) {
     // 如果選擇了「喝」，先過濾只保留有「喝」標籤的餐廳
@@ -320,7 +320,7 @@ function recommendRestaurants(answers, restaurants, options = {}) {
         typeof tag === 'string' && tag.toLowerCase().trim() === "喝"
       )
     );
-    
+
     // 如果過濾後沒有餐廳，直接返回空陣列
     if (restaurants.length === 0) {
       console.warn("沒有找到符合「喝」條件的餐廳");
@@ -333,7 +333,7 @@ function recommendRestaurants(answers, restaurants, options = {}) {
         typeof tag === 'string' && tag.toLowerCase().trim() === "吃一點"
       )
     );
-    
+
     if (restaurants.length === 0) {
       console.warn("沒有找到符合「吃一點」條件的餐廳");
       return [];
@@ -345,13 +345,13 @@ function recommendRestaurants(answers, restaurants, options = {}) {
         typeof tag === 'string' && tag.toLowerCase().trim() === "飽足"
       )
     );
-    
+
     if (restaurants.length === 0) {
       console.warn("沒有找到符合「吃飽」條件的餐廳");
       return [];
     }
   }
-  
+
   // 使用 calculateMatchScore 為每個餐廳打分
   const scoredRestaurants = restaurants.map(restaurant => {
     const score = calculateMatchScore(
@@ -367,21 +367,21 @@ function recommendRestaurants(answers, restaurants, options = {}) {
     );
     return { ...restaurant, matchScore: score };
   });
-  
+
   // 按分數排序餐廳
   const sortedRestaurants = scoredRestaurants.sort((a, b) => b.matchScore - a.matchScore);
   const minScoreThreshold = options.minScoreThreshold || (WEIGHT.MIN_SCORE * 2);
-  
+
   // 過濾掉分數過低的餐廳
   const filteredRestaurants = sortedRestaurants.filter(r => r.matchScore >= minScoreThreshold);
-  
+
   // 關鍵條件下不返回備選項，確保嚴格匹配
   if (options.strictBasicMatch &&
-      (basicAnswers.includes("喝") || basicAnswers.includes("吃") ||
-       basicAnswers.includes("吃一點") || basicAnswers.includes("吃飽"))) {
+    (basicAnswers.includes("喝") || basicAnswers.includes("吃") ||
+      basicAnswers.includes("吃一點") || basicAnswers.includes("吃飽"))) {
     return filteredRestaurants; // 不回退到排序列表，寧可返回空
   }
-  
+
   // 如果沒有符合條件的餐廳，退回到分數最高的10家
   return filteredRestaurants.length > 0 ? filteredRestaurants : sortedRestaurants.slice(0, 10);
 }

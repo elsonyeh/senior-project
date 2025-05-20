@@ -6,8 +6,9 @@ import React, {
   useMemo,
 } from "react";
 import socket from "../services/socket";
+import { AnimatePresence } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
-import { motion, AnimatePresence } from "framer-motion";
 import "./BuddiesVoteStyles.css";
 import { buddiesBasicQuestions } from "../data/buddiesBasicQuestions";
 
@@ -23,6 +24,12 @@ export default function BuddiesQuestionSwiper({
   const [waiting, setWaiting] = useState(false);
   const [voteStats, setVoteStats] = useState({});
   const [voteBubbles, setVoteBubbles] = useState([]); // 改為數組，存儲多個氣泡
+  const [localQuestions, setLocalQuestions] = useState(questions);
+
+  // props.questions 變動時自動同步
+  useEffect(() => {
+    setLocalQuestions(questions);
+  }, [questions]);
 
   // Refs - 不會觸發重新渲染
   const hasCompletedRef = useRef(false);
@@ -48,8 +55,8 @@ export default function BuddiesQuestionSwiper({
   // 處理安全的問題格式化 - 必須先初始化
   const safeQuestions = useMemo(
     () =>
-      Array.isArray(questions)
-        ? questions.map((q, index) => ({
+      Array.isArray(localQuestions)
+        ? localQuestions.map((q, index) => ({
             id: q.id || `q${index}`,
             text: q.text || "",
             leftOption: q.leftOption || "選項 A",
@@ -60,80 +67,57 @@ export default function BuddiesQuestionSwiper({
               (q.text && isBuddiesBasicQuestion(q.text) ? "basic" : "fun"),
           }))
         : [],
-    [questions, isBuddiesBasicQuestion]
-  );
-
-  // 從問題中提取文本和來源 - 依賴於safeQuestions
-  const questionTexts = useMemo(
-    () => safeQuestions.map((q) => q.text),
-    [safeQuestions]
-  );
-
-  const questionSources = useMemo(
-    () => safeQuestions.map((q) => q.source),
-    [safeQuestions]
+    [localQuestions, isBuddiesBasicQuestion]
   );
 
   // 新增: 根據已有答案過濾問題
-  const getVisibleQuestions = useCallback((allQuestions, currentAnswers) => {
-    return allQuestions.filter((question, index) => {
-      // 檢查依賴條件
-      if (question.dependsOn) {
-        const { question: dependsOnQ, answer: dependsOnA } = question.dependsOn;
+  const getVisibleQuestions = useCallback(
+    (allQuestions) => {
+      // 檢查是否有需要跳過的問題
+      const skipSet = voteStats?.skipQuestions
+        ? new Set(voteStats.skipQuestions)
+        : new Set();
 
-        // 找到依賴問題的索引
-        const dependsOnIndex = allQuestions.findIndex(
-          (q) => q.text === dependsOnQ || q.question === dependsOnQ
-        );
+      // 找到「想吃正餐還是想喝飲料」問題的索引
+      const eatOrDrinkIndex = allQuestions.findIndex(
+        (q) => q.text && q.text.includes("想吃正餐還是想喝飲料")
+      );
 
-        // 如果找到依賴問題且已回答
-        if (dependsOnIndex !== -1 && dependsOnIndex < index) {
-          const dependsOnId = allQuestions[dependsOnIndex].id;
+      // 獲取房主對「吃/喝」問題的選擇
+      const hostEatDrinkChoice = voteStats?.hostAnswers?.[eatOrDrinkIndex];
 
-          // 檢查依賴問題的答案
-          if (
-            // 檢查 answersRef 中的答案
-            (answersRef.current[dependsOnIndex] &&
-              answersRef.current[dependsOnIndex] !== dependsOnA) ||
-            // 或檢查傳入的當前答案
-            (currentAnswers &&
-              currentAnswers[dependsOnId] &&
-              currentAnswers[dependsOnId] !== dependsOnA)
-          ) {
-            return false; // 如果依賴條件不滿足，不顯示此問題
+      return allQuestions.filter((q, index) => {
+        // 如果這個問題在跳過列表中，不顯示
+        if (skipSet.has(index)) {
+          console.log(`問題 ${index} 在跳過列表中`);
+          return false;
+        }
+
+        // 檢查是否是飲食相關問題
+        if (q.text && (q.text.includes("吃一點") || q.text.includes("辣的"))) {
+          // 如果房主已選擇「喝」，跳過這些問題
+          if (hostEatDrinkChoice === "喝") {
+            console.log(`問題 ${index} 因為房主選擇了喝而跳過`);
+            return false;
+          }
+
+          // 如果房主還沒有回答吃/喝問題，且當前問題在吃/喝問題之後，暫時不顯示
+          if (!hostEatDrinkChoice && index > eatOrDrinkIndex) {
+            console.log(`問題 ${index} 等待房主選擇吃/喝`);
+            return false;
           }
         }
-      }
 
-      // 特殊處理「喝」相關的依賴
-      if (
-        question.text &&
-        (question.text.includes("吃一點") || question.text.includes("辣的"))
-      ) {
-        // 找「想吃正餐還是想喝飲料」問題
-        const eatOrDrinkIndex = allQuestions.findIndex(
-          (q) => q.text && q.text.includes("想吃正餐還是想喝飲料")
-        );
-
-        // 如果找到且已回答為「喝」
-        if (
-          eatOrDrinkIndex !== -1 &&
-          answersRef.current[eatOrDrinkIndex] === "喝"
-        ) {
-          return false; // 不顯示這些問題
-        }
-      }
-
-      return true; // 其他問題都顯示
-    });
-  }, []);
+        return true;
+      });
+    },
+    [voteStats]
+  );
 
   // 使用 useMemo 獲取當前應該顯示的問題
   const currentQuestion = useMemo(() => {
-    // 首先獲取所有可能顯示的問題
-    const visibleQuestions = getVisibleQuestions(safeQuestions, {});
-
-    // 返回當前索引的問題，如果索引超出範圍則返回 null
+    const visibleQuestions = getVisibleQuestions(safeQuestions);
+    console.log("當前可見問題數量:", visibleQuestions.length);
     return questionIndex < visibleQuestions.length
       ? visibleQuestions[questionIndex]
       : null;
@@ -147,6 +131,9 @@ export default function BuddiesQuestionSwiper({
     }
   }, []);
 
+  // 使用 ref 來追蹤已顯示的投票
+  const displayedVotesRef = useRef(new Set());
+
   // 顯示投票氣泡動畫
   const showVoteBubble = useCallback((voteData) => {
     if (!isMountedRef.current) return;
@@ -154,56 +141,116 @@ export default function BuddiesQuestionSwiper({
     // 避免顯示自己的投票
     if (voteData.senderId === socket.id) return;
 
+    // 生成唯一的投票 ID
+    const voteId = `${voteData.senderId}-${voteData.timestamp || Date.now()}`;
+
+    // 檢查這個投票是否已經顯示過
+    if (displayedVotesRef.current.has(voteId)) {
+      console.log("Skip duplicate vote bubble:", voteId);
+      return;
+    }
+
+    // 記錄這個投票已經顯示
+    displayedVotesRef.current.add(voteId);
+
     // 創建新的投票氣泡
     const newBubble = {
-      id: Date.now() + Math.random(),
+      id: voteId,
       option: voteData.option,
       userName: voteData.userName || "有人",
-      timestamp: Date.now(),
+      timestamp: voteData.timestamp || Date.now(),
     };
 
     // 添加新氣泡到數組
     setVoteBubbles((prev) => {
-      const newBubbles = [newBubble, ...prev].slice(0, 5);
+      // 限制最多顯示3個氣泡
+      const newBubbles = [newBubble, ...prev].slice(0, 3);
       return newBubbles;
     });
 
-    // 3秒後移除此氣泡
+    // 2秒後移除此氣泡
     setTimeout(() => {
       if (isMountedRef.current) {
-        setVoteBubbles((prev) =>
-          prev.filter((bubble) => bubble.id !== newBubble.id)
-        );
+        setVoteBubbles((prev) => prev.filter((bubble) => bubble.id !== voteId));
       }
-    }, 3000);
+    }, 2000);
+
+    // 30秒後從已顯示集合中移除，允許再次顯示（以防同一用戶在新一輪投票中再次投票）
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        displayedVotesRef.current.delete(voteId);
+      }
+    }, 30000);
   }, []);
 
-  // 處理新投票
-  const handleNewVote = useCallback(
-    (data) => {
+  // 處理投票統計更新
+  const handleVoteStatsUpdate = useCallback(
+    (stats) => {
       if (!isMountedRef.current) return;
 
-      // 顯示投票氣泡
-      showVoteBubble(data);
+      // 保存跳過問題信息
+      if (stats.skipQuestions) {
+        console.log("更新需要跳過的問題:", stats.skipQuestions);
+      }
 
       // 更新投票統計
       setVoteStats((prev) => {
-        const option = data.option;
-        return {
-          ...prev,
-          [option]: (prev[option] || 0) + 1,
+        // 合併新的投票數據，保留現有的 hostAnswers
+        const updatedStats = {
+          ...stats,
+          hostAnswers: {
+            ...(prev?.hostAnswers || {}),
+            ...(stats.hostAnswers || {}),
+          },
         };
+
+        // 如果有新的用戶數據，處理投票統計
+        if (stats.userData && Array.isArray(stats.userData)) {
+          const voteCounts = {};
+          const prevUserData = prev?.userData || [];
+
+          // 找出新的投票
+          const newVotes = stats.userData.filter((vote) => {
+            return !prevUserData.some(
+              (prevVote) =>
+                prevVote.id === vote.id &&
+                prevVote.option === vote.option &&
+                prevVote.timestamp === vote.timestamp
+            );
+          });
+
+          // 計算票數
+          stats.userData.forEach((vote) => {
+            if (vote.option) {
+              voteCounts[vote.option] = (voteCounts[vote.option] || 0) + 1;
+            }
+          });
+
+          // 顯示新投票的泡泡
+          newVotes.forEach((vote) => {
+            if (vote.id !== socket.id) {
+              const voter = members.find((m) => m.id === vote.id);
+              showVoteBubble({
+                option: vote.option,
+                senderId: vote.id,
+                userName: voter ? voter.name : "有人",
+                timestamp: vote.timestamp,
+              });
+            }
+          });
+
+          return {
+            ...updatedStats,
+            ...voteCounts,
+            userData: stats.userData,
+          };
+        }
+
+        return updatedStats;
       });
     },
-    [showVoteBubble]
+    [showVoteBubble, members, socket.id]
   );
-
-  // 處理投票統計更新
-  const handleVoteStats = useCallback((stats) => {
-    if (!isMountedRef.current) return;
-    console.log("收到投票統計:", stats);
-    setVoteStats(stats);
-  }, []);
 
   // 處理推薦結果
   const handleGroupRecommendations = useCallback(
@@ -230,8 +277,10 @@ export default function BuddiesQuestionSwiper({
     // 監聽問題同步事件
     const handleSyncQuestions = (data) => {
       if (!isMountedRef.current) return;
-
       if (data && data.questions && Array.isArray(data.questions)) {
+        setLocalQuestions(data.questions);
+        setQuestionIndex(0);
+        // 其他重置...
         console.log("收到房間同步問題集:", data.questions.length);
 
         // 如果使用 props 管理問題集，可以通過回調通知父組件
@@ -245,7 +294,6 @@ export default function BuddiesQuestionSwiper({
         questionSourcesRef.current = [];
 
         // 重置為第一題
-        setQuestionIndex(0);
         setWaiting(false);
         setVoteStats({});
         setVoteBubbles([]);
@@ -267,6 +315,12 @@ export default function BuddiesQuestionSwiper({
       console.log(`提交答案: ${answer}, 題目 ${questionIndex}`);
       setWaiting(true);
 
+      // 檢查是否為房主
+      const isCurrentUserHost = members.some(
+        (m) => m.id === socket.id && m.isHost
+      );
+      console.log("當前用戶是否為房主:", isCurrentUserHost);
+
       // 保存答案，同時更新ref
       const newAnswers = { ...answersRef.current, [questionIndex]: answer };
       answersRef.current = newAnswers;
@@ -287,15 +341,10 @@ export default function BuddiesQuestionSwiper({
       const questionSourcesArray = [...questionSourcesRef.current];
 
       // 計算所有可見問題（考慮依賴關係）
-      const visibleQuestions = getVisibleQuestions(safeQuestions, newAnswers);
+      const visibleQuestions = getVisibleQuestions(safeQuestions);
+      const totalVisibleQuestions = visibleQuestions.length;
 
-      // 日誌可見問題數量，幫助調試
-      console.log(
-        `可見問題數量: ${visibleQuestions.length}，總問題數: ${safeQuestions.length}`
-      );
-      console.log(`當前已回答: ${Object.keys(newAnswers).length} 題`);
-
-      // 發送答案到服務器
+      // 發送答案到服務器，包含房主資訊
       socket.emit(
         "submitAnswers",
         {
@@ -304,18 +353,19 @@ export default function BuddiesQuestionSwiper({
           questionTexts: questionTextsArray,
           questionSources: questionSourcesArray,
           index: questionIndex,
-          totalQuestions: visibleQuestions.length, // 使用可見問題數量而非所有問題
+          totalQuestions: totalVisibleQuestions,
+          isHost: isCurrentUserHost,
           currentAnswerCount: Object.keys(newAnswers).length,
-          basicQuestions: buddiesBasicQuestions,
         },
         (response) => {
           if (response && !response.success) {
             console.error(`答案提交回調錯誤: ${response.error}`);
+            setWaiting(false); // 出錯時解除等待狀態
           } else {
             console.log(
               `答案提交成功，當前題目：${questionIndex}/${
-                visibleQuestions.length - 1
-              }`
+                totalVisibleQuestions - 1
+              }，是否為房主：${isCurrentUserHost}`
             );
           }
         }
@@ -327,120 +377,93 @@ export default function BuddiesQuestionSwiper({
       safeQuestions,
       isBuddiesBasicQuestion,
       getVisibleQuestions,
+      members,
+      socket.id,
     ]
+  );
+
+  // 處理下一題信號
+  const handleNextQuestion = useCallback(
+    (data) => {
+      console.log(`收到下一題信號: ${JSON.stringify(data)}`);
+
+      if (!isMountedRef.current) return;
+
+      // 清理計時器
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      // 獲取下一題索引
+      let nextIndex = data.nextIndex;
+      const skipSet = new Set(data.skipQuestions || []);
+
+      // 確保不會跳到需要跳過的問題
+      while (skipSet.has(nextIndex) && nextIndex < safeQuestions.length) {
+        console.log(`跳過問題 ${nextIndex}`);
+        nextIndex++;
+      }
+
+      console.log(`將跳轉到題目 ${nextIndex}`);
+
+      // 更新 voteStats 中的跳過問題列表
+      setVoteStats((prev) => ({
+        ...prev,
+        skipQuestions: Array.from(skipSet),
+        hostAnswers: data.hostAnswers || prev.hostAnswers,
+      }));
+
+      // 設置延遲以確保動畫順暢
+      const delay = data.isLastUser ? 2000 : 100;
+      timeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          setQuestionIndex(nextIndex);
+          setWaiting(false);
+        }
+      }, delay);
+    },
+    [safeQuestions.length]
   );
 
   // 處理Socket事件監聽 - 這是主要的useEffect
   useEffect(() => {
     console.log("初始化Socket事件監聽，當前題目:", questionIndex);
 
-    // 設置組件已掛載標記
     isMountedRef.current = true;
 
-    // 收到下一題信號 - 重新設計此函數，考慮問題依賴關係
-    const handleNextQuestion = (data) => {
-      console.log(`收到下一題信號: ${JSON.stringify(data)}`);
-
+    // 處理問題流程更新
+    const handleQuestionFlowUpdate = (data) => {
       if (!isMountedRef.current) return;
 
-      // 先清理任何現有的計時器
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
+      console.log("收到問題流程更新:", data);
+
+      // 更新跳過問題的設置
+      if (data.skipQuestions) {
+        console.log("需要跳過的問題:", data.skipQuestions);
+        setVoteStats((prev) => ({
+          ...prev,
+          skipQuestions: data.skipQuestions,
+          hostAnswers: {
+            ...(prev.hostAnswers || {}),
+            [data.currentIndex]: data.hostChoice,
+          },
+        }));
       }
 
-      // 獲取考慮依賴關係後可見的問題列表
-      const visibleQuestions = getVisibleQuestions(
-        safeQuestions,
-        answersRef.current
-      );
-      console.log(
-        "可見問題列表:",
-        visibleQuestions.map((q) => q.text)
-      );
-
-      // 找到當前問題在可見問題列表中的索引
-      const currentVisibleIndex = visibleQuestions.findIndex(
-        (q) => q.id === safeQuestions[questionIndex].id
-      );
-
-      // 計算下一個應該顯示的問題索引
-      let nextIndex;
-
-      // 如果數據中提供了下一個索引，使用它
-      if (data && typeof data.nextIndex !== "undefined") {
-        nextIndex = Number(data.nextIndex);
-        console.log(`使用服務器提供的下一題索引: ${nextIndex}`);
-      } else {
-        // 否則計算下一個可見問題的索引
-        const nextVisibleIndex = currentVisibleIndex + 1;
-
-        // 如果還有下一個可見問題
-        if (nextVisibleIndex < visibleQuestions.length) {
-          // 找到下一個可見問題在原始問題列表中的索引
-          nextIndex = safeQuestions.findIndex(
-            (q) => q.id === visibleQuestions[nextVisibleIndex].id
-          );
-          console.log(
-            `計算出的下一題索引: ${nextIndex} (可見索引: ${nextVisibleIndex})`
-          );
-        } else {
-          // 如果沒有更多可見問題，就進入下一個問題索引
-          nextIndex = questionIndex + 1;
-          console.log(`沒有更多可見問題，使用索引+1: ${nextIndex}`);
-        }
-      }
-
-      // 防止退步，確保新題目索引大於當前索引
-      if (nextIndex <= questionIndex) {
-        console.warn(
-          `收到的題目索引 ${nextIndex} 不大於當前索引 ${questionIndex}，忽略`
-        );
-        return;
-      }
-
-      // 檢查是否為最後一個用戶完成的信號
-      if (data && data.isLastUser) {
-        console.log("所有用戶已完成選擇，將在2秒後切換到題目:", nextIndex);
-
-        // 更新等待文本
-        const waitingElement = document.querySelector(".waiting-text");
-        if (waitingElement) {
-          waitingElement.textContent = "所有人都完成了！即將進入下一題...";
-        }
-
-        // 延遲2秒後再切換題目，讓用戶看到結果
-        timeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            console.log("2秒後切換到題目:", nextIndex);
-            setQuestionIndex(nextIndex);
-            setVoteStats({});
-            setWaiting(false);
-
-            // 重置等待文本 (如果使用DOM操作的話)
-            const waitingElement = document.querySelector(".waiting-text");
-            if (waitingElement) {
-              waitingElement.textContent = "等待其他人回答...";
-            }
-          }
-        }, 2000);
-      } else {
-        // 如果不是最後一個用戶，仍然添加少量延遲以避免同步問題
-        timeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            console.log("立即切換到題目:", nextIndex);
-            setQuestionIndex(nextIndex);
-            setVoteStats({});
-            setWaiting(false);
-          }
-        }, 100);
+      // 如果是當前問題的房主選擇，更新狀態
+      if (data.currentIndex === questionIndex) {
+        setVoteStats((prev) => ({
+          ...prev,
+          hostVote: data.hostChoice,
+        }));
       }
     };
 
-    // 原有的事件監聽器註冊
+    // 註冊事件監聽器
+    socket.on("updateQuestionFlow", handleQuestionFlowUpdate);
     socket.on("nextQuestion", handleNextQuestion);
-    socket.on("voteStats", handleVoteStats);
-    socket.on("newVote", handleNewVote);
+    socket.on("voteStats", handleVoteStatsUpdate);
     socket.on("groupRecommendations", handleGroupRecommendations);
 
     // 發送準備就緒信號
@@ -456,41 +479,29 @@ export default function BuddiesQuestionSwiper({
 
     // 連接時發送就緒信號
     sendReadySignal();
-
-    // 重新連接時也發送就緒信號
     socket.on("connect", sendReadySignal);
 
     // 清理函數
     return () => {
       console.log("清理Socket事件監聽");
       isMountedRef.current = false;
+      socket.off("updateQuestionFlow", handleQuestionFlowUpdate);
       socket.off("nextQuestion", handleNextQuestion);
-      socket.off("voteStats", handleVoteStats);
-      socket.off("newVote", handleNewVote);
+      socket.off("voteStats", handleVoteStatsUpdate);
       socket.off("groupRecommendations", handleGroupRecommendations);
       socket.off("connect", sendReadySignal);
 
-      // 清理計時器
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
     };
-  }, [
-    questionIndex,
-    roomId,
-    showVoteBubble,
-    handleGroupRecommendations,
-    handleVoteStats,
-    handleNewVote,
-    getVisibleQuestions,
-    safeQuestions,
-    clearAllTimeouts,
-  ]);
+  }, [questionIndex, roomId, safeQuestions, handleGroupRecommendations]);
 
-  // 清理組件時的副作用
+  // 組件卸載時清理
   useEffect(() => {
     return () => {
+      displayedVotesRef.current.clear();
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -503,7 +514,7 @@ export default function BuddiesQuestionSwiper({
   if (questionIndex >= safeQuestions.length) {
     return (
       <div className="all-questions-done">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -517,7 +528,7 @@ export default function BuddiesQuestionSwiper({
             <span></span>
             <span></span>
           </div>
-        </motion.div>
+        </Motion.div>
       </div>
     );
   }
@@ -527,39 +538,19 @@ export default function BuddiesQuestionSwiper({
     return <div>載入問題中...</div>;
   }
 
-  const updateVoteBar = () => {
-    const leftCount = parseInt(voteStats[currentQuestion.leftOption]) || 0;
-    const rightCount = parseInt(voteStats[currentQuestion.rightOption]) || 0;
-    const totalVotes = leftCount + rightCount;
-
-    // 確保數值有效
-    if (isNaN(leftCount) || isNaN(rightCount)) {
-      console.error("無效的投票數據:", voteStats);
-      return 0;
-    }
-
-    return totalVotes > 0 ? Math.round((leftCount / totalVotes) * 100) : 50; // 預設顯示 50%
-  };
-
   return (
     <div className="question-container">
-      {/* 投票浮動指示器 - 支持多個氣泡依序顯示 */}
+      {/* 投票浮動指示器 */}
       <div className="vote-bubbles-container">
         <AnimatePresence>
-          {voteBubbles.map((bubble, index) => (
-            <motion.div
+          {voteBubbles.map((bubble) => (
+            <Motion.div
               key={bubble.id}
               className="vote-bubble"
-              initial={{ opacity: 0, scale: 0.5, x: 0, y: -20 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                x: 0,
-                y: index * 60, // 每個氣泡往下偏移
-              }}
-              exit={{ opacity: 0, scale: 0.8, x: 50 }}
+              initial={{ opacity: 0, y: -20, x: 20 }}
+              animate={{ opacity: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, y: 20, x: 20 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              style={{ top: 70 }} // 基礎位置
             >
               <div className="vote-bubble-content">
                 <div className="vote-bubble-name">{bubble.userName}</div>
@@ -567,7 +558,7 @@ export default function BuddiesQuestionSwiper({
                   選擇了「{bubble.option}」
                 </div>
               </div>
-            </motion.div>
+            </Motion.div>
           ))}
         </AnimatePresence>
       </div>
@@ -645,7 +636,7 @@ export default function BuddiesQuestionSwiper({
 
                         return (
                           <>
-                            <motion.div
+                            <Motion.div
                               className="vote-bar-left-single"
                               initial={{ width: "0%" }}
                               animate={{ width: `${leftPercentage}%` }}
@@ -656,7 +647,7 @@ export default function BuddiesQuestionSwiper({
                                 damping: 15,
                               }}
                             />
-                            <motion.div
+                            <Motion.div
                               className="vote-bar-right-single"
                               initial={{ width: "0%" }}
                               animate={{ width: `${rightPercentage}%` }}
@@ -668,7 +659,7 @@ export default function BuddiesQuestionSwiper({
                               }}
                             />
                             {totalVotes > 0 && (
-                              <motion.div
+                              <Motion.div
                                 className="vote-percentage-indicator"
                                 initial={{ opacity: 0 }}
                                 animate={{
@@ -683,7 +674,7 @@ export default function BuddiesQuestionSwiper({
                                 }}
                               >
                                 {leftPercentage}%
-                              </motion.div>
+                              </Motion.div>
                             )}
                           </>
                         );
