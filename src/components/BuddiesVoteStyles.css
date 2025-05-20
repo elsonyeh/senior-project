@@ -36,7 +36,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 15vh;
+  padding-top: 8vh;
 }
 
 /* 問題進度指示器 - 已隱藏，但保留代碼以備需要 */
@@ -69,61 +69,90 @@
   transition: width 0.5s ease;
 }
 
-/* 投票氣泡容器 */
+/* 投票泡泡容器 */
 .vote-bubbles-container {
   position: fixed;
-  top: 80px;
+  top: 20px;
   right: 20px;
-  width: 220px;
   z-index: 1000;
+  pointer-events: none;
   display: flex;
   flex-direction: column;
-  pointer-events: none;
-  max-height: calc(100vh - 100px);
-  overflow: hidden;
+  align-items: flex-end;
 }
 
-/* 投票氣泡 */
+/* 投票泡泡 */
 .vote-bubble {
-  position: absolute;
-  right: 0;
-  z-index: 1000;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  will-change: transform, opacity;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  margin: 8px;
+  max-width: 200px;
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: bubbleAppear 0.3s ease forwards;
 }
 
 .vote-bubble-content {
-  background-color: #6874E8;
-  color: white;
-  padding: 0.8rem 1rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: #E3F2FD;
+  border-radius: 8px;
+  padding: 10px;
   position: relative;
-  max-width: 200px;
-  text-align: center;
-  margin-bottom: 10px;
 }
 
 .vote-bubble-content::after {
   content: '';
   position: absolute;
-  top: 100%;
-  right: 10px;
-  border-width: 8px;
-  border-style: solid;
-  border-color: #6874E8 transparent transparent transparent;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 8px solid #E3F2FD;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
 }
 
 .vote-bubble-name {
-  font-weight: bold;
-  font-size: 0.9rem;
-  margin-bottom: 0.2rem;
+  font-weight: 600;
+  font-size: 14px;
+  color: #4A90E2;
+  margin-bottom: 4px;
 }
 
 .vote-bubble-choice {
-  font-size: 0.8rem;
-  opacity: 0.9;
+  font-size: 12px;
+  color: #666666;
+}
+
+/* 投票泡泡動畫 */
+@keyframes bubbleAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bubbleDisappear {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* 確保動畫容器在最上層 */
+.AnimatePresence {
+  position: relative;
+  z-index: 1000;
 }
 
 /* 實時票數顯示 */
@@ -233,46 +262,42 @@
 }
 
 .vote-bar-container-single {
-  height: 16px;
-  background: #f0f0f0;
-  border-radius: 8px;
   position: relative;
-  overflow: hidden;
-  margin: 0 auto;
   width: 100%;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 10px 0;
 }
 
 .vote-bar-left-single {
   position: absolute;
   left: 0;
-  top: 0;
   height: 100%;
-  background: linear-gradient(90deg, #6874E8, #8892FF);
-  border-radius: 8px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%);
+  border-radius: 10px 0 0 10px;
+  transition: width 0.5s ease;
 }
 
 .vote-bar-right-single {
   position: absolute;
   right: 0;
-  top: 0;
   height: 100%;
-  background: linear-gradient(90deg, #FF9F68, #FFB088);
-  border-radius: 8px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(90deg, #FF6B6B 0%, #FF5252 100%);
+  border-radius: 0 10px 10px 0;
+  transition: width 0.5s ease;
 }
 
 .vote-percentage-indicator {
   position: absolute;
-  top: -30px;
-  transform: translateX(-50%);
-  background: #fff;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  font-size: 0.8em;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: left 0.5s ease;
 }
 
 /* 等待動畫 */
@@ -685,16 +710,13 @@
 
 /* 比例條容器優化 */
 .vote-status-container {
-  background: white;
+  background: #FFFFFF;
   border-radius: 16px;
-  padding: 1.5rem;
-  margin: 2rem auto;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  max-width: 380px;
-  width: 85%;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
 }
 
 /* 投票標題欄優化 */
@@ -740,36 +762,35 @@
 
 .vote-option-label {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
+  margin: 5px 0;
+  font-size: 14px;
+  color: #333333;
 }
 
 .vote-option-label.left {
-  margin-right: auto;
-  color: #6874E8;
+  color: #4A90E2;
 }
 
 .vote-option-label.right {
-  margin-left: auto;
-  color: #FF9F68;
+  color: #FF6B6B;
 }
 
 .vote-count {
-  padding: 3px 10px;
+  font-weight: bold;
+  padding: 4px 8px;
   border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 12px;
+  background: #F5F5F5;
 }
 
 .vote-option-label.left .vote-count {
-  background: rgba(104, 116, 232, 0.1);
-  color: #6874E8;
+  color: #4A90E2;
 }
 
 .vote-option-label.right .vote-count {
-  background: rgba(255, 159, 104, 0.1);
-  color: #FF9F68;
+  color: #FF6B6B;
 }
 
 /* 動畫效果 */
@@ -786,10 +807,8 @@
 /* 響應式設計優化 */
 @media (max-width: 480px) {
   .vote-status-container {
-    padding: 1.2rem;
-    width: 90%;
-    max-width: 340px;
-    margin: 1.5rem auto;
+    margin: 10px;
+    padding: 15px;
   }
 
   .vote-distribution {
@@ -807,7 +826,7 @@
   }
 
   .vote-bar-container-single {
-    height: 14px;
+    height: 16px;
   }
 
   .vote-percentage-indicator {
@@ -869,23 +888,19 @@
 .vote-member-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #f8f8f8;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  color: #444;
-  min-width: 100px;
+  padding: 8px 12px;
+  margin: 4px 0;
+  background: #F5F5F5;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
 .vote-member-item.voted {
-  background: #e8f5ff;
-  color: #6874E8;
+  background: #E3F2FD;
 }
 
 .vote-member-item.waiting {
-  background: #fff0f0;
-  color: #FF6B6B;
+  background: #FFF3E0;
 }
 
 .vote-member-icon {
@@ -902,11 +917,13 @@
 
 /* 更新投票狀態容器樣式 */
 .vote-status-container {
-  background: white;
+  background: #FFFFFF;
   border-radius: 16px;
-  padding: 1.5rem;
-  margin: 1rem auto;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
 }
 
 @media (max-width: 480px) {
@@ -921,5 +938,55 @@
 
   .vote-member-name {
     max-width: 100px;
+  }
+}
+
+/* 投票完成指示器 */
+.vote-complete-indicator {
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+/* 動畫效果 */
+@keyframes dotPulse {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes barGrow {
+  from {
+    width: 0;
+  }
+}
+
+/* 響應式調整 */
+@media (max-width: 480px) {
+  .vote-status-container {
+    margin: 10px;
+    padding: 15px;
+  }
+
+  .vote-bar-container-single {
+    height: 16px;
+  }
+
+  .vote-option-label {
+    font-size: 12px;
   }
 }
