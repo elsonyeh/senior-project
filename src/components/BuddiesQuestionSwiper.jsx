@@ -257,7 +257,25 @@ export default function BuddiesQuestionSwiper({
     (recommendations) => {
       if (!isMountedRef.current || hasCompletedRef.current) return;
 
-      console.log("收到推薦結果:", recommendations.length);
+      console.log("收到推薦結果:", recommendations);
+
+      // 適應新的數據格式
+      let recs = recommendations;
+      if (
+        recommendations &&
+        typeof recommendations === "object" &&
+        recommendations.recommendations
+      ) {
+        recs = recommendations.recommendations;
+        console.log("解析推薦數據:", recs.length);
+      }
+
+      // 確保推薦結果有效
+      if (!Array.isArray(recs) || recs.length === 0) {
+        console.error("收到無效的推薦結果");
+        return;
+      }
+
       hasCompletedRef.current = true;
 
       // 清理計時器
@@ -265,7 +283,14 @@ export default function BuddiesQuestionSwiper({
 
       // 調用完成回調
       if (typeof onComplete === "function") {
-        onComplete(recommendations);
+        // 確保傳遞有效的推薦結果
+        const validRecommendations = recs.filter((r) => r && r.id);
+        if (validRecommendations.length > 0) {
+          console.log("傳遞有效推薦結果到父組件:", validRecommendations.length);
+          onComplete(validRecommendations);
+        } else {
+          console.error("沒有有效的推薦結果");
+        }
       }
     },
     [onComplete, clearAllTimeouts]
@@ -344,6 +369,9 @@ export default function BuddiesQuestionSwiper({
       const visibleQuestions = getVisibleQuestions(safeQuestions);
       const totalVisibleQuestions = visibleQuestions.length;
 
+      // 檢查是否是最後一題
+      const isLastQuestion = questionIndex === totalVisibleQuestions - 1;
+
       // 發送答案到服務器，包含房主資訊
       socket.emit(
         "submitAnswers",
@@ -356,17 +384,86 @@ export default function BuddiesQuestionSwiper({
           totalQuestions: totalVisibleQuestions,
           isHost: isCurrentUserHost,
           currentAnswerCount: Object.keys(newAnswers).length,
+          isLastQuestion,
+          answerQuestionMap: questionTextsArray.reduce((map, text, idx) => {
+            if (text) map[idx] = text;
+            return map;
+          }, {}),
         },
         (response) => {
           if (response && !response.success) {
             console.error(`答案提交回調錯誤: ${response.error}`);
-            setWaiting(false); // 出錯時解除等待狀態
+            setWaiting(false);
           } else {
             console.log(
               `答案提交成功，當前題目：${questionIndex}/${
                 totalVisibleQuestions - 1
-              }，是否為房主：${isCurrentUserHost}`
+              }，是否為房主：${isCurrentUserHost}，是否最後一題：${isLastQuestion}`
             );
+
+            // 如果是最後一題，主動請求推薦結果
+            if (isLastQuestion) {
+              console.log("這是最後一題，準備請求推薦結果");
+
+              // 構建答案陣列，確保順序正確
+              const finalAnswers = [];
+              const visibleQuestions = getVisibleQuestions(safeQuestions);
+
+              visibleQuestions.forEach((question, idx) => {
+                const answer = answersRef.current[idx];
+                if (answer) {
+                  finalAnswers.push(answer);
+                }
+              });
+
+              console.log("最終答案陣列:", finalAnswers);
+
+              // 發送推薦請求
+              socket.emit(
+                "getBuddiesRecommendations",
+                {
+                  roomId,
+                  answers: finalAnswers,
+                  questionTexts: questionTextsArray,
+                  questionSources: questionSourcesArray,
+                  totalAnswers: finalAnswers.length,
+                  isHost: isCurrentUserHost,
+                },
+                (response) => {
+                  if (response && response.success) {
+                    console.log("成功請求推薦結果");
+                    if (response.recommendations) {
+                      handleGroupRecommendations(response.recommendations);
+                    }
+                  } else {
+                    console.error("請求推薦結果失敗:", response?.error);
+                    // 如果失敗，3秒後自動重試，最多重試3次
+                    let retryCount = 0;
+                    const retryInterval = setInterval(() => {
+                      if (retryCount < 3) {
+                        console.log(`第 ${retryCount + 1} 次重試請求推薦結果`);
+                        socket.emit("getBuddiesRecommendations", {
+                          roomId,
+                          answers: finalAnswers,
+                          questionTexts: questionTextsArray,
+                          questionSources: questionSourcesArray,
+                          totalAnswers: finalAnswers.length,
+                          isHost: isCurrentUserHost,
+                        });
+                        retryCount++;
+                      } else {
+                        clearInterval(retryInterval);
+                        console.error("推薦結果請求重試次數已達上限");
+                        // 通知父組件切換到推薦階段，即使沒有收到推薦結果
+                        if (typeof onComplete === "function") {
+                          onComplete([]);
+                        }
+                      }
+                    }, 3000);
+                  }
+                }
+              );
+            }
           }
         }
       );
@@ -379,6 +476,7 @@ export default function BuddiesQuestionSwiper({
       getVisibleQuestions,
       members,
       socket.id,
+      handleGroupRecommendations,
     ]
   );
 

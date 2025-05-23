@@ -38,7 +38,7 @@ const ADMIN_STORAGE_KEY = 'isAdminUser';
 
 try {
   app = initializeApp(firebaseConfig);
-  
+
   // 只在瀏覽器環境初始化 Analytics
   if (typeof window !== 'undefined') {
     try {
@@ -48,7 +48,7 @@ try {
       console.warn('Firebase Analytics 初始化失敗:', analyticsError);
     }
   }
-  
+
   // 初始化 Firestore
   try {
     db = getFirestore(app);
@@ -56,7 +56,7 @@ try {
   } catch (firestoreError) {
     console.error('Firebase Firestore 初始化失敗:', firestoreError);
   }
-  
+
   // 初始化 Authentication
   try {
     auth = getAuth(app);
@@ -64,7 +64,7 @@ try {
   } catch (authError) {
     console.error('Firebase Auth 初始化失敗:', authError);
   }
-  
+
   // 初始化 Realtime Database
   try {
     rtdb = getDatabase(app);
@@ -72,7 +72,7 @@ try {
   } catch (rtdbError) {
     console.error('Firebase Realtime Database 初始化失敗:', rtdbError);
   }
-  
+
   // 初始化 Storage
   try {
     storage = getStorage(app);
@@ -80,7 +80,7 @@ try {
   } catch (storageError) {
     console.error('Firebase Storage 初始化失敗:', storageError);
   }
-  
+
   console.log('Firebase 已成功初始化');
 } catch (error) {
   console.error('Firebase 初始化失敗:', error);
@@ -96,19 +96,19 @@ export const checkIsAdmin = async (forceRefresh = false) => {
   if (isAdmin && !forceRefresh) {
     return isAdmin;
   }
-  
+
   // 如果有正在進行的檢查，直接返回該 Promise
   if (adminCheckPromise && !forceRefresh) {
     return adminCheckPromise;
   }
-  
+
   // 先嘗試從本地存儲獲取管理員狀態
   const storedAdminStatus = localStorage.getItem(ADMIN_STORAGE_KEY);
   if (storedAdminStatus === 'true' && !forceRefresh) {
     isAdmin = true;
     return true;
   }
-  
+
   // 創建新的檢查 Promise
   adminCheckPromise = new Promise(async (resolve) => {
     try {
@@ -119,10 +119,10 @@ export const checkIsAdmin = async (forceRefresh = false) => {
         resolve(false);
         return;
       }
-      
+
       // 獲取用戶的 ID Token 結果，包含 Custom Claims
       const tokenResult = await auth.currentUser.getIdTokenResult();
-      
+
       // 檢查 Claims 中是否包含 admin: true
       if (tokenResult.claims.admin === true) {
         isAdmin = true;
@@ -133,7 +133,7 @@ export const checkIsAdmin = async (forceRefresh = false) => {
         localStorage.removeItem(ADMIN_STORAGE_KEY);
         console.log('用戶不是管理員（Custom Claims）');
       }
-      
+
       resolve(isAdmin);
     } catch (error) {
       console.error('檢查管理員狀態失敗:', error);
@@ -145,7 +145,7 @@ export const checkIsAdmin = async (forceRefresh = false) => {
       adminCheckPromise = null;
     }
   });
-  
+
   return adminCheckPromise;
 };
 

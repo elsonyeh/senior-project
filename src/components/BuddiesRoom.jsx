@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { QRCode } from "react-qrcode-logo";
 import socket from "../services/socket";
@@ -164,17 +164,22 @@ export default function BuddiesRoom() {
 
     // 接收餐廳推薦
     socket.on("groupRecommendations", (data) => {
-      console.log("收到餐廳推薦");
+      console.log("收到餐廳推薦:", data);
 
       // 適應新的數據格式
       let recs = data;
       let timestamp = null;
 
       // 檢查是否是新格式（包含時間戳的對象）
-      if (data && typeof data === "object" && data.recommendations) {
-        recs = data.recommendations;
-        timestamp = data.timestamp;
-        console.log("推薦時間戳:", timestamp);
+      if (data && typeof data === "object") {
+        if (data.recommendations) {
+          recs = data.recommendations;
+          timestamp = data.timestamp;
+        } else if (data.results) {
+          recs = data.results;
+          timestamp = data.timestamp;
+        }
+        console.log("解析推薦數據:", recs?.length);
       }
 
       if (!recs || !Array.isArray(recs) || recs.length === 0) {
@@ -222,6 +227,21 @@ export default function BuddiesRoom() {
       console.error("推薦生成錯誤:", error);
       setError(error || "推薦生成失敗，請重試");
       setPhase("waiting");
+
+      // 添加重試機制
+      if (retryCount < 3) {
+        setTimeout(() => {
+          console.log("嘗試重新獲取推薦結果");
+          socket.emit("getBuddiesRecommendations", { roomId }, (response) => {
+            if (response && response.success) {
+              console.log("重試成功獲取推薦結果");
+            } else {
+              console.error("重試獲取推薦結果失敗:", response?.error);
+              setRetryCount((prev) => prev + 1);
+            }
+          });
+        }, 2000);
+      }
     });
 
     // 提交答案
@@ -665,75 +685,38 @@ export default function BuddiesRoom() {
     }
   };
 
-  // 提交答案
-  const handleSubmitAnswers = (answerData) => {
-    // 檢查是否收到結構化的答案數據（含問題文本和來源）
-    if (answerData.answers && answerData.questionTexts) {
-      // 檢查是否有問題來源信息
-      const hasQuestionSources =
-        answerData.questionSources &&
-        Array.isArray(answerData.questionSources) &&
-        answerData.questionSources.length > 0;
+  // 處理答案提交完成
+  const handleSubmitAnswers = useCallback((recommendations) => {
+    console.log("收到推薦結果，準備切換到推薦階段:", recommendations.length);
 
-      // 如果沒有問題來源信息，根據 buddiesBasicQuestions 生成
-      const generatedSources = !hasQuestionSources
-        ? answerData.questionTexts.map((text) => {
-            // 使用 buddiesBasicQuestions 判斷問題類型
-            const isBasic = buddiesBasicQuestions.some(
-              (q) => q.question === text
-            );
-            return isBasic ? "basic" : "fun";
-          })
-        : null;
-
-      socket.emit("submitAnswers", {
-        roomId,
-        answers: answerData.answers,
-        questionTexts: answerData.questionTexts,
-        // 優先使用現有問題來源，否則使用生成的來源
-        questionSources: hasQuestionSources
-          ? answerData.questionSources
-          : generatedSources,
-        // 傳遞特定的基本問題集
-        basicQuestions: buddiesBasicQuestions,
-      });
-
-      console.log("提交結構化答案:", {
-        answers: answerData.answers,
-        hasQuestionTexts: Array.isArray(answerData.questionTexts),
-        hasQuestionSources: hasQuestionSources,
-        basicQuestionsCount: buddiesBasicQuestions.length,
-      });
-    } else {
-      // 向後兼容的處理方法
-      const answers = Array.isArray(answerData)
-        ? answerData
-        : Object.values(answerData);
-
-      // 為舊格式生成問題來源（根據順序判斷）
-      // 假設前 buddiesBasicQuestions.length 個答案是基本問題的答案
-      const generatedSources = answers.map((_, index) =>
-        index < buddiesBasicQuestions.length ? "basic" : "fun"
-      );
-
-      socket.emit("submitAnswers", {
-        roomId,
-        answers,
-        // 添加問題文本數組（如果可能的話）
-        questionTexts: [
-          ...buddiesBasicQuestions.map((q) => q.question),
-          ...Array(answers.length - buddiesBasicQuestions.length).fill(
-            "趣味問題"
-          ),
-        ],
-        // 添加生成的問題來源
-        questionSources: generatedSources,
-        // 傳遞正確的基本問題集
-        basicQuestions: buddiesBasicQuestions,
-      });
+    if (!Array.isArray(recommendations) || recommendations.length === 0) {
+      console.error("收到無效的推薦結果");
+      setError("推薦生成失敗，請重試");
+      setPhase("waiting");
+      return;
     }
-    setPhase("waiting-recommendations");
-  };
+
+    // 確保推薦結果有效
+    const validRecommendations = recommendations.filter((r) => r && r.id);
+    if (validRecommendations.length === 0) {
+      console.error("推薦結果無效");
+      setError("推薦結果無效，請重試");
+      setPhase("waiting");
+      return;
+    }
+
+    // 設置推薦結果
+    setRecommendations(validRecommendations);
+
+    // 使用 setTimeout 確保狀態更新順序
+    setTimeout(() => {
+      setPhase("recommend");
+      console.log(
+        "已切換到推薦階段，推薦餐廳數量:",
+        validRecommendations.length
+      );
+    }, 100);
+  }, []);
 
   // 開始問答
   const handleStartQuestions = () => {
@@ -871,7 +854,10 @@ export default function BuddiesRoom() {
           <BuddiesRecommendation
             roomId={roomId}
             restaurants={recommendations}
-            onBack={() => setPhase("waiting")}
+            onBack={() => {
+              setPhase("waiting");
+              setRecommendations([]);
+            }}
           />
         );
 
