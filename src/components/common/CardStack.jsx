@@ -19,7 +19,7 @@ export default function CardStack({
   const [visibleCards, setVisibleCards] = useState([]);
   // 全域狀態追蹤目前顯示哪個徽章
   const [activeBadge, setActiveBadge] = useState(null);
-  
+
   // 使用ref來追蹤上一次的cards，避免不必要的重新渲染
   const prevCardsRef = useRef([]);
 
@@ -29,7 +29,7 @@ export default function CardStack({
     const areCardArraysEqual = (prev, curr) => {
       if (!prev || !curr) return false;
       if (prev.length !== curr.length) return false;
-      
+
       // 只比較id，避免無限循環
       for (let i = 0; i < prev.length; i++) {
         if (!prev[i] || !curr[i] || prev[i].id !== curr[i].id) {
@@ -38,7 +38,7 @@ export default function CardStack({
       }
       return true;
     };
-    
+
     // 只有當cards真正改變時才更新state
     if (!areCardArraysEqual(prevCardsRef.current, cards)) {
       prevCardsRef.current = cards;
@@ -86,7 +86,7 @@ export default function CardStack({
             if (!item) return null; // 防止 undefined 項目
             const position = arr.length - index - 1;
             const itemKey = item.id || `card-${index}`; // 使用回退值作為 key
-            
+
             return (
               <SwipeableCard
                 key={itemKey}
@@ -142,9 +142,9 @@ function SwipeableCard({
   const rightArrowOpacity = useTransform(x, [0, 30, 100], [0.4, 0.7, 1]);
 
   const isTop = position === 0;
-  const topOffset = position * 18 + 20;  // 計算每張卡片的垂直位置(下一張卡片向下偏移18px)
-  const isTopCard = position === 0;     // 判斷是否為最上層的卡片
-  const scaleOffset = 1 - position * 0.04;  // 計算縮放比例，讓下方的卡片看起來更小(縮小0.04%)
+  const topOffset = position * 18 + 20; // 計算每張卡片的垂直位置(下一張卡片向下偏移18px)
+  const isTopCard = position === 0; // 判斷是否為最上層的卡片
+  const scaleOffset = 1 - position * 0.04; // 計算縮放比例，讓下方的卡片看起來更小(縮小0.04%)
   const blur = position > 0 ? 3 * position : 0;
 
   // 處理拖拽中的狀態更新

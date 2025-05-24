@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import socket from "../services/socket";
 import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
-import RecommendationResult from "./RecommendationResult";
 import { funQuestionTagsMap } from "../data/funQuestionTags";
 import {
   voteForRestaurant,
@@ -11,7 +10,7 @@ import {
   finalizeRestaurant,
   listenFinalRestaurant,
 } from "../services/firebaseService";
-import "./RecommendationResult.css";
+import "./RecommendationResult.css"; // 直接使用 RecommendationResult 的 CSS
 import "./SwiftTasteCard.css";
 import "./BuddiesVoteStyles.css";
 
@@ -72,17 +71,23 @@ export default function BuddiesRecommendation({
   const [alternativeRestaurants, setAlternativeRestaurants] = useState([]);
   const [voteAnimation, setVoteAnimation] = useState(null);
   const [totalMembers, setTotalMembers] = useState(0);
+
+  // 結果頁面相關狀態（與 RecommendationResult 一致）
+  const [selected, setSelected] = useState(null);
+  const [displayedAlternatives, setDisplayedAlternatives] = useState([]);
+  const [alternativesPool, setAlternativesPool] = useState([]);
+  const [noMoreAlternatives, setNoMoreAlternatives] = useState(false);
+
   const navigate = useNavigate();
 
   // 使用房間ID創建一個確定性的種子
   const generateSeedFromRoomId = (roomId) => {
-    if (!roomId) return 12345; // 默認種子
+    if (!roomId) return 12345;
     return roomId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   };
 
   // 使用基於種子的隨機排序函數
   const seededShuffle = (array, seed) => {
-    // 創建確定性的隨機數生成器
     const seededRandom = (() => {
       let s = seed;
       return () => {
@@ -91,11 +96,10 @@ export default function BuddiesRecommendation({
       };
     })();
 
-    // 使用確定性隨機數進行排序
     return [...array].sort(() => seededRandom() - 0.5);
   };
 
-  // 在 BuddiesRecommendation 組件內添加本地推薦邏輯
+  // 本地推薦邏輯
   const generateLocalRecommendations = useCallback(
     (restaurantList, answers = [], options = {}) => {
       if (!Array.isArray(restaurantList) || restaurantList.length === 0) {
@@ -106,17 +110,14 @@ export default function BuddiesRecommendation({
       console.log("開始生成本地推薦，原始餐廳數量:", restaurantList.length);
       console.log("答案:", answers);
 
-      // 基本問題答案處理（前6個為基本問題）
       const basicAnswers = answers.slice(0, 6);
       const funAnswers = answers.slice(6);
 
       console.log("基本問題答案:", basicAnswers);
       console.log("趣味問題答案:", funAnswers);
 
-      // 第一階段：硬性條件過濾
       let filteredRestaurants = [...restaurantList];
 
-      // 處理基本問題篩選
       basicAnswers.forEach((answer) => {
         if (!answer) return;
 
@@ -235,7 +236,6 @@ export default function BuddiesRecommendation({
         );
       });
 
-      // 如果沒有符合基本條件的餐廳，直接返回空陣列
       if (filteredRestaurants.length === 0) {
         console.log("沒有符合基本條件的餐廳");
         return [];
@@ -243,9 +243,8 @@ export default function BuddiesRecommendation({
 
       console.log("通過基本條件篩選的餐廳數量:", filteredRestaurants.length);
 
-      // 第二階段：計算趣味問題匹配分數
       const scoredRestaurants = filteredRestaurants.map((restaurant) => {
-        let score = 0; // 基礎分數從0開始
+        let score = 0;
         const tags = Array.isArray(restaurant.tags)
           ? restaurant.tags
           : [restaurant.tags];
@@ -255,11 +254,9 @@ export default function BuddiesRecommendation({
           )
           .filter(Boolean);
 
-        // 趣味問題匹配分數計算
         funAnswers.forEach((answer) => {
           if (!answer) return;
 
-          // 使用 funQuestionTagsMap 進行標籤匹配
           const mappedTags = funQuestionTagsMap[answer] || [];
           let matchCount = 0;
 
@@ -274,18 +271,16 @@ export default function BuddiesRecommendation({
             }
           });
 
-          // 計算此答案的匹配程度（0-1之間）
           if (mappedTags.length > 0) {
-            score += (matchCount / mappedTags.length) * 2; // 每個趣味問題最高2分
+            score += (matchCount / mappedTags.length) * 2;
           }
         });
 
-        // 加入餐廳基本評分（權重較小）
         if (restaurant.rating) {
-          score += restaurant.rating / 10; // 評分最高貢獻0.5分
+          score += restaurant.rating / 10;
         }
         if (restaurant.reviews) {
-          score += Math.min(restaurant.reviews / 1000, 0.5); // 評論數最高貢獻0.5分
+          score += Math.min(restaurant.reviews / 1000, 0.5);
         }
 
         return {
@@ -294,7 +289,6 @@ export default function BuddiesRecommendation({
         };
       });
 
-      // 根據分數排序並選擇前10名
       const sortedRestaurants = scoredRestaurants
         .sort((a, b) => b.matchScore - a.matchScore)
         .slice(0, 10);
@@ -314,35 +308,29 @@ export default function BuddiesRecommendation({
 
   // 處理平票情況的函數
   const handleTieBreaker = useCallback((tiedRestaurants, roomId) => {
-    // 使用多個因素來打破平局
     const tieBreakers = tiedRestaurants.map((restaurant) => {
       let tieScore = 0;
 
-      // 1. 匹配分數權重 (最高權重)
       if (restaurant.matchScore) {
         tieScore += restaurant.matchScore * 3;
       }
 
-      // 2. 評分權重
       if (restaurant.rating) {
         tieScore += restaurant.rating * 2;
       }
 
-      // 3. 評論數量權重
       if (restaurant.reviews) {
         tieScore += Math.min(restaurant.reviews / 100, 3);
       }
 
-      // 4. 標籤數量權重
       const tags = Array.isArray(restaurant.tags)
         ? restaurant.tags
         : [restaurant.tags];
       tieScore += tags.length * 0.5;
 
-      // 5. 使用房間ID作為種子生成確定性隨機因子
       const seed = generateSeedFromRoomId(roomId);
       const random = createSeededRandom(seed);
-      tieScore += random() * 0.1; // 添加小的隨機因子，但權重很小
+      tieScore += random() * 0.1;
 
       return {
         ...restaurant,
@@ -350,7 +338,6 @@ export default function BuddiesRecommendation({
       };
     });
 
-    // 根據平局分數排序
     return tieBreakers.sort((a, b) => b.tieScore - a.tieScore)[0];
   }, []);
 
@@ -359,16 +346,13 @@ export default function BuddiesRecommendation({
     setPhase("vote-result");
 
     if (Object.keys(votes).length > 0) {
-      // 計算每個餐廳的總票數
       const voteCounts = {};
       Object.entries(votes).forEach(([restaurantId, count]) => {
         voteCounts[restaurantId] = count;
       });
 
-      // 找出最高票數
       const maxVotes = Math.max(...Object.values(voteCounts));
 
-      // 找出所有獲得最高票的餐廳
       const topVotedRestaurants = Object.entries(voteCounts)
         .filter(([, count]) => count === maxVotes)
         .map(([restaurantId]) => {
@@ -381,7 +365,6 @@ export default function BuddiesRecommendation({
       console.log("最高票餐廳:", topVotedRestaurants);
 
       if (topVotedRestaurants.length > 1) {
-        // 如果有平票，使用平票處理邏輯
         console.log("檢測到平票情況，使用平票處理邏輯");
         const finalRestaurant = handleTieBreaker(topVotedRestaurants, roomId);
         setFinalResult(finalRestaurant);
@@ -400,6 +383,79 @@ export default function BuddiesRecommendation({
     handleTieBreaker,
   ]);
 
+  // 初始化結果頁面資料（與 RecommendationResult 一致的邏輯）
+  useEffect(() => {
+    if (phase === "result" || phase === "vote-result") {
+      if (saved.length > 0) {
+        // 按照分數排序已保存的餐廳
+        const sortedSaved = [...saved].sort((a, b) => {
+          if (a.matchScore !== undefined && b.matchScore !== undefined) {
+            return b.matchScore - a.matchScore;
+          }
+          return 0;
+        });
+
+        // 選擇分數最高的餐廳作為主選餐廳
+        const selectedRestaurant = sortedSaved[0];
+
+        if (!selected || selected.id !== selectedRestaurant.id) {
+          setSelected(selectedRestaurant);
+
+          // 合併其他餐廳
+          const allAlternativeRestaurants = [
+            ...sortedSaved.filter(
+              (r) => r && r.id && r.id !== selectedRestaurant.id
+            ),
+            ...alternativeRestaurants.filter(
+              (r) => r && r.id && r.id !== selectedRestaurant.id
+            ),
+          ];
+
+          // 根據 matchScore 或投票數排序所有備選餐廳
+          const sortedAlternatives = [...allAlternativeRestaurants].sort(
+            (a, b) => {
+              if (a.matchScore !== undefined && b.matchScore !== undefined) {
+                return b.matchScore - a.matchScore;
+              }
+              const votesA = votes[a.id] || 0;
+              const votesB = votes[b.id] || 0;
+              return votesB - votesA;
+            }
+          );
+
+          // 移除重複的餐廳
+          const uniqueAlternatives = [];
+          const seenIds = new Set();
+
+          sortedAlternatives.forEach((r) => {
+            if (r && r.id && !seenIds.has(r.id)) {
+              seenIds.add(r.id);
+              uniqueAlternatives.push(r);
+            }
+          });
+
+          // 設置初始顯示的備選餐廳（最多2家）
+          const initialDisplayed = uniqueAlternatives.slice(0, 2);
+          const initialPool = uniqueAlternatives.slice(2);
+
+          setDisplayedAlternatives(initialDisplayed);
+          setAlternativesPool(initialPool);
+          setNoMoreAlternatives(initialPool.length === 0);
+
+          setShowConfetti(true);
+        }
+      }
+    }
+  }, [phase, saved, alternativeRestaurants, votes, selected]);
+
+  // 當showConfetti為true時，設置定時器關閉它
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => setShowConfetti(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
+
   // 修改 useEffect 中的餐廳處理邏輯
   useEffect(() => {
     console.log("初始化推薦組件，餐廳數量:", restaurants.length);
@@ -409,14 +465,12 @@ export default function BuddiesRecommendation({
       return;
     }
 
-    // 使用本地推薦邏輯生成推薦結果
     const recommendedRestaurants = generateLocalRecommendations(
       restaurants,
       [],
       { roomId }
     );
 
-    // 取前10間作為主要推薦
     const mainRecommendations = recommendedRestaurants
       .slice(0, 10)
       .map((r) => ({
@@ -431,7 +485,6 @@ export default function BuddiesRecommendation({
 
     setLimitedRestaurants(mainRecommendations);
 
-    // 取接下來的5間作為備選
     if (recommendedRestaurants.length > 10) {
       const alternatives = recommendedRestaurants.slice(10, 15).map((r) => ({
         ...r,
@@ -450,7 +503,6 @@ export default function BuddiesRecommendation({
   useEffect(() => {
     if (!roomId) return;
 
-    // 查詢用戶是否已投票
     const userId = localStorage.getItem("userId");
     if (userId) {
       const voted = localStorage.getItem(`voted_${roomId}_${userId}`);
@@ -459,32 +511,26 @@ export default function BuddiesRecommendation({
       }
     }
 
-    // 監聽房間成員人數
     const handleMembersUpdate = (membersList) => {
       if (membersList && Array.isArray(membersList)) {
         setTotalMembers(membersList.length);
       }
     };
 
-    // 註冊監聽事件
     socket.on("updateUsers", handleMembersUpdate);
 
-    // 監聽投票更新
     const unsubscribeVotes = listenVotes(roomId, (votesData) => {
       if (votesData) {
         setVotes(votesData);
 
-        // 檢查是否所有成員都已完成投票
         if (totalMembers > 0) {
           const uniqueVoters = new Set();
           Object.entries(votesData).forEach(([restaurantId, count]) => {
-            // 假設每位用戶只會為一家餐廳投票
             for (let i = 0; i < count; i++) {
               uniqueVoters.add(`voter_${uniqueVoters.size}`);
             }
           });
 
-          // 如果所有成員都已投票，切換到結果階段
           if (uniqueVoters.size >= totalMembers && phase === "recommend") {
             handleFinishSwiping();
           }
@@ -492,10 +538,8 @@ export default function BuddiesRecommendation({
       }
     });
 
-    // 監聽最終結果
     const unsubscribeFinal = listenFinalRestaurant(roomId, (finalData) => {
       if (finalData && finalData.id) {
-        // 找到最終選擇的餐廳
         const finalRestaurant = restaurants.find((r) => r.id === finalData.id);
         if (finalRestaurant) {
           setFinalResult(finalRestaurant);
@@ -507,7 +551,6 @@ export default function BuddiesRecommendation({
     });
 
     return () => {
-      // 移除監聽
       socket.off("updateUsers", handleMembersUpdate);
       unsubscribeVotes();
       unsubscribeFinal();
@@ -518,12 +561,8 @@ export default function BuddiesRecommendation({
   const handleSaveRestaurant = async (restaurant) => {
     if (!restaurant || !restaurant.id) return;
 
-    // 檢查是否已存在
     if (!saved.find((r) => r.id === restaurant.id)) {
-      // 添加到收藏列表
       setSaved((prev) => [...prev, restaurant]);
-
-      // 同時為該餐廳投票
       await handleVote(restaurant.id);
     }
   };
@@ -535,7 +574,6 @@ export default function BuddiesRecommendation({
     try {
       const result = await voteForRestaurant(roomId, restaurantId);
       if (result.success) {
-        // 標記為已投票
         setUserVoted(true);
         const userId = localStorage.getItem("userId");
         if (userId) {
@@ -560,7 +598,6 @@ export default function BuddiesRecommendation({
         timestamp: Date.now(),
       });
 
-      // 3秒後移除動畫
       setTimeout(() => {
         setVoteAnimation(null);
       }, 3000);
@@ -572,7 +609,6 @@ export default function BuddiesRecommendation({
     if (!roomId || saved.length === 0) return;
 
     try {
-      // 如果有多個收藏，選擇第一個
       const selectedRestaurant = saved[0];
 
       const result = await finalizeRestaurant(roomId, selectedRestaurant);
@@ -601,12 +637,39 @@ export default function BuddiesRecommendation({
     }
   };
 
+  // Google Maps 導航
+  const goToGoogleMaps = (place) => {
+    const query = encodeURIComponent(place);
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${query}`,
+      "_blank"
+    );
+  };
+
+  // 選擇另一家餐廳（與 RecommendationResult 一致）
+  const selectAnother = () => {
+    if (alternativesPool.length === 0) {
+      setNoMoreAlternatives(true);
+      return;
+    }
+
+    const updatedDisplayed = [...displayedAlternatives.slice(1)];
+    const newRestaurantToDisplay = alternativesPool[0];
+    updatedDisplayed.push(newRestaurantToDisplay);
+
+    const updatedPool = alternativesPool.slice(1);
+
+    setDisplayedAlternatives(updatedDisplayed);
+    setAlternativesPool(updatedPool);
+    setNoMoreAlternatives(updatedPool.length === 0);
+  };
+
   // 渲染五彩紙屑
   const renderConfetti = () => {
     return (
       showConfetti && (
         <div className="confetti-container">
-          {Array.from({ length: 80 }).map((_, i) => (
+          {Array.from({ length: 50 }).map((_, i) => (
             <div
               key={i}
               className="confetti"
@@ -623,43 +686,214 @@ export default function BuddiesRecommendation({
     );
   };
 
-  // 如果處於結果階段
+  // 如果處於結果階段 - 使用與 RecommendationResult 完全一樣的 UI
   if (phase === "result" || phase === "vote-result") {
-    // 確保最終選擇的餐廳在saved列表頂部
-    let finalSaved = [...saved];
-    if (finalResult && !saved.some((r) => r.id === finalResult.id)) {
-      finalSaved = [finalResult, ...saved];
-    } else if (finalResult) {
-      finalSaved = [
-        finalResult,
-        ...saved.filter((r) => r.id !== finalResult.id),
-      ];
+    if (!selected || typeof selected !== "object") {
+      return (
+        <div className="recommend-screen">
+          <div className="empty-result">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2>😅 沒有選到餐廳</h2>
+              <p>大家太挑了嗎？不如放寬一點條件再試試</p>
+              <motion.button
+                className="btn-restart"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleRestart}
+              >
+                🔄 重新開始
+              </motion.button>
+              <motion.button
+                className="btn-restart"
+                style={{ background: "#6874E8", marginLeft: "1rem" }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleBackToRoom}
+              >
+                👥 回到房間
+              </motion.button>
+            </motion.div>
+          </div>
+        </div>
+      );
     }
 
     return (
       <div className="recommend-screen">
         {renderConfetti()}
 
-        <RecommendationResult
-          saved={finalSaved}
-          alternatives={alternativeRestaurants}
-          onRetry={handleRestart}
-          votes={votes} // 傳遞投票數據給結果組件
-          // 添加額外的返回房間按鈕
-          extraButton={
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="result-title">
+            <span role="img" aria-label="celebration">
+              🎉
+            </span>{" "}
+            命定餐廳就是它！
+          </h2>
+        </motion.div>
+
+        <motion.div
+          className="featured-restaurant"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          style={{
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${
+              selected.photoURL ||
+              "https://source.unsplash.com/400x300/?restaurant"
+            })`,
+          }}
+        >
+          <div className="featured-content">
+            <h3>{selected.name || "未命名餐廳"}</h3>
+            <p className="restaurant-address">
+              {selected.address || "地址未知"}
+            </p>
+
+            <div className="restaurant-details">
+              {typeof selected.rating === "number" && (
+                <div className="rating-badge">
+                  <span className="star">⭐</span> {selected.rating.toFixed(1)}
+                </div>
+              )}
+
+              {selected.type && (
+                <div className="type-badge">{selected.type}</div>
+              )}
+
+              {/* 顯示投票數量 */}
+              {votes && votes[selected.id] && (
+                <div className="votes-badge">
+                  <span className="vote-icon">🗳️</span> {votes[selected.id]} 票
+                </div>
+              )}
+            </div>
+
             <motion.button
-              className="btn-restart"
-              style={{ background: "#6874E8", marginTop: "1rem" }}
+              className="btn-navigate"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleBackToRoom}
+              onClick={() => goToGoogleMaps(selected.address || selected.name)}
             >
-              👥 回到房間
+              <span className="nav-icon">🧭</span> 出發去這裡
             </motion.button>
-          }
-          // 將roomMode設為false，使其與SwiftTaste模式保持一致的顯示效果
-          roomMode={false}
-        />
+          </div>
+        </motion.div>
+
+        {/* 合併顯示所有備選餐廳 */}
+        {displayedAlternatives.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="alternatives-section"
+          >
+            <div className="alternatives-header">
+              <h3>
+                <span role="img" aria-label="eyes">
+                  👀
+                </span>{" "}
+                其他收藏的餐廳
+              </h3>
+              <motion.button
+                className="btn-shuffle"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={selectAnother}
+                disabled={noMoreAlternatives}
+              >
+                {noMoreAlternatives ? "沒有其他餐廳了" : "🔀 換一家試試"}
+              </motion.button>
+            </div>
+
+            <AnimatePresence>
+              <motion.ul
+                className="alternatives-list"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.1 }}
+              >
+                {displayedAlternatives.map((r, index) => (
+                  <motion.li
+                    key={r.id || `alt-${index}`}
+                    className="alternative-item"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div className="alternative-content">
+                      <div className="alternative-info">
+                        <h4>{r.name || "未命名"}</h4>
+                        <p>{r.address || "地址未知"}</p>
+                        <div className="alternative-badges">
+                          {typeof r.rating === "number" && (
+                            <span className="mini-badge rating">
+                              ⭐ {r.rating.toFixed(1)}
+                            </span>
+                          )}
+                          {r.type && (
+                            <span className="mini-badge type">{r.type}</span>
+                          )}
+                          {votes && votes[r.id] && (
+                            <span className="mini-badge votes">
+                              🗳️ {votes[r.id]} 票
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <motion.button
+                        className="btn-mini-navigate"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => goToGoogleMaps(r.address || r.name)}
+                      >
+                        🧭 出發
+                      </motion.button>
+                    </div>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            </AnimatePresence>
+
+            {alternativesPool.length > 0 && (
+              <p className="more-alternatives">
+                還有 {alternativesPool.length} 家其他選擇 ...
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="retry-container"
+        >
+          <motion.button
+            className="btn-restart"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleRestart}
+          >
+            🔁 再試一次
+          </motion.button>
+          <motion.button
+            className="btn-restart"
+            style={{ background: "#6874E8", marginLeft: "0.5rem" }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleBackToRoom}
+          >
+            👥 回到房間
+          </motion.button>
+        </motion.div>
       </div>
     );
   }
