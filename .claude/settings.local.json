@@ -10,7 +10,8 @@
       "Bash(npm run dev:*)",
       "Read(//c/Users/elson/Downloads/**)",
       "Bash(claude doctor)",
-      "Bash(start http://localhost:5176)"
+      "Bash(start http://localhost:5176)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
