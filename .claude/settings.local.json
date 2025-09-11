@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run migrate-firebase:*)",
+      "Bash(sed:*)",
+      "Bash(node:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(npm start)",
+      "Read(//c/Users/elson/OneDrive/圖片/螢幕擷取畫面/**)",
+      "Bash(npm run dev:*)",
+      "Read(//c/Users/elson/Downloads/**)",
+      "Bash(claude doctor)",
+      "Bash(start http://localhost:5176)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

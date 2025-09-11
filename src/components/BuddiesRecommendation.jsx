@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import socket from "../services/socket";
+import { memberService } from "../services/supabaseService";
 import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import RecommendationResult from "./RecommendationResult";
-import {
-  voteForRestaurant,
-  listenVotes,
-  finalizeRestaurant,
-  listenFinalRestaurant,
-} from "../services/firebaseService";
+import { voteService, finalResultService } from "../services/supabaseService";
 import "./RecommendationResult.css";
 import "./SwiftTasteCard.css";
 import "./BuddiesVoteStyles.css";
@@ -192,17 +187,13 @@ export default function BuddiesRecommendation({
     }
 
     // 監聽房間成員人數
-    const handleMembersUpdate = (membersList) => {
-      if (membersList && Array.isArray(membersList)) {
-        setTotalMembers(membersList.length);
-      }
-    };
-
-    // 註冊監聽事件
-    socket.on("updateUsers", handleMembersUpdate);
+    const unsubscribeMembers = memberService.listenRoomMembers(roomId, (membersObj) => {
+      const membersList = Object.values(membersObj);
+      setTotalMembers(membersList.length);
+    });
 
     // 監聽投票更新
-    const unsubscribeVotes = listenVotes(roomId, (votesData) => {
+    const unsubscribeVotes = voteService.listenVotes(roomId, (votesData) => {
       if (votesData) {
         setVotes(votesData);
 
@@ -225,7 +216,7 @@ export default function BuddiesRecommendation({
     });
 
     // 監聽最終結果
-    const unsubscribeFinal = listenFinalRestaurant(roomId, (finalData) => {
+    const unsubscribeFinal = finalResultService.listenFinalRestaurant(roomId, (finalData) => {
       if (finalData && finalData.id) {
         // 找到最終選擇的餐廳
         const finalRestaurant = restaurants.find((r) => r.id === finalData.id);
@@ -240,7 +231,7 @@ export default function BuddiesRecommendation({
 
     return () => {
       // 移除監聽
-      socket.off("updateUsers", handleMembersUpdate);
+      unsubscribeMembers();
       unsubscribeVotes();
       unsubscribeFinal();
     };
@@ -265,7 +256,7 @@ export default function BuddiesRecommendation({
     if (!roomId || userVoted) return;
 
     try {
-      const result = await voteForRestaurant(roomId, restaurantId);
+      const result = await voteService.voteForRestaurant(roomId, restaurantId);
       if (result.success) {
         // 標記為已投票
         setUserVoted(true);
@@ -307,7 +298,7 @@ export default function BuddiesRecommendation({
       // 如果有多個收藏，選擇第一個
       const selectedRestaurant = saved[0];
 
-      const result = await finalizeRestaurant(roomId, selectedRestaurant);
+      const result = await finalResultService.finalizeRestaurant(roomId, selectedRestaurant);
       if (result.success) {
         setFinalResult(selectedRestaurant);
         setShowConfetti(true);

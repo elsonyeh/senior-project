@@ -23,18 +23,42 @@ export default function RestaurantSwiperMotion({
       <div className="restaurant-info-blur">
         <h3>{r.name || "未命名餐廳"}</h3>
         <p>{r.address || "地址未知"}</p>
-        <small>{r.type || "類型不明"}</small>
-        {typeof r.rating === "number" && (
+        <small>{r.category || "類型不明"}</small>
+        {typeof r.rating === "number" && r.rating > 0 && (
           <div className="restaurant-rating">⭐ {r.rating.toFixed(1)} 分</div>
+        )}
+        {r.tags && r.tags.length > 0 && (
+          <div className="restaurant-tags">
+            {r.tags.slice(0, 3).map((tag, index) => (
+              <span key={index} className="tag">{tag}</span>
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
 
-  const background = (r) =>
-    `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${
-      r.photoURL || "https://source.unsplash.com/400x300/?restaurant"
-    })`;
+  const background = (r) => {
+    // 優先使用 primaryImage，然後是 allImages 中的第一張，最後是預設圖片
+    let imageUrl = r.primaryImage?.image_url || 
+                   (r.allImages && r.allImages.length > 0 ? r.allImages[0]?.image_url : null) ||
+                   (r.restaurant_images && r.restaurant_images.length > 0 ? r.restaurant_images[0]?.image_url : null) ||
+                   r.photoURL || // 支援舊格式
+                   r.image_url || // 支援其他格式
+                   `https://source.unsplash.com/400x300/restaurant,food/?${r.name || 'restaurant'}`;
+    
+    // 確保 URL 有效
+    if (!imageUrl || imageUrl === 'null') {
+      imageUrl = `https://source.unsplash.com/400x300/restaurant,food/?${r.name || 'restaurant'}`;
+    }
+    
+    return {
+      backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${imageUrl})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    };
+  };
 
   return (
     <div

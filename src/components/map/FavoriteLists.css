@@ -1,0 +1,466 @@
+/* Favorite Lists Component Styles */
+.favorite-lists-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  max-height: 60px;
+}
+
+.favorite-lists-container.open {
+  max-height: 500px;
+}
+
+/* 標題欄 */
+.lists-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s ease;
+}
+
+.lists-header:hover {
+  background: rgba(255, 107, 53, 0.05);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  font-size: 1.2rem;
+  color: #ff6b35;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.lists-count {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 400;
+}
+
+.chevron-icon {
+  font-size: 1rem;
+  color: #666;
+  transition: transform 0.3s ease;
+}
+
+.chevron-icon.rotated {
+  transform: rotate(180deg);
+}
+
+/* 清單內容 */
+.lists-content {
+  padding: 0 20px 20px 20px;
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+/* 清單選擇器 */
+.lists-selector {
+  margin-bottom: 16px;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.list-item:hover {
+  background: rgba(255, 107, 53, 0.05);
+}
+
+.list-item.selected {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: #ff6b35;
+}
+
+.list-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.list-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.list-name {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.list-count {
+  font-size: 0.8rem;
+  color: #666;
+  margin-left: auto;
+}
+
+.edit-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  padding: 2px 4px;
+  border-bottom: 1px solid #ff6b35;
+}
+
+/* 清單操作按鈕 */
+.list-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.list-item:hover .list-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.edit-btn {
+  color: #666;
+}
+
+.edit-btn:hover {
+  background: rgba(102, 102, 102, 0.1);
+  color: #333;
+}
+
+.delete-btn {
+  color: #ef4444;
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+/* 新增清單 */
+.add-list-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.add-list-btn:hover {
+  border-color: #ff6b35;
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.05);
+}
+
+/* 新增清單表單 */
+.create-list-form {
+  padding: 16px;
+  background: rgba(255, 107, 53, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.new-list-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.new-list-input:focus {
+  border-color: #ff6b35;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.confirm-btn,
+.cancel-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-btn {
+  background: #ff6b35;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #e55a2b;
+}
+
+.cancel-btn {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  background: #e5e5e5;
+}
+
+/* 當前清單內容 */
+.current-list-content {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.list-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.add-place-btn {
+  background: #ff6b35;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.add-place-btn:hover {
+  background: #e55a2b;
+  transform: translateY(-1px);
+}
+
+/* 地點清單 */
+.places-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.empty-list {
+  text-align: center;
+  padding: 24px 16px;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+
+.empty-list p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.empty-hint {
+  font-size: 0.8rem !important;
+  color: #999 !important;
+}
+
+/* 地點項目 */
+.place-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.place-item:hover {
+  background: rgba(255, 107, 53, 0.08);
+  transform: translateX(2px);
+}
+
+.place-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.place-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.place-name {
+  margin: 0 0 2px 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place-address {
+  margin: 0 0 4px 0;
+  font-size: 0.75rem;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-stars {
+  font-size: 0.7rem;
+  color: #ffc107;
+}
+
+.rating-value {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.remove-place-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.place-item:hover .remove-place-btn {
+  opacity: 1;
+}
+
+.remove-place-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+/* 滾動條樣式 */
+.lists-content::-webkit-scrollbar,
+.places-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lists-content::-webkit-scrollbar-track,
+.places-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lists-content::-webkit-scrollbar-thumb,
+.places-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.lists-content::-webkit-scrollbar-thumb:hover,
+.places-list::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* 手機適配 */
+@media (max-width: 480px) {
+  .lists-header {
+    padding: 12px 16px;
+  }
+  
+  .lists-content {
+    padding: 0 16px 16px 16px;
+  }
+  
+  .list-item {
+    padding: 10px 12px;
+  }
+  
+  .place-item {
+    padding: 6px 10px;
+  }
+  
+  .place-image {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .place-name {
+    font-size: 0.85rem;
+  }
+  
+  .place-address {
+    font-size: 0.7rem;
+  }
+}

@@ -1,0 +1,226 @@
+/* Empty State Component Styles */
+.empty-state {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 40px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #fefefe 0%, #f8f9ff 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.empty-state-content {
+  position: relative;
+  z-index: 2;
+  max-width: 400px;
+}
+
+.empty-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 107, 53, 0.05) 100%);
+  color: #ff6b35;
+  font-size: 2.5rem;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(255, 107, 53, 0.1);
+}
+
+.empty-state-title {
+  margin: 0 0 12px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-description {
+  margin: 0 0 32px 0;
+  font-size: 1rem;
+  color: #666;
+  line-height: 1.6;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.empty-state-action {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto;
+}
+
+.empty-state-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+}
+
+.empty-state-action:active {
+  transform: translateY(0);
+}
+
+/* 背景裝飾 */
+.empty-state-decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.decoration {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.05;
+}
+
+.decoration-1 {
+  width: 120px;
+  height: 120px;
+  background: #ff6b35;
+  top: -20px;
+  right: -20px;
+}
+
+.decoration-2 {
+  width: 80px;
+  height: 80px;
+  background: #22c55e;
+  bottom: -10px;
+  left: -10px;
+}
+
+.decoration-3 {
+  width: 60px;
+  height: 60px;
+  background: #3b82f6;
+  top: 50%;
+  left: -30px;
+  transform: translateY(-50%);
+}
+
+/* 平板適配 */
+@media (max-width: 768px) {
+  .empty-state {
+    min-height: 250px;
+    padding: 32px 16px;
+    margin: 16px 0;
+  }
+  
+  .empty-state-icon {
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+  
+  .empty-state-title {
+    font-size: 1.3rem;
+  }
+  
+  .empty-state-description {
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+  }
+  
+  .empty-state-action {
+    padding: 12px 24px;
+    font-size: 0.9rem;
+  }
+}
+
+/* 手機適配 */
+@media (max-width: 480px) {
+  .empty-state {
+    min-height: 200px;
+    padding: 24px 12px;
+  }
+  
+  .empty-state-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 1.8rem;
+    margin-bottom: 16px;
+  }
+  
+  .empty-state-title {
+    font-size: 1.2rem;
+  }
+  
+  .empty-state-description {
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+  
+  .empty-state-action {
+    padding: 10px 20px;
+    font-size: 0.85rem;
+  }
+  
+  .decoration-1 {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .decoration-2 {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .decoration-3 {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .empty-state {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1f2937 100%);
+  }
+  
+  .empty-state-title {
+    color: #f5f5f5;
+  }
+  
+  .empty-state-description {
+    color: #a3a3a3;
+  }
+}
+
+/* 高對比模式 */
+@media (prefers-contrast: high) {
+  .empty-state {
+    border: 2px solid #ccc;
+  }
+  
+  .empty-state-icon {
+    border: 2px solid #ff6b35;
+  }
+  
+  .empty-state-action {
+    border: 2px solid #ff6b35;
+  }
+}

@@ -1,0 +1,3325 @@
+[
+  {
+    "id": "1XUJDylNkgX4aFVo9pn7",
+    "tags": [
+      "鄉村",
+      "台式",
+      "喜氣",
+      "自助餐",
+      "友善",
+      "開放式廚房",
+      "平價",
+      "狗",
+      "戶外",
+      "活力",
+      "多樣",
+      "家常",
+      "傳統",
+      "親民",
+      "老店",
+      "室內",
+      "中式",
+      "亞洲",
+      "快餐",
+      "簡餐",
+      "米食",
+      "飽足"
+    ],
+    "name": "阿英排骨飯",
+    "location": {
+      "lng": 120.2838794,
+      "lat": 22.6281507
+    },
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區富野路79-2號",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 196000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F1XUJDylNkgX4aFVo9pn7?alt=media&token=76d07032-90bd-4867-8a52-3a598f6bc5b2",
+    "type": "排骨飯，便當",
+    "rating": 4.1,
+    "suggestedPeople": "1~4",
+    "priceRange": "$"
+  },
+  {
+    "id": "2eXysyiuZqCNgPrDG7Mv",
+    "suggestedPeople": "1~4",
+    "isSpicy": false,
+    "type": "燒烤",
+    "location": {
+      "lat": 22.6272477,
+      "lng": 120.2833238
+    },
+    "priceRange": "$",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F2eXysyiuZqCNgPrDG7Mv?alt=media&token=831c1cb7-4091-4a4d-b31e-96889d469058",
+    "address": "803高雄市鹽埕區大公路81號",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 196000000
+    },
+    "name": "炭火燒烤（志賢烤肉）",
+    "rating": 4.9,
+    "tags": [
+      "熱情",
+      "鄉村",
+      "台式",
+      "動感十足",
+      "喜氣",
+      "平價",
+      "特別",
+      "吃一點",
+      "亞洲",
+      "戶外",
+      "多樣",
+      "烤肉",
+      "小份",
+      "重口味"
+    ]
+  },
+  {
+    "id": "31t4oEqYxxkwS2y2exci",
+    "location": {
+      "lat": 22.6284891,
+      "lng": 120.2838669
+    },
+    "type": "葡萄酒",
+    "priceRange": "$$$",
+    "tags": [
+      "現代",
+      "美式",
+      "工業",
+      "高級",
+      "優雅",
+      "舒適",
+      "喝",
+      "精緻",
+      "文青",
+      "安靜"
+    ],
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F31t4oEqYxxkwS2y2exci?alt=media&token=22b43657-04f6-4308-8ece-2a2a837b895e",
+    "name": "樵仕飲葡萄酒",
+    "address": "803高雄市鹽埕區富野路90號",
+    "rating": 5,
+    "updatedAt": {
+      "seconds": 1747105953,
+      "nanoseconds": 424000000
+    }
+  },
+  {
+    "id": "3ZpPQ4xjutfe2GYjJ7NT",
+    "updatedAt": {
+      "seconds": 1746863438,
+      "nanoseconds": 587000000
+    },
+    "priceRange": "$$",
+    "isSpicy": false,
+    "tags": [
+      "現代",
+      "美式",
+      "簡約",
+      "復古",
+      "明亮活潑",
+      "優雅",
+      "舒適",
+      "寧靜",
+      "高級",
+      "貓",
+      "工業",
+      "精緻餐飲",
+      "甜食",
+      "西方風味",
+      "喝",
+      "精緻",
+      "文青",
+      "大型",
+      "多樣",
+      "拼盤",
+      "開放",
+      "聚會",
+      "成熟",
+      "特色",
+      "景觀",
+      "明亮",
+      "室內",
+      "空調",
+      "乾淨",
+      "簡約",
+      "衛生",
+      "酒吧",
+      "簡餐",
+      "吃一點",
+      "飽足"
+    ],
+    "suggestedPeople": "1~8",
+    "address": "803高雄市鹽埕區瀨南街205號",
+    "location": {
+      "lng": 120.2838516,
+      "lat": 22.6276226
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F3ZpPQ4xjutfe2GYjJ7NT?alt=media&token=2e747eb1-aa4b-4c2c-ae61-3ee5a611cff7",
+    "type": "酒精，咖啡，簡餐，烤雞",
+    "rating": 4.9,
+    "name": "廢墟Ruins(Cafe BAR B&B)"
+  },
+  {
+    "id": "3z2YRIieq3eLs298LBWX",
+    "name": "黑炭咖啡",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F3z2YRIieq3eLs298LBWX?alt=media&token=2101f323-7801-45ae-a553-67f754b78578",
+    "suggestedPeople": "1~4",
+    "tags": [
+      "現代",
+      "美式",
+      "工業",
+      "喝",
+      "熱",
+      "冷",
+      "貓",
+      "寧靜",
+      "優雅",
+      "自助服務",
+      "經典",
+      "咖啡廳",
+      "精緻",
+      "文青",
+      "小店",
+      "義式",
+      "歐式",
+      "獨特",
+      "冰飲",
+      "苦甜",
+      "景觀",
+      "室內",
+      "乾淨",
+      "輕鬆",
+      "成熟",
+      "吃一點"
+    ],
+    "isSpicy": false,
+    "updatedAt": {
+      "seconds": 1746863461,
+      "nanoseconds": 341000000
+    },
+    "priceRange": "$",
+    "location": {
+      "lat": 22.6280646,
+      "lng": 120.2851569
+    },
+    "type": "茶，飲料，咖啡，酒",
+    "rating": 4.9,
+    "address": " 803高雄市鹽埕區鹽埕街122之3號"
+  },
+  {
+    "id": "54W6JTGJFDtd6E84cNwh",
+    "rating": 4.2,
+    "address": "803高雄市鹽埕區瀨南街206號",
+    "priceRange": "$",
+    "name": "榮璋陽春麵",
+    "isSpicy": false,
+    "type": "麵食與湯品",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "台式",
+      "明亮活潑",
+      "友善",
+      "舒適",
+      "平價",
+      "熱",
+      "特別",
+      "麵食",
+      "米食",
+      "簡餐",
+      "溫馨",
+      "老店",
+      "親民",
+      "多樣",
+      "飽足"
+    ],
+    "suggestedPeople": "1~4",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F54W6JTGJFDtd6E84cNwh?alt=media&token=b8c5014a-6e6f-490c-8ef1-ae208ef32e1c",
+    "updatedAt": {
+      "seconds": 1746863494,
+      "nanoseconds": 767000000
+    },
+    "location": {
+      "lng": 120.2840274,
+      "lat": 22.6274607
+    }
+  },
+  {
+    "id": "7tG10AppSi1jSBT3qTgW",
+    "type": "滷虱目魚頭、煎虱目魚肚、滷肉飯、雞絲飯、綜合湯",
+    "tags": [
+      "熱情",
+      "鄉村",
+      "復古",
+      "台式",
+      "友善",
+      "美式",
+      "溫暖",
+      "熱",
+      "動感十足",
+      "簡約",
+      "喜氣",
+      "狗",
+      "舊",
+      "簡餐",
+      "米食",
+      "中式",
+      "亞洲",
+      "傳統",
+      "家常",
+      "飽足"
+    ],
+    "priceRange": "$",
+    "name": "老蔡虱目魚",
+    "rating": 4.1,
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 196000000
+    },
+    "suggestedPeople": "1~4",
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區瀨南街201號",
+    "location": {
+      "lng": 120.2838363,
+      "lat": 22.6274741
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F7tG10AppSi1jSBT3qTgW?alt=media&token=30a73f43-8382-4b99-b17b-66eaae6adcc8"
+  },
+  {
+    "id": "9FZ8z3RkY8QUIt2D6zBD",
+    "suggestedPeople": "1~4",
+    "isSpicy": false,
+    "name": "樹泡芙",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "tags": [
+      "現代",
+      "熱情",
+      "明亮活潑",
+      "喜氣",
+      "友善",
+      "美式",
+      "平價",
+      "甜食",
+      "吃一點",
+      "鄉村",
+      "特別",
+      "連鎖",
+      "輕盈",
+      "小份",
+      "戶外",
+      "甜食"
+    ],
+    "location": {
+      "lat": 22.6254484,
+      "lng": 120.2839695
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F9FZ8z3RkY8QUIt2D6zBD?alt=media&token=795ec0cc-4bd6-4207-aa89-98f994d19761",
+    "rating": 4.3,
+    "address": "803高雄市鹽埕區鹽埕街47-2號",
+    "priceRange": "$",
+    "type": "泡芙"
+  },
+  {
+    "id": "9Vd2dIVtKS36Et2iZH0p",
+    "rating": 4.7,
+    "isSpicy": false,
+    "tags": [
+      "現代",
+      "簡約",
+      "美式",
+      "明亮活潑",
+      "休閒",
+      "優雅",
+      "舒適",
+      "寧靜",
+      "精緻餐飲",
+      "喝",
+      "吃一點",
+      "甜食",
+      "冷",
+      "平價",
+      "貓",
+      "輕鬆",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "小份",
+      "安靜",
+      "冰飲",
+      "頂樓",
+      "景觀",
+      "室內",
+      "空調"
+    ],
+    "updatedAt": {
+      "seconds": 1746861119,
+      "nanoseconds": 314000000
+    },
+    "suggestedPeople": "1~4",
+    "address": " 803003高雄市鹽埕區中正四路272號東側1樓",
+    "type": "飲料，甜點，咖啡",
+    "priceRange": "$",
+    "name": "打狗喫 TAKAO EAT",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F9Vd2dIVtKS36Et2iZH0p?alt=media&token=d7a81ff2-7128-4dec-a4b8-443e0bb9b8c6",
+    "location": {
+      "lng": 120.28678,
+      "lat": 22.6269955
+    }
+  },
+  {
+    "id": "9iYX16AZVWwyLyqlHDxi",
+    "suggestedPeople": "1~4",
+    "type": "廣東粥",
+    "isSpicy": false,
+    "priceRange": "$",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "location": {
+      "lat": 22.6262517,
+      "lng": 120.282674
+    },
+    "name": "大溝頂廣東粥",
+    "rating": 4.3,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2F9iYX16AZVWwyLyqlHDxi?alt=media&token=57d4e1e0-3e02-4cdd-9a10-89ee917a86a8",
+    "tags": [
+      "鄉村",
+      "台式",
+      "平價",
+      "舊",
+      "熱",
+      "溫暖",
+      "溫馨",
+      "中式",
+      "亞洲",
+      "米食",
+      "飽足"
+    ],
+    "address": "803高雄市鹽埕區大仁路151號"
+  },
+  {
+    "id": "AWYL936B2k0HcyUV4EB4",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "type": "麵食，台式小吃",
+    "priceRange": "$",
+    "suggestedPeople": "1~4",
+    "location": {
+      "lng": 120.2831697,
+      "lat": 22.6263585
+    },
+    "address": " 803高雄市鹽埕區大仁路144號",
+    "name": "長腳麵",
+    "tags": [
+      "現代",
+      "熱情",
+      "鄉村",
+      "台式",
+      "平價",
+      "喜氣",
+      "友善",
+      "狗",
+      "中式",
+      "亞洲",
+      "連鎖",
+      "傳統",
+      "快餐",
+      "麵食",
+      "米食",
+      "成熟",
+      "飽足"
+    ],
+    "isSpicy": false,
+    "rating": 4.6,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FAWYL936B2k0HcyUV4EB4?alt=media&token=46bd7083-92df-4455-8e82-55d3daa55c76"
+  },
+  {
+    "id": "B3dhvYuuChcE0i8W4Rx9",
+    "rating": 4.8,
+    "priceRange": "$$$",
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區五福四路117號",
+    "updatedAt": {
+      "seconds": 1746863565,
+      "nanoseconds": 613000000
+    },
+    "tags": [
+      "現代",
+      "簡約",
+      "工業",
+      "明亮活潑",
+      "休閒",
+      "優雅",
+      "舒適",
+      "狗",
+      "西方風味",
+      "高級",
+      "喝",
+      "快餐",
+      "義式",
+      "簡餐",
+      "酒吧",
+      "包廂",
+      "室內",
+      "西式",
+      "飽足"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FB3dhvYuuChcE0i8W4Rx9?alt=media&token=86049e28-b84b-45af-b8c7-5113dcb75fa3",
+    "suggestedPeople": "1~4",
+    "type": "漢堡，披薩和其他酒吧餐點，酒",
+    "name": "鸚鵡螺餐酒館",
+    "location": {
+      "lng": 120.284866,
+      "lat": 22.62282
+    }
+  },
+  {
+    "id": "B56YbExkyFwoavutkRb1",
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "type": "義大利麵焗烤，小炸物",
+    "tags": [
+      "現代",
+      "簡約",
+      "明亮活潑",
+      "舒適",
+      "高級",
+      "平價",
+      "休閒快餐",
+      "西方風味",
+      "小店",
+      "麵食",
+      "義式",
+      "親民",
+      "拼盤",
+      "輕盈",
+      "明亮",
+      "室內",
+      "空調",
+      "衛生",
+      "乾淨",
+      "飽足"
+    ],
+    "updatedAt": {
+      "seconds": 1746863575,
+      "nanoseconds": 947000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FB56YbExkyFwoavutkRb1?alt=media&token=760e6d9e-7c84-4e2f-8e2e-5798c1921dff",
+    "location": {
+      "lng": 120.2852753,
+      "lat": 22.6241026
+    },
+    "priceRange": "$$",
+    "address": "803高雄市鹽埕區新樂街122號",
+    "rating": 4.7,
+    "name": "千義PASTA"
+  },
+  {
+    "id": "BL0nD7r3MT2SYmbrGepm",
+    "priceRange": "$",
+    "tags": [
+      "現代",
+      "熱情",
+      "台式",
+      "友善",
+      "舒適",
+      "狗",
+      "休閒快餐",
+      "日式",
+      "麵食",
+      "快餐",
+      "家常",
+      "空調",
+      "飽足"
+    ],
+    "address": "803高雄市鹽埕區鹽埕街74號",
+    "name": "喜洋洋鍋燒麵",
+    "type": "鍋燒麵、炒飯、蓋飯、燴飯、湯品、單點、小菜",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FBL0nD7r3MT2SYmbrGepm?alt=media&token=f24c7b00-5424-4126-8b3c-a15b21f67d0a",
+    "location": {
+      "lat": 22.626465,
+      "lng": 120.2842737
+    },
+    "isSpicy": false,
+    "updatedAt": {
+      "seconds": 1746863586,
+      "nanoseconds": 435000000
+    },
+    "rating": 4.1,
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "CrT70q4dCx8ArJ5OFltS",
+    "updatedAt": {
+      "seconds": 1746863707,
+      "nanoseconds": 814000000
+    },
+    "address": "803高雄市鹽埕區北斗街18號",
+    "suggestedPeople": "1~4",
+    "priceRange": "$$",
+    "isSpicy": true,
+    "rating": 4.6,
+    "location": {
+      "lat": 22.631737,
+      "lng": 120.2845554
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FCrT70q4dCx8ArJ5OFltS?alt=media&token=9e9484cd-7f80-4b1c-a45d-01014d90e3a4",
+    "type": "炒河粉，會安雞飯 ",
+    "name": "越龍門_越南河粉/雞飯",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "明亮活潑",
+      "色彩繽紛",
+      "舒適",
+      "友善",
+      "高級",
+      "平價",
+      "狗",
+      "辣",
+      "特別",
+      "米食",
+      "麵食",
+      "輕盈",
+      "空調",
+      "明亮",
+      "輕鬆",
+      "活力",
+      "異國",
+      "重口味",
+      "獨特",
+      "飽足"
+    ]
+  },
+  {
+    "id": "D9J5ly7v2skdPHB6GVuq",
+    "isSpicy": false,
+    "address": " 803高雄市鹽埕區河西路100號",
+    "suggestedPeople": "1~4",
+    "priceRange": "$",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "name": "戴蛋餅",
+    "location": {
+      "lat": 22.6281117,
+      "lng": 120.2866436
+    },
+    "rating": 4.3,
+    "type": "早餐，蛋餅",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FD9J5ly7v2skdPHB6GVuq?alt=media&token=65da5dba-b867-49c4-af25-5760c2894f16",
+    "tags": [
+      "熱情",
+      "鄉村",
+      "復古",
+      "台式",
+      "喜氣",
+      "平價",
+      "吃一點",
+      "舊",
+      "狗",
+      "小份",
+      "戶外",
+      "開放",
+      "中式",
+      "傳統",
+      "老店",
+      "親民",
+      "經典",
+      "亞洲"
+    ]
+  },
+  {
+    "id": "DqG2HtvWkNB6iJicUnUL",
+    "suggestedPeople": "1~4",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FDqG2HtvWkNB6iJicUnUL?alt=media&token=25aa855b-2a00-4666-9078-00e7a78fb310",
+    "priceRange": "$$",
+    "location": {
+      "lng": 120.2823585,
+      "lat": 22.6253316
+    },
+    "type": "飲料，酒，台日式下酒菜",
+    "tags": [
+      "熱情",
+      "復古",
+      "台式",
+      "日式",
+      "色彩繽紛",
+      "喝",
+      "特別",
+      "瘋狂",
+      "舊",
+      "平價",
+      "狗",
+      "高級",
+      "友善",
+      "喜氣",
+      "簡餐",
+      "居酒屋",
+      "成熟",
+      "溫馨",
+      "飽足"
+    ],
+    "address": " 803高雄市鹽埕區新樂街213之57號",
+    "rating": 4.7,
+    "isSpicy": false,
+    "updatedAt": {
+      "seconds": 1746863726,
+      "nanoseconds": 331000000
+    },
+    "name": "酒場清志郎"
+  },
+  {
+    "id": "EV6BEzT7Ajlic1cnKzE1",
+    "address": "803高雄市鹽埕區五福四路49號",
+    "isSpicy": false,
+    "location": {
+      "lng": 120.2875044,
+      "lat": 22.6213872
+    },
+    "name": "牛津啤酒屋Oxford",
+    "updatedAt": {
+      "seconds": 1746863735,
+      "nanoseconds": 462000000
+    },
+    "type": "中式餐點和炸物，酒",
+    "tags": [
+      "現代",
+      "熱情",
+      "美式",
+      "色彩繽紛",
+      "休閒",
+      "瘋狂",
+      "喝",
+      "特別",
+      "開放式廚房",
+      "高級",
+      "簡餐",
+      "酒吧",
+      "溫馨",
+      "室內",
+      "輕盈",
+      "飽足"
+    ],
+    "priceRange": "$$$",
+    "rating": 4.6,
+    "suggestedPeople": "1~4",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FEV6BEzT7Ajlic1cnKzE1?alt=media&token=5c7c79b0-bb36-467d-919a-bad8bcd27b18"
+  },
+  {
+    "id": "EpVQYIQq07Mo1cjAdLVf",
+    "tags": [
+      "現代",
+      "簡約",
+      "美式",
+      "西方風味",
+      "優雅",
+      "喝",
+      "明亮活潑",
+      "貓",
+      "寧靜",
+      "歐式",
+      "義式",
+      "室內",
+      "空調",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "清爽",
+      "冰飲",
+      "濃郁",
+      "苦甜",
+      "成熟",
+      "深度"
+    ],
+    "type": "咖啡",
+    "location": {
+      "lng": 120.283671,
+      "lat": 22.6272915
+    },
+    "rating": 5,
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "name": "36味咖啡館-鹽埕冰滴製造所",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FEpVQYIQq07Mo1cjAdLVf?alt=media&token=41e57bd2-ef03-4855-a725-667f05e97693",
+    "updatedAt": {
+      "seconds": 1746598028,
+      "nanoseconds": 661000000
+    },
+    "address": "803高雄市鹽埕區大公路62號",
+    "priceRange": "$"
+  },
+  {
+    "id": "Fb5zDqlV2I5WH1cCDg55",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FFb5zDqlV2I5WH1cCDg55?alt=media&token=9d1789fc-f41a-4acd-ae81-f666118226f8",
+    "type": "臭豆腐",
+    "location": {
+      "lng": 120.2835155,
+      "lat": 22.6265954
+    },
+    "name": "鹽埕波臭豆腐",
+    "updatedAt": {
+      "seconds": 1746863757,
+      "nanoseconds": 379000000
+    },
+    "rating": 4.5,
+    "address": "803高雄市鹽埕區瀨南街186號1樓",
+    "isSpicy": true,
+    "priceRange": "$",
+    "tags": [
+      "現代",
+      "簡約",
+      "台式",
+      "友善",
+      "狗",
+      "平價",
+      "瘋狂",
+      "特別",
+      "辣",
+      "吃一點",
+      "小份",
+      "成熟",
+      "濃郁",
+      "獨特",
+      "特色",
+      "重口味",
+      "室內",
+      "空調",
+      "乾淨",
+      "衛生",
+      "明亮",
+      "飽足"
+    ],
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "FdaUEOao5sYuM2SwUyda",
+    "location": {
+      "lng": 120.2867893,
+      "lat": 22.6211118
+    },
+    "updatedAt": {
+      "seconds": 1747106369,
+      "nanoseconds": 88000000
+    },
+    "isSpicy": false,
+    "rating": 4.5,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FFdaUEOao5sYuM2SwUyda?alt=media&token=33295ef6-95ac-4da1-98d4-b6a34aefc792",
+    "priceRange": "$",
+    "suggestedPeople": "1~4",
+    "address": "803高雄市鹽埕區五福四路63巷37號",
+    "tags": [
+      "現代",
+      "簡約",
+      "明亮活潑",
+      "優雅",
+      "精緻餐飲",
+      "平價",
+      "貓",
+      "甜食",
+      "吃一點",
+      "喝",
+      "溫馨",
+      "消暑",
+      "小份",
+      "安靜",
+      "苦甜",
+      "小店",
+      "文青",
+      "溫和"
+    ],
+    "name": "chill bake",
+    "type": "飲料，甜點"
+  },
+  {
+    "id": "G2a0Lo3QuvSnWhZ4p89w",
+    "name": "張家舖古物咖啡",
+    "isSpicy": false,
+    "tags": [
+      "復古",
+      "動感十足",
+      "喜氣",
+      "友善",
+      "平價",
+      "狗",
+      "溫暖",
+      "瘋狂",
+      "吃一點",
+      "甜食",
+      "咖啡廳",
+      "戶外",
+      "活力",
+      "文青",
+      "小店",
+      "小份",
+      "特色",
+      "苦甜",
+      "深度"
+    ],
+    "type": "咖啡，飲料，甜點",
+    "location": {
+      "lng": 120.2857734,
+      "lat": 22.6280235
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FG2a0Lo3QuvSnWhZ4p89w?alt=media&token=3d5bf711-603c-4b24-9516-1c7dc10057cf",
+    "suggestedPeople": "1~4",
+    "priceRange": "$",
+    "updatedAt": {
+      "seconds": 1746796393,
+      "nanoseconds": 267000000
+    },
+    "rating": 4.4,
+    "address": "803高雄市鹽埕區府北路19號"
+  },
+  {
+    "id": "GSP2Zs126ExDVfFnUT4Z",
+    "location": {
+      "lng": 120.2837487,
+      "lat": 22.6260195
+    },
+    "suggestedPeople": "1~4",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FGSP2Zs126ExDVfFnUT4Z?alt=media&token=8e63d811-aa5a-4b73-9153-90edf0f74ea1",
+    "rating": 5,
+    "isSpicy": false,
+    "tags": [
+      "喝",
+      "特別",
+      "冷",
+      "熱",
+      "現代",
+      "熱情",
+      "高級",
+      "平價",
+      "茶館",
+      "輕盈",
+      "冰飲",
+      "成熟",
+      "特色",
+      "深度"
+    ],
+    "updatedAt": {
+      "seconds": 1746723857,
+      "nanoseconds": 727000000
+    },
+    "priceRange": "$$",
+    "address": "803高雄市鹽埕區大仁路116號",
+    "name": "春之英普洱茶",
+    "type": "茶"
+  },
+  {
+    "id": "HQVYQaZ72Hfz4A38qpjD",
+    "address": "804高雄市鼓山區華豐里華榮路418號",
+    "name": "都瓦哩印度廚房",
+    "updatedAt": {
+      "seconds": 1746798769,
+      "nanoseconds": 32000000
+    },
+    "priceRange": "$$$",
+    "isSpicy": true,
+    "suggestedPeople": "1~4",
+    "type": "北印度風味，咖哩、烤餅、烤肉、烤蔬菜",
+    "location": {
+      "lat": 22.667635,
+      "lng": 120.2962
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FHQVYQaZ72Hfz4A38qpjD?alt=media&token=9a64200b-bef7-43e1-a8ee-5db4fdd3e8c6",
+    "tags": [
+      "現代",
+      "簡約",
+      "印度風味",
+      "明亮活潑",
+      "喜氣",
+      "動感十足",
+      "友善",
+      "高級",
+      "狗",
+      "特別",
+      "辣",
+      "米食",
+      "熱鬧",
+      "濃郁",
+      "大份量",
+      "重口味",
+      "飽足",
+      "亞洲",
+      "獨特",
+      "特色",
+      "異國"
+    ],
+    "rating": 4.9
+  },
+  {
+    "id": "HmOL5WFRBWkfeYN2hXFZ",
+    "type": "中式甜點，藥湯",
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區大公路1號",
+    "updatedAt": {
+      "seconds": 1746863791,
+      "nanoseconds": 271000000
+    },
+    "rating": 4,
+    "suggestedPeople": "1~4",
+    "tags": [
+      "復古",
+      "台式",
+      "甜食",
+      "熱",
+      "冷",
+      "特別",
+      "亞洲",
+      "中式",
+      "重口味",
+      "特色",
+      "濃郁",
+      "成熟",
+      "苦甜",
+      "暖和",
+      "連鎖",
+      "吃一點",
+      "飽足"
+    ],
+    "priceRange": "$$",
+    "name": "東隆堂龜苓膏",
+    "location": {
+      "lat": 22.6263476,
+      "lng": 120.2851459
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FHmOL5WFRBWkfeYN2hXFZ?alt=media&token=74a70d82-9e80-4dbe-bc52-8afcf6451075"
+  },
+  {
+    "id": "IjUyJaDXeWPQBrsA60BM",
+    "type": "油飯，羹湯",
+    "address": "80252高雄市苓雅區尚義街39號",
+    "priceRange": "$",
+    "location": {
+      "lat": 22.6294871,
+      "lng": 120.31507
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FIjUyJaDXeWPQBrsA60BM?alt=media&token=05b2af60-d8ec-4441-a8b5-ab72561d6807",
+    "rating": 4.3,
+    "updatedAt": {
+      "seconds": 1746863805,
+      "nanoseconds": 676000000
+    },
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "name": "Uben 油飯",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "台式",
+      "友善",
+      "平價",
+      "溫暖",
+      "狗",
+      "文青",
+      "小店",
+      "家常",
+      "傳統",
+      "親民",
+      "室內",
+      "乾淨",
+      "亞洲",
+      "中式",
+      "溫馨",
+      "輕鬆",
+      "米食",
+      "飽足"
+    ]
+  },
+  {
+    "id": "JFAXIQiyGKxvVPwcTQQQ",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "type": "肉燥飯，魚皮湯，土魠魚粥",
+    "priceRange": "$",
+    "suggestedPeople": "1~8",
+    "location": {
+      "lat": 22.6319284,
+      "lng": 120.284283
+    },
+    "address": "803高雄市鹽埕區北斗街28號",
+    "name": "琴姐土魠魚粥香菇肉燥飯",
+    "tags": [
+      "現代",
+      "熱情",
+      "鄉村",
+      "明亮活潑",
+      "喜氣",
+      "休閒快餐",
+      "平價",
+      "狗",
+      "台式",
+      "快餐",
+      "米食",
+      "開放",
+      "熱鬧",
+      "家常",
+      "親民",
+      "飽足"
+    ],
+    "isSpicy": false,
+    "rating": 4.4,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FJFAXIQiyGKxvVPwcTQQQ?alt=media&token=77788f66-b5ca-43b0-82cb-a04cecf934f3"
+  },
+  {
+    "id": "KDBCyD4to0Fqhsxz3CuU",
+    "address": "塩埕第一公有零售市場",
+    "updatedAt": {
+      "seconds": 1746863835,
+      "nanoseconds": 766000000
+    },
+    "type": "墨西哥捲餅，塔可",
+    "rating": 4.8,
+    "isSpicy": true,
+    "suggestedPeople": "1~4",
+    "tags": [
+      "現代",
+      "熱情",
+      "美式",
+      "西方風味",
+      "明亮活潑",
+      "休閒快餐",
+      "開放式廚房",
+      "平價",
+      "高級",
+      "簡約",
+      "狗",
+      "特別",
+      "辣",
+      "小店",
+      "戶外",
+      "活力",
+      "拼盤",
+      "小份",
+      "熱情",
+      "開放",
+      "成熟",
+      "獨特",
+      "濃郁",
+      "特色",
+      "異國",
+      "輕鬆",
+      "吃一點",
+      "飽足"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FKDBCyD4to0Fqhsxz3CuU?alt=media&token=ed6dbd4d-1936-416a-bc5f-1e86a5acd71d",
+    "location": {
+      "lat": 22.6249215,
+      "lng": 120.2823218
+    },
+    "name": "MADDOG 墨西哥捲餅",
+    "priceRange": "$$"
+  },
+  {
+    "id": "Kjg508X5WQQ5nuzOi3L1",
+    "isSpicy": false,
+    "rating": 4.9,
+    "address": "  803高雄市鹽埕區五福四路13號",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FKjg508X5WQQ5nuzOi3L1?alt=media&token=8f16873f-a694-4ed7-8535-2cef982d01ab",
+    "tags": [
+      "現代",
+      "熱情",
+      "復古",
+      "台式",
+      "日式",
+      "昏暗浪漫",
+      "休閒",
+      "友善",
+      "開放式廚房",
+      "瘋狂",
+      "貓",
+      "狗",
+      "特別",
+      "喝",
+      "舒適",
+      "酒吧",
+      "聚會",
+      "科技"
+    ],
+    "suggestedPeople": "1~4",
+    "priceRange": "$$$",
+    "type": "無菜單酒精",
+    "location": {
+      "lng": 120.288604,
+      "lat": 22.620897
+    },
+    "name": "埕拾參酒館",
+    "updatedAt": {
+      "seconds": 1746797276,
+      "nanoseconds": 95000000
+    }
+  },
+  {
+    "id": "L418p3Kj7Wdq1TKggE9i",
+    "updatedAt": {
+      "seconds": 1746863862,
+      "nanoseconds": 948000000
+    },
+    "tags": [
+      "現代",
+      "簡約",
+      "高級",
+      "甜食",
+      "特別",
+      "吃一點",
+      "明亮活潑",
+      "自助服務",
+      "平價",
+      "包廂",
+      "隱私",
+      "小份",
+      "傳統",
+      "米食",
+      "室內",
+      "中式",
+      "亞洲",
+      "飽足"
+    ],
+    "rating": 4.7,
+    "type": "港式點心，料理",
+    "location": {
+      "lat": 22.6294717,
+      "lng": 120.2836766
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FL418p3Kj7Wdq1TKggE9i?alt=media&token=96b25190-a60a-4682-9245-ae32647d8836",
+    "address": "803高雄市鹽埕區七賢三路227號",
+    "isSpicy": false,
+    "name": "點22 港式點心專賣店",
+    "suggestedPeople": "1~4",
+    "priceRange": "$$"
+  },
+  {
+    "id": "N7h8lYW6I7CEszIwAtTN",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "日式",
+      "休閒",
+      "舒適",
+      "平價",
+      "熱",
+      "冷",
+      "寧靜",
+      "特別",
+      "喝",
+      "溫馨",
+      "室內",
+      "冰飲",
+      "深度",
+      "溫和",
+      "安靜",
+      "小份",
+      "精緻",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "苦甜"
+    ],
+    "priceRange": "$",
+    "rating": 4.9,
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1746691509,
+      "nanoseconds": 732000000
+    },
+    "isSpicy": false,
+    "address": " 803高雄市鹽埕區大勇路117-1號",
+    "location": {
+      "lng": 120.2844652,
+      "lat": 22.6252198
+    },
+    "name": "維肯茶藝",
+    "type": "茶，飲料，甜點",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FN7h8lYW6I7CEszIwAtTN?alt=media&token=f916e2ca-a924-4246-a0c4-4baef7918b8b"
+  },
+  {
+    "id": "NDuDcfuiArgsT7aKWiQd",
+    "type": "土魠魚羹，肉燥飯",
+    "tags": [
+      "台式",
+      "舊",
+      "特別",
+      "吃一點",
+      "明亮活潑",
+      "平價",
+      "鄉村",
+      "台式",
+      "特別",
+      "舊",
+      "特色",
+      "米食",
+      "傳統",
+      "小店",
+      "小份",
+      "麵食",
+      "老店",
+      "飽足"
+    ],
+    "priceRange": "$",
+    "name": "尚芳土魠魚羹",
+    "rating": 3.9,
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "address": "803高雄市鹽埕區富野路79",
+    "location": {
+      "lng": 120.283854,
+      "lat": 22.628091
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FNDuDcfuiArgsT7aKWiQd?alt=media&token=e4efff0f-6381-4f74-b3b1-e32d00ba2203"
+  },
+  {
+    "id": "P5RAIajSHmOCcVgzEjaX",
+    "address": "803高雄市鹽埕區大仁路71號",
+    "isSpicy": true,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FP5RAIajSHmOCcVgzEjaX?alt=media&token=db1a8886-4f9d-4f96-8767-06233a964e51",
+    "type": "烏克蘭烤肉",
+    "suggestedPeople": "1~8",
+    "tags": [
+      "熱情",
+      "西方風味",
+      "色彩繽紛",
+      "舒適",
+      "精緻餐飲",
+      "友善",
+      "高級",
+      "平價",
+      "特別",
+      "瘋狂",
+      "動感十足",
+      "辣",
+      "歐式",
+      "烤肉",
+      "重口味",
+      "大份量",
+      "飽足",
+      "活力"
+    ],
+    "rating": 4.7,
+    "updatedAt": {
+      "seconds": 1746724285,
+      "nanoseconds": 919000000
+    },
+    "location": {
+      "lng": 120.2850628,
+      "lat": 22.6250674
+    },
+    "name": "KOZAK Ukrainian Shashlik 烏克蘭烤肉",
+    "priceRange": "$$"
+  },
+  {
+    "id": "Pvtcce4ZL99UlTRhoKBM",
+    "tags": [
+      "現代",
+      "熱情",
+      "印度風味",
+      "動感十足",
+      "舒適",
+      "精緻餐飲",
+      "特別",
+      "熱",
+      "狗",
+      "辣",
+      "衛生",
+      "暖和",
+      "熱食",
+      "深度",
+      "特色",
+      "獨特",
+      "異國",
+      "重口味",
+      "大份量",
+      "飽足"
+    ],
+    "rating": 4.8,
+    "type": "馬來西亞風味肉骨茶，料理",
+    "location": {
+      "lng": 120.2835189,
+      "lat": 22.6226484
+    },
+    "isSpicy": true,
+    "priceRange": "$$$",
+    "address": "803高雄市鹽埕區大勇路58號",
+    "suggestedPeople": "1~4",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FPvtcce4ZL99UlTRhoKBM?alt=media&token=09b55d76-b331-4f7e-97a6-18b21fd1e1d3",
+    "name": "食鍋者正宗南洋風味館",
+    "updatedAt": {
+      "seconds": 1746863909,
+      "nanoseconds": 712000000
+    }
+  },
+  {
+    "id": "PzYaK5iEq9uz5XrhTYm4",
+    "name": "王家鱉店",
+    "location": {
+      "lat": 22.6284328,
+      "lng": 120.2843255
+    },
+    "suggestedPeople": "5~8",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FPzYaK5iEq9uz5XrhTYm4?alt=media&token=588687f3-26ff-421d-9300-e184139ecd91",
+    "isSpicy": false,
+    "type": "甲魚，雞仔豬肚鱉",
+    "address": "803高雄市鹽埕區瀨南街231號",
+    "priceRange": "$$$",
+    "tags": [
+      "復古",
+      "台式",
+      "動感十足",
+      "瘋狂",
+      "舊",
+      "鄉村",
+      "熱",
+      "特別",
+      "熱湯",
+      "暖和",
+      "熱食",
+      "獨特",
+      "熱鬧",
+      "開放",
+      "聚會",
+      "特色",
+      "創新",
+      "老店",
+      "飽足"
+    ],
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "rating": 4.4
+  },
+  {
+    "id": "Q18U4XxvEXOPXx64OAsf",
+    "suggestedPeople": "1~4",
+    "type": "甜點",
+    "updatedAt": {
+      "seconds": 1747106359,
+      "nanoseconds": 38000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FQ18U4XxvEXOPXx64OAsf?alt=media&token=90d147df-3d6d-4ef9-9c7c-ed1c7525f4e5",
+    "location": {
+      "lat": 22.6253316,
+      "lng": 120.2823585
+    },
+    "tags": [
+      "現代",
+      "簡約",
+      "明亮活潑",
+      "優雅",
+      "精緻餐飲",
+      "平價",
+      "貓",
+      "甜食",
+      "吃一點"
+    ],
+    "name": "聊聊甜室",
+    "priceRange": "$",
+    "rating": 4.9,
+    "createdAt": {
+      "seconds": 1746861890,
+      "nanoseconds": 644000000
+    },
+    "address": "803高雄市鹽埕區新樂街213之29號",
+    "isSpicy": false
+  },
+  {
+    "id": "QAfDnQe2mggJjXI7qfAZ",
+    "type": "蓮藕茶",
+    "address": "803高雄市鹽埕區新興街280號",
+    "priceRange": "$",
+    "location": {
+      "lat": 22.6315261,
+      "lng": 120.2844388
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FQAfDnQe2mggJjXI7qfAZ?alt=media&token=3b19a42d-ea87-4c90-9126-6a29417395a6",
+    "rating": 4.5,
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "name": "老牌蓮藕茶 (新興店)",
+    "tags": [
+      "鄉村",
+      "復古",
+      "熱情",
+      "台式",
+      "喝",
+      "冷"
+    ]
+  },
+  {
+    "id": "RaBsZ2oBZhQduAj4Q5Uq",
+    "type": "鹽酥雞，豆乳雞",
+    "tags": [
+      "現代",
+      "台式",
+      "平價",
+      "吃一點",
+      "熱情",
+      "狗",
+      "熱",
+      "戶外",
+      "活力",
+      "拼盤",
+      "熱食",
+      "小份",
+      "重口味"
+    ],
+    "name": "寶仔豆乳雞",
+    "priceRange": "$",
+    "address": "80347高雄市鹽埕區大公路32號",
+    "location": {
+      "lat": 22.6269345,
+      "lng": 120.2844652
+    },
+    "updatedAt": {
+      "seconds": 1746598131,
+      "nanoseconds": 328000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FRaBsZ2oBZhQduAj4Q5Uq?alt=media&token=9ec47626-1991-4af1-863a-430b23fd48aa",
+    "rating": 4.2,
+    "isSpicy": false,
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "S9nF3vSwSOookMrX7wxO",
+    "rating": 4.9,
+    "type": "酒精，飲料，炸物，燒烤",
+    "tags": [
+      "現代",
+      "熱情",
+      "西方風味",
+      "日式",
+      "色彩繽紛",
+      "動感十足",
+      "休閒",
+      "喜氣",
+      "舒適",
+      "友善",
+      "高級",
+      "瘋狂",
+      "吃一點",
+      "喝",
+      "亞洲",
+      "濃郁",
+      "深度",
+      "烤肉",
+      "多樣",
+      "拼盤",
+      "重口味",
+      "飽足"
+    ],
+    "priceRange": "$$$",
+    "isSpicy": false,
+    "address": "80344高雄市鹽埕區安石街8號",
+    "location": {
+      "lat": 22.6262561,
+      "lng": 120.279324
+    },
+    "name": "Look.瞧-炭烤料理酒吧",
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1746863941,
+      "nanoseconds": 678000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FS9nF3vSwSOookMrX7wxO?alt=media&token=ac27dd40-16c2-4b17-b737-77854a327826"
+  },
+  {
+    "id": "SNWDBmXe3aIzuSt6CIm2",
+    "name": "叻沙郎",
+    "address": "803高雄市鹽埕區七賢三路143-1號",
+    "isSpicy": true,
+    "priceRange": "$",
+    "tags": [
+      "現代",
+      "簡約",
+      "辣",
+      "瘋狂",
+      "明亮活潑",
+      "舒適",
+      "友善",
+      "平價",
+      "亞洲",
+      "深度",
+      "異國",
+      "獨特",
+      "特色",
+      "重口味",
+      "麵食",
+      "米食",
+      "飽足"
+    ],
+    "type": "南洋風味料理",
+    "location": {
+      "lat": 22.6269056,
+      "lng": 120.2823122
+    },
+    "updatedAt": {
+      "seconds": 1746863953,
+      "nanoseconds": 529000000
+    },
+    "rating": 4.8,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FSNWDBmXe3aIzuSt6CIm2?alt=media&token=4882c770-a146-4b83-bd9b-5c8bb8d59649",
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "TCgj2xFeAf7juoDuc8fI",
+    "tags": [
+      "熱情",
+      "復古",
+      "台式",
+      "喜氣",
+      "友善",
+      "平價",
+      "狗",
+      "舊",
+      "麵食",
+      "老店",
+      "傳統",
+      "親民",
+      "家常",
+      "小店",
+      "飽足"
+    ],
+    "priceRange": "$",
+    "rating": 4.4,
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1746863968,
+      "nanoseconds": 266000000
+    },
+    "isSpicy": false,
+    "address": " 803高雄市鹽埕區大義街64號",
+    "location": {
+      "lat": 22.6211716,
+      "lng": 120.2862576
+    },
+    "name": "大義街無名麵店",
+    "type": "麵食與湯品",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FTCgj2xFeAf7juoDuc8fI?alt=media&token=48ac1c45-0aa6-4c9c-bc3a-7d6fca9becb7"
+  },
+  {
+    "id": "U8QdNv4qPLWewUiv1SGH",
+    "isSpicy": false,
+    "tags": [
+      "現代",
+      "美式",
+      "西方風味",
+      "色彩繽紛",
+      "簡約",
+      "喜氣",
+      "高級",
+      "瘋狂",
+      "喝",
+      "義式",
+      "室內",
+      "簡餐",
+      "拼盤",
+      "歐式",
+      "吃一點",
+      "飽足"
+    ],
+    "updatedAt": {
+      "seconds": 1746863987,
+      "nanoseconds": 259000000
+    },
+    "suggestedPeople": "1~4",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FU8QdNv4qPLWewUiv1SGH?alt=media&token=cc336bf9-e71f-43e4-9be4-5dca47a42c90",
+    "type": "飲料，酒，美式簡餐，炸物",
+    "address": " 803高雄市鹽埕區七賢三路55號",
+    "location": {
+      "lat": 22.6239079,
+      "lng": 120.280634
+    },
+    "name": "黑狗酒吧",
+    "priceRange": "$$$",
+    "rating": 4.5
+  },
+  {
+    "id": "VT5QrPTwCLNcp0BBw2Dy",
+    "name": "開壺咖啡",
+    "rating": 4,
+    "isSpicy": false,
+    "type": "飲料，甜點，咖啡",
+    "location": {
+      "lng": 120.2822006,
+      "lat": 22.6252772
+    },
+    "updatedAt": {
+      "seconds": 1746861661,
+      "nanoseconds": 690000000
+    },
+    "createdAt": {
+      "seconds": 1746861637,
+      "nanoseconds": 58000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FVT5QrPTwCLNcp0BBw2Dy?alt=media&token=e7014a3c-0f1c-479b-a485-2f531485b3e6",
+    "tags": [
+      "現代",
+      "簡約",
+      "復古",
+      "日式",
+      "昏暗浪漫",
+      "優雅",
+      "寧靜",
+      "精緻餐飲",
+      "友善",
+      "平價",
+      "貓",
+      "吃一點",
+      "喝",
+      "甜食",
+      "輕鬆",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "小份",
+      "安靜",
+      "冰飲"
+    ],
+    "address": "803007高雄市鹽埕區新樂街213-19號",
+    "suggestedPeople": "1~4",
+    "priceRange": "$"
+  },
+  {
+    "id": "VTPFJXmHarcM52XIgP9v",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FVTPFJXmHarcM52XIgP9v?alt=media&token=b72308f1-77d0-4c1f-b6b5-ea83d9ae40d4",
+    "type": "咖啡，飲料，甜點，早午餐",
+    "isSpicy": false,
+    "tags": [
+      "現代",
+      "簡約",
+      "美式",
+      "工業",
+      "復古",
+      "明亮活潑",
+      "休閒",
+      "優雅",
+      "舒適",
+      "友善",
+      "高級",
+      "貓",
+      "狗",
+      "甜食",
+      "喝",
+      "精緻餐飲",
+      "平價",
+      "簡餐",
+      "明亮",
+      "多樣",
+      "特色",
+      "歐式",
+      "聚會",
+      "消暑",
+      "空調",
+      "精緻",
+      "咖啡廳",
+      "文青",
+      "冰飲",
+      "苦甜",
+      "室內",
+      "吃一點",
+      "飽足"
+    ],
+    "rating": 4.5,
+    "address": "803高雄市鹽埕區大勇路157號",
+    "name": "左咖啡",
+    "priceRange": "$$",
+    "suggestedPeople": "1~4",
+    "location": {
+      "lat": 22.6271091,
+      "lng": 120.2855539
+    },
+    "updatedAt": {
+      "seconds": 1746864004,
+      "nanoseconds": 358000000
+    }
+  },
+  {
+    "id": "W2JJcuNhT75r0WtF0nf8",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FW2JJcuNhT75r0WtF0nf8?alt=media&token=66bbaced-bc90-40cd-9ea3-cc032bfc7cdb",
+    "priceRange": "$",
+    "rating": 4.2,
+    "isSpicy": false,
+    "location": {
+      "lng": 120.2842304,
+      "lat": 22.6316653
+    },
+    "type": "肉粽、碗粿，湯",
+    "suggestedPeople": "1~8",
+    "address": "803高雄市鹽埕區新興街289號",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "name": "肉粽泰Tai",
+    "tags": [
+      "熱情",
+      "鄉村",
+      "復古",
+      "台式",
+      "休閒",
+      "特別",
+      "吃一點",
+      "平價",
+      "舊",
+      "米食",
+      "熱鬧",
+      "開放",
+      "聚會",
+      "小份",
+      "特色",
+      "家常",
+      "傳統",
+      "親民",
+      "老店",
+      "亞洲",
+      "飽足"
+    ]
+  },
+  {
+    "id": "Wrcu0Eblr04qOgppMwct",
+    "priceRange": "$",
+    "isSpicy": false,
+    "location": {
+      "lng": 120.283854,
+      "lat": 22.628091
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FWrcu0Eblr04qOgppMwct?alt=media&token=a225b8f6-d63e-4608-a59e-6339dc126c69",
+    "updatedAt": {
+      "seconds": 1746859715,
+      "nanoseconds": 794000000
+    },
+    "name": "富野冷熱飲",
+    "suggestedPeople": "1~4",
+    "address": " 803高雄市鹽埕區富野路79號",
+    "type": "冷熱飲",
+    "rating": 4,
+    "tags": [
+      "舊",
+      "喝",
+      "台式",
+      "冰飲",
+      "戶外",
+      "熱飲",
+      "茶館",
+      "親民"
+    ]
+  },
+  {
+    "id": "WuQzWUsqGgWZEvCXM19F",
+    "updatedAt": {
+      "seconds": 1747202834,
+      "nanoseconds": 423000000
+    },
+    "type": "簡單麵飯，甜點，飲料",
+    "priceRange": "$$",
+    "isSpicy": false,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FWuQzWUsqGgWZEvCXM19F?alt=media&token=433c0bbf-8acd-48ce-b25f-de5613b9daf5",
+    "address": "803高雄市鹽埕區瀨南街177號",
+    "name": "Booking",
+    "rating": 4.5,
+    "location": {
+      "lng": 120.2832823,
+      "lat": 22.6265658
+    },
+    "tags": [
+      "美式",
+      "工業",
+      "台式",
+      "義式",
+      "明亮活潑",
+      "高級",
+      "簡約",
+      "貓",
+      "冷",
+      "特別",
+      "甜食",
+      "咖啡廳",
+      "文青",
+      "安靜",
+      "頂樓",
+      "室內",
+      "空調",
+      "簡餐",
+      "明亮",
+      "吃一點",
+      "飽足"
+    ],
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "XC58dWDYtM5HvkTJ16xH",
+    "type": "碳烤三明治",
+    "isSpicy": false,
+    "updatedAt": {
+      "seconds": 1746596636,
+      "nanoseconds": 365000000
+    },
+    "address": "803高雄市鹽埕區大公路78號",
+    "rating": 4.1,
+    "suggestedPeople": "1~4",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "美式",
+      "明亮活潑",
+      "休閒快餐",
+      "平價",
+      "吃一點",
+      "簡餐",
+      "輕鬆",
+      "溫馨",
+      "西式",
+      "歐式",
+      "義式",
+      "法式",
+      "明亮",
+      "小店"
+    ],
+    "priceRange": "$",
+    "name": "大ㄎㄡ胖碳烤三明治",
+    "location": {
+      "lat": 22.6275194,
+      "lng": 120.283225
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FXC58dWDYtM5HvkTJ16xH?alt=media&token=e7606847-f917-4cd9-9230-47e1b64aca07"
+  },
+  {
+    "id": "YGq7A6fgD9ghJivxqFmj",
+    "address": "803高雄市鹽埕區大公路56-1號",
+    "isSpicy": false,
+    "type": "飲料",
+    "name": "蔗甘心甘蔗冰茶",
+    "location": {
+      "lat": 22.6273021,
+      "lng": 120.2839406
+    },
+    "suggestedPeople": "1~4",
+    "priceRange": "$",
+    "rating": 4.6,
+    "updatedAt": {
+      "seconds": 1746687450,
+      "nanoseconds": 624000000
+    },
+    "tags": [
+      "現代",
+      "簡約",
+      "喝",
+      "冷",
+      "明亮活潑",
+      "活力",
+      "消暑",
+      "清爽",
+      "茶館",
+      "冰飲",
+      "連鎖"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FYGq7A6fgD9ghJivxqFmj?alt=media&token=62fc1412-7403-486e-a0af-a57020af3074"
+  },
+  {
+    "id": "YZ8DX0BYEu8e9axC6FdP",
+    "type": "拉麵",
+    "priceRange": "$",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FYZ8DX0BYEu8e9axC6FdP?alt=media&token=2c3baa93-1b8a-429d-9ed5-2f8670393bf0",
+    "isSpicy": false,
+    "name": "獺鯌拉麵",
+    "address": "803高雄市鹽埕區大仁路164號",
+    "updatedAt": {
+      "seconds": 1746864063,
+      "nanoseconds": 856000000
+    },
+    "tags": [
+      "現代",
+      "簡約",
+      "日式",
+      "舒適",
+      "平價",
+      "熱",
+      "快餐",
+      "拉麵",
+      "麵食",
+      "濃郁",
+      "明亮",
+      "大份量",
+      "重口味",
+      "飽足",
+      "室內",
+      "空調",
+      "乾淨",
+      "飽足"
+    ],
+    "rating": 4.4,
+    "suggestedPeople": "1~4",
+    "location": {
+      "lng": 120.2824325,
+      "lat": 22.6265878
+    }
+  },
+  {
+    "id": "aJcAWBfq4JgE48rAFy8h",
+    "address": " 803高雄市鹽埕區大仁路136號",
+    "tags": [
+      "現代",
+      "簡約",
+      "台式",
+      "日式",
+      "色彩繽紛",
+      "舒適",
+      "特別",
+      "高級",
+      "平價",
+      "印度風味",
+      "辣",
+      "多樣",
+      "快餐",
+      "麵食",
+      "米食",
+      "家常",
+      "大份量",
+      "飽足",
+      "室內",
+      "空調"
+    ],
+    "suggestedPeople": "1~4",
+    "name": "品果品果蔬食早午晚餐",
+    "rating": 4.2,
+    "type": "素食麵飯食",
+    "isSpicy": true,
+    "location": {
+      "lat": 22.6261883,
+      "lng": 120.2834552
+    },
+    "updatedAt": {
+      "seconds": 1746699529,
+      "nanoseconds": 90000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FaJcAWBfq4JgE48rAFy8h?alt=media&token=111e9053-f981-4935-b740-d8753cdf6057",
+    "priceRange": "$$"
+  },
+  {
+    "id": "aVYgUxd0UhXjxEWLhvqE",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "priceRange": "$",
+    "location": {
+      "lat": 22.6319333,
+      "lng": 120.285051
+    },
+    "tags": [
+      "現代",
+      "熱情",
+      "鄉村",
+      "台式",
+      "明亮活潑",
+      "休閒快餐",
+      "友善",
+      "狗",
+      "平價",
+      "特別",
+      "吃一點",
+      "米食",
+      "暖和",
+      "熱鬧",
+      "開放",
+      "溫和",
+      "家常",
+      "傳統",
+      "親民",
+      "老店",
+      "經典",
+      "飽足"
+    ],
+    "address": "803高雄市鹽埕區河西路167號",
+    "type": "筒仔米糕，湯",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FaVYgUxd0UhXjxEWLhvqE?alt=media&token=4fdc1a81-3a80-4ec2-b8fe-c47b3ad0988a",
+    "suggestedPeople": "1~4",
+    "rating": 4.4,
+    "name": "北港蔡三代筒仔米糕",
+    "isSpicy": false
+  },
+  {
+    "id": "baf5qoSbDFZj7BliYcBi",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fbaf5qoSbDFZj7BliYcBi?alt=media&token=d369088b-22cb-40cc-acbb-42539e42845e",
+    "priceRange": "$",
+    "updatedAt": {
+      "seconds": 1747202905,
+      "nanoseconds": 708000000
+    },
+    "address": " 803高雄市鹽埕區富野路70號",
+    "name": "鹽埕吳家金桔豆花",
+    "tags": [
+      "簡約",
+      "復古",
+      "台式",
+      "日式",
+      "明亮活潑",
+      "甜食",
+      "冰品",
+      "冰飲",
+      "小店",
+      "中式",
+      "老店",
+      "消暑",
+      "經典",
+      "平價",
+      "休閒",
+      "平價",
+      "友善",
+      "冷",
+      "甜食",
+      "吃一點"
+    ],
+    "type": "金桔豆花，甜品",
+    "isSpicy": false,
+    "rating": 4.4,
+    "suggestedPeople": "1~4",
+    "location": {
+      "lng": 120.2843793,
+      "lat": 22.6281853
+    }
+  },
+  {
+    "id": "c6wuUsL1r1kXRQnxNj11",
+    "rating": 4.5,
+    "location": {
+      "lng": 120.284649,
+      "lat": 22.631437
+    },
+    "address": "803高雄市鹽埕區北斗街7號",
+    "priceRange": "$",
+    "name": "金枝黑輪店",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fc6wuUsL1r1kXRQnxNj11?alt=media&token=acb903b3-1266-4fc9-9762-71bd71b8df06",
+    "tags": [
+      "熱情",
+      "鄉村",
+      "台式",
+      "喜氣",
+      "動感十足",
+      "友善",
+      "開放式廚房",
+      "平價",
+      "吃一點",
+      "狗",
+      "熱",
+      "溫暖",
+      "小店",
+      "暖和",
+      "特別",
+      "多樣",
+      "小份",
+      "老店",
+      "經典"
+    ],
+    "isSpicy": false,
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "suggestedPeople": "1~4",
+    "type": "關東煮，黑輪"
+  },
+  {
+    "id": "cNQPptrqrGPUIS769g6J",
+    "updatedAt": {
+      "seconds": 1746792881,
+      "nanoseconds": 945000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FcNQPptrqrGPUIS769g6J?alt=media&token=f0422059-d25c-465b-90bd-46e6697763e4",
+    "type": "咖啡，飲料，甜點",
+    "priceRange": "$",
+    "rating": 4.8,
+    "isSpicy": false,
+    "address": " 803高雄市鹽埕區河西路147號",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "西方風味",
+      "明亮活潑",
+      "舒適",
+      "吃一點",
+      "平價",
+      "狗",
+      "友善",
+      "甜食",
+      "喝",
+      "輕鬆",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "小份",
+      "安靜",
+      "冰飲",
+      "頂樓",
+      "景觀",
+      "室內",
+      "空調"
+    ],
+    "name": "穀雨珈琲",
+    "location": {
+      "lat": 22.6296639,
+      "lng": 120.2862139
+    },
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "duGo3y2J1ORRp6UWXinw",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FduGo3y2J1ORRp6UWXinw?alt=media&token=ae66d94f-a114-4136-ab2c-f46dc7cad9f1",
+    "name": "福林咖哩飯",
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "type": "咖哩飯，排骨飯",
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區大公路16號",
+    "rating": 4.5,
+    "priceRange": "$",
+    "location": {
+      "lng": 120.2849615,
+      "lat": 22.6267852
+    },
+    "tags": [
+      "舊",
+      "鄉村",
+      "台式",
+      "印度風味",
+      "辣",
+      "快餐",
+      "家常",
+      "親民",
+      "飽足",
+      "中式",
+      "亞洲",
+      "米食"
+    ]
+  },
+  {
+    "id": "eCUb5YRUY2qWfv1vC0P0",
+    "suggestedPeople": "1~4",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "辣",
+      "明亮活潑",
+      "喜氣",
+      "休閒快餐",
+      "平價",
+      "高級",
+      "狗",
+      "友善",
+      "活力",
+      "異國",
+      "特色",
+      "獨特",
+      "輕鬆",
+      "飽足"
+    ],
+    "name": "PayaThai帕雅泰",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FeCUb5YRUY2qWfv1vC0P0?alt=media&token=ba49006d-2dc8-4f76-8974-283e9e7a0e6d",
+    "type": "泰式料理",
+    "isSpicy": false,
+    "priceRange": "$$",
+    "updatedAt": {
+      "seconds": 1746864108,
+      "nanoseconds": 319000000
+    },
+    "location": {
+      "lat": 22.6219519,
+      "lng": 120.2855129
+    },
+    "rating": 4.7,
+    "address": "803高雄市鹽埕區大智路89號"
+  },
+  {
+    "id": "eyqehXAtRlZL0ad65gDH",
+    "tags": [
+      "現代",
+      "熱情",
+      "鄉村",
+      "台式",
+      "動感十足",
+      "喜氣",
+      "友善",
+      "平價",
+      "熱",
+      "狗",
+      "飽足"
+    ],
+    "name": "廟口小吃熱炒(阿成師)",
+    "address": " 803高雄市鹽埕區興華街5號",
+    "type": "麵食，炒飯，熱炒",
+    "rating": 4.5,
+    "suggestedPeople": "1~8",
+    "isSpicy": false,
+    "location": {
+      "lat": 22.6298804,
+      "lng": 120.2853098
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FeyqehXAtRlZL0ad65gDH?alt=media&token=3d39508b-b4e9-49db-8144-f93ed7a57eaf",
+    "priceRange": "$",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    }
+  },
+  {
+    "id": "ffRZ55vx2vKZa37NdMGo",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FffRZ55vx2vKZa37NdMGo?alt=media&token=b84fb9c2-2a78-4c0c-8a4e-7550e899e5c8",
+    "rating": 4.8,
+    "tags": [
+      "現代",
+      "熱情",
+      "美式",
+      "復古",
+      "明亮活潑",
+      "休閒",
+      "友善",
+      "喝",
+      "吃一點",
+      "動感十足",
+      "喜氣",
+      "開放式廚房",
+      "高級",
+      "酒吧",
+      "活力",
+      "拼盤",
+      "簡餐",
+      "輕鬆",
+      "溫和",
+      "溫馨",
+      "飽足"
+    ],
+    "name": "鹽埕區貓頭鷹酒館 Night Owl Pub",
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1746864133,
+      "nanoseconds": 938000000
+    },
+    "priceRange": "$$$",
+    "isSpicy": false,
+    "address": "80344高雄市鹽埕區五福四路88號之一",
+    "location": {
+      "lng": 120.2868638,
+      "lat": 22.6221346
+    },
+    "type": "飲料，酒，台式下酒菜"
+  },
+  {
+    "id": "fkNgiJqYgHNTLNh0fPv6",
+    "name": "寒吉文甘梅薯條",
+    "location": {
+      "lat": 22.6278641,
+      "lng": 120.2844199
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FfkNgiJqYgHNTLNh0fPv6?alt=media&token=9fd9260c-bf35-46ea-b707-3f1f175e817e",
+    "suggestedPeople": "1~4",
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區富野路59-1號",
+    "type": "甘梅薯條，豆乳雞",
+    "priceRange": "$",
+    "tags": [
+      "鄉村",
+      "台式",
+      "平價",
+      "狗",
+      "休閒快餐",
+      "吃一點",
+      "熱",
+      "小份",
+      "親民",
+      "戶外"
+    ],
+    "rating": 4.7,
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    }
+  },
+  {
+    "id": "fpgOa4qKVhx1HpzIq2Q8",
+    "name": "柒壹食堂",
+    "isSpicy": false,
+    "location": {
+      "lng": 120.2713265,
+      "lat": 22.622136
+    },
+    "rating": 4.5,
+    "address": "804高雄市鼓山區鼓波街25號",
+    "priceRange": "$",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FfpgOa4qKVhx1HpzIq2Q8?alt=media&token=3da40715-20cf-4438-8507-a9dc944f7971",
+    "tags": [
+      "熱情",
+      "台式",
+      "鄉村",
+      "快餐",
+      "簡餐",
+      "米食",
+      "溫馨",
+      "亞洲",
+      "傳統",
+      "家常",
+      "親民",
+      "溫和",
+      "飽足"
+    ],
+    "type": "便當，家庭料理",
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    }
+  },
+  {
+    "id": "fyK7EPLb6cIHnlsKWF7u",
+    "rating": 4.8,
+    "tags": [
+      "現代",
+      "簡約",
+      "西方風味",
+      "舒適",
+      "高級",
+      "米食",
+      "麵食",
+      "輕盈",
+      "活力",
+      "熱食",
+      "特色",
+      "獨特",
+      "異國",
+      "室內",
+      "歐式",
+      "特別",
+      "色彩繽紛",
+      "飽足"
+    ],
+    "suggestedPeople": "1~4",
+    "priceRange": "$$",
+    "name": "HATA 烏克蘭廚房",
+    "updatedAt": {
+      "seconds": 1746864174,
+      "nanoseconds": 362000000
+    },
+    "location": {
+      "lat": 22.6232888,
+      "lng": 120.2844779
+    },
+    "type": "烏克蘭料理",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FfyK7EPLb6cIHnlsKWF7u?alt=media&token=a5b4bd23-47a4-4dcd-8948-af2ee9b7bbcc",
+    "address": "803高雄市鹽埕區五福四路150號",
+    "isSpicy": false
+  },
+  {
+    "id": "g8mTcFRrxwweRvSYYup2",
+    "priceRange": "$$$",
+    "type": "酒",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fg8mTcFRrxwweRvSYYup2?alt=media&token=d5fbef95-5c2c-4122-aec4-29098df083d9",
+    "rating": 4.9,
+    "tags": [
+      "現代",
+      "簡約",
+      "喝",
+      "優雅",
+      "休閒",
+      "高級",
+      "精緻餐飲",
+      "歐式"
+    ],
+    "updatedAt": {
+      "seconds": 1746796615,
+      "nanoseconds": 671000000
+    },
+    "isSpicy": false,
+    "name": "酤獨葡萄酒 GUDU Natural Wine Bar",
+    "location": {
+      "lng": 120.285167,
+      "lat": 22.623072
+    },
+    "address": " 803高雄市鹽埕區五福四路136號",
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "hI90ecGuTGFiIW44ZYVY",
+    "rating": 5,
+    "priceRange": "$",
+    "address": "803高雄市鹽埕區新樂街213-5號",
+    "updatedAt": {
+      "seconds": 1746861428,
+      "nanoseconds": 405000000
+    },
+    "tags": [
+      "現代",
+      "簡約",
+      "復古",
+      "日式",
+      "昏暗浪漫",
+      "優雅",
+      "寧靜",
+      "精緻餐飲",
+      "友善",
+      "平價",
+      "貓",
+      "吃一點",
+      "喝",
+      "甜食",
+      "輕鬆",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "小份",
+      "安靜",
+      "冰飲",
+      "室內",
+      "空調"
+    ],
+    "isSpicy": false,
+    "name": "如河",
+    "location": {
+      "lat": 22.6253722,
+      "lng": 120.2822146
+    },
+    "suggestedPeople": "1~4",
+    "type": "飲料，甜點，咖啡",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FhI90ecGuTGFiIW44ZYVY?alt=media&token=86a301e3-a013-4371-a92f-64a78ae450d2"
+  },
+  {
+    "id": "jV42bnK5jMaKqPxgrhEa",
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "tags": [
+      "復古",
+      "日式",
+      "舒適",
+      "寧靜",
+      "精緻餐飲",
+      "高級",
+      "貓",
+      "友善",
+      "溫暖",
+      "甜食",
+      "冷",
+      "文青",
+      "小店",
+      "冰品",
+      "消暑",
+      "清爽",
+      "冰飲",
+      "安靜",
+      "室內",
+      "老店",
+      "濃郁",
+      "衛生",
+      "乾淨",
+      "獨特",
+      "吃一點"
+    ],
+    "rating": 4.8,
+    "location": {
+      "lng": 120.284848,
+      "lat": 22.6281401
+    },
+    "type": "日式刨冰冰淇淋",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FjV42bnK5jMaKqPxgrhEa?alt=media&token=6db0e179-ccec-4c52-93f7-a08b10685a32",
+    "priceRange": "$$",
+    "address": "803高雄市鹽埕區富野路56巷10號",
+    "updatedAt": {
+      "seconds": 1746864199,
+      "nanoseconds": 533000000
+    },
+    "name": "鹽埕町冰果室"
+  },
+  {
+    "id": "jfa1zkWsRsaCMLucsytC",
+    "tags": [
+      "復古",
+      "簡約",
+      "鄉村",
+      "台式",
+      "友善",
+      "平價",
+      "狗",
+      "喜氣",
+      "熱情",
+      "小店",
+      "戶外",
+      "活力",
+      "熱食",
+      "多樣",
+      "熱鬧",
+      "開放",
+      "亞洲",
+      "傳統",
+      "家常",
+      "親民",
+      "簡約",
+      "飽足"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fjfa1zkWsRsaCMLucsytC?alt=media&token=e5b7c0fc-edf9-4adf-850a-8e1dc83e8598",
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "location": {
+      "lng": 120.2841441,
+      "lat": 22.6319798
+    },
+    "priceRange": "$",
+    "rating": 4.4,
+    "isSpicy": false,
+    "name": "無名陽春麵",
+    "address": "803高雄市鹽埕區北斗街34號",
+    "type": "麵食與湯品"
+  },
+  {
+    "id": "ke0cD0ggSBmudpG616Ee",
+    "location": {
+      "lng": 120.284614,
+      "lat": 22.627655
+    },
+    "updatedAt": {
+      "seconds": 1746688983,
+      "nanoseconds": 220000000
+    },
+    "priceRange": "$$",
+    "suggestedPeople": "1~4",
+    "address": "803高雄市鹽埕區大公路50巷30弄2號",
+    "type": "咖啡，飲料，甜點",
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "昏暗浪漫",
+      "吃一點",
+      "喝",
+      "熱",
+      "冷",
+      "西方風味",
+      "貓",
+      "精緻",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "小份",
+      "冰飲",
+      "安靜",
+      "苦甜",
+      "濃郁"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fke0cD0ggSBmudpG616Ee?alt=media&token=65dcd088-6bc7-478a-8a13-ed0ca440cec8",
+    "rating": 4.9,
+    "name": "咖啡打擾了茶",
+    "isSpicy": false
+  },
+  {
+    "id": "l29aBMxleUAzKVRnmfCL",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "suggestedPeople": "1~4",
+    "location": {
+      "lat": 22.6234317,
+      "lng": 120.2809053
+    },
+    "tags": [
+      "現代",
+      "熱情",
+      "印度風味",
+      "友善",
+      "明亮活潑",
+      "辣",
+      "色彩繽紛",
+      "動感十足",
+      "瘋狂",
+      "鄉村",
+      "特別",
+      "高級",
+      "平價",
+      "濃郁",
+      "米食",
+      "獨特",
+      "特色",
+      "異國",
+      "重口味",
+      "亞洲",
+      "飽足"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fl29aBMxleUAzKVRnmfCL?alt=media&token=566e5c73-fe34-446a-a473-c6b08b44a93b",
+    "name": "普佳印度餐廳",
+    "address": "803高雄市鹽埕區七賢三路72號",
+    "isSpicy": true,
+    "rating": 4.6,
+    "type": "印度菜",
+    "priceRange": "$$"
+  },
+  {
+    "id": "mKlhkVuS7Y75lTTYAoRd",
+    "type": "義大利麵焗烤，小炸物，pizza",
+    "rating": 4.1,
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "address": "803高雄市鹽埕區大勇路181號",
+    "tags": [
+      "現代",
+      "簡約",
+      "美式",
+      "西方風味",
+      "明亮活潑",
+      "優雅",
+      "舒適",
+      "寧靜",
+      "精緻餐飲",
+      "高級",
+      "貓",
+      "平價",
+      "麵食",
+      "飽足",
+      "文青",
+      "輕盈",
+      "義式",
+      "經典",
+      "飽足"
+    ],
+    "priceRange": "$$",
+    "name": "Dor留",
+    "updatedAt": {
+      "seconds": 1746864236,
+      "nanoseconds": 649000000
+    },
+    "location": {
+      "lat": 22.6280179,
+      "lng": 120.2863353
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FmKlhkVuS7Y75lTTYAoRd?alt=media&token=1c17432c-5661-4bb4-94c0-71c8154ad8a4"
+  },
+  {
+    "id": "mO5JgrRiPsV81gFJOSDT",
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "isSpicy": false,
+    "type": "米糕，湯",
+    "address": "803高雄市鹽埕區大仁路107號",
+    "location": {
+      "lat": 22.6255077,
+      "lng": 120.2841385
+    },
+    "name": "米糕城",
+    "priceRange": "$",
+    "tags": [
+      "鄉村",
+      "台式",
+      "平價",
+      "吃一點",
+      "復古",
+      "小份",
+      "小店",
+      "老店",
+      "經典",
+      "傳統",
+      "親民",
+      "飽足"
+    ],
+    "rating": 3.7,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FmO5JgrRiPsV81gFJOSDT?alt=media&token=f00921a4-c9cc-440b-91c9-387e60e98f86"
+  },
+  {
+    "id": "ms6kwFapq1Ojhjvl9HyD",
+    "suggestedPeople": "1~4",
+    "name": "高雄溫室酒吧",
+    "tags": [
+      "現代",
+      "美式",
+      "昏暗浪漫",
+      "工業",
+      "色彩繽紛",
+      "休閒",
+      "高級",
+      "喝",
+      "瘋狂",
+      "平價",
+      "簡餐",
+      "活力",
+      "酒吧",
+      "拼盤",
+      "聚會",
+      "獨特",
+      "特色",
+      "科技",
+      "飽足"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fms6kwFapq1Ojhjvl9HyD?alt=media&token=b9561803-0143-49f1-9352-b2f3afbed1e3",
+    "type": "酒精，下酒菜，特色料理",
+    "isSpicy": false,
+    "priceRange": "$$",
+    "updatedAt": {
+      "seconds": 1746864260,
+      "nanoseconds": 843000000
+    },
+    "location": {
+      "lng": 120.2853963,
+      "lat": 22.6250129
+    },
+    "rating": 4.8,
+    "address": " 803高雄市鹽埕區大仁路55號2樓"
+  },
+  {
+    "id": "nh3iX6s7qEUbbib9vIC3",
+    "rating": 4.7,
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "type": "便當，家庭料理",
+    "suggestedPeople": "1~4",
+    "location": {
+      "lng": 120.285347,
+      "lat": 22.626834
+    },
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區大勇路145號",
+    "name": "得意廚房",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fnh3iX6s7qEUbbib9vIC3?alt=media&token=1596e1a1-12a4-49c5-8d77-ce6791bd3793",
+    "tags": [
+      "現代",
+      "簡約",
+      "平價",
+      "友善",
+      "自助餐",
+      "精緻餐飲",
+      "台式",
+      "動感十足",
+      "舒適",
+      "狗",
+      "鄉村",
+      "多樣",
+      "開放",
+      "家常",
+      "親民",
+      "飽足",
+      "亞洲",
+      "米食",
+      "飽足"
+    ],
+    "priceRange": "$"
+  },
+  {
+    "id": "nzGxXwozmvnaUEQFWe1F",
+    "updatedAt": {
+      "seconds": 1746864279,
+      "nanoseconds": 616000000
+    },
+    "location": {
+      "lng": 120.2809242,
+      "lat": 22.6244337
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FnzGxXwozmvnaUEQFWe1F?alt=media&token=9aca4be2-b3ac-4deb-8fea-0cbb32feb41b",
+    "type": "雞湯，紹興麵，現炒青菜、菜脯蛋類小菜",
+    "name": "壹捌迷你土雞鍋",
+    "suggestedPeople": "1~4",
+    "tags": [
+      "現代",
+      "熱情",
+      "台式",
+      "明亮活潑",
+      "動感十足",
+      "喜氣",
+      "友善",
+      "高級",
+      "平價",
+      "狗",
+      "溫暖",
+      "熱",
+      "特別",
+      "辣",
+      "麵食",
+      "米食",
+      "熱湯",
+      "熱食",
+      "溫和",
+      "大份量",
+      "亞洲",
+      "中式",
+      "暖和",
+      "飽足"
+    ],
+    "rating": 4.5,
+    "priceRange": "$$",
+    "address": " 803高雄市鹽埕區七賢三路73號",
+    "isSpicy": true
+  },
+  {
+    "id": "sIuNegaZ2s2ZLEJ6xSkf",
+    "updatedAt": {
+      "seconds": 1746861162,
+      "nanoseconds": 99000000
+    },
+    "name": "囁囁喫茶部",
+    "suggestedPeople": "1~4",
+    "location": {
+      "lng": 120.283458,
+      "lat": 22.63028
+    },
+    "type": "飲料，甜點，咖啡",
+    "tags": [
+      "現代",
+      "簡約",
+      "美式",
+      "明亮活潑",
+      "喝",
+      "吃一點",
+      "甜食",
+      "熱",
+      "冷",
+      "貓",
+      "平價",
+      "優雅",
+      "休閒",
+      "輕鬆",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "小份",
+      "安靜",
+      "冰飲",
+      "頂樓",
+      "景觀",
+      "室內",
+      "空調"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FsIuNegaZ2s2ZLEJ6xSkf?alt=media&token=395eca10-2834-4e0f-9722-7dea551607f5",
+    "rating": 4.5,
+    "isSpicy": false,
+    "priceRange": "$",
+    "address": "高雄市鹽埕區新興街251巷1弄7號"
+  },
+  {
+    "id": "sig0sZv7BPMoyVku7fxo",
+    "location": {
+      "lng": 120.2810123,
+      "lat": 22.624864
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fsig0sZv7BPMoyVku7fxo?alt=media&token=d32a3785-42b8-4724-851d-1730db1e1f65",
+    "name": "銀座聚場",
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區五福四路260巷8號",
+    "rating": 4.7,
+    "updatedAt": {
+      "seconds": 1746798176,
+      "nanoseconds": 782000000
+    },
+    "tags": [
+      "熱情",
+      "簡約",
+      "工業",
+      "復古",
+      "明亮活潑",
+      "舒適",
+      "寧靜",
+      "精緻餐飲",
+      "平價",
+      "甜食",
+      "喝",
+      "吃一點",
+      "舊",
+      "優雅",
+      "咖啡廳",
+      "文青",
+      "小店",
+      "安靜",
+      "隱私",
+      "多樣",
+      "冰飲",
+      "苦甜",
+      "私密",
+      "獨特",
+      "溫和",
+      "室內",
+      "空調",
+      "乾淨"
+    ],
+    "priceRange": "$",
+    "type": "咖啡、甜點、鹹食",
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "sjwBDzxUo3kKfdFsRwmG",
+    "type": "串燒，日式酒",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FsjwBDzxUo3kKfdFsRwmG?alt=media&token=a8541a1b-175a-425a-b021-5a8643a0fe42",
+    "priceRange": "$$$",
+    "tags": [
+      "熱情",
+      "復古",
+      "日式",
+      "喜氣",
+      "動感十足",
+      "喝",
+      "吃一點",
+      "瘋狂",
+      "高級",
+      "友善",
+      "狗",
+      "居酒屋",
+      "溫馨",
+      "小店",
+      "活力",
+      "成熟",
+      "經典",
+      "亞洲",
+      "簡餐",
+      "飽足"
+    ],
+    "location": {
+      "lat": 22.6246003,
+      "lng": 120.2819562
+    },
+    "updatedAt": {
+      "seconds": 1746864294,
+      "nanoseconds": 795000000
+    },
+    "name": "築田日式居酒屋",
+    "suggestedPeople": "1~4",
+    "isSpicy": false,
+    "rating": 4.2,
+    "address": "803高雄市鹽埕區五福四路232號之6號"
+  },
+  {
+    "id": "tVu0T4817kvf6AGi0X3P",
+    "priceRange": "$",
+    "tags": [
+      "熱情",
+      "特別",
+      "台式",
+      "舊",
+      "喜氣",
+      "休閒快餐",
+      "狗",
+      "鄉村",
+      "麵食",
+      "快餐",
+      "家常",
+      "傳統",
+      "親民",
+      "飽足"
+    ],
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    },
+    "location": {
+      "lat": 22.6269245,
+      "lng": 120.2854337
+    },
+    "rating": 3.9,
+    "name": "阿珠切仔擔",
+    "isSpicy": false,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FtVu0T4817kvf6AGi0X3P?alt=media&token=80fe4af4-9951-4dc4-a685-447a2fa950a6",
+    "type": "台式麵飯，台式小吃",
+    "address": "803高雄市鹽埕區大勇路149號",
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "tbXMnAVY3IdHIppHxkGw",
+    "location": {
+      "lng": 120.2847197,
+      "lat": 22.6290754
+    },
+    "priceRange": "$",
+    "isSpicy": false,
+    "suggestedPeople": "1~4",
+    "rating": 4,
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FtbXMnAVY3IdHIppHxkGw?alt=media&token=982e7026-77c7-498d-915e-ca011200a423",
+    "name": "綠田50年青草茶",
+    "updatedAt": {
+      "seconds": 1746859606,
+      "nanoseconds": 530000000
+    },
+    "address": "803高雄市鹽埕區瀨南街259號",
+    "type": "青草茶，茶",
+    "tags": [
+      "簡約",
+      "台式",
+      "冷",
+      "喝",
+      "特色",
+      "連鎖",
+      "冰飲",
+      "熱飲"
+    ]
+  },
+  {
+    "id": "u2AZqGXbzmdXDCjXGkyv",
+    "suggestedPeople": "1~4",
+    "location": {
+      "lat": 22.623208,
+      "lng": 120.2848144
+    },
+    "tags": [
+      "現代",
+      "熱情",
+      "美式",
+      "明亮活潑",
+      "喜氣",
+      "休閒快餐",
+      "西方風味",
+      "平價",
+      "特別",
+      "友善",
+      "辣",
+      "米食",
+      "熱食",
+      "暖和",
+      "特色",
+      "重口味",
+      "飽足",
+      "異國",
+      "飽足"
+    ],
+    "name": "黛麗莎西班牙拉丁美洲餐廳",
+    "updatedAt": {
+      "seconds": 1746864314,
+      "nanoseconds": 611000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2Fu2AZqGXbzmdXDCjXGkyv?alt=media&token=c328df21-96cf-426f-833e-ba39b0f96c5e",
+    "isSpicy": true,
+    "address": " 803高雄市鹽埕區五福四路146-2號",
+    "priceRange": "$$",
+    "type": "拉丁風味美食",
+    "rating": 4.3
+  },
+  {
+    "id": "uqUXIgY8C1fWLwRS5eWY",
+    "rating": 3.6,
+    "address": " 803高雄市鹽埕區瀨南街223號",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FuqUXIgY8C1fWLwRS5eWY?alt=media&token=0bf29c5e-e723-4564-8fea-4d34665c7cd2",
+    "type": "杏仁茶，吐司類、漢堡類、蛋餅類、果醬吐司厚片、素食、餐包",
+    "name": "50年杏仁茶",
+    "isSpicy": false,
+    "tags": [
+      "熱情",
+      "鄉村",
+      "復古",
+      "日式",
+      "喜氣",
+      "平價",
+      "舊",
+      "小店",
+      "戶外",
+      "活力",
+      "多樣",
+      "拼盤",
+      "熱鬧",
+      "開放",
+      "聚會",
+      "重口味",
+      "簡餐",
+      "快餐",
+      "吃一點",
+      "飽足"
+    ],
+    "priceRange": "$",
+    "location": {
+      "lat": 22.6279249,
+      "lng": 120.2840213
+    },
+    "suggestedPeople": "1~4",
+    "updatedAt": {
+      "seconds": 1747104849,
+      "nanoseconds": 197000000
+    }
+  },
+  {
+    "id": "vX9WALSeHCOCZy11eXx7",
+    "tags": [
+      "現代",
+      "簡約",
+      "印度風味",
+      "明亮活潑",
+      "喜氣",
+      "動感十足",
+      "友善",
+      "高級",
+      "狗",
+      "特別",
+      "辣",
+      "米食",
+      "亞洲",
+      "異國",
+      "重口味",
+      "特色",
+      "飽足"
+    ],
+    "priceRange": "$$$",
+    "updatedAt": {
+      "seconds": 1746799266,
+      "nanoseconds": 607000000
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FvX9WALSeHCOCZy11eXx7?alt=media&token=0702c84b-2861-46bb-b7bb-2e2d25c3742c",
+    "location": {
+      "lat": 22.6252,
+      "lng": 120.2806319
+    },
+    "type": "北印度風味，. 咖哩、烤餅、烤肉",
+    "rating": 4.9,
+    "name": "薩加旺印度餐廳",
+    "address": "803高雄市鹽埕區五福四路276號",
+    "isSpicy": false,
+    "suggestedPeople": "1~4"
+  },
+  {
+    "id": "vXjt0hCf7k8L38OR02pz",
+    "location": {
+      "lat": 22.6249215,
+      "lng": 120.2823218
+    },
+    "suggestedPeople": "1~4",
+    "type": "酒精，飲料，下酒菜，特色料理，炒飯",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FvXjt0hCf7k8L38OR02pz?alt=media&token=b07ce1b7-f33f-43a2-82b2-6cc7a5ef02f3",
+    "updatedAt": {
+      "seconds": 1746864495,
+      "nanoseconds": 871000000
+    },
+    "name": "空腹虫大酒家",
+    "priceRange": "$$",
+    "rating": 4.6,
+    "address": "803高雄市鹽埕區瀨南街141之7號",
+    "tags": [
+      "熱情",
+      "復古",
+      "日式",
+      "昏暗浪漫",
+      "簡約",
+      "喜氣",
+      "友善",
+      "平價",
+      "狗",
+      "溫暖",
+      "瘋狂",
+      "特別",
+      "喝",
+      "小店",
+      "活力",
+      "多樣",
+      "居酒屋",
+      "熱鬧",
+      "開放",
+      "聚會",
+      "特色",
+      "創新",
+      "飽足"
+    ],
+    "isSpicy": false
+  },
+  {
+    "id": "wsaeB42qTd5YQbO9HWwm",
+    "type": "肉圓 燒賣 碗粿 餛飩湯",
+    "updatedAt": {
+      "seconds": 1746864480,
+      "nanoseconds": 621000000
+    },
+    "tags": [
+      "現代",
+      "台式",
+      "明亮活潑",
+      "舒適",
+      "友善",
+      "平價",
+      "狗",
+      "吃一點",
+      "喜氣",
+      "米食",
+      "亞洲",
+      "中式",
+      "重口味",
+      "傳統",
+      "親民",
+      "飽足"
+    ],
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FwsaeB42qTd5YQbO9HWwm?alt=media&token=e12d50e5-bbd8-40f0-853e-199f51831150",
+    "isSpicy": false,
+    "address": "803高雄市鹽埕區鹽埕街57號",
+    "suggestedPeople": "1~4",
+    "priceRange": "$",
+    "name": "尤媽媽肉圓",
+    "location": {
+      "lat": 22.6260626,
+      "lng": 120.284268
+    },
+    "rating": 4.2
+  },
+  {
+    "id": "ybpTXLQGR1HGTEr2TFIN",
+    "updatedAt": {
+      "seconds": 1746858823,
+      "nanoseconds": 99000000
+    },
+    "tags": [
+      "現代",
+      "熱情",
+      "簡約",
+      "明亮活潑",
+      "舒適",
+      "辣",
+      "特別",
+      "瘋狂",
+      "狗",
+      "平價",
+      "高級",
+      "貓",
+      "米食",
+      "重口味",
+      "大份量",
+      "飽足",
+      "異國",
+      "室內",
+      "乾淨",
+      "亞洲",
+      "濃郁"
+    ],
+    "type": "泰式風味料理",
+    "address": " 803高雄市鹽埕區五福四路129之1號",
+    "isSpicy": true,
+    "name": "泰法客泰味小食光",
+    "location": {
+      "lng": 120.2845652,
+      "lat": 22.6229956
+    },
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/tastebuddies-demo-2.firebasestorage.app/o/restaurant_images%2FybpTXLQGR1HGTEr2TFIN?alt=media&token=f790636d-ee73-4655-b005-7ccaef140a13",
+    "suggestedPeople": "1~4",
+    "priceRange": "$$",
+    "rating": 4.8
+  }
+]

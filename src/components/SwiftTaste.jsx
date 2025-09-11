@@ -1,267 +1,476 @@
-// SwiftTaste.jsx
-import React, { useState, useEffect } from "react";
-import { basicQuestions } from "../data/basicQuestions";
-import { funQuestions } from "../data/funQuestions";
-import QuestionSwiperMotion from "./QuestionSwiperMotion";
-import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
+﻿// 修復 SwiftTaste.jsx 中的 navigate 語法錯誤
+// 將 navigate(/buddies?roomId=) 改為 navigate(/buddies?roomId=)
+
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { roomService, memberService, recommendationService } from "../services/supabaseService";
+import { restaurantService } from "../services/restaurantService";
+import { funQuestionTagService } from "../services/funQuestionTagService";
+import { getBasicQuestionsForSwiftTaste, getFunQuestions } from "../services/questionService";
 import ModeSwiperMotion from "./ModeSwiperMotion";
+import QuestionSwiperMotion from "./QuestionSwiperMotion";
+import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
+import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import RecommendationResult from "./RecommendationResult";
-import {
-  getRestaurants,
-  getRecommendationsFromFirebase,
-  saveRecommendationsToFirebase,
-  listenRoomRecommendations,
-} from "../services/firebaseService";
-import {
-  getRandomFunQuestions,
-  recommendRestaurants,
-  getRandomTen,
-} from "../logic/enhancedRecommendLogicFrontend.js";
-import { useNavigate, useLocation } from "react-router-dom";
+import BuddiesRoom from "./BuddiesRoom";
+import BuddiesQuestionSwiper from "./BuddiesQuestionSwiper";
+import BuddiesRecommendation from "./BuddiesRecommendation";
+import BuddiesResultPage from "../pages/BuddiesResultPage";
+import LoadingOverlay from "./LoadingOverlay";
 import "./SwiftTasteCard.css";
 
 export default function SwiftTaste() {
-  const [phase, setPhase] = useState("selectMode");
-  const [recommendations, setRecommendations] = useState([]);
-  const [saved, setSaved] = useState([]);
-  const [restaurantList, setRestaurantList] = useState([]);
-  const [selectedMode, setSelectedMode] = useState(null);
-  const [allQuestions, setAllQuestions] = useState([]);
-  const [userAnswers, setUserAnswers] = useState([]);
-  const [roomId, setRoomId] = useState(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const [phase, setPhase] = useState("selectMode");
+  const [selectedMode, setSelectedMode] = useState(null);
+  const [userAnswers, setUserAnswers] = useState([]);
+  const [basicAnswers, setBasicAnswers] = useState([]);
+  const [funAnswers, setFunAnswers] = useState([]);
+  const basicAnswersRef = useRef([]);  // 用於可靠地存儲基本答案
+  const [restaurants, setRestaurants] = useState([]);
+  const [filteredRestaurants, setFilteredRestaurants] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingRestaurantFilter, setLoadingRestaurantFilter] = useState(false);
+  const [error, setError] = useState(null);
+  const [roomId, setRoomId] = useState(null);
+  const [roomData, setRoomData] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [finalResult, setFinalResult] = useState(null);
+  const [funQuestionTagsMap, setFunQuestionTagsMap] = useState({});
+  const [loadingTags, setLoadingTags] = useState(false);
+  const [basicQuestions, setBasicQuestions] = useState([]);
+  const [funQuestions, setFunQuestions] = useState([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  
+  // Current questions being shown
+  const currentQuestions = phase === 'questions' ? basicQuestions : (phase === 'funQuestions' ? funQuestions : []);
 
-  // 從Firebase獲取餐廳資料
+  // 從 URL 參數獲取房間ID
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // 使用新的Firebase服務獲取餐廳數據
-        const data = await getRestaurants();
-        setRestaurantList(data);
-      } catch (error) {
-        console.error("Failed to fetch restaurants from Firebase:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const urlRoomId = searchParams.get("roomId");
+    if (urlRoomId) {
+      setRoomId(urlRoomId);
+      setSelectedMode("buddies");
+      setPhase("buddiesRoom");
+    }
+  }, [searchParams]);
 
-    fetchData();
+  // 載入餐廳資料和問題
+  useEffect(() => {
+    loadRestaurants();
+    loadQuestions();
+    // 預載入趣味問題標籤映射（不阻塞UI，不顯示載入動畫）
+    loadFunQuestionTagsMap(false).catch(err => {
+      console.warn('Pre-loading fun question tags failed:', err);
+    });
   }, []);
 
-  // 處理URL參數，檢查是否從多人模式進入
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
+  const loadQuestions = async () => {
+    try {
+      setQuestionsLoading(true);
+      
+      // 載入SwiftTaste基本問題（包含所有基本問題）
+      const basicQs = await getBasicQuestionsForSwiftTaste();
+      setBasicQuestions(basicQs);
+      
+      // 載入趣味問題
+      const funQs = await getFunQuestions();
+      setFunQuestions(funQs);
+      
+      console.log(`Loaded ${basicQs.length} basic questions and ${funQs.length} fun questions`);
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      setError('載入問題失敗');
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
 
-    // 檢查是否是多人模式
-    if (params.get("mode") === "buddies") {
-      const roomIdParam = params.get("roomId");
-
-      if (roomIdParam) {
-        setRoomId(roomIdParam);
-        setSelectedMode("buddies");
-
-        // 檢查本地存儲中是否有餐廳推薦
-        const savedRecsJson = localStorage.getItem("buddiesRecommendations");
-
-        if (savedRecsJson) {
-          try {
-            const savedRecs = JSON.parse(savedRecsJson);
-            if (savedRecs?.length) {
-              setRecommendations(savedRecs);
-              setPhase("recommend");
-              return;
-            }
-          } catch (e) {
-            console.error("Error parsing saved recommendations:", e);
-          }
-        }
-
-        // 從Firebase獲取房間推薦數據
-        const fetchRoomData = async () => {
-          try {
-            const roomRecs = await getRecommendationsFromFirebase(roomIdParam);
-
-            if (roomRecs?.length) {
-              setRecommendations(roomRecs);
-              localStorage.setItem(
-                "buddiesRecommendations",
-                JSON.stringify(roomRecs)
-              );
-              setPhase("recommend");
-            } else {
-              // 如果沒有推薦，設置為選擇模式
-              setPhase("selectMode");
-            }
-          } catch (error) {
-            console.error("Failed to fetch room recommendations:", error);
-            setPhase("selectMode");
-          }
-        };
-
-        fetchRoomData();
-
-        // 監聽房間推薦變化
-        const unsubscribe = listenRoomRecommendations(
-          roomIdParam,
-          (updatedRecs) => {
-            if (updatedRecs?.length) {
-              setRecommendations(updatedRecs);
-              localStorage.setItem(
-                "buddiesRecommendations",
-                JSON.stringify(updatedRecs)
-              );
-              setPhase("recommend");
-            }
-          }
-        );
-
-        return () => {
-          // 清理監聽
-          if (typeof unsubscribe === "function") {
-            unsubscribe();
-          }
-        };
+  const loadFunQuestionTagsMap = async (showLoading = true) => {
+    try {
+      if (showLoading) {
+        setLoadingTags(true);
+      }
+      console.log('Loading fun question tags map...');
+      const tagsMap = await funQuestionTagService.getFunQuestionTagsMap();
+      setFunQuestionTagsMap(tagsMap);
+      console.log('Loaded fun question tags map with', Object.keys(tagsMap).length, 'options');
+      return tagsMap;
+    } catch (error) {
+      console.error('Failed to load fun question tags map:', error);
+      // 使用回退映射
+      const fallbackMap = funQuestionTagService.getFallbackTagsMap();
+      setFunQuestionTagsMap(fallbackMap);
+      return fallbackMap;
+    } finally {
+      if (showLoading) {
+        setLoadingTags(false);
       }
     }
-  }, [location.search]);
+  };
 
-  // 格式化問題以適應滑動器
-  const formatQuestionsForSwiper = (questions) =>
-    questions.map((q, index) => ({
-      id: "q" + index,
-      text: q.question,
-      leftOption: q.options[0],
-      rightOption: q.options[1],
-      hasVS: q.question.includes("v.s."), // 標記v.s.格式問題
-      dependsOn: q.dependsOn // 保留問題依賴關係
-    }));
+  const loadRestaurants = async () => {
+    try {
+      setLoading(true);
+      // 從 Supabase 載入餐廳資料
+      const data = await restaurantService.getRestaurants({
+        featured: false, // 載入所有餐廳，不只是推薦餐廳
+        minRating: 0     // 不限制評分
+      });
+      setRestaurants(data);
+    } catch (error) {
+      console.error("載入餐廳失敗:", error);
+      setError("載入餐廳失敗，請稍後重試");
+      // 如果載入失敗，使用空陣列作為備用
+      setRestaurants([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // 處理模式選擇（單人/多人）
   const handleModeSelect = (direction) => {
-    if (direction === "left") {
-      // 前往多人模式
-      navigate("/buddies", { state: { fromSwiftTaste: true } });
-    } else if (direction === "right") {
-      // 單人模式
-      setSelectedMode("solo");
-      // 隨機抽取3題趣味問題
-      const randomFun = getRandomFunQuestions(funQuestions, 3);
-      setAllQuestions([...basicQuestions, ...randomFun]);
+    // 將滑動方向轉換為模式
+    const mode = direction === "left" ? "buddies" : "single";
+    setSelectedMode(mode);
+    if (mode === "buddies") {
+      setPhase("buddiesRoom");
+    } else {
+      // 清理之前的保存餐廳記錄
+      localStorage.removeItem("savedRestaurants");
+      console.log("Cleared previous saved restaurants");
       setPhase("questions");
     }
   };
 
-  // 處理問題回答完成
-  const handleQuestionComplete = async (answersObj) => {
-    if (loading || !restaurantList.length) {
-      console.error("餐廳數據尚未加載完成");
+  const handleBasicQuestionsComplete = (answers) => {
+    console.log('Basic questions completed with answers:', answers);
+    const basicAnswersList = answers.answers || [];
+    setBasicAnswers(basicAnswersList);
+    basicAnswersRef.current = basicAnswersList;  // 同時存儲到ref中
+    console.log('Stored basic answers in ref:', basicAnswersRef.current);
+    setPhase("funQuestions"); // 轉到趣味問題
+  };
+
+  const handleFunQuestionsComplete = async (answers) => {
+    console.log('Fun questions completed with answers:', answers);
+    const funAnswersList = answers.answers || [];
+    setFunAnswers(funAnswersList);
+    
+    // 使用ref中的基本答案，確保數據正確
+    const currentBasicAnswers = basicAnswersRef.current;
+    console.log('Using basic answers from ref:', currentBasicAnswers);
+    console.log('Using fun answers:', funAnswersList);
+    
+    if (currentBasicAnswers.length === 0) {
+      console.error('Basic answers are empty! This should not happen.');
+      // 如果基本答案為空，回到基本問題
+      setPhase("questions");
       return;
     }
-
-    console.log("收到的答案對象:", answersObj);
-
-    // 1. 提取答案列表 - 支援多種格式
-    let answerList = [];
-
-    // 如果答案是一個結構化對象，正確提取
-    if (answersObj && typeof answersObj === "object") {
-      if (Array.isArray(answersObj.answers)) {
-        // 新格式：使用 answers 陣列
-        answerList = answersObj.answers;
-      } else if (answersObj.rawAnswers) {
-        // 使用原始答案對象
-        answerList = Object.values(answersObj.rawAnswers);
-      } else {
-        // 舊格式：直接是答案對象
-        answerList = Object.values(answersObj);
-      }
-    }
-
-    console.log("處理後的答案列表:", answerList);
-    console.log("包含喝選項:", answerList.includes("喝"));
     
-    // 保存用戶回答
-    setUserAnswers(answerList);
-
-    // 2. 創建問題-答案映射關係
-    const answerQuestionMap = {};
-    const questionTexts = [];
+    // 確保標籤映射已載入
+    if (Object.keys(funQuestionTagsMap).length === 0 && !loadingTags) {
+      console.log('Fun question tags not loaded, loading now...');
+      await loadFunQuestionTagsMap(true); // 這時需要顯示載入動畫
+    }
     
-    // 從 questionTexts 提取問題文本
-    if (answersObj.questionTexts && Array.isArray(answersObj.questionTexts)) {
-      answersObj.questionTexts.forEach((text, index) => {
-        if (index < answerList.length) {
-          answerQuestionMap[index] = text;
-          questionTexts.push(text);
+    await filterRestaurantsByAnswers(currentBasicAnswers, funAnswersList);
+    setPhase("restaurants"); // 轉到餐廳推薦
+  };
+
+  const filterRestaurantsByAnswers = async (basic, fun) => {
+    console.log('Filtering restaurants with basic:', basic, 'fun:', fun);
+    setLoadingRestaurantFilter(true);
+    
+    try {
+      // 處理答案格式 - 檢查是否已經是字串陣列
+      const basicAnswers = Array.isArray(basic) ? 
+        (typeof basic[0] === 'string' ? basic : basic.map(answer => answer.selectedOption || answer)) : 
+        [];
+      const funAnswers = Array.isArray(fun) ? 
+        (typeof fun[0] === 'string' ? fun : fun.map(answer => answer.selectedOption || answer)) : 
+        [];
+    
+    console.log('Basic answers:', basicAnswers);
+    console.log('Fun answers:', funAnswers);
+    
+    // 權重常數（基於後端邏輯）
+    const WEIGHT = {
+      BASIC_MATCH: 10,
+      FUN_MATCH: 5,
+      RATING: 1.5,
+      MIN_SCORE: 1
+    };
+    
+    // 前置過濾：嚴格匹配關鍵條件
+    let filteredRestaurants = restaurants;
+    console.log(`Starting with ${restaurants.length} restaurants`);
+    
+    if (basicAnswers.includes("喝")) {
+      console.log("Filtering for 喝 restaurants...");
+      // 如果選擇了「喝」，只保留有「喝」標籤的餐廳
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        const tags = r.tags ? (Array.isArray(r.tags) ? r.tags : [r.tags]) : [];
+        const hasTag = tags.some(tag => 
+          typeof tag === 'string' && tag.toLowerCase().trim() === "喝"
+        );
+        if (hasTag) {
+          console.log(`✓ Restaurant ${r.name} has 喝 tag:`, tags);
         }
+        return hasTag;
       });
-    }
-    // 從問題ID-答案映射中提取
-    else {
-      // 直接從 answerObj 提取 (q0, q1, q2...)
-      Object.entries(answersObj).forEach(([id, answer]) => {
-        if (id.startsWith('q')) {
-          const index = parseInt(id.replace("q", ""));
-          const question = allQuestions[index];
-          if (question) {
-            answerQuestionMap[index] = question.text || question.question;
-            questionTexts[index] = question.text || question.question;
-          }
-        }
-      });
-    }
-
-    console.log("問題-答案映射:", answerQuestionMap);
-    console.log("問題文本列表:", questionTexts);
-
-    // 3. 使用增強版推薦邏輯
-    const recommendedRestaurants = recommendRestaurants(answerList, restaurantList, {
-      basicQuestions: basicQuestions,
-      answerQuestionMap: answerQuestionMap,
-      questionTexts: questionTexts,
-      strictBasicMatch: true
-    });
-
-    // 4. 如果是多人模式且有房間ID，保存結果到Firebase
-    if (selectedMode === "buddies" && roomId) {
-      try {
-        await saveRecommendationsToFirebase(roomId, recommendedRestaurants);
-      } catch (error) {
-        console.error("Failed to save recommendations to Firebase:", error);
+      console.log(`After 喝 filter: ${filteredRestaurants.length} restaurants`);
+      
+      if (filteredRestaurants.length === 0) {
+        console.warn("沒有找到符合「喝」條件的餐廳");
+        setFilteredRestaurants([]);
+        return;
       }
-    }
-
-    // 5. 限制推薦餐廳數量
-    const limited = getRandomTen(recommendedRestaurants);
-    setRecommendations(limited);
-
-    // 6. 設置下一階段
-    if (!limited || limited.length === 0) {
-      setSaved([]);
-      setPhase("result");
+    } else if (basicAnswers.includes("吃一點")) {
+      console.log("Filtering for 吃一點 restaurants...");
+      // 只保留有「吃一點」標籤的餐廳
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        const tags = r.tags ? (Array.isArray(r.tags) ? r.tags : [r.tags]) : [];
+        const hasTag = tags.some(tag =>
+          typeof tag === 'string' && tag.toLowerCase().trim() === "吃一點"
+        );
+        if (hasTag) {
+          console.log(`✓ Restaurant ${r.name} has 吃一點 tag:`, tags);
+        }
+        return hasTag;
+      });
+      console.log(`After 吃一點 filter: ${filteredRestaurants.length} restaurants`);
+      
+      if (filteredRestaurants.length === 0) {
+        console.warn("沒有找到符合「吃一點」條件的餐廳");
+        setFilteredRestaurants([]);
+        return;
+      }
+    } else if (basicAnswers.includes("吃飽")) {
+      console.log("Filtering for 吃飽 restaurants...");
+      // 只保留有「飽足」標籤的餐廳
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        const tags = r.tags ? (Array.isArray(r.tags) ? r.tags : [r.tags]) : [];
+        const hasTag = tags.some(tag =>
+          typeof tag === 'string' && tag.toLowerCase().trim() === "飽足"
+        );
+        if (hasTag) {
+          console.log(`✓ Restaurant ${r.name} has 飽足 tag:`, tags);
+        }
+        return hasTag;
+      });
+      console.log(`After 飽足 filter: ${filteredRestaurants.length} restaurants`);
+      
+      if (filteredRestaurants.length === 0) {
+        console.warn("沒有找到符合「飽足」條件的餐廳");
+        setFilteredRestaurants([]);
+        return;
+      }
     } else {
-      setPhase("recommend");
+      console.log("No critical filtering needed, proceeding with all restaurants");
+    }
+    
+    // 計算每個餐廳的匹配分數
+    const scoredRestaurants = await Promise.all(filteredRestaurants.map(async restaurant => {
+      let score = WEIGHT.MIN_SCORE;
+      const { price_range, tags, rating, isSpicy } = restaurant;
+      
+      // 正規化餐廳標籤
+      const restaurantTags = Array.isArray(tags) ? tags : (tags ? [tags] : []);
+      const normalizedTags = restaurantTags
+        .filter(Boolean)
+        .filter(tag => tag !== null && tag !== undefined)
+        .map(tag => String(tag || '').toLowerCase())
+        .filter(tag => tag.length > 0);
+      
+      let basicMatchCount = 0;
+      
+      // 處理基本問題匹配
+      basicAnswers.forEach(answer => {
+        let matched = false;
+        
+        switch(answer) {
+          case "奢華美食":
+            // 根據後端邏輯：價格範圍是 $$$ 或 $$
+            matched = price_range === "$$$" || price_range === "$$";
+            if (matched) console.log(`✓ ${restaurant.name} matches 奢華美食 (price: ${price_range})`);
+            break;
+            
+          case "平價美食":
+            // 根據後端邏輯：價格範圍是 $ 或 $$
+            matched = price_range === "$" || price_range === "$$";
+            if (matched) console.log(`✓ ${restaurant.name} matches 平價美食 (price: ${price_range})`);
+            break;
+            
+          case "吃":
+            // 檢查是否有"吃一點"或"飽足"標籤
+            matched = normalizedTags.includes("吃一點") || normalizedTags.includes("飽足");
+            if (matched) {
+              console.log(`✓ ${restaurant.name} matches 吃 (has 吃一點 or 飽足 tag)`);
+              score += WEIGHT.BASIC_MATCH; // 避免重複加分
+            }
+            break;
+            
+          case "喝":
+            // 必須有"喝"標籤
+            matched = normalizedTags.includes("喝");
+            if (matched) {
+              console.log(`✓ ${restaurant.name} matches 喝`);
+              score += WEIGHT.BASIC_MATCH * 1.5; // 提高喝的匹配權重
+            }
+            break;
+            
+          case "吃一點":
+            // 必須有"吃一點"標籤
+            matched = normalizedTags.includes("吃一點");
+            if (matched) console.log(`✓ ${restaurant.name} matches 吃一點`);
+            break;
+            
+          case "吃飽":
+            // 必須有"飽足"標籤
+            matched = normalizedTags.includes("飽足");
+            if (matched) console.log(`✓ ${restaurant.name} matches 吃飽 (has 飽足 tag)`);
+            break;
+            
+          case "辣":
+            matched = isSpicy === true;
+            if (matched) console.log(`✓ ${restaurant.name} matches 辣 (isSpicy: ${isSpicy})`);
+            break;
+            
+          case "不辣":
+            matched = isSpicy === false;
+            if (matched) console.log(`✓ ${restaurant.name} matches 不辣 (isSpicy: ${isSpicy})`);
+            break;
+            
+          case "單人":
+            // 檢查建議人數是否包含"1"
+            matched = restaurant.suggestedPeople && restaurant.suggestedPeople.includes("1");
+            if (matched) console.log(`✓ ${restaurant.name} matches 單人 (suggestedPeople: ${restaurant.suggestedPeople})`);
+            break;
+            
+          case "多人":
+            // 檢查建議人數是否包含"~"（表示多人）
+            matched = restaurant.suggestedPeople && restaurant.suggestedPeople.includes("~");
+            if (matched) console.log(`✓ ${restaurant.name} matches 多人 (suggestedPeople: ${restaurant.suggestedPeople})`);
+            break;
+            
+          default:
+            // 其他答案用標籤匹配
+            const safeAnswer = String(answer || '').toLowerCase();
+            matched = safeAnswer.length > 0 && normalizedTags.some(tag => 
+              tag && typeof tag === 'string' && tag.includes(safeAnswer)
+            );
+            if (matched) console.log(`✓ ${restaurant.name} matches ${answer} via tag matching`);
+            break;
+        }
+        
+        // 只對非特殊情況加基本分數（吃和喝已經在上面處理過加分）
+        if (matched && !['吃', '喝'].includes(answer)) {
+          score += WEIGHT.BASIC_MATCH;
+          basicMatchCount++;
+        } else if (matched && ['吃一點', '吃飽'].includes(answer)) {
+          // 對吃一點和吃飽也計入匹配數量
+          basicMatchCount++;
+        }
+      });
+      
+      // 如果沒有任何基本匹配，給予最低分
+      if (basicMatchCount === 0 && basicAnswers.length > 0) {
+        score = WEIGHT.MIN_SCORE;
+      }
+      
+      // 處理趣味問題匹配（使用Supabase標籤映射）
+      if (funAnswers.length > 0) {
+        // 使用批量計算匹配分數
+        const funMatchScore = await funQuestionTagService.calculateBatchMatchScore(
+          funAnswers, 
+          restaurantTags
+            .filter(tag => tag !== null && tag !== undefined && tag !== '')
+            .map(tag => String(tag || ''))
+            .filter(tag => tag.length > 0)
+        );
+        
+        score += funMatchScore * WEIGHT.FUN_MATCH;
+      }
+      
+      // 加入評分權重
+      if (typeof rating === 'number' && rating > 0) {
+        score += Math.min(rating / 5, 1) * WEIGHT.RATING;
+      }
+      
+      // 如果完全匹配所有基本問題，給予額外獎勵
+      if (basicMatchCount === basicAnswers.length && basicAnswers.length > 0) {
+        score += WEIGHT.BASIC_MATCH * 0.5;
+      }
+      
+      return { ...restaurant, calculatedScore: score };
+    }));
+    
+    // 過濾掉分數過低的餐廳
+    const minScoreThreshold = WEIGHT.MIN_SCORE * 2;
+    const qualifiedRestaurants = scoredRestaurants.filter(r => r.calculatedScore >= minScoreThreshold);
+    
+    // 按分數排序，選出前10名
+    const sortedRestaurants = qualifiedRestaurants.length > 0 ? 
+      qualifiedRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore) :
+      scoredRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore).slice(0, 10);
+    
+    const selected = sortedRestaurants.slice(0, 10);
+    
+    console.log(`Filtered ${selected.length} restaurants from ${restaurants.length} total`);
+    console.log('Selected restaurants:', selected.map(r => ({ 
+      name: r.name, 
+      score: r.calculatedScore.toFixed(2), 
+      tags: r.tags,
+      price: r.price_range 
+      })));
+      
+      setFilteredRestaurants(selected);
+      
+    } catch (error) {
+      console.error('Error filtering restaurants:', error);
+      setError('篩選餐廳時發生錯誤');
+    } finally {
+      setLoadingRestaurantFilter(false);
     }
   };
 
-  // 保存用戶喜歡的餐廳
-  const handleSaveRestaurant = (restaurant) => {
-    if (!restaurant || !restaurant.id) return;
+  const getRandomFunQuestions = (questions, count = 3) => {
+    const shuffled = [...questions].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
 
-    if (!saved.find((r) => r.id === restaurant.id)) {
-      setSaved((prev) => [...prev, restaurant]);
+  const handleSave = (restaurant) => {
+    console.log('Saving restaurant:', restaurant);
+    // 單人模式：直接保存到本地
+    if (selectedMode === "single") {
+      const saved = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
+      
+      // 避免重複保存相同餐廳
+      const alreadySaved = saved.some(r => r.id === restaurant.id || r.name === restaurant.name);
+      if (!alreadySaved) {
+        const newSaved = [...saved, restaurant];
+        localStorage.setItem("savedRestaurants", JSON.stringify(newSaved));
+        console.log(`✓ Saved ${restaurant.name} to localStorage. Total saved: ${newSaved.length}`);
+      } else {
+        console.log(`Restaurant ${restaurant.name} already saved, skipping.`);
+      }
     }
   };
 
-  // 重新開始
-  const handleRestart = () => {
+  const handleRestaurantFinish = () => {
+    if (selectedMode === "single") {
+      setPhase("result");
+    } else if (selectedMode === "buddies") {
+      setPhase("buddiesRecommendation");
+    }
+  };
+
+  const handleBackToStart = () => {
     setPhase("selectMode");
-    setRecommendations([]);
-    setSaved([]);
-    setAllQuestions([]);
+    setSelectedMode(null);
     setUserAnswers([]);
     // 如果是多人模式，回到房間而不是回到起點
     if (selectedMode === "buddies" && roomId) {
@@ -269,53 +478,114 @@ export default function SwiftTaste() {
     }
   };
 
-  if (loading && phase === "selectMode") {
+  if ((loading || questionsLoading) && phase === "selectMode") {
     return (
       <div style={{ textAlign: "center", padding: "20px" }}>
         <h2>載入中...</h2>
-        <p>正在準備美食推薦</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: "center", padding: "20px" }}>
+        <h2>錯誤</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>重新整理</button>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="swift-taste">
       {phase === "selectMode" && (
         <ModeSwiperMotion onSelect={handleModeSelect} />
       )}
 
       {phase === "questions" && (
         <QuestionSwiperMotion
-          questions={formatQuestionsForSwiper(allQuestions)}
-          onComplete={handleQuestionComplete}
+          questions={basicQuestions}
+          onComplete={handleBasicQuestionsComplete}
+          onBack={handleBackToStart}
         />
       )}
 
-      {phase === "recommend" && (
-        <>
-          <h2>
-            推薦餐廳 🍜（{selectedMode === "solo" ? "自己吃" : "一起選"}）
-          </h2>
-          <RestaurantSwiperMotion
-            restaurants={recommendations}
-            onSave={handleSaveRestaurant}
-            onFinish={() => setPhase("result")}
-          />
-          <h3>已收藏餐廳 ⭐</h3>
-          <ul>
-            {saved.map((r) => (
-              <li key={r.id}>{r.name}</li>
-            ))}
-          </ul>
-          <button className="btn-restart" onClick={handleRestart}>
-            🔄 重新選擇
-          </button>
-        </>
+      {phase === "funQuestions" && (
+        <QuestionSwiperMotion
+          questions={getRandomFunQuestions(funQuestions, 3)}
+          onComplete={handleFunQuestionsComplete}
+          onBack={() => setPhase("questions")}
+        />
+      )}
+
+      {phase === "restaurants" && (
+        <RestaurantSwiperMotion
+          restaurants={filteredRestaurants.length > 0 ? filteredRestaurants : restaurants}
+          onSave={handleSave}
+          onFinish={handleRestaurantFinish}
+        />
       )}
 
       {phase === "result" && (
-        <RecommendationResult saved={saved} onRetry={handleRestart} />
+        <RecommendationResult
+          saved={JSON.parse(localStorage.getItem("savedRestaurants") || "[]")}
+          alternatives={filteredRestaurants}
+          onRetry={handleBackToStart}
+        />
       )}
+
+      {phase === "buddiesRoom" && (
+        <BuddiesRoom
+          roomId={roomId}
+          onRoomCreated={(roomData) => {
+            setRoomData(roomData);
+            setRoomId(roomData.roomId);
+          }}
+          onJoinRoom={(roomData) => {
+            setRoomData(roomData);
+            setRoomId(roomData.roomId);
+          }}
+          onStartQuestions={() => setPhase("buddiesQuestions")}
+          onBack={handleBackToStart}
+        />
+      )}
+
+      {phase === "buddiesQuestions" && (
+        <BuddiesQuestionSwiper
+          roomId={roomId}
+          onFinish={() => setPhase("buddiesRecommendation")}
+          onBack={() => setPhase("buddiesRoom")}
+        />
+      )}
+
+      {phase === "buddiesRecommendation" && (
+        <BuddiesRecommendation
+          roomId={roomId}
+          onFinish={() => setPhase("buddiesResult")}
+          onBack={() => setPhase("buddiesRoom")}
+        />
+      )}
+
+      {phase === "buddiesResult" && (
+        <BuddiesResultPage
+          roomId={roomId}
+          onBack={handleBackToStart}
+        />
+      )}
+
+      {/* 趣味問題標籤載入動畫 */}
+      <LoadingOverlay 
+        show={loadingTags}
+        message="準備趣味問題中"
+        subMessage="正在載入問題標籤映射表..."
+      />
+
+      {/* 餐廳篩選載入動畫 */}
+      <LoadingOverlay 
+        show={loadingRestaurantFilter}
+        message="分析您的喜好中"
+        subMessage="正在根據您的選擇篩選最適合的餐廳..."
+      />
     </div>
   );
 }

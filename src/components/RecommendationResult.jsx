@@ -193,7 +193,9 @@ export default function RecommendationResult({
         transition={{ delay: 0.2, duration: 0.5 }}
         style={{
           backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${
-            selected.photoURL ||
+            selected.primaryImage?.image_url || 
+            (selected.allImages && selected.allImages[0]?.image_url) ||
+            selected.photoURL || // 支援舊格式
             "https://source.unsplash.com/400x300/?restaurant"
           })`,
         }}
@@ -209,7 +211,9 @@ export default function RecommendationResult({
               </div>
             )}
 
-            {selected.type && <div className="type-badge">{selected.type}</div>}
+            {(selected.category || selected.type) && (
+              <div className="type-badge">{selected.category || selected.type}</div>
+            )}
 
             {/* 顯示投票數量 */}
             {votes && votes[selected.id] && (
@@ -281,8 +285,8 @@ export default function RecommendationResult({
                             ⭐ {r.rating.toFixed(1)}
                           </span>
                         )}
-                        {r.type && (
-                          <span className="mini-badge type">{r.type}</span>
+                        {(r.category || r.type) && (
+                          <span className="mini-badge type">{r.category || r.type}</span>
                         )}
                         {votes && votes[r.id] && (
                           <span className="mini-badge votes">

@@ -1,0 +1,465 @@
+/* Map Page Main Layout */
+.map-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+  overflow: hidden;
+}
+
+/* 通知消息 */
+.notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 10000;
+  max-width: 320px;
+  width: calc(100% - 40px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.notification.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.notification.success {
+  border-left: 4px solid #22c55e;
+  background: #f0fdf4;
+}
+
+.notification.error {
+  border-left: 4px solid #ef4444;
+  background: #fef2f2;
+}
+
+.notification span {
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.notification-close:hover {
+  color: #333;
+}
+
+/* 頂部控制欄 */
+.map-controls {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+}
+
+.search-container {
+  flex: 1;
+  max-width: 400px;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.menu-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.menu-button:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  color: #ff6b35;
+}
+
+.menu-button.active {
+  background: #ff6b35;
+  color: white;
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+}
+
+.menu-button.active:hover {
+  background: #e55a2b;
+}
+
+/* 地圖主體 */
+.map-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 側邊欄 */
+.map-sidebar {
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  width: 300px;
+  max-height: calc(100vh - 160px);
+  z-index: 999;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.map-sidebar.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 底部資訊欄 */
+.place-info-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 16px 20px;
+  z-index: 1000;
+  animation: slideUpFadeIn 0.3s ease-out;
+}
+
+.place-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.place-info-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.place-info-address {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.place-info-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.rating-stars {
+  color: #ffc107;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.rating-text {
+  color: #666;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* 動畫 */
+@keyframes slideUpFadeIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 手機適配 */
+@media (max-width: 768px) {
+  .map-controls {
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    gap: 10px;
+  }
+
+  .search-container {
+    max-width: none;
+  }
+
+  .menu-button {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+  }
+
+  /* 側邊欄改為底部彈出 */
+  .map-sidebar {
+    top: auto;
+    bottom: 80px; /* 避免被底部導航遮擋 */
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-height: calc(70vh - 80px); /* 減去底部導航高度 */
+    border-radius: 16px 16px 0 0;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    transform: translateY(calc(100% + 80px)); /* 調整隱藏位置 */
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .map-sidebar.open {
+    transform: translateY(0);
+  }
+
+  /* 通知消息位置調整 */
+  .notification {
+    top: 80px;
+    max-width: 280px;
+    width: calc(100% - 32px);
+    font-size: 0.9rem;
+    padding: 10px 14px;
+  }
+
+  /* 底部資訊欄調整 */
+  .place-info-bar {
+    padding: 14px 16px;
+    bottom: 80px; /* 確保不被底部導航遮擋 */
+  }
+
+  .place-info-name {
+    font-size: 1rem;
+  }
+
+  .place-info-address {
+    font-size: 0.8rem;
+  }
+
+  .rating-stars {
+    font-size: 0.8rem;
+  }
+
+  .rating-text {
+    font-size: 0.8rem;
+  }
+}
+
+/* 超小螢幕適配 */
+@media (max-width: 480px) {
+  .map-controls {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    gap: 8px;
+  }
+
+  .menu-button {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+  }
+
+  .map-sidebar {
+    max-height: calc(75vh - 80px); /* 減去底部導航高度 */
+    border-radius: 12px 12px 0 0;
+    bottom: 80px; /* 確保不被導航遮擋 */
+    transform: translateY(calc(100% + 80px)); /* 調整隱藏位置 */
+  }
+
+  .notification {
+    top: 70px;
+    max-width: 260px;
+    width: calc(100% - 24px);
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+
+  .place-info-bar {
+    padding: 12px 14px;
+    bottom: 80px; /* 確保不被底部導航遮擋 */
+  }
+
+  .place-info-name {
+    font-size: 0.95rem;
+  }
+
+  .place-info-address {
+    font-size: 0.75rem;
+  }
+}
+    left: 16px;
+    right: 16px;
+  }
+  
+  .search-container {
+    max-width: none;
+  }
+  
+  .menu-button {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+  
+  .map-sidebar {
+    top: 70px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-height: calc(100vh - 140px);
+  }
+  
+  .place-info-bar {
+    padding: 12px 16px;
+  }
+  
+  .place-info-name {
+    font-size: 1rem;
+  }
+  
+  .place-info-address {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-controls {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    gap: 8px;
+  }
+  
+  .control-buttons {
+    gap: 6px;
+  }
+  
+  .menu-button {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .map-sidebar {
+    top: 60px;
+    right: 12px;
+    left: 12px;
+    max-height: calc(100vh - 120px);
+  }
+  
+  .notification {
+    top: 16px;
+    max-width: 280px;
+    width: calc(100% - 24px);
+  }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .map-page {
+    background: #1a1a1a;
+  }
+  
+  .notification.success {
+    background: #064e3b;
+    color: #d1fae5;
+  }
+  
+  .notification.error {
+    background: #7f1d1d;
+    color: #fecaca;
+  }
+  
+  .place-info-bar {
+    background: rgba(30, 30, 30, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .place-info-name {
+    color: #f5f5f5;
+  }
+  
+  .place-info-address,
+  .rating-text {
+    color: #a3a3a3;
+  }
+}
+
+/* 高對比模式 */
+@media (prefers-contrast: high) {
+  .menu-button {
+    border: 2px solid #333;
+    background: white;
+  }
+  
+  .menu-button.active {
+    border-color: #ff6b35;
+  }
+  
+  .place-info-bar {
+    border-top: 2px solid #ccc;
+    background: white;
+  }
+  
+  .notification {
+    border: 2px solid #ccc;
+  }
+  
+  .notification.success {
+    border-color: #22c55e;
+  }
+  
+  .notification.error {
+    border-color: #ef4444;
+  }
+}

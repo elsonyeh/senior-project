@@ -171,7 +171,7 @@ function SwipeableCard({
         zIndex: 10 - position,
         top: topOffset,
         scale: scaleOffset,
-        backgroundImage: background || undefined,
+        ...(typeof background === 'object' ? background : { backgroundImage: background }),
         filter: blur ? `blur(${blur}px)` : "none",
         boxShadow: isTop
           ? "0 12px 28px rgba(0,0,0,0.25)"

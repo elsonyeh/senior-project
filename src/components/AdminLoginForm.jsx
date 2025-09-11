@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminLogin } from "../services/firebaseService";
-import { getAuth, sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../services/firebase";
+import { adminService } from "../services/supabaseService";
 import "./AdminLoginForm.css";
 
 export default function AdminLoginForm() {
@@ -21,7 +19,7 @@ export default function AdminLoginForm() {
     setIsLoading(true);
 
     try {
-      const result = await adminLogin(email, password);
+      const result = await adminService.adminLogin(email, password);
       
       if (result.success) {
         // 登入成功導向管理頁面
@@ -47,18 +45,16 @@ export default function AdminLoginForm() {
     }
 
     try {
-      await sendPasswordResetEmail(auth, email);
-      setResetStatus("密碼重設郵件已發送，請檢查您的信箱");
-      setShowResetForm(false);
+      const result = await adminService.resetPassword(email);
+      if (result.success) {
+        setResetStatus("密碼重設郵件已發送，請檢查您的信箱");
+        setShowResetForm(false);
+      } else {
+        setResetStatus(result.error || "發送重設郵件失敗，請稍後再試");
+      }
     } catch (error) {
       console.error("送出重設郵件失敗:", error);
-      if (error.code === 'auth/user-not-found') {
-        setResetStatus("找不到此電子郵件對應的帳號");
-      } else if (error.code === 'auth/invalid-email') {
-        setResetStatus("電子郵件格式不正確");
-      } else {
-        setResetStatus("發送重設郵件失敗，請稍後再試");
-      }
+      setResetStatus("發送重設郵件失敗，請稍後再試");
     }
   };
 

@@ -10,21 +10,29 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
   // 處理哪些問題應該顯示的邏輯
   const getVisibleQuestions = (allQuestions, currentAnswers) => {
     return allQuestions.filter((question) => {
-      // 專門檢查吃飽和辣不辣的問題
-      if (
-        question.text &&
-        (question.text.includes("吃一點") || question.text.includes("辣的"))
-      ) {
-        // 找到"吃還是喝"的問題
-        const eatOrDrinkQuestion = allQuestions.find(
-          (q) => q.text && q.text.includes("想吃正餐還是想喝飲料")
-        );
+      // 檢查是否為與食物相關的問題（應該在選擇"喝"時跳過）
+      if (question.text) {
+        const shouldSkipWhenDrinking = 
+          question.text.includes("吃一點還是吃飽") ||
+          question.text.includes("想吃辣的還是不辣") ||
+          question.text.includes("吃一點") ||
+          question.text.includes("吃飽") ||
+          question.text.includes("辣的") ||
+          question.text.includes("不辣");
 
-        if (
-          eatOrDrinkQuestion &&
-          currentAnswers[eatOrDrinkQuestion.id] === "喝"
-        ) {
-          return false; // 如果選擇了"喝"，則不顯示這些問題
+        if (shouldSkipWhenDrinking) {
+          // 找到"吃還是喝"的問題
+          const eatOrDrinkQuestion = allQuestions.find(
+            (q) => q.text && (
+              q.text.includes("想吃正餐還是想喝飲料") ||
+              q.text.includes("吃") && q.text.includes("喝")
+            )
+          );
+
+          if (eatOrDrinkQuestion && currentAnswers[eatOrDrinkQuestion.id] === "喝") {
+            console.log(`Skipping food-related question: "${question.text}" because user chose "喝"`);
+            return false; // 如果選擇了"喝"，則不顯示這些問題
+          }
         }
       }
 
@@ -44,6 +52,9 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
 
     // 檢查是否所有非依賴問題都已回答
     const visibleQuestions = getVisibleQuestions(safeQuestions, updated);
+    console.log(`Visible questions after update: ${visibleQuestions.length}/${safeQuestions.length}`);
+    console.log('Visible question texts:', visibleQuestions.map(q => q.text));
+    
     const allQuestionsAnswered = visibleQuestions.every((question) => {
       // 如果問題有依賴且依賴條件不滿足，則不需要回答
       if (question.dependsOn) {

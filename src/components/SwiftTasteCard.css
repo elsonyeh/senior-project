@@ -47,11 +47,11 @@
 /* --- 選項樣式 --- */
 .options-display {
   display: flex;
-  font-size: 1.15rem;
+  font-size: 1.4rem;
   justify-content: space-between;
   width: 100%;
-  margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
   position: relative;
 }
 
@@ -60,7 +60,7 @@
   width: 45%;
   text-align: center;
   font-weight: bold;
-  padding: 0px 8px;
+  padding: 16px 8px;
   transition: all 0.2s ease;
   background: transparent;
   /* 移除背景 */
@@ -73,7 +73,7 @@
   top: 50%;
   transform: translate(-50%, -50%);
   color: #999;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 /* --- Question card option styles --- */
@@ -145,7 +145,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 
@@ -168,13 +168,17 @@
 
 /* 📦 包住文字的模糊區塊 */
 .restaurant-info-blur {
-  backdrop-filter: blur(5px);
-  background: rgba(0, 0, 0, 0.15);
-  padding: 1rem;
-  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 1.5rem;
+  border-radius: 16px;
   position: relative;
   z-index: 2;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  margin: 1rem;
+  max-width: 320px;
+  transform: translateY(-10px);
 }
 
 .restaurant-info-blur h3 {
@@ -197,6 +201,37 @@
 .restaurant-rating {
   font-size: 1rem;
   color: gold;
+  margin: 0.5rem 0;
+  justify-content: center;
+}
+
+/* 價格區間樣式 */
+.price-range {
+  font-size: 1.1rem;
+  color: #4CAF50;
+  font-weight: bold;
+  margin: 0.3rem 0;
+}
+
+/* 餐廳標籤樣式 */
+.restaurant-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  justify-content: center;
+}
+
+.restaurant-tags .tag {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  backdrop-filter: blur(2px);
+}
   margin-top: 0.5rem;
 }
 

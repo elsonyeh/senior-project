@@ -111,13 +111,13 @@ const connectWithRetry = (maxRetries = MAX_CONNECTION_ATTEMPTS, delay = 5000) =>
   
   const tryConnect = () => {
     connectionAttempts++;
-    console.log(`嘗試連接 Firebase Realtime Database (嘗試 ${connectionAttempts}/${maxRetries})...`);
+    console.log(`🔄 嘗試連接 Firebase (傳統模式) (${connectionAttempts}/${maxRetries})...`);
     
     rtdb.ref('.info/connected').on('value', (snapshot) => {
       if (snapshot.exists() && snapshot.val() === true) {
         retries = 0; // 重置重試計數
         connectionAttempts = 0;
-        console.log('已成功連接到 Firebase Realtime Database');
+        console.log('✅ Firebase Realtime Database 連線成功（提供傳統功能支援）');
       } else if (retries < maxRetries) {
         retries++;
         console.log(`連接失敗，${delay/1000}秒後重試 (${retries}/${maxRetries})...`);
@@ -161,9 +161,9 @@ if (rtdb) {
   rtdb.ref('.info/connected').on('value', (snapshot) => {
     const connected = snapshot.val();
     if (connected) {
-      console.log('與 Firebase Realtime Database 連接建立');
+      console.log('🔄 Firebase Realtime Database 連線建立（傳統模式）');
     } else {
-      console.log('與 Firebase Realtime Database 連接中斷');
+      console.log('❌ Firebase Realtime Database 連線中斷');
     }
   });
 

@@ -26,7 +26,7 @@ import {
 } from "firebase/firestore";
 
 import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { db, rtdb, auth, checkIsAdmin } from "./firebase";
+import { db, rtdb, auth, checkIsAdmin } from "./legacy-firebase";
 
 // 保存一個局部的管理員狀態變數
 let localIsAdmin = false;

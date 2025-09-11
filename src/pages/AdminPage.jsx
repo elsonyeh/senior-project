@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { isAdminUser } from "../services/firebaseService";
+import { adminService } from "../services/supabaseService";
 import AdminDashboard from "../components/AdminDashboard";
 
 export default function AdminPage() {
@@ -15,7 +15,7 @@ export default function AdminPage() {
         console.log("AdminPage: 開始檢查管理員權限...");
 
         // 標準環境下的管理員檢查
-        const adminStatus = await isAdminUser();
+        const adminStatus = await adminService.isAdminUser();
         console.log("AdminPage: 管理員檢查結果:", adminStatus);
         setIsAdmin(adminStatus);
 

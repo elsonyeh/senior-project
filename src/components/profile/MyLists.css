@@ -1,0 +1,623 @@
+/* My Lists Component Styles */
+.my-lists-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.my-lists-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e0e0e0;
+  border-top: 3px solid #ff6b35;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+/* 標題區域 */
+.lists-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+}
+
+.lists-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.title-icon {
+  font-size: 1.4rem;
+  color: #ff6b35;
+}
+
+.lists-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* 內容區域 */
+.lists-content {
+  display: flex;
+  min-height: 500px;
+  overflow-x: hidden;
+}
+
+/* 清單側邊欄 */
+.lists-sidebar {
+  width: 300px;
+  min-width: 300px;
+  border-right: 1px solid #f0f0f0;
+  padding: 20px;
+  background: #fafafa;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 500px;
+}
+
+.list-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.list-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.list-card.selected {
+  border-color: #ff6b35;
+  background: #fff8f5;
+}
+
+.list-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.list-color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.list-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-card-name {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-card-count {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.list-card-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.list-card:hover .list-card-actions {
+  opacity: 1;
+}
+
+.list-action-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-btn {
+  color: #666;
+}
+
+.edit-btn:hover {
+  background: rgba(102, 102, 102, 0.1);
+  color: #333;
+}
+
+.delete-btn {
+  color: #ef4444;
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+/* 創建清單表單 */
+.create-list-form {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 12px;
+}
+
+.create-list-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.create-list-input:focus {
+  border-color: #ff6b35;
+}
+
+.create-list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.create-confirm-btn,
+.create-cancel-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.create-confirm-btn {
+  background: #ff6b35;
+  color: white;
+}
+
+.create-confirm-btn:hover {
+  background: #e55a2b;
+}
+
+.create-cancel-btn {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.create-cancel-btn:hover {
+  background: #e5e5e5;
+}
+
+.create-list-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.create-list-btn:hover {
+  border-color: #ff6b35;
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.05);
+}
+
+/* 清單內容區域 */
+.list-content-area {
+  flex: 1;
+  min-width: 0;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 500px;
+}
+
+.list-content-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.list-info {
+  margin-bottom: 12px;
+}
+
+.list-content-title {
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.list-content-description {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.list-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+/* 地點網格 */
+.places-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.empty-list-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  color: #ddd;
+  margin-bottom: 16px;
+}
+
+.empty-list-message h4 {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.empty-list-message p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #999;
+}
+
+/* 地點卡片 */
+.place-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.place-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-color: #e0e0e0;
+}
+
+.place-image-container {
+  position: relative;
+  height: 120px;
+  overflow: hidden;
+}
+
+.place-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.place-card:hover .place-image {
+  transform: scale(1.05);
+}
+
+.place-image-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #ccc;
+}
+
+.place-card-content {
+  padding: 16px;
+}
+
+.place-name {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place-address {
+  margin: 0 0 12px 0;
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star-filled {
+  color: #ffc107;
+  font-size: 0.8rem;
+}
+
+.star-empty {
+  color: #e0e0e0;
+  font-size: 0.8rem;
+}
+
+.rating-value {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.place-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.added-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.place-card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.place-card:hover .place-card-actions {
+  opacity: 1;
+}
+
+.place-action-btn {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navigate-btn {
+  color: #007AFF;
+}
+
+.navigate-btn:hover {
+  background: #007AFF;
+  color: white;
+}
+
+.remove-btn {
+  color: #ef4444;
+}
+
+.remove-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* 無選中清單狀態 */
+.no-list-selected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #666;
+}
+
+.no-list-icon {
+  font-size: 4rem;
+  color: #ddd;
+  margin-bottom: 20px;
+}
+
+.no-list-selected h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.no-list-selected p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #999;
+}
+
+/* 動畫 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 滾動條樣式 */
+.lists-sidebar::-webkit-scrollbar,
+.list-content-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lists-sidebar::-webkit-scrollbar-track,
+.list-content-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lists-sidebar::-webkit-scrollbar-thumb,
+.list-content-area::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.lists-sidebar::-webkit-scrollbar-thumb:hover,
+.list-content-area::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* 手機適配 */
+@media (max-width: 768px) {
+  .lists-content {
+    flex-direction: column;
+    min-height: auto;
+    overflow-x: hidden;
+  }
+  
+  .lists-sidebar {
+    width: 100%;
+    min-width: unset;
+    max-height: 250px;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px;
+    margin: 0;
+  }
+  
+  .list-content-area {
+    max-height: 400px;
+    min-width: unset;
+  }
+  
+  .places-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .place-card-actions {
+    opacity: 1;
+  }
+  
+  .create-list-input {
+    width: calc(100% - 24px);
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 480px) {
+  .lists-header {
+    padding: 20px 16px 12px;
+  }
+  
+  .lists-sidebar {
+    padding: 12px;
+  }
+  
+  .list-content-area {
+    padding: 16px;
+  }
+  
+  .list-card {
+    padding: 12px;
+  }
+  
+  .place-card-content {
+    padding: 12px;
+  }
+  
+  .lists-title {
+    font-size: 1.2rem;
+  }
+  
+  .empty-list-message {
+    padding: 40px 16px;
+  }
+  
+  .create-list-input {
+    width: calc(100% - 24px);
+    padding: 10px 12px;
+    box-sizing: border-box;
+  }
+}

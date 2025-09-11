@@ -1,0 +1,30 @@
+﻿/* eslint-env node */
+// index.js - 轉換為 CommonJS 格式
+const express = require('express');
+const http = require('http');
+const cors = require('cors');
+const { Server } = require('socket.io');
+const dotenv = require('dotenv');
+const process = require('process');
+const firebase = require('./firebase.js');
+const { rtdb, firestore, admin, isConnected, isOfflineMode } = firebase;
+
+// 新增 Supabase 支援
+const supabaseService = require('./supabase.js');
+const { 
+  roomService: supabaseRoomService, 
+  memberService: supabaseMemberService,
+  recommendationService: supabaseRecommendationService,
+  voteService: supabaseVoteService,
+  finalResultService: supabaseFinalResultService
+} = supabaseService;
+
+// 初始化 dotenv
+dotenv.config();
+
+// 創建數據庫操作函數
+const database = rtdb;
+const serverTimestamp = () => admin.database.ServerValue.TIMESTAMP;
+const ref = (path) => database.ref(path);
+const set = (reference, data) => reference.set(data);
+const get = (reference) => reference.once('value');

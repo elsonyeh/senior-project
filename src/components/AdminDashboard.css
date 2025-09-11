@@ -1,51 +1,166 @@
-/* 適用於標籤的textarea樣式 */
-.restaurant-table textarea.restaurant-input {
-  resize: none;
-  overflow-y: auto;
-  border: 1px solid #eee;
-  height: auto;
-  min-height: 70px;
-  font-family: inherit;
-  width: 100%;
-  box-sizing: border-box;
-  line-height: 1.5;
-  padding: 8px;
-}
-
-.restaurant-table textarea.restaurant-input:focus {
-  border-color: #2196F3;
-  outline: none;
-  background-color: #fff;
-}
-
-.restaurant-table textarea.restaurant-input:not(:focus) {
-  background-color: transparent;
-  border-color: transparent;
-}/* AdminDashboard.css */
+/* AdminDashboard.css */
 
 /* 主容器 */
-.admin-container {
-  padding: 0 2rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #f9f9f9;
-  min-height: 170vh;
-  overflow: auto;
+.admin-dashboard {
+  padding: 0;
+  min-height: 100vh;
+  background: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 /* 標題欄 */
-.admin-header {
+.dashboard-header {
+  background: white;
+  padding: 20px 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding: 1rem 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e9ecef;
 }
 
-.admin-header h1 {
-  color: #333;
+.dashboard-header h1 {
   margin: 0;
+  color: #333;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.admin-info {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-logout {
+  padding: 10px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* 頁籤 */
+.dashboard-tabs {
+  background: white;
+  padding: 0 30px;
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tab-button {
+  padding: 15px 25px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tab-button:hover {
+  color: #007bff;
+  background: rgba(0, 123, 255, 0.05);
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: rgba(0, 123, 255, 0.05);
+}
+
+/* 內容區域 */
+.dashboard-content {
+  padding: 0;
+}
+
+/* 功能開發中的佔位符 */
+.feature-placeholder {
+  text-align: center;
+  padding: 80px 20px;
+  background: white;
+  margin: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.feature-placeholder p {
+  color: #666;
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+.feature-placeholder p:first-child {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.buddies-section h2,
+.analytics-section h2 {
+  margin: 0 0 20px 0;
+  color: #333;
   font-size: 1.8rem;
+  padding: 30px 30px 0 30px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 15px 20px;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .dashboard-tabs {
+    padding: 0 20px;
+    flex-direction: column;
+  }
+
+  .tab-button {
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    text-align: left;
+    padding: 12px 15px;
+  }
+
+  .tab-button.active {
+    border-left-color: #007bff;
+    border-bottom-color: transparent;
+  }
+
+  .feature-placeholder {
+    margin: 20px;
+    padding: 60px 20px;
+  }
+
+  .buddies-section h2,
+  .analytics-section h2 {
+    padding: 20px 20px 0 20px;
+    font-size: 1.5rem;
+  }
 }
 
 .user-status {
@@ -684,121 +799,6 @@
 .cancel-button {
   background-color: #757575;
   color: white;
-}
-
-/* 房間管理 */
-.room-management-container {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.room-management-header {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.room-management-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.refresh-button {
-  background-color: #2196F3;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s ease;
-}
-
-.refresh-button:hover {
-  background-color: #1976d2;
-}
-
-.room-table-container {
-  overflow-x: auto;
-}
-
-.room-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.room-table th {
-  background-color: #f8f9fa;
-  padding: 12px 8px;
-  text-align: left;
-  font-weight: 600;
-  color: #333;
-}
-
-.room-table th.center {
-  text-align: center;
-}
-
-.room-table th.left {
-  text-align: left;
-}
-
-.room-table td {
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.room-table td.center {
-  text-align: center;
-}
-
-.room-id {
-  font-family: monospace;
-  color: #666;
-}
-
-.room-status {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.room-status.waiting {
-  background-color: #fff3e0;
-  color: #f57c00;
-}
-
-.room-status.recommend {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.room-status.completed {
-  background-color: #f5f5f5;
-  color: #757575;
-}
-
-.room-delete-button {
-  background-color: #f44336;
-  color: white;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: background-color 0.2s ease;
-}
-
-.room-delete-button:hover {
-  background-color: #d32f2f;
 }
 
 /* 空數據提示 */

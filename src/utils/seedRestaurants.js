@@ -1,4 +1,4 @@
-import { db } from '../services/firebase';
+import { db } from '../services/legacy-firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { restaurantData } from '../data/localRestaurants';
 

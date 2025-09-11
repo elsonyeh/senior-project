@@ -1,0 +1,367 @@
+/* 聯絡我們頁面樣式 */
+.contact-content {
+  padding: 0 20px 20px;
+}
+
+.contact-intro {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.contact-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.contact-description {
+  font-size: 16px;
+  color: #718096;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 聯絡資訊網格 */
+.contact-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.contact-info-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: transform 0.2s ease;
+}
+
+.contact-info-card:hover {
+  transform: translateY(-2px);
+}
+
+.contact-info-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.contact-info-content {
+  flex: 1;
+}
+
+.contact-info-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+}
+
+.contact-info-main {
+  font-size: 15px;
+  color: #4a5568;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.contact-info-desc {
+  font-size: 13px;
+  color: #718096;
+  margin: 0;
+}
+
+/* 聯絡表單 */
+.contact-form-section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+}
+
+.form-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 20px 0;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 6px;
+}
+
+.form-input,
+.form-textarea {
+  padding: 12px 16px;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d3748;
+  background: white;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input:disabled,
+.form-textarea:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+
+.submit-success {
+  background: #f0fff4;
+  border: 1px solid #68d391;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #2f855a;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.submit-success p {
+  margin: 0;
+}
+
+.submit-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* 社群媒體 */
+.social-section {
+  text-align: center;
+}
+
+.social-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 16px 0;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.social-link {
+  width: 48px;
+  height: 48px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
+  font-size: 24px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.social-link:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* 動畫 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .contact-content {
+    padding: 0 16px 20px;
+  }
+  
+  .contact-title {
+    font-size: 20px;
+  }
+  
+  .contact-description {
+    font-size: 14px;
+  }
+  
+  .contact-info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .contact-info-card {
+    padding: 16px;
+  }
+  
+  .contact-form-section {
+    padding: 20px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .form-section-title {
+    font-size: 18px;
+  }
+}
+
+/* 暗色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .contact-title {
+    color: #f7fafc;
+  }
+  
+  .contact-description {
+    color: #a0aec0;
+  }
+  
+  .contact-info-card {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .contact-info-title {
+    color: #f7fafc;
+  }
+  
+  .contact-info-main {
+    color: #e2e8f0;
+  }
+  
+  .contact-info-desc {
+    color: #a0aec0;
+  }
+  
+  .contact-form-section {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .form-section-title {
+    color: #f7fafc;
+  }
+  
+  .form-label {
+    color: #f7fafc;
+  }
+  
+  .form-input,
+  .form-textarea {
+    background: #4a5568;
+    border-color: #4a5568;
+    color: #f7fafc;
+  }
+  
+  .form-input:focus,
+  .form-textarea:focus {
+    border-color: #667eea;
+  }
+  
+  .form-input:disabled,
+  .form-textarea:disabled {
+    background: #2d3748;
+  }
+  
+  .social-title {
+    color: #f7fafc;
+  }
+  
+  .social-link {
+    background: #4a5568;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #667eea;
+  }
+  
+  .social-link:hover {
+    background: #667eea;
+    color: white;
+  }
+}

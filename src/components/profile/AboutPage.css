@@ -1,0 +1,435 @@
+/* 關於我們頁面樣式 */
+.about-content {
+  padding: 0 20px 20px;
+}
+
+.about-intro {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.about-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.about-description {
+  font-size: 18px;
+  color: #667eea;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+/* 品牌故事 */
+.story-section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 32px;
+}
+
+.story-content p {
+  font-size: 15px;
+  color: #4a5568;
+  line-height: 1.7;
+  margin: 0 0 16px 0;
+}
+
+.story-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* 核心功能 */
+.features-section {
+  margin-bottom: 32px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.feature-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+}
+
+.feature-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 28px;
+  margin: 0 auto 16px;
+}
+
+.feature-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+}
+
+.feature-description {
+  font-size: 14px;
+  color: #718096;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 統計數據 */
+.stats-section {
+  margin-bottom: 32px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  color: white;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* 團隊介紹 */
+.team-section {
+  margin-bottom: 32px;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.team-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-2px);
+}
+
+.member-avatar {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 auto 16px;
+}
+
+.member-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+}
+
+.member-position {
+  font-size: 14px;
+  color: #667eea;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+}
+
+.member-description {
+  font-size: 13px;
+  color: #718096;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 使命願景 */
+.mission-section {
+  margin-bottom: 32px;
+}
+
+.mission-card {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.mission-icon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 36px;
+  margin: 0 auto 20px;
+}
+
+.mission-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 16px 0;
+}
+
+.mission-description {
+  font-size: 16px;
+  color: #4a5568;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 聯繫資訊 */
+.contact-cta {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.cta-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 12px 0;
+}
+
+.cta-description {
+  font-size: 15px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.cta-email {
+  font-size: 14px;
+  color: #718096;
+  margin: 0;
+}
+
+.cta-email a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cta-email a:hover {
+  text-decoration: underline;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .about-content {
+    padding: 0 16px 20px;
+  }
+  
+  .about-title {
+    font-size: 20px;
+  }
+  
+  .about-description {
+    font-size: 16px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+  }
+  
+  .story-section {
+    padding: 20px;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .feature-card {
+    padding: 20px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+  
+  .stat-number {
+    font-size: 28px;
+  }
+  
+  .team-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .team-card {
+    padding: 20px;
+  }
+  
+  .mission-card {
+    padding: 24px;
+  }
+  
+  .mission-title {
+    font-size: 20px;
+  }
+  
+  .mission-description {
+    font-size: 15px;
+  }
+  
+  .contact-cta {
+    padding: 24px;
+  }
+}
+
+/* 暗色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .about-title {
+    color: #f7fafc;
+  }
+  
+  .section-title {
+    color: #f7fafc;
+  }
+  
+  .story-section {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .story-content p {
+    color: #e2e8f0;
+  }
+  
+  .feature-card {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .feature-title {
+    color: #f7fafc;
+  }
+  
+  .feature-description {
+    color: #a0aec0;
+  }
+  
+  .team-card {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .member-name {
+    color: #f7fafc;
+  }
+  
+  .member-description {
+    color: #a0aec0;
+  }
+  
+  .mission-card {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .mission-title {
+    color: #f7fafc;
+  }
+  
+  .mission-description {
+    color: #e2e8f0;
+  }
+  
+  .contact-cta {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .cta-title {
+    color: #f7fafc;
+  }
+  
+  .cta-description {
+    color: #e2e8f0;
+  }
+  
+  .cta-email {
+    color: #a0aec0;
+  }
+}

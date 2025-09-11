@@ -1,0 +1,129 @@
+/* 頁面包裝器樣式 */
+.page-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* 頁面標題區域 */
+.page-header {
+  background: #ffffff;
+  padding: 16px 20px;
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-width: 40px;
+}
+
+.back-button:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateX(-2px);
+}
+
+.back-button:active {
+  background: rgba(102, 126, 234, 0.2);
+  transform: translateX(0);
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+  text-align: center;
+  letter-spacing: -0.5px;
+  flex: 1;
+}
+
+.header-spacer {
+  min-width: 40px; /* 與返回按鈕同寬，保持標題居中 */
+}
+
+/* 內容區域 */
+.page-content {
+  padding: 0 0 120px 0;
+  min-height: calc(100vh - 120px);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .page-header {
+    padding: 12px 16px;
+    border-radius: 0 0 20px 20px;
+    margin-bottom: 20px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .back-button {
+    font-size: 22px;
+    padding: 6px;
+    min-width: 36px;
+  }
+  
+  .header-spacer {
+    min-width: 36px;
+  }
+  
+  .page-content {
+    padding: 0 0 100px 0;
+  }
+}
+
+/* 暗色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .page-wrapper {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  }
+  
+  .page-header {
+    background: #2d3748;
+  }
+  
+  .page-title {
+    color: #f7fafc;
+  }
+  
+  .back-button {
+    color: #667eea;
+  }
+  
+  .back-button:hover {
+    background: rgba(102, 126, 234, 0.2);
+  }
+  
+  .back-button:active {
+    background: rgba(102, 126, 234, 0.3);
+  }
+}

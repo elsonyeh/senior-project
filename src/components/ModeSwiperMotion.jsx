@@ -27,7 +27,7 @@ export default function ModeSwiperMotion({ onSelect }) {
     <CardStack
       cards={data}
       badgeType="none"
-      onSwipe={(dir) => onSelect(dir === "right" ? "right" : "left")}
+      onSwipe={(dir) => onSelect(dir)}
       onLocalSwipe={handleLocalSwipe}
       renderCard={(item) => (
         <>

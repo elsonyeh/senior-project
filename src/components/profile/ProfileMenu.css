@@ -1,0 +1,264 @@
+/* 個人資料選單樣式 */
+.profile-menu {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* 用戶資料區域 */
+.user-profile-section {
+  background: #ffffff;
+  padding: 32px 24px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 0 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-profile-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.user-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.default-avatar {
+  font-size: 32px;
+  color: white;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.5px;
+}
+
+.user-email {
+  font-size: 16px;
+  color: #718096;
+  margin: 0;
+  word-break: break-word;
+}
+
+/* 選單內容區域 */
+.menu-content {
+  padding: 0 20px;
+  padding-bottom: 120px;
+}
+
+/* 選單項目容器 */
+.menu-items-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* 選單項目 */
+.menu-item {
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f7fafc;
+  position: relative;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background: #f8fafc;
+  transform: translateX(2px);
+}
+
+.menu-item:active {
+  background: #edf2f7;
+  transform: translateX(0);
+}
+
+.menu-item-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-item-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.menu-item-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
+  font-size: 24px;
+}
+
+.menu-item-label {
+  font-size: 17px;
+  font-weight: 500;
+  color: #2d3748;
+  line-height: 1.4;
+}
+
+.menu-item-right {
+  display: flex;
+  align-items: center;
+}
+
+/* 導航箭頭 */
+.nav-arrow {
+  color: #a0aec0;
+  font-size: 20px;
+  transition: transform 0.2s ease;
+}
+
+.menu-item:hover .nav-arrow {
+  transform: translateX(2px);
+  color: #667eea;
+}
+
+/* 登出項目樣式 */
+.logout-item {
+  color: #e53e3e !important;
+}
+
+.logout-item .menu-item-icon {
+  color: #e53e3e;
+}
+
+.logout-item .menu-item-label {
+  color: #e53e3e;
+}
+
+.logout-item:hover .nav-arrow {
+  color: #e53e3e;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .profile-menu {
+    padding-bottom: 80px; /* 為底部導航留空間 */
+  }
+  
+  .user-profile-section {
+    margin: 0 16px 20px;
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+  
+  .user-avatar {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .default-avatar {
+    font-size: 28px;
+  }
+  
+  .user-name {
+    font-size: 20px;
+  }
+  
+  .user-email {
+    font-size: 14px;
+  }
+  
+  .menu-content {
+    padding: 0 16px;
+    padding-bottom: 120px;
+  }
+  
+  .menu-items-container {
+    border-radius: 12px;
+  }
+  
+  .menu-item {
+    padding: 16px 18px;
+  }
+  
+  .menu-item-label {
+    font-size: 16px;
+  }
+}
+
+/* 暗色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .profile-menu {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  }
+  
+  .user-profile-section {
+    background: #2d3748;
+  }
+  
+  .user-name {
+    color: #f7fafc;
+  }
+  
+  .user-email {
+    color: #a0aec0;
+  }
+  
+  .menu-items-container {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .menu-item {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .menu-item:hover {
+    background: #4a5568;
+  }
+  
+  .menu-item:active {
+    background: #1a202c;
+  }
+  
+  .menu-item-label {
+    color: #f7fafc;
+  }
+}

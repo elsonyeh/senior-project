@@ -1,0 +1,201 @@
+/* 常見問題頁面樣式 */
+.faq-content {
+  padding: 0 20px 20px;
+}
+
+.faq-intro {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.faq-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.faq-description {
+  font-size: 16px;
+  color: #718096;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* FAQ 列表 */
+.faq-list {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+}
+
+.faq-item {
+  border-bottom: 1px solid #f7fafc;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-question {
+  width: 100%;
+  padding: 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.faq-question:hover {
+  background: #f8fafc;
+}
+
+.faq-question-text {
+  font-size: 17px;
+  font-weight: 600;
+  color: #2d3748;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.expand-icon {
+  color: #667eea;
+  font-size: 20px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.faq-question:hover .expand-icon {
+  color: #5a67d8;
+}
+
+.faq-answer {
+  padding: 0 20px 20px;
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.faq-answer p {
+  font-size: 15px;
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 底部提示 */
+.faq-footer {
+  text-align: center;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.faq-footer p {
+  font-size: 14px;
+  color: #718096;
+  margin: 0 0 4px 0;
+  line-height: 1.5;
+}
+
+.faq-footer p:last-child {
+  margin: 0;
+  color: #667eea;
+  font-weight: 500;
+}
+
+/* 動畫 */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .faq-content {
+    padding: 0 16px 20px;
+  }
+  
+  .faq-title {
+    font-size: 20px;
+  }
+  
+  .faq-description {
+    font-size: 14px;
+  }
+  
+  .faq-question {
+    padding: 16px 18px;
+  }
+  
+  .faq-question-text {
+    font-size: 16px;
+  }
+  
+  .faq-answer {
+    padding: 0 18px 16px;
+  }
+  
+  .faq-answer p {
+    font-size: 14px;
+  }
+}
+
+/* 暗色模式支援 */
+@media (prefers-color-scheme: dark) {
+  .faq-title {
+    color: #f7fafc;
+  }
+  
+  .faq-description {
+    color: #a0aec0;
+  }
+  
+  .faq-list {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .faq-item {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .faq-question:hover {
+    background: #4a5568;
+  }
+  
+  .faq-question-text {
+    color: #f7fafc;
+  }
+  
+  .faq-answer p {
+    color: #e2e8f0;
+  }
+  
+  .faq-footer {
+    background: #4a5568;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .faq-footer p {
+    color: #a0aec0;
+  }
+  
+  .faq-footer p:last-child {
+    color: #667eea;
+  }
+}
