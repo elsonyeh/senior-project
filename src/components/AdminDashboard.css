@@ -246,7 +246,12 @@
 }
 
 .role-badge.super-admin {
-  background-color: #fd7e14;
+  background-color: #dc3545;
+  color: white;
+}
+
+.role-badge.admin {
+  background-color: #6c757d;
   color: white;
 }
 
@@ -340,4 +345,25 @@
 
 .export-logs-btn:hover {
   background: #5a6268;
+}
+
+/* 無權限提示 */
+.no-permission {
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* 簡約風格優化 */
+.edit-btn, .reset-password-btn, .delete-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.add-admin-btn, .export-logs-btn {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 6px;
 }

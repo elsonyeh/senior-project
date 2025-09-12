@@ -810,12 +810,65 @@ export const finalResultService = {
 
 // 管理員功能
 export const adminService = {
-  // 管理員帳號清單（實際上應該存在資料庫中）
-  adminAccounts: [
-    { email: 'admin@swifttaste.com', password: 'admin123456', role: 'admin' },
-    { email: 'elson921121@gmail.com', password: '921121elson', role: 'super_admin' },
-    { email: 'tidalx86arm@gmail.com', password: '12345', role: 'admin' }
+  // 預設管理員帳號清單（備用）
+  defaultAdminAccounts: [
+    { 
+      email: 'admin@swifttaste.com', 
+      password: 'admin123456', 
+      role: 'admin',
+      created_at: '2024-01-01T00:00:00.000Z',
+      last_login_at: null
+    },
+    { 
+      email: 'elson921121@gmail.com', 
+      password: '921121elson', 
+      role: 'super_admin',
+      created_at: '2023-12-01T00:00:00.000Z',
+      last_login_at: null
+    },
+    { 
+      email: 'tidalx86arm@gmail.com', 
+      password: '12345', 
+      role: 'admin',
+      created_at: '2024-02-01T00:00:00.000Z',
+      last_login_at: null
+    }
   ],
+
+  /**
+   * 獲取所有管理員帳號
+   * @return {Promise<Array>} 管理員列表
+   */
+  async getAllAdmins() {
+    try {
+      if (!supabase) {
+        console.error('Supabase 客戶端未初始化');
+        return this.defaultAdminAccounts;
+      }
+
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('獲取管理員列表失敗:', error);
+        return this.defaultAdminAccounts;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('獲取管理員列表異常:', error);
+      return this.defaultAdminAccounts;
+    }
+  },
+
+  // 相容性屬性，保持原有代碼可用
+  get adminAccounts() {
+    // 這個節時返回預設值，實際應該使用 getAllAdmins() 異步方法
+    return this.defaultAdminAccounts;
+  },
 
   /**
    * 管理員登入
@@ -827,14 +880,33 @@ export const adminService = {
     try {
       console.log('AdminService: 嘗試登入:', email);
       
-      // 檢查是否為授權管理員帳號
-      const adminAccount = this.adminAccounts.find(
-        account => account.email === email && account.password === password
-      );
+      if (!supabase) {
+        console.error('Supabase 客戶端未初始化');
+        return { success: false, error: 'Supabase 配置錯誤' };
+      }
 
-      if (!adminAccount) {
+      // 從資料庫查詢管理員
+      const { data: adminAccount, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !adminAccount) {
         console.log('AdminService: 管理員帳號驗證失敗');
         return { success: false, error: '管理員帳號或密碼錯誤' };
+      }
+
+      // 更新最後登入時間
+      const { error: updateError } = await supabase
+        .from('admin_users')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', adminAccount.id);
+
+      if (updateError) {
+        console.error('更新登入時間失敗:', updateError);
       }
 
       // 設定登入狀態
@@ -842,6 +914,7 @@ export const adminService = {
         email: email,
         isAdmin: true,
         role: adminAccount.role,
+        adminId: adminAccount.id,
         loginTime: new Date().toISOString(),
         sessionId: `admin_${Date.now()}_${Math.random().toString(36).substring(2)}`
       };
@@ -997,6 +1070,230 @@ export const adminService = {
     } catch (error) {
       console.error('刪除房間失敗:', error);
       return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * 檢查是否為超級管理員
+   * @param {String} email - 管理員郵箱
+   * @return {Promise<Boolean>} 是否為超級管理員
+   */
+  async isSuperAdmin(email) {
+    try {
+      if (!supabase) {
+        // 備用方案
+        const adminAccount = this.defaultAdminAccounts.find(account => account.email === email);
+        return adminAccount?.role === 'super_admin';
+      }
+
+      const { data: adminAccount, error } = await supabase
+        .from('admin_users')
+        .select('role')
+        .eq('email', email)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !adminAccount) return false;
+      return adminAccount.role === 'super_admin';
+    } catch (error) {
+      console.error('檢查超級管理員權限失敗:', error);
+      return false;
+    }
+  },
+
+  /**
+   * 獲取管理員資訊
+   * @param {String} email - 管理員郵箱
+   * @return {Promise<Object>} 管理員資訊
+   */
+  async getAdminInfo(email) {
+    try {
+      if (!supabase) {
+        // 備用方案
+        const adminAccount = this.defaultAdminAccounts.find(account => account.email === email);
+        if (!adminAccount) return null;
+        
+        return {
+          email: adminAccount.email,
+          role: adminAccount.role,
+          roleName: adminAccount.role === 'super_admin' ? '超級管理員' : '一般管理員'
+        };
+      }
+
+      const { data: adminAccount, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !adminAccount) return null;
+      
+      return {
+        id: adminAccount.id,
+        email: adminAccount.email,
+        role: adminAccount.role,
+        roleName: adminAccount.role === 'super_admin' ? '超級管理員' : '一般管理員',
+        createdAt: adminAccount.created_at,
+        lastLoginAt: adminAccount.last_login_at
+      };
+    } catch (error) {
+      console.error('獲取管理員資訊失敗:', error);
+      return null;
+    }
+  },
+
+  /**
+   * 初始化管理員資料（如果資料庫為空）
+   * @return {Promise<Object>} 初始化結果
+   */
+  async initializeAdminData() {
+    try {
+      if (!supabase) {
+        console.log('Supabase 未配置，跳過初始化');
+        return { success: false, error: 'Supabase 未配置' };
+      }
+
+      // 檢查是否已有管理員資料
+      const { data: existingAdmins, error: countError } = await supabase
+        .from('admin_users')
+        .select('id', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error('檢查現有管理員失敗:', countError);
+        return { success: false, error: countError.message };
+      }
+
+      // 如果已有資料，不需要初始化
+      if (existingAdmins && existingAdmins.length > 0) {
+        console.log('管理員資料已存在，無需初始化');
+        return { success: true, message: '資料已存在' };
+      }
+
+      // 插入預設管理員資料
+      const { data, error } = await supabase
+        .from('admin_users')
+        .insert(this.defaultAdminAccounts);
+
+      if (error) {
+        console.error('初始化管理員資料失敗:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('管理員資料初始化成功');
+      return { success: true, data };
+    } catch (error) {
+      console.error('初始化管理員資料異常:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * 獲取當前管理員權限
+   * @return {Object} 當前管理員資訊
+   */
+  getCurrentAdmin() {
+    const adminSession = localStorage.getItem('adminSession');
+    if (!adminSession) return null;
+    
+    try {
+      const session = JSON.parse(adminSession);
+      
+      // 如果 session 中沒有 role，從 adminAccounts 中查找
+      let role = session.role;
+      if (!role) {
+        const adminAccount = this.adminAccounts.find(account => account.email === session.email);
+        role = adminAccount?.role || 'admin';
+      }
+      
+      return {
+        email: session.email,
+        role: role,
+        isSuperAdmin: role === 'super_admin'
+      };
+    } catch (error) {
+      console.error('解析管理員 session 失敗:', error);
+      return null;
+    }
+  },
+
+  /**
+   * 更新管理員密碼
+   * @param {String} email - 管理員郵箱
+   * @param {String} newPassword - 新密碼
+   * @return {Promise<Object>} 更新結果
+   */
+  async updatePassword(email, newPassword) {
+    try {
+      if (!supabase) {
+        return { success: false, error: 'Supabase 配置錯誤' };
+      }
+
+      const { data, error } = await supabase
+        .from('admin_users')
+        .update({ password: newPassword })
+        .eq('email', email)
+        .eq('is_active', true)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('AdminService: 更新密碼失敗:', error);
+        return { success: false, error: '找不到該管理員帳號或更新失敗' };
+      }
+      
+      console.log(`AdminService: 已更新 ${email} 的密碼`);
+      return { success: true, data };
+    } catch (error) {
+      console.error('AdminService: 更新密碼失敗:', error);
+      return { success: false, error: '更新密碼過程發生錯誤' };
+    }
+  },
+
+  /**
+   * 刪除管理員（軟刪除）
+   * @param {String} email - 管理員郵箱
+   * @return {Promise<Object>} 刪除結果
+   */
+  async deleteAdmin(email) {
+    try {
+      if (!supabase) {
+        return { success: false, error: 'Supabase 配置錯誤' };
+      }
+
+      // 先查詢管理員資料
+      const { data: adminData, error: queryError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .eq('is_active', true)
+        .single();
+
+      if (queryError || !adminData) {
+        return { success: false, error: '找不到該管理員帳號' };
+      }
+      
+      // 不能刪除超級管理員
+      if (adminData.role === 'super_admin') {
+        return { success: false, error: '不能刪除超級管理員帳號' };
+      }
+      
+      // 軟刪除：設為非活躍狀態
+      const { error: deleteError } = await supabase
+        .from('admin_users')
+        .update({ is_active: false })
+        .eq('id', adminData.id);
+
+      if (deleteError) {
+        console.error('AdminService: 刪除管理員失敗:', deleteError);
+        return { success: false, error: '刪除管理員失敗' };
+      }
+      
+      console.log(`AdminService: 已刪除管理員 ${email}`);
+      return { success: true };
+    } catch (error) {
+      console.error('AdminService: 刪除管理員失敗:', error);
+      return { success: false, error: '刪除管理員過程發生錯誤' };
     }
   },
 };
