@@ -1,0 +1,180 @@
+/* IdleHint.css */
+.idle-hint-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 8000;
+  backdrop-filter: blur(2px);
+}
+
+.idle-hint-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  z-index: 8001;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.hint-icon {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.hint-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.hint-subtitle {
+  font-size: 1rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 25px 0;
+}
+
+/* 滑動動畫演示 */
+.swipe-animation {
+  position: relative;
+  height: 60px;
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-demo {
+  font-size: 2rem;
+  z-index: 2;
+}
+
+.swipe-arrows {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  pointer-events: none;
+}
+
+.arrow-left,
+.arrow-right {
+  font-size: 1.5rem;
+  color: #007bff;
+  font-weight: bold;
+}
+
+/* 操作按鈕 */
+.hint-action-button {
+  width: 100%;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 15px;
+}
+
+.hint-action-button:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* 關閉按鈕 */
+.hint-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.hint-close:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* 響應式設計 */
+@media (max-width: 480px) {
+  .idle-hint-modal {
+    max-width: 280px;
+    padding: 25px 20px;
+  }
+  
+  .hint-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+  }
+  
+  .hint-title {
+    font-size: 1.2rem;
+  }
+  
+  .hint-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .swipe-animation {
+    height: 50px;
+    margin: 15px 0;
+  }
+  
+  .swipe-demo {
+    font-size: 1.8rem;
+  }
+  
+  .arrow-left,
+  .arrow-right {
+    font-size: 1.3rem;
+  }
+  
+  .hint-action-button {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+}
+
+/* 動畫增強 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.hint-action-button:active {
+  animation: pulse 0.2s ease;
+}

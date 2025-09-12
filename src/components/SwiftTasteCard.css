@@ -1,3 +1,44 @@
+/* --- 開發測試按鈕 --- */
+.dev-controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+}
+
+.dev-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.dev-btn:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dev-btn-show {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.dev-btn-reset {
+  background: linear-gradient(135deg, #ffc107, #fd7e14);
+  color: #212529;
+}
+
 /* --- General Layout --- */
 .motion-swiper-container {
   position: fixed;

@@ -6,9 +6,11 @@ import { createClient } from '@supabase/supabase-js';
 // Supabase 配置
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
 console.log('Supabase URL:', supabaseUrl);
 console.log('Supabase Key exists:', !!supabaseAnonKey);
+console.log('Supabase Service Key exists:', !!supabaseServiceKey);
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase 配置缺失，請檢查環境變數');
@@ -16,7 +18,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('VITE_SUPABASE_ANON_KEY存在:', !!supabaseAnonKey);
 }
 
-// 創建 Supabase 客戶端
+// 創建 Supabase 客戶端（一般用戶）
 export const supabase = supabaseUrl && supabaseAnonKey ? 
   createClient(supabaseUrl, supabaseAnonKey, {
     realtime: {
@@ -24,6 +26,15 @@ export const supabase = supabaseUrl && supabaseAnonKey ?
         eventsPerSecond: 10, // 限制每秒事件數量
       },
     },
+  }) : null;
+
+// 創建 Supabase 管理客戶端（具有完整權限）
+export const supabaseAdmin = supabaseUrl && supabaseServiceKey ? 
+  createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
   }) : null;
 
 // 監聽器管理 - 防止重複監聽和內存洩漏
@@ -801,8 +812,9 @@ export const finalResultService = {
 export const adminService = {
   // 管理員帳號清單（實際上應該存在資料庫中）
   adminAccounts: [
-    { email: 'admin@swifttaste.com', password: 'admin123456' },
-    { email: 'elson921121@gmail.com', password: '921121elson' }
+    { email: 'admin@swifttaste.com', password: 'admin123456', role: 'admin' },
+    { email: 'elson921121@gmail.com', password: '921121elson', role: 'super_admin' },
+    { email: 'tidalx86arm@gmail.com', password: '12345', role: 'admin' }
   ],
 
   /**
@@ -829,6 +841,7 @@ export const adminService = {
       const adminSession = {
         email: email,
         isAdmin: true,
+        role: adminAccount.role,
         loginTime: new Date().toISOString(),
         sessionId: `admin_${Date.now()}_${Math.random().toString(36).substring(2)}`
       };

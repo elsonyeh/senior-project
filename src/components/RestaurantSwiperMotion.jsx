@@ -6,10 +6,18 @@ export default function RestaurantSwiperMotion({
   restaurants,
   onSave,
   onFinish,
+  tutorialMode = false,
+  onSingleSwipe,
 }) {
   const [seen, setSeen] = useState([]);
 
   const handleSwipe = (dir, r) => {
+    // 如果是教學模式，只處理單次滑動事件
+    if (tutorialMode && onSingleSwipe) {
+      onSingleSwipe(dir, r);
+      return;
+    }
+
     if (dir === "right") onSave?.(r);
     const newSeen = [...seen, r.id];
     setSeen(newSeen);

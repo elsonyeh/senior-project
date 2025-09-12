@@ -1,91 +1,94 @@
-/* AdminDashboard.css */
-
-/* 主容器 */
+/* Admin Dashboard - 與圖片樣式完全一致 */
 .admin-dashboard {
-  padding: 0;
+  width: 100%;
   min-height: 100vh;
-  background: #f5f5f5;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #f8f9fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* 標題欄 */
+/* 頂部標題列 */
 .dashboard-header {
   background: white;
-  padding: 20px 30px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 15px 25px;
+  border-bottom: 1px solid #dee2e6;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e9ecef;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.system-icon {
+  font-size: 1.2rem;
 }
 
 .dashboard-header h1 {
   margin: 0;
-  color: #333;
-  font-size: 2rem;
+  font-size: 1.3rem;
   font-weight: 600;
+  color: #333;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.admin-info {
-  color: #666;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.btn-logout {
-  padding: 10px 20px;
+.logout-btn {
   background: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.btn-logout:hover {
+.logout-btn:hover {
   background: #c82333;
-  transform: translateY(-1px);
 }
 
-/* 頁籤 */
-.dashboard-tabs {
+/* 用戶資訊列 */
+.user-info {
   background: white;
-  padding: 0 30px;
+  padding: 10px 25px;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.admin-status {
+  color: #28a745;
+  font-weight: 500;
+}
+
+/* 標籤頁 */
+.dashboard-tabs {
   display: flex;
-  gap: 0;
-  border-bottom: 1px solid #e9ecef;
+  background: white;
+  border-bottom: 1px solid #dee2e6;
 }
 
 .tab-button {
-  padding: 15px 25px;
-  background: none;
+  flex: 1;
+  background: #e9ecef;
   border: none;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 15px 20px;
   cursor: pointer;
-  color: #666;
-  border-bottom: 3px solid transparent;
+  font-size: 0.95rem;
+  color: #495057;
+  border-radius: 0;
   transition: all 0.2s ease;
-  position: relative;
-}
-
-.tab-button:hover {
-  color: #007bff;
-  background: rgba(0, 123, 255, 0.05);
 }
 
 .tab-button.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
-  background: rgba(0, 123, 255, 0.05);
+  background: #28a745;
+  color: white;
+  font-weight: 500;
+}
+
+.tab-button:hover:not(.active) {
+  background: #dee2e6;
 }
 
 /* 內容區域 */
@@ -93,781 +96,248 @@
   padding: 0;
 }
 
-/* 功能開發中的佔位符 */
-.feature-placeholder {
-  text-align: center;
-  padding: 80px 20px;
-  background: white;
-  margin: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+/* Buddies 區域樣式 */
+.buddies-section {
+  padding: 20px 25px;
 }
 
-.feature-placeholder p {
-  color: #666;
-  font-size: 16px;
-  margin: 10px 0;
-}
-
-.feature-placeholder p:first-child {
-  font-size: 24px;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
-.buddies-section h2,
-.analytics-section h2 {
-  margin: 0 0 20px 0;
-  color: #333;
-  font-size: 1.8rem;
-  padding: 30px 30px 0 30px;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .dashboard-header {
-    padding: 15px 20px;
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .dashboard-header h1 {
-    font-size: 1.6rem;
-  }
-
-  .dashboard-tabs {
-    padding: 0 20px;
-    flex-direction: column;
-  }
-
-  .tab-button {
-    border-bottom: none;
-    border-left: 3px solid transparent;
-    text-align: left;
-    padding: 12px 15px;
-  }
-
-  .tab-button.active {
-    border-left-color: #007bff;
-    border-bottom-color: transparent;
-  }
-
-  .feature-placeholder {
-    margin: 20px;
-    padding: 60px 20px;
-  }
-
-  .buddies-section h2,
-  .analytics-section h2 {
-    padding: 20px 20px 0 20px;
-    font-size: 1.5rem;
-  }
-}
-
-.user-status {
-  margin-bottom: 1rem;
-  color: #666;
-}
-
-.user-status span {
-  color: #4CAF50;
-  font-weight: 500;
-}
-
-/* 登出按鈕 */
-.logout-button {
-  background-color: #f44336;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
-}
-
-.logout-button:hover {
-  background-color: #d32f2f;
-}
-
-/* 主頁籤 */
-.tab-container {
-  display: flex;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.tab-button {
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  flex: 1;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-}
-
-.tab-button.active-restaurants {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.tab-button.inactive-restaurants {
-  background-color: #e0e0e0;
-  color: #333;
-}
-
-.tab-button.active-rooms {
-  background-color: #2196F3;
-  color: white;
-}
-
-.tab-button.inactive-rooms {
-  background-color: #e0e0e0;
-  color: #333;
-}
-
-/* 餐廳子頁籤 */
-.restaurant-subtab-container {
-  display: flex;
-  margin-bottom: 1.5rem;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid #e0e0e0;
-  width: fit-content;
-}
-
-.restaurant-subtab-button {
-  padding: 8px 20px;
-  border: none;
-  cursor: pointer;
-  background-color: white;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-}
-
-.restaurant-subtab-button.active-subtab {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.restaurant-subtab-button.inactive-subtab {
-  background-color: #f9f9f9;
-  color: #333;
-}
-
-/* 新增餐廳表單區域 */
-.add-restaurant-container {
-  background-color: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  width: 100%;
-}
-
-.add-restaurant-form {
-  background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.add-restaurant-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.add-restaurant-input {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  transition: border-color 0.2s ease;
-}
-
-.add-restaurant-input:focus {
-  border-color: #2196F3;
-  outline: none;
-}
-
-.add-restaurant-controls {
+.section-title {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin: 1rem 0;
+  gap: 8px;
 }
 
-.add-restaurant-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+.section-icon {
+  font-size: 1.1rem;
 }
 
-.add-restaurant-button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: background-color 0.2s ease;
-}
-
-.add-restaurant-button:hover {
-  background-color: #43a047;
-}
-
-/* 標籤管理區域 */
-.tags-management-container {
-  background-color: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  width: 100%;
-}
-
-.tags-management-section {
-  background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.tags-search-box {
-  margin-bottom: 1rem;
-  position: relative;
-  display: flex;
-}
-
-.tag-search-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.clear-tag-search {
-  background: none;
-  border: none;
-  color: #f44336;
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 4px 8px;
-  border-radius: 4px;
-  margin-left: 8px;
-  white-space: nowrap;
-}
-
-.clear-tag-search:hover {
-  background-color: #ffebee;
-}
-
-.tags-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0.5rem;
-  margin-top: 1rem;
-  position: relative;
-}
-
-/* 已選標籤顯示區域 */
-.selected-tags-container {
-  margin: 1rem 0;
-  padding: 0.5rem 1rem;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  border: 1px solid #e0e0e0;
-}
-
-.selected-tags-header {
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.selected-tags-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.selected-tag-pill {
-  background-color: #2196F3;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.remove-tag {
-  cursor: pointer;
-  opacity: 0.8;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.3);
-  font-size: 0.7rem;
-}
-
-.remove-tag:hover {
-  opacity: 1;
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
-/* 標籤項目樣式 */
-.tag-item {
-  background-color: #fff;
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  position: relative;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-}
-
-.tag-item:hover {
-  background-color: #f1f3f5;
-  border-color: #adb5bd;
-}
-
-.tag-item.highlighted {
-  background-color: #e3f2fd;
-  border-color: #2196F3;
-}
-
-.tag-item.active {
-  background-color: #2196F3;
-  border-color: #1976d2;
-  color: white;
-}
-
-.tag-item.active .tag-name-text {
-  color: white;
-  font-weight: 500;
-}
-
-.tag-item.active:hover {
-  background-color: #1976d2;
-}
-
-.tag-item.editing {
-  z-index: 10;
-  padding: 8px;
-  height: auto;
-}
-
-.tag-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.tag-name-text {
-  cursor: pointer;
-  user-select: none;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.tag-name-text:hover {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.tag-actions {
-  display: none;
-  gap: 4px;
-}
-
-.tag-item:hover .tag-actions {
-  display: flex;
-}
-
-.tag-edit-button,
-.tag-delete-button {
-  background: none;
-  border: none;
-  padding: 2px 4px;
-  cursor: pointer;
-  font-size: 12px;
-  border-radius: 2px;
-  transition: all 0.2s ease;
-}
-
-.tag-edit-button:hover {
-  background-color: #2196F3;
-  color: white;
-}
-
-.tag-delete-button:hover {
-  background-color: #f44336;
-  color: white;
-}
-
-/* 編輯標籤容器 */
-.tag-edit-container {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  position: relative;
-  width: 100%;
-}
-
-.tag-edit-input {
-  width: 100%;
-  padding: 4px 6px;
-  border: 1px solid #2196F3;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  margin-bottom: 4px;
-}
-
-.tag-edit-buttons {
-  display: flex;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.tag-save-button,
-.tag-cancel-button {
-  padding: 2px 6px;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  font-size: 12px;
-  min-width: 24px;
-}
-
-.tag-save-button {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.tag-cancel-button {
-  background-color: #f44336;
-  color: white;
-}
-
-/* 篩選餐廳預覽 */
-.filtered-restaurants-preview {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background-color: #fff;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-.preview-list {
-  margin-top: 0.5rem;
-}
-
-.preview-item {
-  padding: 0.5rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.preview-more {
-  padding: 0.5rem;
-  color: #757575;
-  font-style: italic;
-  font-size: 0.9rem;
-}
-
-/* 餐廳列表 */
-.restaurant-list-container {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  overflow: hidden;
-  margin-top: 2rem;
-}
-
-.restaurant-list-header {
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-}
-
-.restaurant-list-header h3 {
+.section-header h2 {
   margin: 0;
-  color: #333;
-}
-
-.restaurant-header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.clear-search-button {
-  background-color: #f44336;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
-}
-
-.clear-search-button:hover {
-  background-color: #d32f2f;
-}
-
-.export-button {
-  background-color: #4a69bd;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s ease;
-}
-
-.export-button:hover {
-  background-color: #3c5aa6;
-}
-
-.restaurant-table-container {
-  overflow-x: auto;
-  max-height: calc(100vh - 400px);
-}
-
-.restaurant-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.restaurant-table th {
-  background-color: #f8f9fa;
-  padding: 12px 8px;
-  text-align: left;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #333;
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
-.restaurant-table th.center {
-  text-align: center;
-}
-
-.restaurant-table th.left {
-  text-align: left;
-}
-
-.restaurant-table td {
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.restaurant-table td.center {
-  text-align: center;
-}
-
-.restaurant-input {
-  width: 100%;
-  padding: 4px 8px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background-color: transparent;
-}
-
-/* 改進標籤欄位顯示 */
-.restaurant-table td:nth-child(5) {
-  max-width: 200px;
-  position: relative;
-}
-
-.restaurant-table td:nth-child(5) .restaurant-input {
-  white-space: normal;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  min-height: 60px;
-  line-height: 1.5;
-  text-align: left;
-  background-color: #ffffff;
-  display: block;
-  overflow-y: auto;
-  max-height: 120px;
-  padding: 8px;
-  margin: 0;
-}
-
-/* 當非編輯模式時提供更好的標籤顯示 */
-.restaurant-table td:nth-child(5) .restaurant-input:not(:focus) {
-  white-space: pre-wrap;
-}
-
-/* 編輯模式下的標籤輸入框樣式 */
-.restaurant-table td:nth-child(5) .restaurant-input:focus {
-  border: 1px solid #2196F3;
-  background-color: #fff;
-  position: relative;
-  z-index: 5;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.restaurant-input:focus {
-  border-color: #2196F3;
-  background-color: #fff;
-  outline: none;
-}
-
-.restaurant-image {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.restaurant-no-image {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f1f3f5;
-  border-radius: 4px;
-  color: #adb5bd;
-  font-size: 0.8rem;
-}
-
-.restaurant-image-upload {
-  margin-top: 4px;
-  font-size: 0.8rem;
-}
-
-.button-group {
-  display: flex;
-  gap: 4px;
-}
-
-.edit-button,
-.delete-button,
-.save-button,
-.cancel-button {
-  padding: 4px 8px;
+.refresh-btn {
+  background: #007bff;
+  color: white;
   border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.refresh-btn:hover {
+  background: #0056b3;
+}
+
+/* 資料表格 */
+.data-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.data-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 0.9rem;
+}
+
+.data-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+}
+
+.status-waiting {
+  color: #ffc107;
+  font-weight: 500;
+}
+
+.status-voting {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
-  transition: background-color 0.2s ease;
 }
 
-.edit-button {
-  background-color: #2196F3;
-  color: white;
+.delete-btn:hover {
+  background: #c82333;
 }
 
-.delete-button {
-  background-color: #f44336;
-  color: white;
+/* 管理員管理區域 */
+.admins-section {
+  padding: 20px 25px;
 }
 
-.save-button {
-  background-color: #4CAF50;
-  color: white;
+.admin-status-info {
+  color: #666;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
 }
 
-.cancel-button {
-  background-color: #757575;
-  color: white;
+.separator {
+  margin: 0 8px;
+  color: #ccc;
 }
 
-/* 空數據提示 */
-.empty-message {
-  padding: 1rem;
-  text-align: center;
-  color: #757575;
-  font-style: italic;
+/* 管理員資訊 */
+.admin-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* 響應式設計 */
-@media (max-width: 1024px) {
-  .admin-container {
-    padding: 0 1rem;
-  }
-
-  .restaurant-table-container {
-    max-height: none;
-  }
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
-@media (max-width: 768px) {
-  .restaurant-table {
-    font-size: 0.8rem;
-  }
-
-  .add-restaurant-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tags-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  }
-  
-  .restaurant-subtab-container {
-    width: 100%;
-  }
-  
-  .restaurant-subtab-button {
-    flex: 1;
-  }
+.status-indicator.online {
+  background-color: #28a745;
+  box-shadow: 0 0 6px rgba(40, 167, 69, 0.6);
 }
 
-/* 工具提示 */
-[title] {
-  position: relative;
+.status-indicator.offline {
+  background-color: #9E9E9E;
 }
 
-[title]:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  border-radius: 4px;
+.current-user {
+  color: #007bff;
+  font-weight: bold;
   font-size: 12px;
-  white-space: nowrap;
-  z-index: 1000;
 }
 
-/* 動畫效果 */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* 權限徽章 */
+.role-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
-.fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+.role-badge.super-admin {
+  background-color: #fd7e14;
+  color: white;
+}
+
+/* 狀態徽章 */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-badge.online {
+  background-color: #d4edda;
+  color: #28a745;
+}
+
+.status-badge.offline {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+/* 操作按鈕組 */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.edit-btn, .reset-password-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.edit-btn:hover:not(:disabled), .reset-password-btn:hover {
+  background: #0056b3;
+}
+
+.edit-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.reset-password-btn {
+  background: #fd7e14;
+}
+
+.reset-password-btn:hover {
+  background: #e6701e;
+}
+
+/* 管理員操作區域 */
+.admin-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  gap: 12px;
+}
+
+.add-admin-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.add-admin-btn:hover {
+  background: #218838;
+}
+
+.export-logs-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.export-logs-btn:hover {
+  background: #5a6268;
 }

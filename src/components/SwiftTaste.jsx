@@ -18,6 +18,8 @@ import BuddiesQuestionSwiper from "./BuddiesQuestionSwiper";
 import BuddiesRecommendation from "./BuddiesRecommendation";
 import BuddiesResultPage from "../pages/BuddiesResultPage";
 import LoadingOverlay from "./LoadingOverlay";
+import SwipeOnboarding from "./SwipeOnboarding";
+import IdleHint from "./IdleHint";
 import "./SwiftTasteCard.css";
 
 export default function SwiftTaste() {
@@ -43,6 +45,10 @@ export default function SwiftTaste() {
   const [basicQuestions, setBasicQuestions] = useState([]);
   const [funQuestions, setFunQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const [showIdleHint, setShowIdleHint] = useState(false);
+  const [idleTimer, setIdleTimer] = useState(null);
   
   // Current questions being shown
   const currentQuestions = phase === 'questions' ? basicQuestions : (phase === 'funQuestions' ? funQuestions : []);
@@ -56,6 +62,23 @@ export default function SwiftTaste() {
       setPhase("buddiesRoom");
     }
   }, [searchParams]);
+
+  // 監聽phase變化，管理停留時間提示
+  useEffect(() => {
+    // 在這些階段啟動停留時間計時器
+    const phasesWithIdleTimer = ['selectMode', 'questions', 'funQuestions', 'restaurants'];
+    
+    if (phasesWithIdleTimer.includes(phase) && !showOnboarding) {
+      startIdleTimer();
+    } else {
+      clearIdleTimer();
+    }
+
+    // 清理函數
+    return () => {
+      clearIdleTimer();
+    };
+  }, [phase, showOnboarding]);
 
   // 載入餐廳資料和問題
   useEffect(() => {
@@ -140,8 +163,58 @@ export default function SwiftTaste() {
       // 清理之前的保存餐廳記錄
       localStorage.removeItem("savedRestaurants");
       console.log("Cleared previous saved restaurants");
-      setPhase("questions");
+      
+      // 檢查是否已經看過引導動畫
+      const hasSeenOnboardingBefore = localStorage.getItem("hasSeenSwipeOnboarding");
+      if (!hasSeenOnboardingBefore) {
+        setShowOnboarding(true);
+      } else {
+        setPhase("questions");
+      }
     }
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    setHasSeenOnboarding(true);
+    localStorage.setItem("hasSeenSwipeOnboarding", "true");
+    setPhase("questions");
+  };
+
+  // 用於開發測試：重置引導動畫狀態
+  const resetOnboarding = () => {
+    localStorage.removeItem("hasSeenSwipeOnboarding");
+    setHasSeenOnboarding(false);
+    setShowOnboarding(false);
+    console.log("Onboarding reset - will show again on next single mode selection");
+  };
+
+  // 用於開發測試：強制顯示引導動畫
+  const forceShowOnboarding = () => {
+    setShowOnboarding(true);
+    console.log("Forcing onboarding to show");
+  };
+
+  // 停留時間管理
+  const startIdleTimer = () => {
+    clearIdleTimer(); // 清除之前的計時器
+    const timer = setTimeout(() => {
+      setShowIdleHint(true);
+    }, 15000); // 15秒後顯示提示
+    setIdleTimer(timer);
+  };
+
+  const clearIdleTimer = () => {
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      setIdleTimer(null);
+    }
+    setShowIdleHint(false);
+  };
+
+  const resetIdleTimer = () => {
+    clearIdleTimer();
+    startIdleTimer();
   };
 
   const handleBasicQuestionsComplete = (answers) => {
@@ -346,14 +419,14 @@ export default function SwiftTaste() {
             
           case "單人":
             // 檢查建議人數是否包含"1"
-            matched = restaurant.suggestedPeople && restaurant.suggestedPeople.includes("1");
-            if (matched) console.log(`✓ ${restaurant.name} matches 單人 (suggestedPeople: ${restaurant.suggestedPeople})`);
+            matched = restaurant.suggested_people && restaurant.suggested_people.includes("1");
+            if (matched) console.log(`✓ ${restaurant.name} matches 單人 (suggested_people: ${restaurant.suggested_people})`);
             break;
             
           case "多人":
             // 檢查建議人數是否包含"~"（表示多人）
-            matched = restaurant.suggestedPeople && restaurant.suggestedPeople.includes("~");
-            if (matched) console.log(`✓ ${restaurant.name} matches 多人 (suggestedPeople: ${restaurant.suggestedPeople})`);
+            matched = restaurant.suggested_people && restaurant.suggested_people.includes("~");
+            if (matched) console.log(`✓ ${restaurant.name} matches 多人 (suggested_people: ${restaurant.suggested_people})`);
             break;
             
           default:
@@ -498,31 +571,79 @@ export default function SwiftTaste() {
 
   return (
     <div className="swift-taste">
+      {/* 開發測試按鈕 */}
+      {import.meta.env.DEV && (
+        <div className="dev-controls">
+          <button 
+            onClick={forceShowOnboarding}
+            className="dev-btn dev-btn-show"
+          >
+            🎯 測試引導動畫
+          </button>
+          <button 
+            onClick={resetOnboarding}
+            className="dev-btn dev-btn-reset"
+          >
+            🔄 重置引導狀態
+          </button>
+        </div>
+      )}
+
+      {/* 停留時間提示 */}
+      <IdleHint 
+        show={showIdleHint} 
+        phase={phase} 
+        onDismiss={resetIdleTimer} 
+      />
+
+      {/* SwiftTaste 引導動畫 */}
+      {showOnboarding && (
+        <SwipeOnboarding onComplete={handleOnboardingComplete} />
+      )}
+      
       {phase === "selectMode" && (
-        <ModeSwiperMotion onSelect={handleModeSelect} />
+        <ModeSwiperMotion onSelect={(direction) => {
+          resetIdleTimer(); // 重置計時器
+          handleModeSelect(direction);
+        }} />
       )}
 
       {phase === "questions" && (
         <QuestionSwiperMotion
           questions={basicQuestions}
-          onComplete={handleBasicQuestionsComplete}
+          onComplete={(answers) => {
+            resetIdleTimer();
+            handleBasicQuestionsComplete(answers);
+          }}
           onBack={handleBackToStart}
+          onSwipe={resetIdleTimer} // 每次滑動重置計時器
         />
       )}
 
       {phase === "funQuestions" && (
         <QuestionSwiperMotion
           questions={getRandomFunQuestions(funQuestions, 3)}
-          onComplete={handleFunQuestionsComplete}
+          onComplete={(answers) => {
+            resetIdleTimer();
+            handleFunQuestionsComplete(answers);
+          }}
           onBack={() => setPhase("questions")}
+          onSwipe={resetIdleTimer} // 每次滑動重置計時器
         />
       )}
 
       {phase === "restaurants" && (
         <RestaurantSwiperMotion
           restaurants={filteredRestaurants.length > 0 ? filteredRestaurants : restaurants}
-          onSave={handleSave}
-          onFinish={handleRestaurantFinish}
+          onSave={(...args) => {
+            resetIdleTimer();
+            handleSave(...args);
+          }}
+          onFinish={(...args) => {
+            resetIdleTimer();
+            handleRestaurantFinish(...args);
+          }}
+          onSwipe={resetIdleTimer} // 每次滑動重置計時器
         />
       )}
 

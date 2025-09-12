@@ -11,7 +11,13 @@
       "Read(//c/Users/elson/Downloads/**)",
       "Bash(claude doctor)",
       "Bash(start http://localhost:5176)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm install:*)",
+      "Bash(npx eslint:*)",
+      "Bash(git checkout:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

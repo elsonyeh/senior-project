@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import CardStack from "./common/CardStack";
 import "./SwiftTasteCard.css";
 
-export default function QuestionSwiperMotion({ questions, onComplete }) {
+export default function QuestionSwiperMotion({ questions, onComplete, tutorialMode = false, onSingleSwipe }) {
   const [answers, setAnswers] = useState({});
   const [lastSwipedId, setLastSwipedId] = useState(null);
   const [lastDirection, setLastDirection] = useState("");
@@ -42,6 +42,12 @@ export default function QuestionSwiperMotion({ questions, onComplete }) {
 
   const handleSwipe = (dir, q) => {
     if (!q) return;
+
+    // 如果是教學模式，只處理單次滑動事件
+    if (tutorialMode && onSingleSwipe) {
+      onSingleSwipe(dir, q);
+      return;
+    }
 
     const answer = dir === "right" ? q.rightOption : q.leftOption;
     const updated = { ...answers, [q.id]: answer };

@@ -76,7 +76,7 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
   const userCount = options.userCount || 1;
   const strictBasicMatch = options.strictBasicMatch === true;
 
-  const { priceRange, type, isSpicy, suggestedPeople, tags, rating, reviews, likes, location } = restaurant || {};
+  const { priceRange, type, isSpicy, suggested_people, tags, rating, reviews, likes, location } = restaurant || {};
   const restaurantType = type ? type.split(/[,、，]/).map(t => t.trim()) : [];
   const restaurantTags = Array.isArray(tags) ? tags : tags ? [tags] : [];
   if (restaurantType.length > 0) restaurantTags.push(...restaurantType);
@@ -214,8 +214,8 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
         }
         case "辣": matched = isSpicy === true; break;
         case "不辣": matched = isSpicy === false; break;
-        case "單人": matched = suggestedPeople && suggestedPeople.includes("1"); break;
-        case "多人": matched = suggestedPeople && suggestedPeople.includes("~"); break;
+        case "單人": matched = suggested_people && suggested_people.includes("1"); break;
+        case "多人": matched = suggested_people && suggested_people.includes("~"); break;
         default: matched = tagMatch([answer]);
       }
       if (matched) {
