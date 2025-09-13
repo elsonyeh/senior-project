@@ -6,7 +6,7 @@ import './SwipeOnboarding.css';
 import './SwiftTasteCard.css';
 
 // 教學用問題滑動組件
-const TutorialQuestionSwiper = ({ questions, onSwipe }) => {
+const TutorialQuestionSwiper = ({ questions, onSwipe, swipeDirection = "both" }) => {
   const handleSwipe = (dir, question) => {
     onSwipe(dir, question);
   };
@@ -21,13 +21,14 @@ const TutorialQuestionSwiper = ({ questions, onSwipe }) => {
         }}
         tutorialMode={true}
         onSingleSwipe={handleSwipe}
+        swipeDirection={swipeDirection}
       />
     </div>
   );
 };
 
 // 教學用餐廳滑動組件
-const TutorialRestaurantSwiper = ({ restaurants, onSwipe }) => {
+const TutorialRestaurantSwiper = ({ restaurants, onSwipe, swipeDirection = "both" }) => {
   const handleSwipe = (dir, restaurant) => {
     onSwipe(dir, restaurant);
   };
@@ -46,6 +47,7 @@ const TutorialRestaurantSwiper = ({ restaurants, onSwipe }) => {
         }}
         tutorialMode={true}
         onSingleSwipe={handleSwipe}
+        swipeDirection={swipeDirection}
       />
     </div>
   );
@@ -70,7 +72,7 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
       title: "試試看右滑選擇！",
       subtitle: "這是真實的問題卡片，試著向右滑動選擇「內用」",
       icon: "👉",
-      animation: "interactive",
+      animation: "swipeRight",
       showCard: true,
       interactive: true,
       cardData: {
@@ -85,7 +87,7 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
       title: "很好！再試試左滑",
       subtitle: "現在向左滑動選擇「輕食」",
       icon: "👈",
-      animation: "interactive",
+      animation: "swipeLeft",
       showCard: true,
       interactive: true,
       cardData: {
@@ -97,9 +99,9 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
       }
     },
     {
-      title: "完美！餐廳卡片也是一樣",
-      subtitle: "右滑收藏這家餐廳，或左滑跳過",
-      icon: "🍽️",
+      title: "完美！現在試試餐廳卡片",
+      subtitle: "右滑收藏這家餐廳",
+      icon: "❤️",
       animation: "interactive",
       showCard: true,
       interactive: true,
@@ -110,7 +112,26 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
         rating: 4.5,
         tags: ["家庭聚餐", "平價"],
         type: "restaurant",
-        id: "tutorial-restaurant"
+        id: "tutorial-restaurant-1",
+        swipeDirection: "right"
+      }
+    },
+    {
+      title: "很好！再試試左滑跳過",
+      subtitle: "左滑跳過這家餐廳",
+      icon: "✗",
+      animation: "interactive",
+      showCard: true,
+      interactive: true,
+      cardData: {
+        name: "普通餐廳",
+        category: "快餐",
+        address: "台北市中山區",
+        rating: 3.2,
+        tags: ["快速", "便宜"],
+        type: "restaurant",
+        id: "tutorial-restaurant-2",
+        swipeDirection: "left"
       }
     },
     {
@@ -168,17 +189,22 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
 
     // 互動模式，使用真實的滑動組件
     if (cardData.type === "question") {
+      // 根據步驟設置滑動方向限制
+      const swipeDirection = currentStep === 1 ? "right" : currentStep === 2 ? "left" : "both";
       return (
         <TutorialQuestionSwiper 
           questions={[cardData]}
           onSwipe={handleInteractiveSwipe}
+          swipeDirection={swipeDirection}
         />
       );
     } else if (cardData.type === "restaurant") {
+      // 餐廳卡片根據cardData中的swipeDirection設置
       return (
         <TutorialRestaurantSwiper 
           restaurants={[cardData]}
           onSwipe={handleInteractiveSwipe}
+          swipeDirection={cardData.swipeDirection || "both"}
         />
       );
     }
@@ -270,17 +296,22 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
                   <motion.div
                     className="demo-card-wrapper"
                     animate={{
-                      x: steps[currentStep].animation === 'swipeRight' ? [0, 80, 0] 
-                         : steps[currentStep].animation === 'swipeLeft' ? [0, -80, 0]
-                         : steps[currentStep].animation === 'restaurantSwipe' ? [0, 80, 0, -80, 0]
-                         : 0,
-                      rotate: steps[currentStep].animation === 'swipeRight' ? [0, 12, 0] 
-                             : steps[currentStep].animation === 'swipeLeft' ? [0, -12, 0]
-                             : steps[currentStep].animation === 'restaurantSwipe' ? [0, 12, 0, -12, 0]
-                             : 0
+                      x: steps[currentStep].animation === 'swipeRight' ? [0, 150, 0] 
+                         : steps[currentStep].animation === 'swipeLeft' ? [0, -150, 0]
+                         : steps[currentStep].animation === 'interactive' ? (
+                           currentStep === 3 ? [0, 150, 0] : // 右滑收藏餐廳
+                           currentStep === 4 ? [0, -150, 0] : [0, 150, 0] // 左滑跳過餐廳
+                         ) : 0,
+                      rotate: steps[currentStep].animation === 'swipeRight' ? [0, 20, 0] 
+                             : steps[currentStep].animation === 'swipeLeft' ? [0, -20, 0]
+                             : steps[currentStep].animation === 'interactive' ? (
+                               currentStep === 3 ? [0, 20, 0] : // 右滑收藏餐廳
+                               currentStep === 4 ? [0, -20, 0] : [0, 20, 0] // 左滑跳過餐廳
+                             ) : 0,
+                      scale: steps[currentStep].animation === 'interactive' ? [1, 1.02, 1] : 1
                     }}
                     transition={{
-                      duration: steps[currentStep].animation === 'restaurantSwipe' ? 4 : 2.5,
+                      duration: steps[currentStep].animation === 'interactive' ? 2.5 : 2.5,
                       repeat: Infinity,
                       repeatType: "loop",
                       delay: 0.5,
@@ -293,7 +324,7 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
                   {/* 滑動方向指示 */}
                   {(steps[currentStep].animation === 'swipeRight' || 
                     steps[currentStep].animation === 'swipeLeft' ||
-                    steps[currentStep].animation === 'restaurantSwipe') && (
+                    steps[currentStep].animation === 'interactive') && (
                     <div className="swipe-indicators">
                       {steps[currentStep].animation === 'swipeRight' && (
                         <motion.div 
@@ -313,22 +344,26 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
                           👈 選擇左邊
                         </motion.div>
                       )}
-                      {steps[currentStep].animation === 'restaurantSwipe' && (
+                      {steps[currentStep].animation === 'interactive' && (
                         <>
-                          <motion.div 
-                            className="swipe-indicator like-indicator"
-                            animate={{ opacity: [0, 1, 0, 0, 0] }}
-                            transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-                          >
-                            ❤️ 收藏
-                          </motion.div>
-                          <motion.div 
-                            className="swipe-indicator skip-indicator"
-                            animate={{ opacity: [0, 0, 0, 1, 0] }}
-                            transition={{ duration: 4, repeat: Infinity, delay: 2.5 }}
-                          >
-                            ✗ 跳過
-                          </motion.div>
+                          {currentStep === 3 && (
+                            <motion.div 
+                              className="swipe-indicator right-indicator"
+                              animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.1, 1] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                            >
+                              ❤️ 收藏餐廳
+                            </motion.div>
+                          )}
+                          {currentStep === 4 && (
+                            <motion.div 
+                              className="swipe-indicator left-indicator"
+                              animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.1, 1] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                            >
+                              ✗ 跳過餐廳
+                            </motion.div>
+                          )}
                         </>
                       )}
                     </div>
@@ -374,33 +409,39 @@ const SwipeOnboarding = ({ onComplete, onInteractiveStep, questions, restaurants
         </div>
       </div>
 
-      {/* 手指滑動指示器 */}
-      <div className="swipe-hint">
-        <motion.div
-          className="finger-icon"
-          animate={{
-            x: currentStep === 1 ? [0, 50, 0] : currentStep === 2 ? [0, -50, 0] : 0,
-            opacity: [0.5, 1, 0.5]
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            repeatType: "loop"
-          }}
-        >
-          👆
-        </motion.div>
-        {(currentStep === 1 || currentStep === 2) && (
+      {/* 手指滑動指示器 - 只在需要滑動演示時顯示 */}
+      {(currentStep === 1 || currentStep === 2 || currentStep === 3 || currentStep === 4) && (
+        <div className="swipe-hint">
+          <motion.div
+            className="finger-icon"
+            animate={{
+              x: currentStep === 1 ? [0, 60, 0] : 
+                 currentStep === 2 ? [0, -60, 0] :
+                 currentStep === 3 ? [0, 60, 0] :
+                 currentStep === 4 ? [0, -60, 0] : 0,
+              opacity: [0.5, 1, 0.5]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              repeatType: "loop"
+            }}
+          >
+            👆
+          </motion.div>
           <motion.p 
             className="swipe-text"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {currentStep === 1 ? "試著滑動看看！" : "或是這樣滑動"}
+            {currentStep === 1 ? "試著滑動看看！" : 
+             currentStep === 2 ? "或是這樣滑動" :
+             currentStep === 3 ? "滑動收藏餐廳" :
+             currentStep === 4 ? "滑動跳過餐廳" : ""}
           </motion.p>
-        )}
-      </div>
+        </div>
+      )}
     </motion.div>
   );
 };

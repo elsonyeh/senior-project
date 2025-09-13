@@ -29,8 +29,27 @@
 /* 主要操作按鈕組 */
 .manager-actions {
   display: flex;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
   margin-bottom: 25px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #007bff;
+}
+
+.primary-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .action-btn-group {
@@ -45,19 +64,28 @@
 
 /* 現代化按鈕樣式 */
 .btn {
-  padding: 8px 16px;
+  padding: 10px 18px;
   border: none;
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-icon {
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn:hover {
@@ -77,6 +105,20 @@
 
 .btn-primary:hover {
   background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.btn-add-restaurant {
+  font-size: 15px;
+  padding: 12px 20px;
+  font-weight: 700;
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #dc3545, #c82333) !important;
+}
+
+.btn-cancel:hover {
+  background: linear-gradient(135deg, #c82333, #bd2130) !important;
 }
 
 .btn-success {
@@ -104,6 +146,14 @@
 
 .btn-info:hover {
   background: linear-gradient(135deg, #138496, #117a8b);
+}
+
+.btn-export {
+  font-size: 13px;
+  padding: 8px 16px;
+  font-weight: 600;
+  min-width: 120px;
+  justify-content: center;
 }
 
 .btn-warning {
@@ -151,13 +201,29 @@
   background: white;
   color: #495057;
   border: 1.5px solid #dee2e6;
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-outline:hover {
   background: #f8f9fa;
   border-color: #adb5bd;
   color: #495057;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.clear-filters {
+  color: #6c757d;
+  border-color: #ced4da;
+}
+
+.clear-filters:hover {
+  color: #dc3545;
+  border-color: #dc3545;
+  background: #fff5f5;
+}
+
+.clear-filters-suggestion {
+  margin-top: 15px;
 }
 
 .btn:disabled {
@@ -171,11 +237,32 @@
 .btn-sm {
   padding: 6px 12px;
   font-size: 12px;
+  gap: 4px;
 }
 
 .btn-lg {
   padding: 12px 24px;
   font-size: 15px;
+}
+
+/* 表格操作按鈕 */
+.table-action-btn {
+  min-width: 70px;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.edit-actions,
+.normal-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.edit-actions .btn,
+.normal-actions .btn {
+  margin: 1px;
 }
 
 /* 新增餐廳表單 */
@@ -581,6 +668,94 @@
     padding: 15px;
   }
 
+  .manager-actions {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .primary-actions,
+  .export-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-add-restaurant {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .export-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-export {
+    width: 100%;
+  }
+
+  .filter-info {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .search-controls {
+    padding: 15px;
+    gap: 12px;
+  }
+
+  .search-header {
+    padding: 12px 15px;
+  }
+
+  .search-header h3 {
+    font-size: 14px;
+  }
+
+  .mode-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tags-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .tags-title {
+    font-size: 13px;
+  }
+
+  .category-grid {
+    padding: 12px 15px;
+    gap: 6px;
+  }
+
+  .category-tag {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .edit-actions,
+  .normal-actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .table-action-btn {
+    min-width: 60px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
   .manager-header {
     flex-direction: column;
     gap: 15px;
@@ -617,26 +792,245 @@
   }
 }
 
-/* 標籤雲樣式優化 */
+/* 區段標題樣式 */
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-icon {
+  font-size: 1.2rem;
+}
+
+/* 篩選信息區域 */
+.filter-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #007bff;
+}
+
+.filter-info span {
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 舊的標籤雲樣式已整合到 tags-section 中 */
+
+/* 標籤搜尋卡片 */
+.tag-search-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-bottom: 1px solid #dee2e6;
+}
+
+.search-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-icon {
+  font-size: 18px;
+}
+
+.selected-count {
+  background: #007bff;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.search-controls {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filter-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.clear-all-tags {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.clear-all-tags:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tag-search-input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: #f8f9fa;
+}
+
+.tag-search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.tag-search-input::placeholder {
+  color: #8d9498;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #6c757d;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+  background: #dc3545;
+  transform: scale(1.1);
+}
+
+.match-mode-toggle {
+  display: flex;
+  background: #f1f3f4;
+  border-radius: 8px;
+  padding: 4px;
+  align-self: flex-start;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mode-btn:hover {
+  color: #495057;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.mode-btn.active {
+  background: #007bff;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.mode-btn.active:hover {
+  background: #0056b3;
+}
+
+/* 標籤區域樣式 */
+.tags-section {
+  border-top: 1px solid #e9ecef;
+  background: #fafbfc;
+}
+
+.tags-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tags-title {
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tags-count {
+  color: #6c757d;
+  font-size: 13px;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+}
+
 .category-grid {
+  padding: 15px 20px;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 15px 0;
+  gap: 8px;
   max-height: 300px;
   overflow-y: auto;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 8px;
 }
 
 .category-tag {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
+  background: white;
+  border: 1.5px solid #dee2e6;
   color: #495057;
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -644,73 +1038,62 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .category-tag:hover {
   background: #e9ecef;
   border-color: #adb5bd;
   transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .category-tag.selected {
   background: #007bff;
   color: white;
   border-color: #0056b3;
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
 }
 
 .category-tag.selected:hover {
   background: #0056b3;
+  border-color: #004085;
+}
+
+.tag-name {
+  font-weight: 600;
+}
+
+.tag-count {
+  opacity: 0.8;
+  font-size: 12px;
 }
 
 .tag-added-icon {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: bold;
+  margin-left: 2px;
 }
 
 .no-tags-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: #6c757d;
   font-style: italic;
-  padding: 20px;
+  padding: 30px;
   text-align: center;
   width: 100%;
-}
-
-/* 標籤搜尋區域 */
-.tag-search-section {
-  margin-bottom: 20px;
-  padding: 15px;
   background: white;
+  border: 2px dashed #dee2e6;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.tag-search-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-
-.tag-search-input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
-}
-
-.match-mode-options {
-  display: flex;
-  gap: 15px;
-  font-size: 14px;
-}
-
-.match-mode-options label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  color: #495057;
+.no-tags-icon {
+  font-size: 24px;
+  opacity: 0.5;
 }
 
 /* 彈出視窗樣式 */

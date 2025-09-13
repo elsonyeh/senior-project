@@ -810,30 +810,6 @@ export const finalResultService = {
 
 // 管理員功能
 export const adminService = {
-  // 預設管理員帳號清單（備用）
-  defaultAdminAccounts: [
-    { 
-      email: 'admin@swifttaste.com', 
-      password: 'admin123456', 
-      role: 'admin',
-      created_at: '2024-01-01T00:00:00.000Z',
-      last_login_at: null
-    },
-    { 
-      email: 'elson921121@gmail.com', 
-      password: '921121elson', 
-      role: 'super_admin',
-      created_at: '2023-12-01T00:00:00.000Z',
-      last_login_at: null
-    },
-    { 
-      email: 'tidalx86arm@gmail.com', 
-      password: '12345', 
-      role: 'admin',
-      created_at: '2024-02-01T00:00:00.000Z',
-      last_login_at: null
-    }
-  ],
 
   /**
    * 獲取所有管理員帳號
@@ -842,8 +818,7 @@ export const adminService = {
   async getAllAdmins() {
     try {
       if (!supabase) {
-        console.error('Supabase 客戶端未初始化');
-        return this.defaultAdminAccounts;
+        throw new Error('Supabase 客戶端未初始化，請檢查環境變數配置');
       }
 
       const { data, error } = await supabase
@@ -854,21 +829,23 @@ export const adminService = {
 
       if (error) {
         console.error('獲取管理員列表失敗:', error);
-        return this.defaultAdminAccounts;
+        throw new Error(`獲取管理員列表失敗: ${error.message}`);
       }
 
-      return data || [];
+      // 如果沒有管理員資料，自動初始化
+      if (!data || data.length === 0) {
+        console.log('沒有找到管理員資料，嘗試初始化...');
+        await this.initializeDefaultAdmins();
+        return this.getAllAdmins(); // 遞迴重新獲取
+      }
+
+      return data;
     } catch (error) {
       console.error('獲取管理員列表異常:', error);
-      return this.defaultAdminAccounts;
+      throw error;
     }
   },
 
-  // 相容性屬性，保持原有代碼可用
-  get adminAccounts() {
-    // 這個節時返回預設值，實際應該使用 getAllAdmins() 異步方法
-    return this.defaultAdminAccounts;
-  },
 
   /**
    * 管理員登入
@@ -956,10 +933,20 @@ export const adminService = {
         return false;
       }
 
-      // 驗證是否為授權管理員
-      const isValidAdmin = this.adminAccounts.some(
-        account => account.email === session.email
-      );
+      // 從 Supabase 資料庫驗證是否為授權管理員
+      if (!supabase) {
+        console.log('AdminService: Supabase 未初始化');
+        return false;
+      }
+
+      const { data: adminAccount, error } = await supabase
+        .from('admin_users')
+        .select('email, is_active')
+        .eq('email', session.email)
+        .eq('is_active', true)
+        .single();
+
+      const isValidAdmin = !error && adminAccount;
 
       console.log('AdminService: 管理員權限檢查結果:', isValidAdmin);
       return isValidAdmin && session.isAdmin === true;
@@ -991,10 +978,19 @@ export const adminService = {
    */
   async resetPassword(email) {
     try {
-      // 檢查是否為授權管理員帳號
-      const adminAccount = this.adminAccounts.find(account => account.email === email);
+      if (!supabase) {
+        return { success: false, error: 'Supabase 配置錯誤' };
+      }
+
+      // 從資料庫檢查是否為授權管理員帳號
+      const { data: adminAccount, error } = await supabase
+        .from('admin_users')
+        .select('email')
+        .eq('email', email)
+        .eq('is_active', true)
+        .single();
       
-      if (!adminAccount) {
+      if (error || !adminAccount) {
         return { success: false, error: '此電子郵件不是授權的管理員帳號' };
       }
 
@@ -1081,9 +1077,7 @@ export const adminService = {
   async isSuperAdmin(email) {
     try {
       if (!supabase) {
-        // 備用方案
-        const adminAccount = this.defaultAdminAccounts.find(account => account.email === email);
-        return adminAccount?.role === 'super_admin';
+        throw new Error('Supabase 客戶端未初始化');
       }
 
       const { data: adminAccount, error } = await supabase
@@ -1093,7 +1087,10 @@ export const adminService = {
         .eq('is_active', true)
         .single();
 
-      if (error || !adminAccount) return false;
+      if (error || !adminAccount) {
+        console.log(`管理員 ${email} 不存在或已停用`);
+        return false;
+      }
       return adminAccount.role === 'super_admin';
     } catch (error) {
       console.error('檢查超級管理員權限失敗:', error);
@@ -1109,15 +1106,7 @@ export const adminService = {
   async getAdminInfo(email) {
     try {
       if (!supabase) {
-        // 備用方案
-        const adminAccount = this.defaultAdminAccounts.find(account => account.email === email);
-        if (!adminAccount) return null;
-        
-        return {
-          email: adminAccount.email,
-          role: adminAccount.role,
-          roleName: adminAccount.role === 'super_admin' ? '超級管理員' : '一般管理員'
-        };
+        throw new Error('Supabase 客戶端未初始化');
       }
 
       const { data: adminAccount, error } = await supabase
@@ -1127,7 +1116,10 @@ export const adminService = {
         .eq('is_active', true)
         .single();
 
-      if (error || !adminAccount) return null;
+      if (error || !adminAccount) {
+        console.log(`找不到管理員: ${email}`);
+        return null;
+      }
       
       return {
         id: adminAccount.id,
@@ -1139,77 +1131,89 @@ export const adminService = {
       };
     } catch (error) {
       console.error('獲取管理員資訊失敗:', error);
-      return null;
+      throw error;
     }
   },
 
   /**
-   * 初始化管理員資料（如果資料庫為空）
+   * 初始化預設管理員資料
    * @return {Promise<Object>} 初始化結果
    */
-  async initializeAdminData() {
+  async initializeDefaultAdmins() {
+    const defaultAdmins = [
+      { 
+        email: 'admin@swifttaste.com', 
+        password: 'admin123456', 
+        role: 'admin',
+        created_at: '2024-01-01T00:00:00.000Z',
+        last_login_at: null
+      },
+      { 
+        email: 'elson921121@gmail.com', 
+        password: '921121elson', 
+        role: 'super_admin',
+        created_at: '2023-12-01T00:00:00.000Z',
+        last_login_at: null
+      },
+      { 
+        email: 'tidalx86arm@gmail.com', 
+        password: '12345', 
+        role: 'admin',
+        created_at: '2024-02-01T00:00:00.000Z',
+        last_login_at: null
+      }
+    ];
+
     try {
       if (!supabase) {
-        console.log('Supabase 未配置，跳過初始化');
-        return { success: false, error: 'Supabase 未配置' };
+        throw new Error('Supabase 未配置');
       }
 
-      // 檢查是否已有管理員資料
-      const { data: existingAdmins, error: countError } = await supabase
-        .from('admin_users')
-        .select('id', { count: 'exact', head: true });
-
-      if (countError) {
-        console.error('檢查現有管理員失敗:', countError);
-        return { success: false, error: countError.message };
-      }
-
-      // 如果已有資料，不需要初始化
-      if (existingAdmins && existingAdmins.length > 0) {
-        console.log('管理員資料已存在，無需初始化');
-        return { success: true, message: '資料已存在' };
-      }
-
-      // 插入預設管理員資料
       const { data, error } = await supabase
         .from('admin_users')
-        .insert(this.defaultAdminAccounts);
+        .insert(defaultAdmins)
+        .select();
 
       if (error) {
         console.error('初始化管理員資料失敗:', error);
-        return { success: false, error: error.message };
+        throw new Error(`初始化失敗: ${error.message}`);
       }
 
       console.log('管理員資料初始化成功');
       return { success: true, data };
     } catch (error) {
       console.error('初始化管理員資料異常:', error);
-      return { success: false, error: error.message };
+      throw error;
     }
   },
 
   /**
    * 獲取當前管理員權限
-   * @return {Object} 當前管理員資訊
+   * @return {Promise<Object>} 當前管理員資訊
    */
-  getCurrentAdmin() {
+  async getCurrentAdmin() {
     const adminSession = localStorage.getItem('adminSession');
     if (!adminSession) return null;
     
     try {
       const session = JSON.parse(adminSession);
       
-      // 如果 session 中沒有 role，從 adminAccounts 中查找
-      let role = session.role;
-      if (!role) {
-        const adminAccount = this.adminAccounts.find(account => account.email === session.email);
-        role = adminAccount?.role || 'admin';
+      // 如果 session 中沒有 role 或者需要更新資訊，從 Supabase 查找
+      if (!session.role || !session.adminId) {
+        const adminInfo = await this.getAdminInfo(session.email);
+        if (adminInfo) {
+          // 更新 session
+          session.role = adminInfo.role;
+          session.adminId = adminInfo.id;
+          localStorage.setItem('adminSession', JSON.stringify(session));
+        }
       }
       
       return {
         email: session.email,
-        role: role,
-        isSuperAdmin: role === 'super_admin'
+        role: session.role || 'admin',
+        adminId: session.adminId,
+        isSuperAdmin: session.role === 'super_admin'
       };
     } catch (error) {
       console.error('解析管理員 session 失敗:', error);

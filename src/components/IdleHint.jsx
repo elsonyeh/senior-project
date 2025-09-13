@@ -48,7 +48,7 @@ const IdleHint = ({ show, phase, onDismiss }) => {
   return (
     <AnimatePresence>
       {show && (
-        <>
+        <div className="idle-hint-container">
           {/* 背景遮罩 */}
           <motion.div
             className="idle-hint-overlay"
@@ -62,9 +62,17 @@ const IdleHint = ({ show, phase, onDismiss }) => {
           <motion.div
             className="idle-hint-modal"
             initial={{ opacity: 0, scale: 0.8, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1, 
+              y: 0
+            }}
             exit={{ opacity: 0, scale: 0.8, y: 50 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
+              damping: 25
+            }}
           >
             <motion.div
               className="hint-icon"
@@ -133,7 +141,7 @@ const IdleHint = ({ show, phase, onDismiss }) => {
               ✕
             </button>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

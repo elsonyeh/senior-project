@@ -10,7 +10,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 10000;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -85,7 +85,7 @@
 /* 卡片演示容器 */
 .card-demo-container {
   position: relative;
-  height: 300px;
+  height: 350px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -99,31 +99,40 @@
 
 /* 演示卡片樣式 */
 .demo-card {
-  width: 280px !important;
-  height: 200px !important;
-  max-width: none !important;
-  max-height: none !important;
-  padding: 20px !important;
-  font-size: 0.9rem;
-  background: white !important;
-  color: #333 !important;
+  width: 350px;
+  height: 280px;
+  max-width: none;
+  max-height: none;
+  padding: 25px;
+  font-size: 1rem;
+  background: white;
+  color: #333;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .demo-card .question-wrapper h2 {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
+  font-size: 1.6rem;
+  margin-bottom: 20px;
   color: #333;
+  font-weight: 600;
 }
 
 .demo-card .options-display {
-  font-size: 1rem;
-  margin: 15px 0;
+  font-size: 1.2rem;
+  margin: 20px 0;
 }
 
 .demo-card .options-display .left,
 .demo-card .options-display .right {
-  padding: 10px 8px;
-  font-size: 0.95rem;
+  padding: 12px 10px;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 /* 餐廳卡片樣式 */
@@ -133,33 +142,35 @@
 }
 
 .demo-card .restaurant-name {
-  font-size: 1.3rem;
-  margin-bottom: 8px;
+  font-size: 1.8rem;
+  margin-bottom: 12px;
   color: #333;
   font-weight: 700;
 }
 
 .demo-card .restaurant-category {
   color: #666;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .demo-card .restaurant-rating {
   color: #ffc107;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   font-weight: 600;
+  font-size: 1.2rem;
 }
 
 .demo-card .restaurant-address {
   color: #888;
-  font-size: 0.85rem;
-  margin-bottom: 12px;
+  font-size: 1rem;
+  margin-bottom: 16px;
 }
 
 .demo-card .restaurant-tags {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -167,9 +178,9 @@
 .demo-card .tag {
   background: #e9ecef;
   color: #495057;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
@@ -351,9 +362,9 @@
   }
   
   .demo-card {
-    width: 240px !important;
-    height: 160px !important;
-    padding: 15px !important;
+    width: 240px;
+    height: 160px;
+    padding: 15px;
   }
   
   .demo-card .restaurant-name {
@@ -519,7 +530,7 @@
 .tutorial-swiper-container {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 350px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -527,20 +538,22 @@
 
 .tutorial-swiper-container .motion-swiper-container {
   position: relative;
-  width: 320px;
-  height: 250px;
+  width: 380px;
+  height: 320px;
   padding: 0;
   background: transparent;
 }
 
 .tutorial-swiper-container .motion-card {
-  width: 300px !important;
-  height: 220px !important;
-  max-width: none !important;
-  max-height: none !important;
-  padding: 20px !important;
-  font-size: 0.9rem !important;
-  position: relative !important;
+  width: 350px;
+  height: 280px;
+  max-width: none;
+  max-height: none;
+  padding: 25px;
+  font-size: 1rem;
+  position: relative;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 /* 為教學卡片添加特殊提示 */

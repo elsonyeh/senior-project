@@ -15,6 +15,7 @@ export default function CardStack({
   background,
   centered,
   badgeType = "like-nope",
+  swipeDirection = "both", // 新增滑動方向限制: "left", "right", "both"
 }) {
   const [visibleCards, setVisibleCards] = useState([]);
   // 全域狀態追蹤目前顯示哪個徽章
@@ -115,6 +116,7 @@ export default function CardStack({
                 isRestaurant={Boolean(background)}
                 centered={centered}
                 badgeType="none" // 不使用卡片內的徽章
+                swipeDirection={swipeDirection} // 傳遞滑動方向限制
               />
             );
           })}
@@ -133,6 +135,7 @@ function SwipeableCard({
   isRestaurant,
   centered,
   badgeType,
+  swipeDirection = "both",
 }) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 300], [-20, 20]);
@@ -150,11 +153,11 @@ function SwipeableCard({
   // 處理拖拽中的狀態更新
   const handleDrag = (_, info) => {
     // 當右滑超過30px時，觸發本地樣式變化
-    if (info.offset.x > 30) {
+    if (info.offset.x > 30 && (swipeDirection === "both" || swipeDirection === "right")) {
       onLocalSwipe?.("right", item);
     }
     // 當左滑超過30px時，觸發本地樣式變化
-    else if (info.offset.x < -30) {
+    else if (info.offset.x < -30 && (swipeDirection === "both" || swipeDirection === "left")) {
       onLocalSwipe?.("left", item);
     }
   };
@@ -181,14 +184,14 @@ function SwipeableCard({
       dragConstraints={{ left: 0, right: 0 }}
       onDrag={handleDrag}
       onDragEnd={(e, info) => {
-        if (info.offset.x > 80) {
+        if (info.offset.x > 80 && (swipeDirection === "both" || swipeDirection === "right")) {
           onLocalSwipe?.("right", item);
           onSwipe("right", item);
-        } else if (info.offset.x < -80) {
+        } else if (info.offset.x < -80 && (swipeDirection === "both" || swipeDirection === "left")) {
           onLocalSwipe?.("left", item);
           onSwipe("left", item);
         } else {
-          // 如果滑動距離不夠，重置本地樣式
+          // 如果滑動距離不夠或方向被限制，重置本地樣式
           onLocalSwipe?.("reset", item);
         }
       }}
@@ -198,72 +201,6 @@ function SwipeableCard({
       transition={{ duration: 0.25, ease: "easeOut" }}
     >
       {render(item)}
-
-      {isTop && (
-        <div className="swipe-arrows-container">
-          {/* 左邊箭頭指示 */}
-          <motion.div
-            className="swipe-arrow-indicator left"
-            style={{ opacity: leftArrowOpacity }}
-          >
-            <div className="new-arrow-icon">
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 12H5"
-                  stroke="#FF6B6B"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M12 19L5 12L12 5"
-                  stroke="#FF6B6B"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </motion.div>
-
-          {/* 右邊箭頭指示 */}
-          <motion.div
-            className="swipe-arrow-indicator right"
-            style={{ opacity: rightArrowOpacity }}
-          >
-            <div className="new-arrow-icon">
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M5 12H19"
-                  stroke="#2ECC71"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M12 5L19 12L12 19"
-                  stroke="#2ECC71"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </motion.div>
   );
 }

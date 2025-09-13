@@ -1,29 +1,54 @@
 /* IdleHint.css */
-.idle-hint-overlay {
+/* 容器樣式確保隔離 */
+.idle-hint-container {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 8000;
-  backdrop-filter: blur(2px);
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9997;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.idle-hint-modal {
+.idle-hint-container > * {
+  pointer-events: auto;
+}
+
+/* 增加specificity避免被覆蓋 */
+.idle-hint-container .idle-hint-overlay {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9998;
+  backdrop-filter: blur(2px);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.idle-hint-container .idle-hint-modal {
+  position: relative;
   background: white;
   border-radius: 16px;
-  padding: 30px;
-  max-width: 320px;
-  width: 90%;
+  padding: 20px;
+  width: 280px;
+  min-height: 240px;
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  z-index: 8001;
+  z-index: 9999;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .hint-icon {
@@ -44,6 +69,7 @@
   color: #666;
   line-height: 1.5;
   margin: 0 0 25px 0;
+  max-width: 280px;
 }
 
 /* 滑動動畫演示 */
@@ -83,6 +109,7 @@
 /* 操作按鈕 */
 .hint-action-button {
   width: 100%;
+  max-width: 250px;
   background: linear-gradient(135deg, #007bff, #0056b3);
   color: white;
   border: none;
@@ -92,7 +119,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 15px;
+  margin-top: 15px;
 }
 
 .hint-action-button:hover {
@@ -126,42 +153,99 @@
 }
 
 /* 響應式設計 */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .idle-hint-modal {
-    max-width: 280px;
-    padding: 25px 20px;
+    width: 95%;
+    max-width: 420px;
+    min-height: 350px;
+    padding: 30px 20px;
   }
   
   .hint-icon {
-    font-size: 2.5rem;
-    margin-bottom: 15px;
+    font-size: 4rem;
+    margin-bottom: 20px;
   }
   
   .hint-title {
-    font-size: 1.2rem;
+    font-size: 1.8rem;
   }
   
   .hint-subtitle {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
   }
   
   .swipe-animation {
-    height: 50px;
-    margin: 15px 0;
+    height: 80px;
+    margin: 20px 0;
   }
   
   .swipe-demo {
-    font-size: 1.8rem;
+    font-size: 2.8rem;
   }
   
   .arrow-left,
   .arrow-right {
-    font-size: 1.3rem;
+    font-size: 2rem;
+  }
+
+  .hint-action-button {
+    padding: 16px 24px;
+    font-size: 16px;
+    max-width: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .idle-hint-modal {
+    width: 95%;
+    max-width: 320px;
+    min-height: 300px;
+    padding: 25px 15px;
   }
   
+  .hint-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+  }
+  
+  .hint-title {
+    font-size: 1.5rem;
+  }
+  
+  .hint-subtitle {
+    font-size: 1rem;
+  }
+  
+  .swipe-animation {
+    height: 60px;
+    margin: 15px 0;
+  }
+  
+  .swipe-demo {
+    font-size: 2.2rem;
+  }
+  
+  .arrow-left,
+  .arrow-right {
+    font-size: 1.6rem;
+  }
+  
+  .swipe-arrows {
+    padding: 0 20px;
+  }
+
   .hint-action-button {
-    padding: 12px 16px;
+    padding: 14px 20px;
     font-size: 15px;
+    max-width: 220px;
+  }
+  
+  .hint-close {
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    font-size: 20px;
   }
 }
 

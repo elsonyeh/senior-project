@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import CardStack from "./common/CardStack";
 import "./SwiftTasteCard.css";
 
-export default function QuestionSwiperMotion({ questions, onComplete, tutorialMode = false, onSingleSwipe }) {
+export default function QuestionSwiperMotion({ questions, onComplete, tutorialMode = false, onSingleSwipe, swipeDirection = "both" }) {
   const [answers, setAnswers] = useState({});
   const [lastSwipedId, setLastSwipedId] = useState(null);
   const [lastDirection, setLastDirection] = useState("");
@@ -166,6 +166,7 @@ export default function QuestionSwiperMotion({ questions, onComplete, tutorialMo
       badgeType="none"
       onSwipe={handleSwipe}
       onLocalSwipe={handleLocalSwipe}
+      swipeDirection={swipeDirection}
       renderCard={(q) => (
         <>
           <h3 className="question-text">{formatQuestionText(q)}</h3>

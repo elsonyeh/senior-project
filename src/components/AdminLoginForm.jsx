@@ -86,12 +86,6 @@ export default function AdminLoginForm() {
                 required
                 className={error ? "error" : ""}
               />
-              <span className="input-icon">
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3.66667 3.66667H18.3333C19.5416 3.66667 20.5 4.625 20.5 5.83333V16.5C20.5 17.7083 19.5416 18.6667 18.3333 18.6667H3.66667C2.45833 18.6667 1.5 17.7083 1.5 16.5V5.83333C1.5 4.625 2.45833 3.66667 3.66667 3.66667Z" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M20.5 5.83333L11 11.9167L1.5 5.83333" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
             </div>
           </div>
 

@@ -94,14 +94,6 @@
     background-color: #fef2f2;
   }
   
-  .input-icon {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-  
   .password-toggle {
     position: absolute;
     right: 14px;

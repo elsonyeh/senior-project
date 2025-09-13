@@ -8,6 +8,7 @@ export default function RestaurantSwiperMotion({
   onFinish,
   tutorialMode = false,
   onSingleSwipe,
+  swipeDirection = "both",
 }) {
   const [seen, setSeen] = useState([]);
 
@@ -79,6 +80,7 @@ export default function RestaurantSwiperMotion({
         renderCard={renderCard}
         background={background}
         centered
+        swipeDirection={swipeDirection}
       />
     </div>
   );

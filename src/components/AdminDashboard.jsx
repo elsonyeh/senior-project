@@ -10,6 +10,8 @@ export default function AdminDashboard() {
   const [currentAdmin, setCurrentAdmin] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
+  const [roomList, setRoomList] = useState([]);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   // 獲取管理員列表和當前管理員資訊
@@ -31,9 +33,14 @@ export default function AdminDashboard() {
         }
       }
       
-      const currentAdminInfo = adminService.getCurrentAdmin();
-      console.log('Current Admin Info:', currentAdminInfo); // 調試用
-      setCurrentAdmin(currentAdminInfo);
+      try {
+        const currentAdminInfo = await adminService.getCurrentAdmin();
+        console.log('Current Admin Info:', currentAdminInfo); // 調試用
+        setCurrentAdmin(currentAdminInfo);
+      } catch (error) {
+        console.error('獲取當前管理員資訊失敗:', error);
+        setCurrentAdmin(null);
+      }
       
       // 獲取管理員列表（從 Supabase 資料庫）
       try {
@@ -53,20 +60,35 @@ export default function AdminDashboard() {
         setAdminList(adminListWithStatus);
       } catch (error) {
         console.error('獲取管理員列表失敗:', error);
-        // 備用方案：使用預設資料
-        const adminListWithStatus = adminService.defaultAdminAccounts.map(admin => ({
-          ...admin,
-          isOnline: admin.email === getCurrentAdminEmail(),
-          lastLoginTime: getLastLoginTime(admin),
-          status: admin.email === getCurrentAdminEmail() ? '線上' : '離線',
-          roleName: admin.role === 'super_admin' ? '超級管理員' : '一般管理員'
-        }));
-        setAdminList(adminListWithStatus);
+        // 如果 Supabase 不可用，設置空列表
+        setAdminList([]);
       }
     };
 
     loadAdminData();
-  }, []);
+    if (activeTab === "buddies") {
+      loadRoomData();
+    }
+  }, [activeTab]);
+
+  // 載入房間資料
+  const loadRoomData = async () => {
+    try {
+      setLoading(true);
+      const roomResult = await adminService.getAllRooms();
+      if (roomResult.success) {
+        setRoomList(roomResult.rooms);
+      } else {
+        console.error('載入房間資料失敗:', roomResult.error);
+        setRoomList([]);
+      }
+    } catch (error) {
+      console.error('載入房間資料異常:', error);
+      setRoomList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getCurrentAdminEmail = () => {
     const adminSession = localStorage.getItem('adminSession');
@@ -215,7 +237,7 @@ export default function AdminDashboard() {
   const handleTestFunctions = () => {
     console.log('=== 管理員列表測試 ===');
     console.log('當前管理員:', currentAdmin);
-    console.log('管理員帳號列表:', adminService.adminAccounts);
+    console.log('管理員列表:', adminList);
     console.log('是否有超級管理員權限:', currentAdmin?.isSuperAdmin);
     
     alert(`測試資訊已輸出到控制台：
@@ -223,29 +245,68 @@ export default function AdminDashboard() {
 當前登入：${currentAdmin?.email || '未知'}
 角色：${currentAdmin?.role || '未知'}
 超級管理員：${currentAdmin?.isSuperAdmin ? '是' : '否'}
-管理員總數：${adminService.adminAccounts.length}
+管理員總數：${adminList.length}
 
 請打開瀏覽器開發者工具查看詳細日誌。`);
   };
 
-  // 重置管理員列表到預設值
-  const handleResetAdminList = () => {
+  // 刪除房間
+  const handleDeleteRoom = async (roomId) => {
+    if (!currentAdmin?.isSuperAdmin) {
+      alert('您沒有超級管理員權限');
+      return;
+    }
+    
+    if (confirm(`確定要刪除房間 ${roomId} 嗎？\n\n注意：此操作不可逆轉！`)) {
+      try {
+        setLoading(true);
+        const result = await adminService.deleteRoom(roomId);
+        
+        if (result.success) {
+          alert(`房間 ${roomId} 已成功刪除`);
+          // 重新載入房間列表
+          await loadRoomData();
+        } else {
+          alert('刪除失敗：' + result.error);
+        }
+      } catch (error) {
+        console.error('刪除房間錯誤:', error);
+        alert('刪除過程發生錯誤：' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // 重新初始化管理員列表到預設值
+  const handleResetAdminList = async () => {
     if (!currentAdmin?.isSuperAdmin) return;
     
-    if (confirm('確定要重置管理員列表到預設值嗎？\n\n警告：這會清除所有修改的密碼和刪除的管理員！')) {
-      adminService.saveAdminAccounts(adminService.defaultAdminAccounts);
-      
-      // 重新載入管理員列表
-      const adminListWithStatus = adminService.adminAccounts.map(admin => ({
-        ...admin,
-        isOnline: admin.email === getCurrentAdminEmail(),
-        lastLoginTime: getLastLoginTime(admin.email),
-        status: admin.email === getCurrentAdminEmail() ? '線上' : '離線',
-        roleName: adminService.getAdminInfo(admin.email)?.roleName || '一般管理員'
-      }));
-      setAdminList(adminListWithStatus);
-      
-      alert('管理員列表已重置到預設值！');
+    if (confirm('確定要重新初始化管理員列表到預設值嗎？\n\n警告：這會重新創建預設的管理員帳號！')) {
+      try {
+        await adminService.initializeDefaultAdmins();
+        
+        // 重新載入管理員列表
+        const admins = await adminService.getAllAdmins();
+        const adminListWithStatus = await Promise.all(
+          admins.map(async admin => {
+            const adminInfo = await adminService.getAdminInfo(admin.email);
+            return {
+              ...admin,
+              isOnline: admin.email === getCurrentAdminEmail(),
+              lastLoginTime: getLastLoginTime(admin),
+              status: admin.email === getCurrentAdminEmail() ? '線上' : '離線',
+              roleName: adminInfo?.roleName || '一般管理員'
+            };
+          })
+        );
+        setAdminList(adminListWithStatus);
+        
+        alert('管理員列表已重新初始化！');
+      } catch (error) {
+        console.error('重置管理員列表失敗:', error);
+        alert('重置失敗：' + error.message);
+      }
     }
   };
 
@@ -254,8 +315,10 @@ export default function AdminDashboard() {
       {/* 頂部標題列 */}
       <div className="dashboard-header">
         <div className="header-left">
-          <span className="system-icon">📋</span>
-          <h1>餐廳管理系統</h1>
+          <h1>
+            <span className="system-icon">📋</span>
+            餐廳管理系統
+          </h1>
         </div>
         <button className="logout-btn" onClick={handleLogout}>
           登出
@@ -274,13 +337,13 @@ export default function AdminDashboard() {
           className={`tab-button ${activeTab === "restaurants" ? "active" : ""}`}
           onClick={() => setActiveTab("restaurants")}
         >
-          餐廳資料 (Firestore)
+          餐廳資料
         </button>
         <button
           className={`tab-button ${activeTab === "buddies" ? "active" : ""}`}
           onClick={() => setActiveTab("buddies")}
         >
-          房間管理 (Realtime DB)
+          房間管理
         </button>
         <button
           className={`tab-button ${activeTab === "admins" ? "active" : ""}`}
@@ -299,10 +362,10 @@ export default function AdminDashboard() {
             <div className="section-header">
               <div className="section-title">
                 <span className="section-icon">🏠</span>
-                <h2>房間管理 (Realtime Database)</h2>
+                <h2>房間管理</h2>
               </div>
-              <button className="refresh-btn">
-                🔄 刷新列表
+              <button className="refresh-btn" onClick={loadRoomData} disabled={loading}>
+                🔄 {loading ? '載入中...' : '刷新列表'}
               </button>
             </div>
             
@@ -320,24 +383,50 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>XYGAGM</td>
-                    <td>老-4</td>
-                    <td>0</td>
-                    <td><span className="status-waiting">等待中</span></td>
-                    <td>2025/05/24 上午09:31</td>
-                    <td>未知</td>
-                    <td><button className="delete-btn">🗑️ 刪除</button></td>
-                  </tr>
-                  <tr>
-                    <td>RQ9LF0</td>
-                    <td>老-4</td>
-                    <td>0</td>
-                    <td><span className="status-voting">vote</span></td>
-                    <td>2025/05/24 上午08:37</td>
-                    <td>未知</td>
-                    <td><button className="delete-btn">🗑️ 刪除</button></td>
-                  </tr>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>
+                        載入房間資料中...
+                      </td>
+                    </tr>
+                  ) : roomList.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>
+                        目前沒有房間資料
+                      </td>
+                    </tr>
+                  ) : (
+                    roomList.map((room) => (
+                      <tr key={room.id}>
+                        <td>{room.id}</td>
+                        <td>{room.hostName}</td>
+                        <td>{room.memberCount}</td>
+                        <td>
+                          <span className={`status-${room.status}`}>
+                            {room.status === 'waiting' ? '等待中' : 
+                             room.status === 'vote' ? '投票中' :
+                             room.status === 'recommend' ? '推薦中' :
+                             room.status === 'completed' ? '已完成' : room.status}
+                          </span>
+                        </td>
+                        <td>{room.createdAt ? new Date(room.createdAt).toLocaleString('zh-TW') : '-'}</td>
+                        <td>{room.lastUpdated ? new Date(room.lastUpdated).toLocaleString('zh-TW') : '-'}</td>
+                        <td>
+                          {currentAdmin?.isSuperAdmin ? (
+                            <button 
+                              className="delete-btn"
+                              onClick={() => handleDeleteRoom(room.id)}
+                              disabled={loading}
+                            >
+                              🗑️ 刪除
+                            </button>
+                          ) : (
+                            <span>僅可查看</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

@@ -416,85 +416,6 @@
   animation: badgePulseNope 0.6s ease-in-out;
 }
 
-
-
-/* --- 箭頭圖標滑動指示動畫設計 --- */
-.swipe-arrow-indicator {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin: 0;
-}
-
-.swipe-arrows-container {
-  position: absolute;
-  bottom: 24vh;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  /* 改為置中對齊 */
-  gap: 20vw;
-  /* 使用固定間距控制兩個箭頭的距離 */
-  pointer-events: none;
-}
-
-.new-arrow-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transform: scale(1.2);
-  /* 直接放大整個圖標 */
-}
-
-.swipe-arrow-indicator.left {
-  animation: pulseLeft 1.5s infinite;
-}
-
-.swipe-arrow-indicator.right {
-  animation: pulseRight 1.5s infinite;
-}
-
-@keyframes pulseRight {
-  0% {
-    transform: scale(1) translateX(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  50% {
-    transform: scale(1.05) translateX(45px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  100% {
-    transform: scale(1) translateX(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-}
-
-@keyframes pulseLeft {
-  0% {
-    transform: scale(1) translateX(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  50% {
-    transform: scale(1.05) translateX(-45px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  100% {
-    transform: scale(1) translateX(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-}
-
-
 /* 在手機上的優化 */
 @media (max-width: 480px) {
   .fixed-badge {
@@ -540,12 +461,6 @@
     100% {
       transform: translateX(-90px) scale(1) rotate(-8deg);
     }
-  }
-
-  .swipe-arrow-indicator {
-    width: 60px;
-    height: 60px;
-    gap: 120px;
   }
 }
 

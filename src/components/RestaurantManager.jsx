@@ -415,17 +415,22 @@ const RestaurantManager = () => {
     <div className="restaurant-manager">
       {/* 功能按鈕區 */}
       <div className="manager-actions">
-        <button 
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="btn-add-restaurant"
-        >
-          {showAddForm ? '取消新增' : '新增餐廳'}
-        </button>
+        <div className="primary-actions">
+          <button 
+            onClick={() => setShowAddForm(!showAddForm)}
+            className={`btn btn-primary btn-add-restaurant ${showAddForm ? 'btn-cancel' : ''}`}
+          >
+            <span className="btn-icon">{showAddForm ? '✕' : '➕'}</span>
+            {showAddForm ? '取消新增' : '新增餐廳'}
+          </button>
+        </div>
         <div className="export-buttons">
-          <button onClick={handleExportRestaurants} className="btn-export">
+          <button onClick={handleExportRestaurants} className="btn btn-info btn-export">
+            <span className="btn-icon">📄</span>
             匯出 JSON
           </button>
-          <button onClick={handleExportRestaurantsCSV} className="btn-export">
+          <button onClick={handleExportRestaurantsCSV} className="btn btn-success btn-export">
+            <span className="btn-icon">📊</span>
             匯出 CSV
           </button>
         </div>
@@ -532,85 +537,129 @@ const RestaurantManager = () => {
       {/* 標籤篩選區 */}
       <div className="category-filters">
         <div className="section-header">
-          <span className="section-icon">🍴</span>
-          <h2>餐廳管理</h2>
+          <h2>
+            <span className="section-icon">🍴</span>
+            餐廳管理
+          </h2>
         </div>
         
         <div className="filter-info">
           <span>點入標籤查看對應餐廳</span>
-          <button onClick={clearFilters} className="clear-filters">
+          <button onClick={clearFilters} className="btn btn-outline btn-sm clear-filters">
+            <span className="btn-icon">🗑️</span>
             清除選擇
           </button>
         </div>
         
-        <div className="tag-search-section">
-          <input
-            type="text"
-            placeholder="搜尋標籤..."
-            value={tagSearchQuery}
-            onChange={(e) => setTagSearchQuery(e.target.value)}
-            className="tag-search-input"
-          />
-          
-          <div className="match-mode-options">
-            <label className="match-mode-option">
-              <input
-                type="radio"
-                name="matchMode"
-                value="any"
-                checked={matchMode === 'any'}
-                onChange={(e) => setMatchMode(e.target.value)}
-              />
-              <span>有符合就顯示</span>
-            </label>
-            <label className="match-mode-option">
-              <input
-                type="radio"
-                name="matchMode"
-                value="all"
-                checked={matchMode === 'all'}
-                onChange={(e) => setMatchMode(e.target.value)}
-              />
-              <span>全部符合才顯示</span>
-            </label>
+        <div className="tag-search-card">
+          <div className="search-header">
+            <h3>
+              <span className="search-icon">🔍</span>
+              標籤搜尋與篩選
+            </h3>
+            {selectedTags.length > 0 && !showAddForm && (
+              <span className="selected-count">已選擇 {selectedTags.length} 個標籤</span>
+            )}
           </div>
-        </div>
-
-        <div className="category-grid">
-          {tagStats
-            .filter(({ tag }) => 
-              tagSearchQuery === '' || 
-              tag.toLowerCase().includes(tagSearchQuery.toLowerCase())
-            )
-            .map(({ tag, count }) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`category-tag ${
-                  showAddForm 
-                    ? (newRestaurant.tags.includes(tag) ? 'selected' : '')
-                    : (selectedTags.includes(tag) ? 'selected' : '')
-                }`}
-                title={showAddForm ? '點擊添加/移除此標籤到新增表單' : '點擊篩選餐廳'}
-              >
-                {tag} ({count})
-                {showAddForm && newRestaurant.tags.includes(tag) && <span className="tag-added-icon">✓</span>}
-              </button>
-            ))}
-          {tagStats.filter(({ tag }) => 
-            tagSearchQuery === '' || 
-            tag.toLowerCase().includes(tagSearchQuery.toLowerCase())
-          ).length === 0 && tagSearchQuery && (
-            <div className="no-tags-found">找不到符合「{tagSearchQuery}」的標籤</div>
-          )}
+          <div className="search-controls">
+            <div className="search-input-wrapper">
+              <input
+                type="text"
+                placeholder="搜尋標籤..."
+                value={tagSearchQuery}
+                onChange={(e) => setTagSearchQuery(e.target.value)}
+                className="tag-search-input"
+              />
+              {tagSearchQuery && (
+                <button
+                  onClick={() => setTagSearchQuery('')}
+                  className="clear-search-btn"
+                  title="清除搜尋"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            
+            <div className="filter-controls">
+              <div className="match-mode-toggle">
+                <button
+                  onClick={() => setMatchMode('any')}
+                  className={`mode-btn ${matchMode === 'any' ? 'active' : ''}`}
+                >
+                  任一符合
+                </button>
+                <button
+                  onClick={() => setMatchMode('all')}
+                  className={`mode-btn ${matchMode === 'all' ? 'active' : ''}`}
+                >
+                  全部符合
+                </button>
+              </div>
+              
+              {(selectedTags.length > 0 || (showAddForm && newRestaurant.tags.length > 0)) && (
+                <button onClick={clearFilters} className="btn btn-outline btn-sm clear-all-tags">
+                  <span className="btn-icon">🗑️</span>
+                  清除全部
+                </button>
+              )}
+            </div>
+          </div>
+          
+          <div className="tags-section">
+            <div className="tags-header">
+              <span className="tags-title">
+                {showAddForm ? '點擊標籤加入餐廳' : '點擊標籤進行篩選'}
+              </span>
+              <span className="tags-count">
+                {tagStats.filter(({ tag }) => 
+                  tagSearchQuery === '' || 
+                  tag.toLowerCase().includes(tagSearchQuery.toLowerCase())
+                ).length} 個標籤
+              </span>
+            </div>
+            
+            <div className="category-grid">
+              {tagStats
+                .filter(({ tag }) => 
+                  tagSearchQuery === '' || 
+                  tag.toLowerCase().includes(tagSearchQuery.toLowerCase())
+                )
+                .map(({ tag, count }) => (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`category-tag ${
+                      showAddForm 
+                        ? (newRestaurant.tags.includes(tag) ? 'selected' : '')
+                        : (selectedTags.includes(tag) ? 'selected' : '')
+                    }`}
+                    title={showAddForm ? '點擊添加/移除此標籤到新增表單' : '點擊篩選餐廳'}
+                  >
+                    <span className="tag-name">{tag}</span>
+                    <span className="tag-count">({count})</span>
+                    {showAddForm && newRestaurant.tags.includes(tag) && <span className="tag-added-icon">✓</span>}
+                  </button>
+                ))}
+              {tagStats.filter(({ tag }) => 
+                tagSearchQuery === '' || 
+                tag.toLowerCase().includes(tagSearchQuery.toLowerCase())
+              ).length === 0 && tagSearchQuery && (
+                <div className="no-tags-found">
+                  <span className="no-tags-icon">🔍</span>
+                  找不到符合「{tagSearchQuery}」的標籤
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* 餐廳列表 */}
       <div className="restaurant-list-section">
         <div className="section-header">
-          <span className="section-icon">📁</span>
           <h2>
+            <span className="section-icon">📁</span>
             {selectedTags.length > 0 
               ? `符合標籤「${selectedTags.join('、')}」的餐廳 (${filteredRestaurants.length})`
               : `所有餐廳 (${restaurants.length})`
@@ -630,7 +679,8 @@ const RestaurantManager = () => {
                 }
               </p>
               {selectedTags.length > 0 && (
-                <button onClick={clearFilters} className="clear-filters-suggestion">
+                <button onClick={clearFilters} className="btn btn-outline btn-sm clear-filters-suggestion">
+                  <span className="btn-icon">🗑️</span>
                   清除篩選條件
                 </button>
               )}
@@ -790,10 +840,12 @@ const RestaurantManager = () => {
                   <td>
                     {editingRestaurant === restaurant.id ? (
                       <div className="edit-actions">
-                        <button onClick={saveEditing} className="btn-save">
+                        <button onClick={saveEditing} className="btn btn-sm btn-success table-action-btn">
+                          <span className="btn-icon">💾</span>
                           保存
                         </button>
-                        <button onClick={cancelEditing} className="btn-cancel">
+                        <button onClick={cancelEditing} className="btn btn-sm btn-secondary table-action-btn">
+                          <span className="btn-icon">✕</span>
                           取消
                         </button>
                       </div>
@@ -801,14 +853,16 @@ const RestaurantManager = () => {
                       <div className="normal-actions">
                         <button 
                           onClick={() => startEditing(restaurant)}
-                          className="btn-action"
+                          className="btn btn-sm btn-info table-action-btn"
                         >
+                          <span className="btn-icon">✏️</span>
                           編輯
                         </button>
                         <button 
                           onClick={() => handleDeleteRestaurant(restaurant.id)}
-                          className="btn-delete"
+                          className="btn btn-sm btn-danger table-action-btn"
                         >
+                          <span className="btn-icon">🗑️</span>
                           刪除
                         </button>
                       </div>
