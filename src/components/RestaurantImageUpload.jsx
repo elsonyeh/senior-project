@@ -19,21 +19,26 @@ const RestaurantImageUpload = ({
   const [isGoogleDriveAuthorized, setIsGoogleDriveAuthorized] = useState(false);
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [currentAdminName, setCurrentAdminName] = useState("管理員");
+  const [currentAdminId, setCurrentAdminId] = useState(null);
   const fileInputRef = useRef(null);
 
-  // 獲取當前管理員姓名
+  // 獲取當前管理員資訊
   useEffect(() => {
     const loadCurrentAdmin = async () => {
       try {
         const currentAdmin = await adminService.getCurrentAdmin();
-        if (currentAdmin?.name) {
-          setCurrentAdminName(currentAdmin.name);
+        if (currentAdmin) {
+          setCurrentAdminName(currentAdmin.name || "管理員");
+          setCurrentAdminId(currentAdmin.id || currentAdmin.adminId); // 獲取管理員 ID
+          console.log('當前管理員資訊:', { id: currentAdmin.id, adminId: currentAdmin.adminId, name: currentAdmin.name });
         } else {
           setCurrentAdminName("管理員");
+          setCurrentAdminId(null);
         }
       } catch (error) {
         console.error('獲取當前管理員資訊失敗:', error);
         setCurrentAdminName("管理員");
+        setCurrentAdminId(null);
       }
     };
 
@@ -241,7 +246,7 @@ const RestaurantImageUpload = ({
           imageType: "general",
           isPrimary: index === 0, // 第一張設為主要照片
           displayOrder: index,
-          uploadedBy: currentAdminName,
+          uploadedBy: currentAdminId,
           externalSource: "外部連結",
         })
       );
@@ -286,7 +291,7 @@ const RestaurantImageUpload = ({
         {
           altText: "餐廳照片",
           imageType: "general",
-          uploadedBy: currentAdminName,
+          uploadedBy: currentAdminId,
           setPrimaryToFirst: true, // 第一張設為主要照片
           maxConcurrency: 2, // 限制併發數量以避免過載
           onBatchProgress: (progress, current, total) => {
@@ -344,7 +349,7 @@ const RestaurantImageUpload = ({
           imageType: "general",
           isPrimary: index === 0, // 第一張設為主要照片
           displayOrder: index,
-          uploadedBy: currentAdminName,
+          uploadedBy: currentAdminId,
         })
       );
 
@@ -483,7 +488,7 @@ const RestaurantImageUpload = ({
           imageType: "general",
           isPrimary: index === 0,
           displayOrder: index,
-          uploadedBy: currentAdminName,
+          uploadedBy: currentAdminId,
         })
       );
 

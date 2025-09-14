@@ -347,8 +347,15 @@ export const restaurantImageService = {
    */
   async uploadRestaurantImage(file, restaurantId, options = {}) {
     try {
-      // 使用管理客戶端上傳到 Supabase Storage
+      // 優先使用管理客戶端來繞過 RLS 限制
       const client = supabaseAdmin || supabase;
+
+      // 記錄使用的客戶端類型用於調試
+      console.log('uploadRestaurantImage: 使用客戶端:', !!supabaseAdmin ? 'Admin (Service Key)' : 'Regular (Anon Key)');
+
+      if (!client) {
+        throw new Error('Supabase 客戶端未初始化');
+      }
 
       // 產生唯一檔案名稱
       const fileExt = file.name.split('.').pop();
@@ -418,6 +425,9 @@ export const restaurantImageService = {
       };
 
       // 使用管理客戶端以繞過RLS限制
+      console.log('準備插入 restaurant_images (上傳)，使用客戶端:', !!supabaseAdmin ? 'Admin' : 'Regular');
+      console.log('插入資料:', imageData);
+
       const { data, error } = await client
         .from('restaurant_images')
         .insert([imageData])
@@ -480,6 +490,9 @@ export const restaurantImageService = {
 
       // 使用管理客戶端以繞過RLS限制
       const client = supabaseAdmin || supabase;
+
+      console.log('準備插入 restaurant_images (外部連結)，使用客戶端:', !!supabaseAdmin ? 'Admin' : 'Regular');
+      console.log('插入資料:', imageData);
 
       const { data, error } = await client
         .from('restaurant_images')

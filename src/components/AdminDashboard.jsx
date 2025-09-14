@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../services/supabaseService";
 import RestaurantManager from "./RestaurantManager";
-import { InputModal, ConfirmModal, NotificationModal } from "./CustomModal";
+import { InputModal, ConfirmModal, NotificationModal, AdminFormModal } from "./CustomModal";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -18,6 +18,8 @@ export default function AdminDashboard() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [showNotification, setShowNotification] = useState(false);
   const [notification, setNotification] = useState({ type: 'success', title: '', message: '' });
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [addingAdmin, setAddingAdmin] = useState(false);
   const navigate = useNavigate();
 
   // 獲取管理員列表和當前管理員資訊
@@ -305,11 +307,34 @@ export default function AdminDashboard() {
 
   // 處理新增管理員
   const handleAddAdmin = () => {
-    if (!currentAdmin?.isSuperAdmin) return;
-    
-    const email = prompt('請輸入新管理員郵箱：');
-    if (email) {
-      alert('新增功能尚未實現（需要後端API支持）');
+    if (!currentAdmin?.isSuperAdmin) {
+      showNotificationMessage('error', '權限不足', '只有超級管理員可以新增管理員');
+      return;
+    }
+    setShowAddAdminModal(true);
+  };
+
+  // 確認新增管理員
+  const confirmAddAdmin = async (adminData) => {
+    setAddingAdmin(true);
+
+    try {
+      console.log('開始新增管理員:', adminData);
+      const result = await adminService.createAdmin(adminData);
+
+      if (result.success) {
+        setShowAddAdminModal(false);
+        showNotificationMessage('success', '新增成功', `管理員 ${adminData.name} 已成功新增`);
+        // 重新載入管理員列表
+        await reloadAdminList();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('新增管理員失敗:', error);
+      showNotificationMessage('error', '新增失敗', error.message);
+    } finally {
+      setAddingAdmin(false);
     }
   };
 
@@ -596,6 +621,15 @@ export default function AdminDashboard() {
                 if (!/^[\u4e00-\u9fa5a-zA-Z\s]+$/.test(value)) return '姓名只能包含中文、英文和空格';
                 return true;
               }}
+            />
+
+            {/* 新增管理員模態框 */}
+            <AdminFormModal
+              isOpen={showAddAdminModal}
+              onClose={() => setShowAddAdminModal(false)}
+              onConfirm={confirmAddAdmin}
+              loading={addingAdmin}
+              title="新增管理員"
             />
 
             {/* 通知模態框 */}

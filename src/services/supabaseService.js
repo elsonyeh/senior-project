@@ -1222,7 +1222,8 @@ export const adminService = {
         email: session.email,
         name: adminInfo?.name,
         role: session.role || 'admin',
-        adminId: session.adminId,
+        adminId: session.adminId || adminInfo?.id, // 確保有 ID
+        id: session.adminId || adminInfo?.id, // 也提供 id 字段
         isSuperAdmin: session.role === 'super_admin'
       };
     } catch (error) {
@@ -1336,6 +1337,117 @@ export const adminService = {
     } catch (error) {
       console.error('AdminService: 更新姓名失敗:', error);
       return { success: false, error: '更新姓名過程發生錯誤: ' + error.message };
+    }
+  },
+
+  /**
+   * 新增管理員
+   * @param {Object} adminData - 管理員資料
+   * @param {String} adminData.email - 電子郵件
+   * @param {String} adminData.name - 姓名
+   * @param {String} adminData.password - 密碼
+   * @param {String} adminData.role - 權限等級 ('admin' 或 'super_admin')
+   * @return {Promise<Object>} 新增結果
+   */
+  async createAdmin({ email, name, password, role = 'admin' }) {
+    try {
+      // 參數驗證
+      if (!email || !password) {
+        return { success: false, error: '郵箱和密碼為必填項目' };
+      }
+
+      // 如果沒有提供姓名，使用預設值
+      if (!name || name.trim() === '') {
+        name = email.split('@')[0]; // 使用郵箱前綴作為預設姓名
+      }
+
+      // 驗證郵箱格式
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return { success: false, error: '郵箱格式不正確' };
+      }
+
+      // 驗證密碼強度
+      if (password.length < 6) {
+        return { success: false, error: '密碼至少需要 6 個字符' };
+      }
+
+      // 驗證姓名長度
+      if (name.length < 1 || name.length > 50) {
+        return { success: false, error: '姓名長度應在 1-50 個字符之間' };
+      }
+
+      // 驗證權限等級
+      if (!['admin', 'super_admin'].includes(role)) {
+        return { success: false, error: '無效的權限等級' };
+      }
+
+      const client = supabaseAdmin || supabase;
+      if (!client) {
+        return { success: false, error: 'Supabase 配置錯誤' };
+      }
+
+      console.log('createAdmin: 嘗試新增管理員:', email, '權限:', role);
+
+      // 檢查是否已存在相同郵箱的活躍管理員
+      const { data: existingAdmin, error: checkError } = await client
+        .from('admin_users')
+        .select('email, is_active')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('createAdmin: 檢查現有管理員失敗:', checkError);
+        return { success: false, error: `檢查失敗: ${checkError.message}` };
+      }
+
+      if (existingAdmin) {
+        if (existingAdmin.is_active) {
+          return { success: false, error: '該郵箱已存在活躍的管理員帳號' };
+        } else {
+          // 如果存在但被停用，可以選擇重新啟用或提示使用者
+          return { success: false, error: '該郵箱曾經是管理員，請聯繫系統管理員處理' };
+        }
+      }
+
+      // 創建新管理員記錄
+      const newAdmin = {
+        email: email.toLowerCase().trim(),
+        name: name.trim(),
+        password: password, // 注意：實際應用中應該加密密碼
+        role: role,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        last_login_at: null
+      };
+
+      const { data, error } = await client
+        .from('admin_users')
+        .insert([newAdmin])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('createAdmin: 插入失敗:', error);
+        return { success: false, error: `新增失敗: ${error.message}` };
+      }
+
+      console.log('createAdmin: 新增成功:', data);
+      return {
+        success: true,
+        data: {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          role: data.role,
+          created_at: data.created_at
+        },
+        message: '管理員新增成功'
+      };
+
+    } catch (error) {
+      console.error('createAdmin: 意外錯誤:', error);
+      return { success: false, error: `系統錯誤: ${error.message}` };
     }
   },
 
