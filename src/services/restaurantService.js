@@ -347,19 +347,61 @@ export const restaurantImageService = {
    */
   async uploadRestaurantImage(file, restaurantId, options = {}) {
     try {
-      // 優先使用管理客戶端來繞過 RLS 限制
+      // 暫時使用 Service Key 客戶端進行上傳
+      // 注意：在生產環境中應該使用後端 API 來處理這個操作
       const client = supabaseAdmin || supabase;
 
-      // 記錄使用的客戶端類型用於調試
       console.log('uploadRestaurantImage: 使用客戶端:', !!supabaseAdmin ? 'Admin (Service Key)' : 'Regular (Anon Key)');
 
       if (!client) {
         throw new Error('Supabase 客戶端未初始化');
       }
 
+      // 如果沒有 Service Key，先檢查用戶權限
+      if (!supabaseAdmin) {
+        console.warn('⚠️ Service Key 未配置，將使用一般客戶端上傳');
+        // 這裡應該檢查管理員權限，但由於使用自定義認證系統，暫時跳過
+      }
+
+      // 獲取餐廳名稱用於 alt_text
+      const { data: restaurant, error: restaurantError } = await client
+        .from('restaurants')
+        .select('name')
+        .eq('id', restaurantId)
+        .single();
+
+      if (restaurantError) throw restaurantError;
+      const restaurantName = restaurant?.name || `餐廳 ${restaurantId}`;
+
+      // 檢查是否已有照片，如果有則刪除
+      const { data: existingImages, error: checkError } = await client
+        .from('restaurant_images')
+        .select('*')
+        .eq('restaurant_id', restaurantId);
+
+      if (checkError) throw checkError;
+
+      // 如果已有照片，刪除舊照片和檔案
+      if (existingImages && existingImages.length > 0) {
+        for (const existingImage of existingImages) {
+          // 刪除儲存空間中的檔案
+          if (existingImage.image_path) {
+            await client.storage
+              .from('restaurant-images')
+              .remove([existingImage.image_path]);
+          }
+        }
+
+        // 刪除資料庫記錄
+        await client
+          .from('restaurant_images')
+          .delete()
+          .eq('restaurant_id', restaurantId);
+      }
+
       // 產生唯一檔案名稱
       const fileExt = file.name.split('.').pop();
-      const fileName = `${restaurantId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${restaurantId}/restaurant.${fileExt}`;
 
       let uploadData, uploadError;
 
@@ -414,10 +456,10 @@ export const restaurantImageService = {
         image_url: urlData.publicUrl,
         image_path: fileName,
         source_type: 'upload',
-        alt_text: options.altText || `${restaurantId} 照片`,
+        alt_text: restaurantName,
         image_type: options.imageType || 'general',
-        is_primary: options.isPrimary || false,
-        display_order: options.displayOrder || 0,
+        is_primary: true, // 一間餐廳只有一張照片，所以都是主要照片
+        display_order: 0,
         file_size: file.size,
         width: options.width,
         height: options.height,

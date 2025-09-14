@@ -92,6 +92,44 @@ const RestaurantManager = () => {
     }
   };
 
+  // 刷新特定餐廳的圖片資料
+  const refreshRestaurantImages = async (restaurantId) => {
+    try {
+      console.log('🔄 刷新餐廳圖片:', restaurantId);
+
+      // 使用 restaurantService.getRestaurants() 獲取最新資料
+      const updatedRestaurants = await restaurantService.getRestaurants();
+
+      // 找到更新後的餐廳資料
+      const updatedRestaurant = updatedRestaurants.find(r => r.id === restaurantId);
+
+      if (updatedRestaurant) {
+        // 更新餐廳列表中的特定餐廳
+        setRestaurants(prevRestaurants =>
+          prevRestaurants.map(restaurant =>
+            restaurant.id === restaurantId ? updatedRestaurant : restaurant
+          )
+        );
+
+        // 同時更新篩選後的餐廳列表
+        setFilteredRestaurants(prevFiltered =>
+          prevFiltered.map(restaurant =>
+            restaurant.id === restaurantId ? updatedRestaurant : restaurant
+          )
+        );
+
+        console.log('✅ 餐廳圖片已更新:', {
+          restaurantName: updatedRestaurant.name,
+          imageCount: updatedRestaurant.restaurant_images?.length || 0
+        });
+      }
+    } catch (error) {
+      console.error('刷新餐廳圖片失敗:', error);
+      // 如果更新失敗，回退到重新載入全部
+      loadRestaurants();
+    }
+  };
+
   // 標籤篩選功能
   const toggleTag = (tag) => {
     // 如果新增表單已打開，將標籤添加到表單中
@@ -895,7 +933,7 @@ const RestaurantManager = () => {
                 onUploadSuccess={(uploadedImages) => {
                   showToast(`成功上傳 ${uploadedImages.length} 張照片！`, 'success');
                   setEditingImageUpload(null);
-                  loadRestaurants(); // 重新載入餐廳列表以更新圖片
+                  refreshRestaurantImages(editingImageUpload.id); // 只更新特定餐廳的圖片預覽
                 }}
                 onUploadError={(error) => {
                   showToast(`上傳失敗: ${error.message}`, 'error');

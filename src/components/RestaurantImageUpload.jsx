@@ -7,7 +7,7 @@ const RestaurantImageUpload = ({
   restaurantId,
   onUploadSuccess,
   onUploadError,
-  maxFiles = 5,
+  maxFiles = 1,
   acceptedTypes = ["image/jpeg", "image/png", "image/webp"],
   maxFileSize = 5 * 1024 * 1024, // 5MB
 }) => {
@@ -153,7 +153,7 @@ const RestaurantImageUpload = ({
   // 處理檔案處理
   const processFiles = (files) => {
     if (files.length > maxFiles) {
-      alert(`最多只能選擇 ${maxFiles} 個檔案`);
+      alert(`一次最多只能上傳 ${maxFiles} 張照片`);
       return;
     }
 
@@ -566,7 +566,6 @@ const RestaurantImageUpload = ({
             <input
               type="file"
               ref={fileInputRef}
-              multiple
               accept={acceptedTypes.join(",")}
               onChange={handleFileSelect}
               disabled={uploading}
@@ -579,7 +578,7 @@ const RestaurantImageUpload = ({
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
             >
-              📷 選擇照片
+              📷 選擇照片 (1張)
             </button>
 
             <div className="upload-info">
@@ -587,7 +586,7 @@ const RestaurantImageUpload = ({
               <p>
                 • 檔案大小限制: {(maxFileSize / (1024 * 1024)).toFixed(1)}MB
               </p>
-              <p>• 最多可選擇 {maxFiles} 個檔案</p>
+              <p>• 一次最多只能上傳 {maxFiles} 張照片</p>
             </div>
           </div>
         </div>
@@ -636,7 +635,7 @@ const RestaurantImageUpload = ({
             <div className="upload-info">
               <p>• 支援從Google雲端硬碟直接選擇圖片</p>
               <p>• 自動同步檔案到本地儲存</p>
-              <p>• 最多可選擇 {maxFiles} 個檔案</p>
+              <p>• 一次最多只能上傳 {maxFiles} 張照片</p>
             </div>
           </div>
         </div>
@@ -685,7 +684,7 @@ const RestaurantImageUpload = ({
             <div className="upload-info">
               <p>• 支援格式: JPG, PNG, WebP, GIF, BMP</p>
               <p>• 請確保圖片連結可以公開訪問</p>
-              <p>• 最多可新增 {maxFiles} 個連結</p>
+              <p>• 一次最多只能上傳 {maxFiles} 張照片</p>
             </div>
           </div>
         </div>
@@ -741,7 +740,7 @@ const RestaurantImageUpload = ({
               <p>• 支援格式: JPG, PNG, WebP, GIF, BMP</p>
               <p>• 圖片會自動下載並上傳到Supabase Storage</p>
               <p>• 提供更穩定的載入速度和存取控制</p>
-              <p>• 批量處理最多 {maxFiles} 張圖片</p>
+              <p>• 一次最多只能上傳 {maxFiles} 張照片</p>
               <p>• 自動記錄原始來源URL</p>
             </div>
           </div>

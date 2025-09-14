@@ -8,9 +8,16 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
-console.log('Supabase URL:', supabaseUrl);
-console.log('Supabase Key exists:', !!supabaseAnonKey);
-console.log('Supabase Service Key exists:', !!supabaseServiceKey);
+console.log('🔍 Supabase 配置檢查：');
+console.log('📍 Supabase URL:', supabaseUrl);
+console.log('🔑 Anon Key exists:', !!supabaseAnonKey);
+console.log('⚡ Service Key exists:', !!supabaseServiceKey);
+
+if (supabaseServiceKey) {
+  console.log('✅ Service Key 格式:', supabaseServiceKey.substring(0, 20) + '...');
+} else {
+  console.log('❌ Service Key 未設置');
+}
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase 配置缺失，請檢查環境變數');
@@ -36,6 +43,9 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceKey ?
       persistSession: false
     }
   }) : null;
+
+// 在創建客戶端後檢查 supabaseAdmin 可用性
+console.log('🔧 supabaseAdmin 可用:', !!supabaseAdmin);
 
 // 監聽器管理 - 防止重複監聽和內存洩漏
 const activeSubscriptions = new Map();
