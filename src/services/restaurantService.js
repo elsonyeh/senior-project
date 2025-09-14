@@ -399,9 +399,10 @@ export const restaurantImageService = {
           .eq('restaurant_id', restaurantId);
       }
 
-      // 產生唯一檔案名稱
+      // 產生唯一檔案名稱，包含時間戳避免快取問題
       const fileExt = file.name.split('.').pop();
-      const fileName = `${restaurantId}/restaurant.${fileExt}`;
+      const timestamp = Date.now();
+      const fileName = `${restaurantId}/restaurant-${timestamp}.${fileExt}`;
 
       let uploadData, uploadError;
 

@@ -104,23 +104,33 @@ const RestaurantManager = () => {
       const updatedRestaurant = updatedRestaurants.find(r => r.id === restaurantId);
 
       if (updatedRestaurant) {
+        // 為圖片 URL 添加時間戳避免快取問題
+        const processedRestaurant = {
+          ...updatedRestaurant,
+          restaurant_images: updatedRestaurant.restaurant_images?.map(img => ({
+            ...img,
+            image_url: `${img.image_url}?t=${Date.now()}`
+          })) || []
+        };
+
         // 更新餐廳列表中的特定餐廳
         setRestaurants(prevRestaurants =>
           prevRestaurants.map(restaurant =>
-            restaurant.id === restaurantId ? updatedRestaurant : restaurant
+            restaurant.id === restaurantId ? processedRestaurant : restaurant
           )
         );
 
         // 同時更新篩選後的餐廳列表
         setFilteredRestaurants(prevFiltered =>
           prevFiltered.map(restaurant =>
-            restaurant.id === restaurantId ? updatedRestaurant : restaurant
+            restaurant.id === restaurantId ? processedRestaurant : restaurant
           )
         );
 
         console.log('✅ 餐廳圖片已更新:', {
           restaurantName: updatedRestaurant.name,
-          imageCount: updatedRestaurant.restaurant_images?.length || 0
+          imageCount: updatedRestaurant.restaurant_images?.length || 0,
+          newImageUrl: processedRestaurant.restaurant_images[0]?.image_url
         });
       }
     } catch (error) {
