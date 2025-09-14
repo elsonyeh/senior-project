@@ -13,7 +13,10 @@ export const authService = {
             name: userData.name || email.split('@')[0],
             bio: userData.bio || '',
             avatar_url: userData.avatar_url || null
-          }
+          },
+          emailRedirectTo: import.meta.env.DEV ?
+            window.location.origin :
+            'https://senior-project-ruby.vercel.app'
         }
       });
 
@@ -79,7 +82,9 @@ export const authService = {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: import.meta.env.DEV ?
+            window.location.origin :
+            'https://senior-project-ruby.vercel.app'
         }
       });
 
@@ -105,7 +110,9 @@ export const authService = {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: import.meta.env.DEV ?
+            window.location.origin :
+            'https://senior-project-ruby.vercel.app'
         }
       });
 
@@ -129,7 +136,13 @@ export const authService = {
   async signOut() {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+
+      // 無論 Supabase 登出是否成功，都清除本地儲存
+      this.clearLocalStorage();
+
+      if (error && !error.message?.includes('session_not_found')) {
+        console.warn('登出時出現錯誤，但本地儲存已清除:', error);
+      }
 
       return {
         success: true,
@@ -137,10 +150,28 @@ export const authService = {
       };
     } catch (error) {
       console.error('登出失敗:', error);
+      // 即使登出失敗，也清除本地儲存
+      this.clearLocalStorage();
+
       return {
         success: false,
         error: this.getErrorMessage(error)
       };
+    }
+  },
+
+  // 清除本地儲存
+  clearLocalStorage() {
+    try {
+      // 清除 Supabase 相關的本地儲存
+      const keys = ['sb-ijgelbxfrahtrrcjijqf-auth-token', 'swifttaste-auth'];
+      keys.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      console.log('本地認證資料已清除');
+    } catch (error) {
+      console.warn('清除本地儲存時出現錯誤:', error);
     }
   },
 
@@ -149,8 +180,15 @@ export const authService = {
     try {
       // 先檢查是否有有效的會話
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
+      // 如果會話錯誤或不存在，清除可能損壞的本地儲存
       if (sessionError || !session) {
+        // 檢查是否是 refresh token 錯誤
+        if (sessionError?.message?.includes('refresh_token') || sessionError?.status === 400) {
+          console.log('Refresh token 無效，正在清除會話...');
+          await this.signOut();
+        }
+
         return {
           success: false,
           user: null,
@@ -159,8 +197,15 @@ export const authService = {
       }
 
       const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error) throw error;
+
+      if (error) {
+        // 如果獲取用戶資訊失敗，也清除會話
+        if (error.status === 401 || error.status === 400) {
+          console.log('用戶資訊無效，正在清除會話...');
+          await this.signOut();
+        }
+        throw error;
+      }
 
       return {
         success: true,
@@ -223,7 +268,9 @@ export const authService = {
   async resetPassword(email) {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${import.meta.env.DEV ?
+          window.location.origin :
+          'https://senior-project-ruby.vercel.app'}/reset-password`
       });
 
       if (error) throw error;
@@ -302,8 +349,15 @@ export const authService = {
       'Invalid email': '電子郵件格式錯誤',
       'Email not confirmed': '請先確認您的電子郵件',
       'Too many requests': '請求過於頻繁，請稍後再試',
-      'Network error': '網路連線錯誤，請檢查網路連線'
+      'Network error': '網路連線錯誤，請檢查網路連線',
+      'Invalid refresh token': '會話已過期，請重新登入',
+      'refresh_token': '會話已過期，請重新登入'
     };
+
+    // 檢查錯誤訊息中是否包含 refresh_token
+    if (error.message && error.message.includes('refresh_token')) {
+      return '會話已過期，請重新登入';
+    }
 
     return errorMessages[error.message] || error.message || '操作失敗，請稍後再試';
   }

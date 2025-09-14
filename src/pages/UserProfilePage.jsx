@@ -33,7 +33,22 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     checkAuthStatus();
-    
+
+    // 處理郵件驗證回調
+    const handleEmailVerification = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const type = urlParams.get('type');
+
+      if (token && type === 'signup') {
+        showNotificationMessage('郵件驗證成功！歡迎加入 SwiftTaste！', 'success');
+        // 清除 URL 參數
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
+
+    handleEmailVerification();
+
     // 監聽認證狀態變化
     const subscription = authService.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {

@@ -187,3 +187,103 @@
 .search-input-wrapper.loading .search-icon {
   animation: searchPulse 1.5s ease-in-out infinite;
 }
+
+/* 分類標題樣式 */
+.suggestion-category {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+/* 分隔線樣式 */
+.suggestion-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+  margin: 4px 0;
+}
+
+/* 餐廳項目樣式 */
+.restaurant-item {
+  background: linear-gradient(90deg, rgba(255, 107, 53, 0.05), transparent);
+}
+
+.restaurant-item:hover {
+  background: linear-gradient(90deg, rgba(255, 107, 53, 0.12), rgba(255, 107, 53, 0.05));
+}
+
+.restaurant-icon {
+  font-size: 1.2rem;
+  margin-right: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.suggestion-rating {
+  font-size: 0.8rem;
+  color: #ff6b35;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* 無結果樣式 */
+.no-results {
+  padding: 24px 16px;
+  text-align: center;
+  color: #666;
+}
+
+.no-results-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.no-results-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.no-results-hint {
+  font-size: 0.85rem;
+  color: #999;
+  font-style: italic;
+}
+
+/* 手機適配新樣式 */
+@media (max-width: 480px) {
+  .suggestion-category {
+    padding: 6px 14px;
+    font-size: 0.7rem;
+  }
+
+  .restaurant-icon {
+    font-size: 1.1rem;
+  }
+
+  .suggestion-rating {
+    font-size: 0.75rem;
+  }
+
+  .no-results {
+    padding: 20px 14px;
+  }
+
+  .no-results-icon {
+    font-size: 1.8rem;
+  }
+
+  .no-results-text {
+    font-size: 0.9rem;
+  }
+
+  .no-results-hint {
+    font-size: 0.8rem;
+  }
+}

@@ -137,6 +137,12 @@ export default function MapPage() {
     showNotificationMessage('地點已加入清單！', 'success');
   }, []);
 
+  // 處理餐廳選擇
+  const handleRestaurantSelect = useCallback((restaurant) => {
+    console.log('選擇餐廳:', restaurant);
+    showNotificationMessage(`已選擇餐廳：${restaurant.name}`, 'success');
+  }, []);
+
   // 處理清單更新
   const handleListUpdate = useCallback((updatedList) => {
     if (selectedList && selectedList.id === updatedList.id) {
@@ -182,9 +188,10 @@ export default function MapPage() {
       <div className="map-controls">
         {/* 搜尋欄 */}
         <div className="search-container">
-          <MapSearch 
+          <MapSearch
             onSearch={handleSearch}
             onLocationSelect={handleLocationSelect}
+            onRestaurantSelect={handleRestaurantSelect}
           />
         </div>
 
