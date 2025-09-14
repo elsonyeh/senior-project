@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { IoSearchOutline, IoCloseOutline } from 'react-icons/io5';
+import googleMapsLoader from '../../utils/googleMapsLoader';
 import './MapSearch.css';
 
 export default function MapSearch({ onSearch, onLocationSelect }) {
@@ -11,56 +12,67 @@ export default function MapSearch({ onSearch, onLocationSelect }) {
 
   // Google Places Autocomplete
   useEffect(() => {
-    const initAutocomplete = () => {
-      if (!window.google || !window.google.maps || !window.google.maps.places) return;
-      
-      if (searchTerm.length > 2) {
-        // 清除之前的timeout
-        if (suggestionsTimeoutRef.current) {
-          clearTimeout(suggestionsTimeoutRef.current);
-        }
-        
-        // 設置延遲搜索
-        suggestionsTimeoutRef.current = setTimeout(() => {
-          try {
-            const autocomplete = new window.google.maps.places.AutocompleteService();
-            autocomplete.getPlacePredictions(
-              {
-                input: searchTerm,
-                componentRestrictions: { country: 'tw' }, // 限制在台灣
-                types: ['restaurant', 'food', 'establishment'] // 優先顯示餐廳
-              },
-              (predictions, status) => {
-                if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-                  setSuggestions(predictions.slice(0, 6)); // 限制顯示6個建議
-                  setShowSuggestions(true);
-                } else {
-                  setSuggestions([]);
-                  setShowSuggestions(false);
-                }
-              }
-            );
-          } catch (error) {
-            console.error('Error getting place predictions:', error);
-            setSuggestions([]);
-            setShowSuggestions(false);
+    let isMounted = true;
+
+    const initAutocomplete = async () => {
+      try {
+        await googleMapsLoader.load();
+
+        if (!isMounted || !window.google || !window.google.maps || !window.google.maps.places) return;
+
+        if (searchTerm.length > 2) {
+          // 清除之前的timeout
+          if (suggestionsTimeoutRef.current) {
+            clearTimeout(suggestionsTimeoutRef.current);
           }
-        }, 300); // 300ms延遲
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
+
+          // 設置延遲搜索
+          suggestionsTimeoutRef.current = setTimeout(() => {
+            if (!isMounted) return;
+
+            try {
+              const autocomplete = new window.google.maps.places.AutocompleteService();
+              autocomplete.getPlacePredictions(
+                {
+                  input: searchTerm,
+                  componentRestrictions: { country: 'tw' }, // 限制在台灣
+                  types: ['restaurant', 'food', 'establishment'], // 優先顯示餐廳
+                  language: 'zh-TW' // 繁體中文
+                },
+                (predictions, status) => {
+                  if (!isMounted) return;
+
+                  if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+                    setSuggestions(predictions.slice(0, 6)); // 限制顯示6個建議
+                    setShowSuggestions(true);
+                  } else {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                  }
+                }
+              );
+            } catch (error) {
+              console.error('Error getting place predictions:', error);
+              if (isMounted) {
+                setSuggestions([]);
+                setShowSuggestions(false);
+              }
+            }
+          }, 300); // 300ms延遲
+        } else {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      } catch (error) {
+        console.error('Failed to load Google Maps for autocomplete:', error);
       }
     };
 
-    if (window.googleMapsLoaded) {
-      initAutocomplete();
-    } else {
-      const handleMapsLoaded = () => {
-        initAutocomplete();
-      };
-      window.addEventListener('googleMapsLoaded', handleMapsLoaded);
-      return () => window.removeEventListener('googleMapsLoaded', handleMapsLoaded);
-    }
+    initAutocomplete();
+
+    return () => {
+      isMounted = false;
+    };
   }, [searchTerm]);
 
   const handleSearch = (e) => {

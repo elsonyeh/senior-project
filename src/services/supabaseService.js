@@ -25,24 +25,41 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('VITE_SUPABASE_ANON_KEY存在:', !!supabaseAnonKey);
 }
 
+// 單例模式創建 Supabase 客戶端，避免多個實例
+let supabaseClient = null;
+let supabaseAdminClient = null;
+
 // 創建 Supabase 客戶端（一般用戶）
-export const supabase = supabaseUrl && supabaseAnonKey ? 
-  createClient(supabaseUrl, supabaseAnonKey, {
-    realtime: {
-      params: {
-        eventsPerSecond: 10, // 限制每秒事件數量
+export const supabase = (() => {
+  if (!supabaseClient && supabaseUrl && supabaseAnonKey) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        storageKey: 'swifttaste-auth', // 唯一的儲存鍵
       },
-    },
-  }) : null;
+      realtime: {
+        params: {
+          eventsPerSecond: 10, // 限制每秒事件數量
+        },
+      },
+    });
+  }
+  return supabaseClient;
+})();
 
 // 創建 Supabase 管理客戶端（具有完整權限）
-export const supabaseAdmin = supabaseUrl && supabaseServiceKey ? 
-  createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }) : null;
+export const supabaseAdmin = (() => {
+  if (!supabaseAdminClient && supabaseUrl && supabaseServiceKey) {
+    supabaseAdminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        storageKey: 'swifttaste-admin-auth', // 唯一的儲存鍵
+      }
+    });
+  }
+  return supabaseAdminClient;
+})();
 
 // 在創建客戶端後檢查 supabaseAdmin 可用性
 console.log('🔧 supabaseAdmin 可用:', !!supabaseAdmin);

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { IoHeartOutline, IoHeart, IoInformationCircleOutline, IoNavigateOutline } from 'react-icons/io5';
+import googleMapsLoader from '../../utils/googleMapsLoader';
 import './MapView.css';
 
 // 台北101的座標作為預設中心點
@@ -20,19 +21,6 @@ export default function MapView({
   const infoWindowRef = useRef(null);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-
-  // 等待Google Maps API載入
-  useEffect(() => {
-    if (window.googleMapsLoaded) {
-      initializeMap();
-    } else {
-      const handleMapsLoaded = () => {
-        initializeMap();
-      };
-      window.addEventListener('googleMapsLoaded', handleMapsLoaded);
-      return () => window.removeEventListener('googleMapsLoaded', handleMapsLoaded);
-    }
-  }, []);
 
   // 初始化Google地圖
   const initializeMap = useCallback(() => {
@@ -81,22 +69,52 @@ export default function MapView({
 
     try {
       const service = new window.google.maps.places.PlacesService(googleMapRef.current);
-      
+
       const request = {
         location: new window.google.maps.LatLng(location.lat, location.lng),
-        radius: 1000, // 1公里範圍
+        radius: 1500, // 1.5公里範圍
         type: ['restaurant'],
-        language: 'zh-TW'
+        language: 'zh-TW',
+        keyword: '餐廳 美食' // 增加關鍵字搜尋
       };
 
       service.nearbySearch(request, (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           clearMarkers();
-          results.slice(0, 20).forEach(place => {
+
+          // 按評分排序，優先顯示高評分餐廳
+          const sortedResults = results
+            .filter(place => place.rating && place.rating > 3.0) // 過濾評分低於3.0的
+            .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+            .slice(0, 25); // 增加到25個結果
+
+          sortedResults.forEach(place => {
             createMarker(place);
           });
+
+          console.log(`找到 ${sortedResults.length} 間餐廳`);
         } else {
           console.warn('Places search failed:', status);
+
+          // 如果搜尋失敗，嘗試更廣泛的搜尋
+          if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+            const fallbackRequest = {
+              location: new window.google.maps.LatLng(location.lat, location.lng),
+              radius: 2000, // 擴大搜尋範圍到2公里
+              keyword: '餐廳 食物 美食 restaurant',
+              language: 'zh-TW'
+            };
+
+            service.nearbySearch(fallbackRequest, (fallbackResults, fallbackStatus) => {
+              if (fallbackStatus === window.google.maps.places.PlacesServiceStatus.OK && fallbackResults) {
+                clearMarkers();
+                fallbackResults.slice(0, 15).forEach(place => {
+                  createMarker(place);
+                });
+                console.log(`備用搜尋找到 ${fallbackResults.length} 個結果`);
+              }
+            });
+          }
         }
       });
     } catch (error) {
@@ -109,17 +127,32 @@ export default function MapView({
     if (!googleMapRef.current || !place.geometry?.location) return;
 
     const isFavorite = favorites.some(fav => fav.place_id === place.place_id);
-    
+    const rating = place.rating || 0;
+
+    // 根據評分選擇圖標顏色
+    let iconColor = '#666'; // 預設灰色
+    if (rating >= 4.5) {
+      iconColor = '#4CAF50'; // 綠色（優秀）
+    } else if (rating >= 4.0) {
+      iconColor = '#FFC107'; // 黃色（很好）
+    } else if (rating >= 3.5) {
+      iconColor = '#FF9800'; // 橙色（不錯）
+    } else if (rating >= 3.0) {
+      iconColor = '#FF5722'; // 紅橙色（一般）
+    }
+
     const marker = new window.google.maps.Marker({
       position: place.geometry.location,
       map: googleMapRef.current,
-      title: place.name,
+      title: `${place.name} ${rating > 0 ? `(${rating}★)` : ''}`,
       icon: {
-        url: isFavorite 
-          ? 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%23ff6b35"%3E%3Cpath d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/%3E%3C/svg%3E'
-          : 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%23666"%3E%3Cpath d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/%3E%3C/svg%3E',
-        scaledSize: new window.google.maps.Size(32, 32)
-      }
+        url: isFavorite
+          ? `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="%23ff6b35"%3E%3Cpath d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/%3E%3C/svg%3E`
+          : `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="${encodeURIComponent(iconColor)}"%3E%3Cpath d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/%3E%3C/svg%3E`,
+        scaledSize: new window.google.maps.Size(isFavorite ? 36 : 32, isFavorite ? 36 : 32),
+        anchor: new window.google.maps.Point(isFavorite ? 18 : 16, isFavorite ? 36 : 32)
+      },
+      animation: place.rating >= 4.5 ? window.google.maps.Animation.DROP : null
     });
 
     marker.addListener('click', () => {
@@ -211,6 +244,28 @@ export default function MapView({
     markersRef.current = [];
   }, []);
 
+  // 載入 Google Maps API
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMaps = async () => {
+      try {
+        await googleMapsLoader.load();
+        if (isMounted) {
+          initializeMap();
+        }
+      } catch (error) {
+        console.error('Failed to load Google Maps:', error);
+      }
+    };
+
+    loadMaps();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initializeMap]);
+
   // 當搜尋位置改變時，移動地圖中心並搜尋
   useEffect(() => {
     if (searchLocation && googleMapRef.current) {
@@ -221,35 +276,14 @@ export default function MapView({
     }
   }, [searchLocation, searchNearbyRestaurants]);
 
-  // 載入Google Maps API
+  // 清理函數
   useEffect(() => {
-    const loadGoogleMaps = () => {
-      if (window.google && window.google.maps) {
-        initializeMap();
-        return;
-      }
-
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      if (!apiKey) {
-        console.error('Google Maps API key not found');
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=zh-TW`;
-      script.async = true;
-      script.onload = initializeMap;
-      document.head.appendChild(script);
-    };
-
-    loadGoogleMaps();
-
     return () => {
       // 清理全域函數
       delete window.toggleFavorite;
       delete window.openNavigation;
     };
-  }, [initializeMap]);
+  }, []);
 
   return (
     <div className="map-view-container">

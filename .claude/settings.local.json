@@ -19,7 +19,8 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Read(//c/Users/elson/OneDrive/文件/**)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(start http://localhost:5174)"
     ],
     "deny": [],
     "ask": []

@@ -100,7 +100,11 @@
 .profile-auth-container {
   max-width: 800px;
   margin: 0 auto;
-  padding-top: 40px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
 }
 
 .auth-welcome {
