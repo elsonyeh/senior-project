@@ -18,59 +18,39 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
     try {
       const restaurants = await restaurantService.getRestaurants();
 
+      if (!restaurants || restaurants.length === 0) {
+        console.warn('餐廳資料庫為空或無法載入');
+        return [];
+      }
+
+      const searchLower = searchTerm.toLowerCase().trim();
+      if (searchLower.length === 0) return [];
+
       const filtered = restaurants.filter(restaurant => {
-        const name = restaurant.name?.toLowerCase() || '';
-        const address = restaurant.address?.toLowerCase() || '';
-        const category = restaurant.category?.toLowerCase() || '';
-        const description = restaurant.description?.toLowerCase() || '';
-        const tags = Array.isArray(restaurant.tags) ?
-          restaurant.tags.join(' ').toLowerCase() :
-          (restaurant.tags?.toLowerCase() || '');
+        if (!restaurant) return false;
 
-        const searchLower = searchTerm.toLowerCase();
+        // 分別檢查各個欄位
+        const name = (restaurant.name || '').toLowerCase();
+        const category = (restaurant.category || '').toLowerCase();
 
-        // 擴展搜尋關鍵字匹配
-        const searchTerms = searchLower.split(' ').filter(term => term.length > 0);
+        // 處理 tags - 可能是陣列或字串
+        let tags = '';
+        if (Array.isArray(restaurant.tags)) {
+          tags = restaurant.tags.filter(Boolean).join(' ').toLowerCase();
+        } else if (restaurant.tags) {
+          tags = restaurant.tags.toLowerCase();
+        }
 
-        return searchTerms.some(term => {
-          return name.includes(term) ||
-                 address.includes(term) ||
-                 category.includes(term) ||
-                 description.includes(term) ||
-                 tags.includes(term) ||
-                 // 特殊關鍵字映射
-                 (term === '麵' && (
-                   name.includes('麵') ||
-                   name.includes('拉麵') ||
-                   name.includes('麵條') ||
-                   name.includes('麵食') ||
-                   name.includes('noodle') ||
-                   category.includes('麵') ||
-                   tags.includes('麵') ||
-                   tags.includes('拉麵') ||
-                   tags.includes('麵食')
-                 )) ||
-                 (term === '飯' && (
-                   name.includes('飯') ||
-                   name.includes('米飯') ||
-                   name.includes('炒飯') ||
-                   name.includes('便當') ||
-                   category.includes('飯') ||
-                   tags.includes('飯')
-                 )) ||
-                 (term === '火鍋' && (
-                   name.includes('火鍋') ||
-                   name.includes('鍋物') ||
-                   category.includes('火鍋') ||
-                   tags.includes('火鍋')
-                 ))
-        });
+        // 檢查是否在 name, category, 或 tags 中找到關鍵字
+        const foundInName = name.includes(searchLower);
+        const foundInCategory = category.includes(searchLower);
+        const foundInTags = tags.includes(searchLower);
+
+        // 任一欄位包含搜尋關鍵字就符合
+        return foundInName || foundInCategory || foundInTags;
       });
 
-      console.log(`搜尋「${searchTerm}」找到 ${filtered.length} 間餐廳:`,
-        filtered.map(r => r.name));
-
-      return filtered.slice(0, 5); // 增加到 5 個結果
+      return filtered.slice(0, 5);
     } catch (error) {
       console.error('Error searching restaurant database:', error);
       return [];
@@ -171,53 +151,6 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
       }
     };
 
-    // 初始檢查餐廳資料（開發用）
-    const debugRestaurantData = async () => {
-      if (import.meta.env.DEV) {
-        try {
-          const restaurants = await restaurantService.getRestaurants();
-          console.log('餐廳資料庫總數:', restaurants.length);
-
-          // 檢查包含「麵」的餐廳
-          const noodleRestaurants = restaurants.filter(r =>
-            r.name?.includes('麵') ||
-            r.category?.includes('麵') ||
-            (Array.isArray(r.tags) && r.tags.some(tag => tag?.includes('麵'))) ||
-            (typeof r.tags === 'string' && r.tags.includes('麵'))
-          );
-          console.log('包含「麵」的餐廳:', noodleRestaurants.length, noodleRestaurants.map(r => r.name));
-
-          // 詳細檢查前幾間餐廳的結構
-          console.log('前5間餐廳的資料結構:');
-          restaurants.slice(0, 5).forEach((r, i) => {
-            console.log(`餐廳${i + 1}:`, {
-              name: r.name,
-              category: r.category,
-              tags: r.tags,
-              description: r.description
-            });
-          });
-
-          // 檢查所有餐廳的標籤
-          const allTags = restaurants.reduce((acc, r) => {
-            if (r.tags) {
-              if (Array.isArray(r.tags)) {
-                acc.push(...r.tags);
-              } else {
-                acc.push(r.tags);
-              }
-            }
-            return acc;
-          }, []);
-          console.log('所有標籤樣本:', [...new Set(allTags)].slice(0, 20));
-
-        } catch (error) {
-          console.error('Debug restaurant data failed:', error);
-        }
-      }
-    };
-
-    debugRestaurantData();
     initAutocomplete();
 
     return () => {
@@ -363,11 +296,18 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
                     <div className="suggestion-address">
                       {restaurant.address}
                     </div>
-                    {restaurant.rating && (
-                      <div className="suggestion-rating">
-                        ⭐ {restaurant.rating}
-                      </div>
-                    )}
+                    <div className="suggestion-details">
+                      {restaurant.category && (
+                        <span className="suggestion-category-tag">
+                          {restaurant.category}
+                        </span>
+                      )}
+                      {restaurant.rating && (
+                        <span className="suggestion-rating">
+                          ⭐ {restaurant.rating}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
