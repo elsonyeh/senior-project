@@ -22,14 +22,55 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
         const name = restaurant.name?.toLowerCase() || '';
         const address = restaurant.address?.toLowerCase() || '';
         const category = restaurant.category?.toLowerCase() || '';
+        const description = restaurant.description?.toLowerCase() || '';
+        const tags = Array.isArray(restaurant.tags) ?
+          restaurant.tags.join(' ').toLowerCase() :
+          (restaurant.tags?.toLowerCase() || '');
+
         const searchLower = searchTerm.toLowerCase();
 
-        return name.includes(searchLower) ||
-               address.includes(searchLower) ||
-               category.includes(searchLower);
+        // 擴展搜尋關鍵字匹配
+        const searchTerms = searchLower.split(' ').filter(term => term.length > 0);
+
+        return searchTerms.some(term => {
+          return name.includes(term) ||
+                 address.includes(term) ||
+                 category.includes(term) ||
+                 description.includes(term) ||
+                 tags.includes(term) ||
+                 // 特殊關鍵字映射
+                 (term === '麵' && (
+                   name.includes('麵') ||
+                   name.includes('拉麵') ||
+                   name.includes('麵條') ||
+                   name.includes('麵食') ||
+                   name.includes('noodle') ||
+                   category.includes('麵') ||
+                   tags.includes('麵') ||
+                   tags.includes('拉麵') ||
+                   tags.includes('麵食')
+                 )) ||
+                 (term === '飯' && (
+                   name.includes('飯') ||
+                   name.includes('米飯') ||
+                   name.includes('炒飯') ||
+                   name.includes('便當') ||
+                   category.includes('飯') ||
+                   tags.includes('飯')
+                 )) ||
+                 (term === '火鍋' && (
+                   name.includes('火鍋') ||
+                   name.includes('鍋物') ||
+                   category.includes('火鍋') ||
+                   tags.includes('火鍋')
+                 ))
+        });
       });
 
-      return filtered.slice(0, 3); // 限制為 3 個結果
+      console.log(`搜尋「${searchTerm}」找到 ${filtered.length} 間餐廳:`,
+        filtered.map(r => r.name));
+
+      return filtered.slice(0, 5); // 增加到 5 個結果
     } catch (error) {
       console.error('Error searching restaurant database:', error);
       return [];
@@ -130,6 +171,53 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
       }
     };
 
+    // 初始檢查餐廳資料（開發用）
+    const debugRestaurantData = async () => {
+      if (import.meta.env.DEV) {
+        try {
+          const restaurants = await restaurantService.getRestaurants();
+          console.log('餐廳資料庫總數:', restaurants.length);
+
+          // 檢查包含「麵」的餐廳
+          const noodleRestaurants = restaurants.filter(r =>
+            r.name?.includes('麵') ||
+            r.category?.includes('麵') ||
+            (Array.isArray(r.tags) && r.tags.some(tag => tag?.includes('麵'))) ||
+            (typeof r.tags === 'string' && r.tags.includes('麵'))
+          );
+          console.log('包含「麵」的餐廳:', noodleRestaurants.length, noodleRestaurants.map(r => r.name));
+
+          // 詳細檢查前幾間餐廳的結構
+          console.log('前5間餐廳的資料結構:');
+          restaurants.slice(0, 5).forEach((r, i) => {
+            console.log(`餐廳${i + 1}:`, {
+              name: r.name,
+              category: r.category,
+              tags: r.tags,
+              description: r.description
+            });
+          });
+
+          // 檢查所有餐廳的標籤
+          const allTags = restaurants.reduce((acc, r) => {
+            if (r.tags) {
+              if (Array.isArray(r.tags)) {
+                acc.push(...r.tags);
+              } else {
+                acc.push(r.tags);
+              }
+            }
+            return acc;
+          }, []);
+          console.log('所有標籤樣本:', [...new Set(allTags)].slice(0, 20));
+
+        } catch (error) {
+          console.error('Debug restaurant data failed:', error);
+        }
+      }
+    };
+
+    debugRestaurantData();
     initAutocomplete();
 
     return () => {

@@ -28,22 +28,20 @@ export default function RestaurantSwiperMotion({
   };
 
   const renderCard = (r) => (
-    <div className="restaurant-card centered">
-      <div className="restaurant-info-blur">
-        <h3>{r.name || "未命名餐廳"}</h3>
-        <p>{r.address || "地址未知"}</p>
-        <small>{r.category || "類型不明"}</small>
-        {typeof r.rating === "number" && r.rating > 0 && (
-          <div className="restaurant-rating">⭐ {r.rating.toFixed(1)} 分</div>
-        )}
-        {r.tags && r.tags.length > 0 && (
-          <div className="restaurant-tags">
-            {r.tags.slice(0, 3).map((tag, index) => (
-              <span key={index} className="tag">{tag}</span>
-            ))}
-          </div>
-        )}
-      </div>
+    <div className="restaurant-info-blur">
+      <h3>{r.name || "未命名餐廳"}</h3>
+      <p>{r.address || "地址未知"}</p>
+      <small>{r.category || "類型不明"}</small>
+      {typeof r.rating === "number" && r.rating > 0 && (
+        <div className="restaurant-rating">⭐ {r.rating.toFixed(1)} 分</div>
+      )}
+      {r.tags && r.tags.length > 0 && (
+        <div className="restaurant-tags">
+          {r.tags.slice(0, 3).map((tag, index) => (
+            <span key={index} className="tag">{tag}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 
