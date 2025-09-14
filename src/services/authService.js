@@ -36,10 +36,14 @@ export const authService = {
   // 用戶登入
   async signIn(email, password) {
     try {
+      console.log('嘗試登入:', { email, passwordLength: password?.length });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
+
+      console.log('Supabase 登入回應:', { data, error });
 
       if (error) throw error;
 
@@ -50,7 +54,18 @@ export const authService = {
         message: '登入成功！'
       };
     } catch (error) {
-      console.error('登入失敗:', error);
+      // 對於常見的認證錯誤，只記錄基本訊息，避免過多的錯誤日誌
+      if (error.message === 'Invalid login credentials') {
+        console.log('登入失敗: 帳號或密碼錯誤');
+      } else {
+        console.error('登入失敗:', error);
+        console.error('錯誤詳情:', {
+          message: error.message,
+          status: error.status,
+          statusText: error.statusText
+        });
+      }
+
       return {
         success: false,
         error: this.getErrorMessage(error)

@@ -72,6 +72,8 @@
 .page-content {
   padding: 0 0 120px 0;
   min-height: calc(100vh - 120px);
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
 }
 
 /* 響應式設計 */
@@ -98,6 +100,8 @@
   
   .page-content {
     padding: 0 0 100px 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 100px);
   }
 }
 
