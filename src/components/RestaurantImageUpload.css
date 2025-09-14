@@ -450,6 +450,69 @@
 }
 
 /* Google Drive 樣式 */
+/* 下載並上傳模式 */
+.download-url-mode {
+  background: white;
+  border: 2px solid #e3f2fd;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+.download-url-mode h4 {
+  margin: 0 0 15px 0;
+  color: #1976d2;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.mode-description {
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  color: #1565c0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.download-info {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.download-info p {
+  margin: 8px 0;
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.download-info p::before {
+  content: "📥";
+  font-size: 12px;
+}
+
+.batch-progress {
+  background: #e8f5e8;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.batch-progress .progress-label {
+  color: #2e7d32;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
 .google-drive-mode {
   margin-bottom: 20px;
 }

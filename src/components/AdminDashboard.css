@@ -352,11 +352,74 @@
   background: #5a6268;
 }
 
+.sync-data-btn {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.sync-data-btn:hover:not(:disabled) {
+  background: #138496;
+}
+
+.sync-data-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* 無權限提示 */
 .no-permission {
   color: #6c757d;
   font-size: 12px;
   font-style: italic;
+}
+
+/* 統一管理員操作按鈕樣式 */
+.admin-action-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 80px; /* 統一按鈕寬度 */
+  text-align: center;
+}
+
+/* 修改姓名按鈕 */
+.update-name-btn {
+  background: #28a745;
+  color: white;
+}
+
+.update-name-btn:hover {
+  background: #218838;
+}
+
+/* 重設密碼按鈕 */
+.reset-password-btn {
+  background: #fd7e14;
+  color: white;
+}
+
+.reset-password-btn:hover {
+  background: #e6701e;
+}
+
+/* 刪除按鈕 */
+.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #c82333;
 }
 
 /* 簡約風格優化 */
@@ -371,4 +434,40 @@
   font-size: 14px;
   padding: 8px 16px;
   border-radius: 6px;
+}
+
+/* 管理員控制區域 */
+.admin-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.admin-controls .refresh-btn {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.3s;
+  white-space: nowrap;
+}
+
+.admin-controls .refresh-btn:hover:not(:disabled) {
+  background: #138496;
+}
+
+.admin-controls .refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-status-info {
+  font-size: 14px;
+  color: #6c757d;
 }

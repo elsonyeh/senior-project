@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../services/supabaseService";
 import RestaurantManager from "./RestaurantManager";
+import { InputModal, ConfirmModal, NotificationModal } from "./CustomModal";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -12,6 +13,11 @@ export default function AdminDashboard() {
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [roomList, setRoomList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notification, setNotification] = useState({ type: 'success', title: '', message: '' });
   const navigate = useNavigate();
 
   // 獲取管理員列表和當前管理員資訊
@@ -133,6 +139,87 @@ export default function AdminDashboard() {
   };
 
 
+  // 處理修改姓名
+  const handleUpdateName = async (email, currentName) => {
+    if (!currentAdmin?.isSuperAdmin && email !== getCurrentAdminEmail()) {
+      showNotificationMessage('error', '權限不足', '您只能修改自己的姓名');
+      return;
+    }
+
+    setEditingAdmin({ email, currentName });
+    setShowNameModal(true);
+  };
+
+  // 確認修改姓名
+  const confirmUpdateName = async (newName) => {
+    try {
+      console.log('開始修改姓名，目標帳號:', editingAdmin.email);
+      const result = await adminService.updateAdminName(editingAdmin.email, newName);
+      console.log('updateAdminName 結果:', result);
+
+      if (result.success) {
+        setShowNameModal(false);
+        showNotificationMessage('success', '更新成功', `姓名已成功更新為：${newName}`);
+        await reloadAdminList();
+
+        // 如果是當前用戶，更新當前用戶資訊
+        if (editingAdmin.email === getCurrentAdminEmail()) {
+          const updatedCurrentAdmin = await adminService.getCurrentAdmin();
+          setCurrentAdmin(updatedCurrentAdmin);
+        }
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('姓名更新錯誤:', error);
+      throw new Error('姓名更新失敗：' + error.message);
+    }
+  };
+
+  // 重新載入管理員列表
+  const reloadAdminList = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 開始同步管理員資料...');
+
+      const admins = await adminService.getAllAdmins();
+      console.log('📋 從 Supabase 獲取到的管理員:', admins);
+
+      const adminListWithStatus = await Promise.all(
+        admins.map(async admin => {
+          const adminInfo = await adminService.getAdminInfo(admin.email);
+          return {
+            ...admin,
+            isOnline: admin.email === getCurrentAdminEmail(),
+            lastLoginTime: getLastLoginTime(admin),
+            status: admin.email === getCurrentAdminEmail() ? '線上' : '離線',
+            roleName: adminInfo?.roleName || '一般管理員'
+          };
+        })
+      );
+
+      setAdminList(adminListWithStatus);
+      console.log('✅ 管理員列表同步完成，共', adminListWithStatus.length, '個活躍帳號');
+
+      if (showNotificationMessage) {
+        showNotificationMessage('success', '同步成功', `已同步 ${adminListWithStatus.length} 個活躍管理員帳號`);
+      }
+    } catch (error) {
+      console.error('重新載入管理員列表失敗:', error);
+      if (showNotificationMessage) {
+        showNotificationMessage('error', '同步失敗', '無法從伺服器同步管理員資料');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 顯示通知訊息
+  const showNotificationMessage = (type, title, message) => {
+    setNotification({ type, title, message });
+    setShowNotification(true);
+  };
+
   // 處理重設密碼 - 直接在網頁內重設
   const handleResetPassword = async (email) => {
     if (!currentAdmin?.isSuperAdmin) {
@@ -233,22 +320,6 @@ export default function AdminDashboard() {
     alert('匯出功能尚未實現（需要後端API支持）');
   };
 
-  // 測試功能 - 顯示當前管理員列表狀態
-  const handleTestFunctions = () => {
-    console.log('=== 管理員列表測試 ===');
-    console.log('當前管理員:', currentAdmin);
-    console.log('管理員列表:', adminList);
-    console.log('是否有超級管理員權限:', currentAdmin?.isSuperAdmin);
-    
-    alert(`測試資訊已輸出到控制台：
-    
-當前登入：${currentAdmin?.email || '未知'}
-角色：${currentAdmin?.role || '未知'}
-超級管理員：${currentAdmin?.isSuperAdmin ? '是' : '否'}
-管理員總數：${adminList.length}
-
-請打開瀏覽器開發者工具查看詳細日誌。`);
-  };
 
   // 刪除房間
   const handleDeleteRoom = async (roomId) => {
@@ -278,37 +349,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 重新初始化管理員列表到預設值
-  const handleResetAdminList = async () => {
-    if (!currentAdmin?.isSuperAdmin) return;
-    
-    if (confirm('確定要重新初始化管理員列表到預設值嗎？\n\n警告：這會重新創建預設的管理員帳號！')) {
-      try {
-        await adminService.initializeDefaultAdmins();
-        
-        // 重新載入管理員列表
-        const admins = await adminService.getAllAdmins();
-        const adminListWithStatus = await Promise.all(
-          admins.map(async admin => {
-            const adminInfo = await adminService.getAdminInfo(admin.email);
-            return {
-              ...admin,
-              isOnline: admin.email === getCurrentAdminEmail(),
-              lastLoginTime: getLastLoginTime(admin),
-              status: admin.email === getCurrentAdminEmail() ? '線上' : '離線',
-              roleName: adminInfo?.roleName || '一般管理員'
-            };
-          })
-        );
-        setAdminList(adminListWithStatus);
-        
-        alert('管理員列表已重新初始化！');
-      } catch (error) {
-        console.error('重置管理員列表失敗:', error);
-        alert('重置失敗：' + error.message);
-      }
-    }
-  };
 
   return (
     <div className="admin-dashboard">
@@ -327,7 +367,7 @@ export default function AdminDashboard() {
 
       {/* 用戶資訊列 */}
       <div className="user-info">
-        <span>當前用戶：elson921121@gmail.com / </span>
+        <span>當前用戶：{currentAdmin?.name || currentAdmin?.email || 'elson921121@gmail.com'} / </span>
         <span className="admin-status">管理員</span>
       </div>
 
@@ -441,7 +481,7 @@ export default function AdminDashboard() {
                 <h2>管理員管理</h2>
               </div>
               <div className="admin-status-info">
-                <span>當前登入：{currentAdmin?.email || 'elson921121@gmail.com'}</span>
+                <span>當前登入：{currentAdmin?.name || currentAdmin?.email || 'elson921121@gmail.com'} ({currentAdmin?.email})</span>
                 <span className="separator"> | </span>
                 <span>{currentAdmin?.isSuperAdmin ? '超級管理員權限' : '一般管理員權限'}</span>
               </div>
@@ -451,11 +491,11 @@ export default function AdminDashboard() {
               <table>
                 <thead>
                   <tr>
-                    <th>管理員帳號</th>
+                    <th>管理員姓名</th>
+                    <th>電子郵件</th>
                     <th>權限等級</th>
                     <th>狀態</th>
                     <th>上次登入時間</th>
-                    <th>帳號狀態</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -465,10 +505,11 @@ export default function AdminDashboard() {
                       <td>
                         <div className="admin-info">
                           <span className={`status-indicator ${admin.isOnline ? 'online' : 'offline'}`}></span>
-                          {admin.email}
+                          {admin.name || '未設定姓名'}
                           {admin.email === getCurrentAdminEmail() && <span className="current-user"> (您)</span>}
                         </div>
                       </td>
+                      <td>{admin.email}</td>
                       <td>
                         <span className={`role-badge ${admin.role === 'super_admin' ? 'super-admin' : 'admin'}`}>
                           {admin.roleName}
@@ -481,32 +522,35 @@ export default function AdminDashboard() {
                       </td>
                       <td>{admin.lastLoginTime}</td>
                       <td>
-                        {admin.email === getCurrentAdminEmail() 
-                          ? '目前線上' 
-                          : admin.lastLoginTime !== '從未登入' 
-                            ? '正常' 
-                            : '從未登入'
-                        }
-                      </td>
-                      <td>
                         <div className="action-buttons">
-                          {currentAdmin?.isSuperAdmin ? (
+                          {(currentAdmin?.isSuperAdmin || admin.email === getCurrentAdminEmail()) ? (
                             <>
-                              <button 
-                                className="reset-password-btn"
-                                onClick={() => handleResetPassword(admin.email)}
-                                title="重設密碼"
+                              <button
+                                className="update-name-btn admin-action-btn"
+                                onClick={() => handleUpdateName(admin.email, admin.name)}
+                                title="修改姓名"
                               >
-                                重設密碼
+                                修改姓名
                               </button>
-                              {admin.email !== getCurrentAdminEmail() && (
-                                <button 
-                                  className="delete-btn"
-                                  onClick={() => handleDeleteAdmin(admin.email)}
-                                  title="刪除管理員帳號"
-                                >
-                                  刪除
-                                </button>
+                              {currentAdmin?.isSuperAdmin && (
+                                <>
+                                  <button
+                                    className="reset-password-btn admin-action-btn"
+                                    onClick={() => handleResetPassword(admin.email)}
+                                    title="重設密碼"
+                                  >
+                                    重設密碼
+                                  </button>
+                                  {admin.email !== getCurrentAdminEmail() && (
+                                    <button
+                                      className="delete-btn admin-action-btn"
+                                      onClick={() => handleDeleteAdmin(admin.email)}
+                                      title="刪除管理員帳號"
+                                    >
+                                      刪除
+                                    </button>
+                                  )}
+                                </>
                               )}
                             </>
                           ) : (
@@ -528,14 +572,40 @@ export default function AdminDashboard() {
                 <button className="export-logs-btn" onClick={handleExportLogs}>
                   匯出操作記錄
                 </button>
-                <button className="test-btn" onClick={handleTestFunctions} style={{backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', padding: '8px 16px', cursor: 'pointer', marginRight: '8px'}}>
-                  🔍 測試功能
-                </button>
-                <button className="reset-btn" onClick={handleResetAdminList} style={{backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', padding: '8px 16px', cursor: 'pointer'}}>
-                  🔄 重置列表
+                <button className="sync-data-btn" onClick={reloadAdminList} disabled={loading}>
+                  🔄 {loading ? '同步中...' : '同步資料'}
                 </button>
               </div>
             )}
+
+            {/* 修改姓名模態框 */}
+            <InputModal
+              isOpen={showNameModal}
+              onClose={() => setShowNameModal(false)}
+              title="修改管理員姓名"
+              label="請輸入新的姓名："
+              placeholder="請輸入姓名"
+              defaultValue={editingAdmin?.currentName || ''}
+              onConfirm={confirmUpdateName}
+              confirmText="更新"
+              cancelText="取消"
+              maxLength={50}
+              validation={(value) => {
+                if (value.length < 1) return '姓名不能為空';
+                if (value.length > 50) return '姓名不能超過 50 字元';
+                if (!/^[\u4e00-\u9fa5a-zA-Z\s]+$/.test(value)) return '姓名只能包含中文、英文和空格';
+                return true;
+              }}
+            />
+
+            {/* 通知模態框 */}
+            <NotificationModal
+              isOpen={showNotification}
+              onClose={() => setShowNotification(false)}
+              title={notification.title}
+              message={notification.message}
+              type={notification.type}
+            />
           </div>
         )}
       </div>

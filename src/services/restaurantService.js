@@ -10,7 +10,6 @@ export const restaurantService = {
    * @param {string} filters.category - 餐廳類別
    * @param {number} filters.priceRange - 價格範圍 (1-4)
    * @param {number} filters.minRating - 最低評分
-   * @param {boolean} filters.featured - 是否只顯示推薦餐廳
    * @returns {Promise<Array>} 餐廳列表
    */
   async getRestaurants(filters = {}) {
@@ -19,10 +18,11 @@ export const restaurantService = {
         .from('restaurants')
         .select(`
           *,
-          restaurant_images!inner(
+          restaurant_images(
             image_url,
             alt_text,
-            is_primary
+            is_primary,
+            display_order
           )
         `)
         .eq('is_active', true)
@@ -41,20 +41,25 @@ export const restaurantService = {
         query = query.gte('rating', filters.minRating);
       }
       
-      if (filters.featured) {
-        query = query.eq('featured', true);
-      }
 
       const { data, error } = await query;
       
       if (error) throw error;
       
-      // 處理餐廳圖片，確保每個餐廳都有主要圖片
-      const processedData = data.map(restaurant => ({
-        ...restaurant,
-        primaryImage: restaurant.restaurant_images.find(img => img.is_primary) || restaurant.restaurant_images[0],
-        allImages: restaurant.restaurant_images
-      }));
+      // 處理餐廳圖片，包括沒有圖片的餐廳
+      const processedData = data.map(restaurant => {
+        const images = restaurant.restaurant_images || [];
+
+        // 按照 display_order 排序圖片
+        const sortedImages = images.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+        return {
+          ...restaurant,
+          primaryImage: sortedImages.find(img => img.is_primary) || sortedImages[0] || null,
+          allImages: sortedImages,
+          hasImages: images.length > 0
+        };
+      });
       
       return processedData;
     } catch (error) {
@@ -132,18 +137,24 @@ export const restaurantService = {
           category,
           price_range,
           rating,
-          restaurant_images!inner(image_url, is_primary)
+          restaurant_images(image_url, is_primary, display_order)
         `)
         .eq('is_active', true)
         .or(`name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%`)
         .limit(20);
 
       if (error) throw error;
-      
-      return data.map(restaurant => ({
-        ...restaurant,
-        primaryImage: restaurant.restaurant_images.find(img => img.is_primary) || restaurant.restaurant_images[0]
-      }));
+
+      return data.map(restaurant => {
+        const images = restaurant.restaurant_images || [];
+        const sortedImages = images.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+        return {
+          ...restaurant,
+          primaryImage: sortedImages.find(img => img.is_primary) || sortedImages[0] || null,
+          hasImages: images.length > 0
+        };
+      });
     } catch (error) {
       console.error('搜尋餐廳失敗:', error);
       throw error;
@@ -336,10 +347,15 @@ export const restaurantImageService = {
    */
   async uploadRestaurantImage(file, restaurantId, options = {}) {
     try {
+      // 使用管理客戶端上傳到 Supabase Storage
+      const client = supabaseAdmin || supabase;
+
       // 產生唯一檔案名稱
       const fileExt = file.name.split('.').pop();
       const fileName = `${restaurantId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      
+
+      let uploadData, uploadError;
+
       // 如果有進度回調，模擬上傳進度
       if (options.onProgress) {
         options.onProgress(0);
@@ -348,14 +364,16 @@ export const restaurantImageService = {
           const currentProgress = Math.min(90, Math.random() * 50 + 30);
           options.onProgress(currentProgress);
         }, 200);
-        
-        // 上傳到 Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+
+        const result = await client.storage
           .from('restaurant-images')
           .upload(fileName, file, {
             cacheControl: '3600',
             upsert: false
           });
+
+        uploadData = result.data;
+        uploadError = result.error;
 
         clearInterval(progressInterval);
         if (options.onProgress) {
@@ -365,18 +383,21 @@ export const restaurantImageService = {
         if (uploadError) throw uploadError;
       } else {
         // 沒有進度回調的傳統上傳
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const result = await client.storage
           .from('restaurant-images')
           .upload(fileName, file, {
             cacheControl: '3600',
             upsert: false
           });
 
+        uploadData = result.data;
+        uploadError = result.error;
+
         if (uploadError) throw uploadError;
       }
 
       // 獲取公開 URL
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = client.storage
         .from('restaurant-images')
         .getPublicUrl(fileName);
 
@@ -396,7 +417,8 @@ export const restaurantImageService = {
         uploaded_by: options.uploadedBy
       };
 
-      const { data, error } = await supabase
+      // 使用管理客戶端以繞過RLS限制
+      const { data, error } = await client
         .from('restaurant_images')
         .insert([imageData])
         .select()
@@ -456,7 +478,10 @@ export const restaurantImageService = {
         external_source: options.externalSource || '外部連結'
       };
 
-      const { data, error } = await supabase
+      // 使用管理客戶端以繞過RLS限制
+      const client = supabaseAdmin || supabase;
+
+      const { data, error } = await client
         .from('restaurant_images')
         .insert([imageData])
         .select()
@@ -478,8 +503,11 @@ export const restaurantImageService = {
    */
   async deleteRestaurantImage(imageId) {
     try {
+      // 使用管理客戶端以繞過RLS限制
+      const client = supabaseAdmin || supabase;
+
       // 先獲取圖片資訊
-      const { data: imageData, error: fetchError } = await supabase
+      const { data: imageData, error: fetchError } = await client
         .from('restaurant_images')
         .select('image_path, source_type')
         .eq('id', imageId)
@@ -489,7 +517,7 @@ export const restaurantImageService = {
 
       // 如果是上傳的檔案，從 Storage 刪除
       if (imageData.source_type === 'upload' && imageData.image_path) {
-        const { error: storageError } = await supabase.storage
+        const { error: storageError } = await client.storage
           .from('restaurant-images')
           .remove([imageData.image_path]);
 
@@ -500,7 +528,7 @@ export const restaurantImageService = {
       // 外部連結圖片不需要刪除檔案，只需刪除資料庫記錄
 
       // 從資料庫刪除記錄
-      const { error: dbError } = await supabase
+      const { error: dbError } = await client
         .from('restaurant_images')
         .delete()
         .eq('id', imageId);
@@ -515,6 +543,197 @@ export const restaurantImageService = {
   },
 
   /**
+   * 從URL下載圖片並上傳到Supabase Storage
+   * @param {string} imageUrl - 圖片URL
+   * @param {string} restaurantId - 餐廳 ID
+   * @param {Object} options - 選項
+   * @returns {Promise<Object>} 上傳結果
+   */
+  async downloadAndUploadImage(imageUrl, restaurantId, options = {}) {
+    try {
+      console.log(`開始從URL下載圖片: ${imageUrl}`);
+
+      // 驗證 URL 格式
+      const urlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i;
+      if (!urlPattern.test(imageUrl)) {
+        throw new Error('請提供有效的圖片URL（支援 jpg, png, gif, bmp, webp 格式）');
+      }
+
+      // 下載圖片
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`下載失敗: HTTP ${response.status} ${response.statusText}`);
+      }
+
+      // 檢查內容類型
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.startsWith('image/')) {
+        throw new Error(`URL內容不是有效的圖片格式: ${contentType}`);
+      }
+
+      // 獲取圖片數據
+      const imageBlob = await response.blob();
+      const fileSize = imageBlob.size;
+
+      // 從URL提取檔案名和副檔名
+      const urlParts = new URL(imageUrl);
+      const pathParts = urlParts.pathname.split('/');
+      const originalFileName = pathParts[pathParts.length - 1] || 'downloaded-image';
+      const fileExt = originalFileName.split('.').pop() || 'jpg';
+
+      // 產生唯一檔案名稱
+      const fileName = `${restaurantId}/${Date.now()}-downloaded.${fileExt}`;
+
+      // 上傳進度回調
+      if (options.onProgress) {
+        options.onProgress(30); // 下載完成30%
+      }
+
+      // 使用管理客戶端上傳到 Supabase Storage
+      const client = supabaseAdmin || supabase;
+      const { data: uploadData, error: uploadError } = await client.storage
+        .from('restaurant-images')
+        .upload(fileName, imageBlob, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: contentType
+        });
+
+      if (uploadError) throw uploadError;
+
+      if (options.onProgress) {
+        options.onProgress(70); // 上傳完成70%
+      }
+
+      // 獲取公開 URL
+      const { data: urlData } = client.storage
+        .from('restaurant-images')
+        .getPublicUrl(fileName);
+
+      // 儲存圖片記錄到資料庫
+      const imageData = {
+        restaurant_id: restaurantId,
+        image_url: urlData.publicUrl,
+        image_path: fileName,
+        source_type: 'downloaded', // 新增來源類型
+        alt_text: options.altText || `${restaurantId} 下載照片`,
+        image_type: options.imageType || 'general',
+        is_primary: options.isPrimary || false,
+        display_order: options.displayOrder || 0,
+        file_size: fileSize,
+        width: options.width,
+        height: options.height,
+        uploaded_by: options.uploadedBy,
+        external_source: `下載自: ${imageUrl}`,
+        original_url: imageUrl // 保存原始URL
+      };
+
+      // 使用管理客戶端以繞過RLS限制
+      const { data, error } = await client
+        .from('restaurant_images')
+        .insert([imageData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (options.onProgress) {
+        options.onProgress(100); // 完成
+      }
+
+      console.log(`圖片下載並上傳成功: ${urlData.publicUrl}`);
+      return {
+        ...data,
+        publicUrl: urlData.publicUrl,
+        originalUrl: imageUrl,
+        downloadedSize: fileSize
+      };
+    } catch (error) {
+      console.error('從URL下載並上傳圖片失敗:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 批量下載並上傳圖片
+   * @param {Array} imageUrls - 圖片URL陣列
+   * @param {string} restaurantId - 餐廳 ID
+   * @param {Object} options - 選項
+   * @returns {Promise<Object>} 批量上傳結果
+   */
+  async batchDownloadAndUploadImages(imageUrls, restaurantId, options = {}) {
+    try {
+      if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
+        throw new Error('請提供有效的圖片URL陣列');
+      }
+
+      const results = [];
+      const errors = [];
+      const maxConcurrency = options.maxConcurrency || 3; // 限制併發數量
+
+      console.log(`開始批量下載 ${imageUrls.length} 張圖片...`);
+
+      // 分批處理以避免過多併發請求
+      for (let i = 0; i < imageUrls.length; i += maxConcurrency) {
+        const batch = imageUrls.slice(i, i + maxConcurrency);
+
+        const batchPromises = batch.map(async (url, batchIndex) => {
+          const globalIndex = i + batchIndex;
+          try {
+            const result = await this.downloadAndUploadImage(url, restaurantId, {
+              ...options,
+              altText: options.altText || `${restaurantId} 下載照片 ${globalIndex + 1}`,
+              isPrimary: globalIndex === 0 && options.setPrimaryToFirst, // 第一張設為主要照片
+              displayOrder: globalIndex,
+              onProgress: (progress) => {
+                if (options.onBatchProgress) {
+                  const overallProgress = ((globalIndex * 100 + progress) / imageUrls.length);
+                  options.onBatchProgress(Math.round(overallProgress), globalIndex + 1, imageUrls.length);
+                }
+              }
+            });
+
+            return { success: true, index: globalIndex, url, result };
+          } catch (error) {
+            console.error(`第 ${globalIndex + 1} 張圖片下載失敗 (${url}):`, error.message);
+            return { success: false, index: globalIndex, url, error: error.message };
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+
+        // 分類成功和失敗的結果
+        batchResults.forEach(result => {
+          if (result.success) {
+            results.push(result);
+          } else {
+            errors.push(result);
+          }
+        });
+
+        // 批次間的小延遲，避免對伺服器造成過大壓力
+        if (i + maxConcurrency < imageUrls.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+
+      console.log(`批量下載完成: 成功 ${results.length} 張，失敗 ${errors.length} 張`);
+
+      return {
+        success: true,
+        totalImages: imageUrls.length,
+        successCount: results.length,
+        errorCount: errors.length,
+        results: results.map(r => r.result),
+        errors: errors
+      };
+    } catch (error) {
+      console.error('批量下載並上傳圖片失敗:', error);
+      throw error;
+    }
+  },
+
+  /**
    * 設定主要照片
    * @param {string} imageId - 圖片 ID
    * @param {string} restaurantId - 餐廳 ID
@@ -522,14 +741,17 @@ export const restaurantImageService = {
    */
   async setPrimaryImage(imageId, restaurantId) {
     try {
+      // 使用管理客戶端以繞過RLS限制
+      const client = supabaseAdmin || supabase;
+
       // 先將該餐廳的所有圖片設為非主要
-      await supabase
+      await client
         .from('restaurant_images')
         .update({ is_primary: false })
         .eq('restaurant_id', restaurantId);
 
       // 設定指定圖片為主要
-      const { error } = await supabase
+      const { error } = await client
         .from('restaurant_images')
         .update({ is_primary: true })
         .eq('id', imageId);

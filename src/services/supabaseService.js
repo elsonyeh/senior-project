@@ -821,7 +821,12 @@ export const adminService = {
         throw new Error('Supabase 客戶端未初始化，請檢查環境變數配置');
       }
 
-      const { data, error } = await supabase
+      // 使用管理客戶端確保有足夠權限
+      const client = supabaseAdmin || supabase;
+
+      console.log('getAllAdmins: 使用客戶端:', !!supabaseAdmin ? 'Admin' : 'Regular');
+
+      const { data, error } = await client
         .from('admin_users')
         .select('*')
         .eq('is_active', true)
@@ -1124,6 +1129,7 @@ export const adminService = {
       return {
         id: adminAccount.id,
         email: adminAccount.email,
+        name: adminAccount.name,
         role: adminAccount.role,
         roleName: adminAccount.role === 'super_admin' ? '超級管理員' : '一般管理員',
         createdAt: adminAccount.created_at,
@@ -1209,8 +1215,12 @@ export const adminService = {
         }
       }
       
+      // 獲取最新管理員資訊
+      const adminInfo = await this.getAdminInfo(session.email);
+
       return {
         email: session.email,
+        name: adminInfo?.name,
         role: session.role || 'admin',
         adminId: session.adminId,
         isSuperAdmin: session.role === 'super_admin'
@@ -1255,37 +1265,128 @@ export const adminService = {
   },
 
   /**
+   * 更新管理員姓名
+   * @param {String} email - 管理員郵箱
+   * @param {String} name - 新姓名
+   * @return {Promise<Object>} 更新結果
+   */
+  async updateAdminName(email, name) {
+    try {
+      // 使用 supabaseAdmin 客戶端以獲得完整權限
+      const client = supabaseAdmin || supabase;
+
+      if (!client) {
+        return { success: false, error: 'Supabase 配置錯誤' };
+      }
+
+      if (!name || name.trim() === '') {
+        return { success: false, error: '姓名不能為空' };
+      }
+
+      console.log('AdminService: 嘗試更新姓名:', { email, name: name.trim(), usingAdmin: !!supabaseAdmin });
+
+      // 先查詢管理員是否存在（避免使用特殊字符導致的查詢問題）
+      const { data: existingAdmin, error: queryError } = await client
+        .from('admin_users')
+        .select('id, email, name, role, is_active')
+        .eq('email', email)
+        .eq('is_active', true)
+        .maybeSingle(); // 使用 maybeSingle 代替 single，避免找不到記錄時的錯誤
+
+      if (queryError) {
+        console.error('AdminService: 查詢管理員失敗:', queryError);
+        return { success: false, error: `查詢錯誤: ${queryError.message}` };
+      }
+
+      if (!existingAdmin) {
+        console.error('AdminService: 找不到管理員:', email);
+        // 嘗試列出所有管理員來調試
+        const { data: allAdmins } = await client
+          .from('admin_users')
+          .select('email, is_active')
+          .limit(10);
+        console.log('所有管理員列表:', allAdmins);
+        return { success: false, error: '找不到該管理員帳號' };
+      }
+
+      console.log('AdminService: 找到管理員:', existingAdmin);
+
+      // 更新姓名（使用 ID 進行更新，避免 email 編碼問題）
+      const { data, error } = await client
+        .from('admin_users')
+        .update({
+          name: name.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingAdmin.id) // 使用 ID 而非 email
+        .select()
+        .single();
+
+      if (error) {
+        console.error('AdminService: 更新姓名失敗:', error);
+        return { success: false, error: `更新失敗: ${error.message}` };
+      }
+
+      if (!data) {
+        return { success: false, error: '更新未生效，請稍後重試' };
+      }
+
+      console.log(`AdminService: 已更新 ${email} 的姓名為 ${name}`, data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('AdminService: 更新姓名失敗:', error);
+      return { success: false, error: '更新姓名過程發生錯誤: ' + error.message };
+    }
+  },
+
+  /**
    * 刪除管理員（軟刪除）
    * @param {String} email - 管理員郵箱
    * @return {Promise<Object>} 刪除結果
    */
   async deleteAdmin(email) {
     try {
-      if (!supabase) {
+      // 使用管理客戶端確保有足夠權限
+      const client = supabaseAdmin || supabase;
+
+      if (!client) {
         return { success: false, error: 'Supabase 配置錯誤' };
       }
 
-      // 先查詢管理員資料
-      const { data: adminData, error: queryError } = await supabase
+      console.log('deleteAdmin: 嘗試刪除管理員:', email, '使用客戶端:', !!supabaseAdmin ? 'Admin' : 'Regular');
+
+      // 先查詢管理員資料（查詢所有活躍管理員）
+      const { data: adminData, error: queryError } = await client
         .from('admin_users')
         .select('*')
         .eq('email', email)
         .eq('is_active', true)
-        .single();
+        .maybeSingle(); // 使用 maybeSingle 避免錯誤
 
-      if (queryError || !adminData) {
-        return { success: false, error: '找不到該管理員帳號' };
+      if (queryError) {
+        console.error('deleteAdmin: 查詢錯誤:', queryError);
+        return { success: false, error: `查詢失敗: ${queryError.message}` };
       }
-      
+
+      if (!adminData) {
+        console.log('deleteAdmin: 找不到管理員或已被刪除:', email);
+        return { success: false, error: '找不到該管理員帳號或已被刪除' };
+      }
+
       // 不能刪除超級管理員
       if (adminData.role === 'super_admin') {
         return { success: false, error: '不能刪除超級管理員帳號' };
       }
-      
+
+      console.log('deleteAdmin: 找到管理員，準備刪除:', adminData);
+
       // 軟刪除：設為非活躍狀態
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await client
         .from('admin_users')
-        .update({ is_active: false })
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', adminData.id);
 
       if (deleteError) {

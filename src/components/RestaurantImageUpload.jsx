@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { restaurantImageService } from "../services/restaurantService";
+import { adminService } from "../services/supabaseService";
 import "./RestaurantImageUpload.css";
 
 const RestaurantImageUpload = ({
@@ -13,92 +14,56 @@ const RestaurantImageUpload = ({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [previewImages, setPreviewImages] = useState([]);
-  const [uploadMode, setUploadMode] = useState("file"); // 'file', 'url', 'google-drive'
+  const [uploadMode, setUploadMode] = useState("file"); // 'file', 'url', 'google-drive', 'download-url'
   const [imageUrls, setImageUrls] = useState([""]); // 外部連結輸入
   const [isGoogleDriveAuthorized, setIsGoogleDriveAuthorized] = useState(false);
   const [gapiLoaded, setGapiLoaded] = useState(false);
+  const [currentAdminName, setCurrentAdminName] = useState("管理員");
   const fileInputRef = useRef(null);
 
+  // 獲取當前管理員姓名
+  useEffect(() => {
+    const loadCurrentAdmin = async () => {
+      try {
+        const currentAdmin = await adminService.getCurrentAdmin();
+        if (currentAdmin?.name) {
+          setCurrentAdminName(currentAdmin.name);
+        } else {
+          setCurrentAdminName("管理員");
+        }
+      } catch (error) {
+        console.error('獲取當前管理員資訊失敗:', error);
+        setCurrentAdminName("管理員");
+      }
+    };
+
+    loadCurrentAdmin();
+  }, []);
+
   // 初始化Google Drive API
+  // 暫時禁用 Google Drive 功能，提供提示訊息
   const initializeGoogleDrive = () => {
     return new Promise((resolve, reject) => {
-      if (window.gapi && window.gapi.load) {
-        window.gapi.load("client:auth2", async () => {
-          try {
-            await window.gapi.client.init({
-              apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-              clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-              discoveryDocs: [
-                "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-              ],
-              scope: "https://www.googleapis.com/auth/drive.file",
-            });
-
-            const authInstance = window.gapi.auth2.getAuthInstance();
-            const isSignedIn = authInstance.isSignedIn.get();
-            setIsGoogleDriveAuthorized(isSignedIn);
-            setGapiLoaded(true);
-            resolve(authInstance);
-          } catch (error) {
-            reject(error);
-          }
-        });
-      } else {
-        // 動態載入Google API腳本
-        const script = document.createElement("script");
-        script.src = "https://apis.google.com/js/api.js";
-        script.onload = () => {
-          window.gapi.load("client:auth2", async () => {
-            try {
-              await window.gapi.client.init({
-                apiKey: process.env.REACT_APP_GOOGLE_API_KEY,
-                clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-                discoveryDocs: [
-                  "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-                ],
-                scope: "https://www.googleapis.com/auth/drive.file",
-              });
-
-              const authInstance = window.gapi.auth2.getAuthInstance();
-              const isSignedIn = authInstance.isSignedIn.get();
-              setIsGoogleDriveAuthorized(isSignedIn);
-              setGapiLoaded(true);
-              resolve(authInstance);
-            } catch (error) {
-              reject(error);
-            }
-          });
-        };
-        script.onerror = reject;
-        document.head.appendChild(script);
-      }
+      reject(new Error('Google Drive 功能暫時停用，請使用其他上傳方式'));
     });
   };
 
   // Google Drive 登入
   const signInToGoogleDrive = async () => {
-    try {
-      if (!gapiLoaded) {
-        await initializeGoogleDrive();
-      }
-
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      await authInstance.signIn();
-      setIsGoogleDriveAuthorized(true);
-    } catch (error) {
-      console.error("Google Drive 登入失敗:", error);
-      alert("Google Drive 登入失敗，請稍後再試");
-    }
+    alert("Google Drive 功能暫時停用中\n\n請使用以下替代方案：\n• 📁 本機上傳：直接選擇電腦中的圖片\n• 🔗 外部連結：貼上圖片網址\n• 📥 下載上傳：輸入網址自動下載");
   };
 
   // Google Drive 登出
   const signOutFromGoogleDrive = async () => {
     try {
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      await authInstance.signOut();
+      // 撤銷 access token
+      if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+        window.google.accounts.oauth2.revoke(window.gapi.client.getToken().access_token);
+      }
       setIsGoogleDriveAuthorized(false);
     } catch (error) {
       console.error("Google Drive 登出失敗:", error);
+      setIsGoogleDriveAuthorized(false);
     }
   };
 
@@ -111,16 +76,17 @@ const RestaurantImageUpload = ({
       }
 
       // 使用Google Picker API選擇檔案
+      const token = window.gapi.client.getToken();
+      if (!token || !token.access_token) {
+        await signInToGoogleDrive();
+        return;
+      }
+
       const picker = new window.google.picker.PickerBuilder()
         .addView(
           new window.google.picker.DocsView(window.google.picker.ViewId.PHOTOS)
         )
-        .setOAuthToken(
-          window.gapi.auth2
-            .getAuthInstance()
-            .currentUser.get()
-            .getAuthResponse().access_token
-        )
+        .setOAuthToken(token.access_token)
         .setCallback(handleGoogleDriveSelection)
         .build();
 
@@ -271,10 +237,11 @@ const RestaurantImageUpload = ({
     try {
       const uploadPromises = validUrls.map((url, index) =>
         restaurantImageService.addExternalImage(url.trim(), restaurantId, {
-          altText: `${restaurantId} 外部照片 ${index + 1}`,
+          altText: `餐廳照片 ${index + 1}`,
           imageType: "general",
           isPrimary: index === 0, // 第一張設為主要照片
           displayOrder: index,
+          uploadedBy: currentAdminName,
           externalSource: "外部連結",
         })
       );
@@ -301,6 +268,66 @@ const RestaurantImageUpload = ({
     }
   };
 
+  // 下載並上傳URL圖片
+  const downloadAndUploadImages = async () => {
+    const validUrls = imageUrls.filter((url) => url.trim() !== "");
+
+    if (validUrls.length === 0) {
+      alert("請輸入至少一個有效的圖片連結");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const results = await restaurantImageService.batchDownloadAndUploadImages(
+        validUrls.map(url => url.trim()),
+        restaurantId,
+        {
+          altText: "餐廳照片",
+          imageType: "general",
+          uploadedBy: currentAdminName,
+          setPrimaryToFirst: true, // 第一張設為主要照片
+          maxConcurrency: 2, // 限制併發數量以避免過載
+          onBatchProgress: (progress, current, total) => {
+            setUploadProgress({
+              overall: progress,
+              current: current,
+              total: total,
+              status: `正在下載第 ${current}/${total} 張圖片... (${progress}%)`
+            });
+          }
+        }
+      );
+
+      // 清空輸入
+      setImageUrls([""]);
+      setUploadProgress({});
+
+      // 通知父組件上傳成功
+      if (onUploadSuccess) {
+        onUploadSuccess(results.results);
+      }
+
+      // 顯示詳細結果
+      if (results.errorCount > 0) {
+        const errorMessages = results.errors.map(err => `${err.url}: ${err.error}`).join('\n');
+        alert(`部分下載完成:\n成功: ${results.successCount} 張\n失敗: ${results.errorCount} 張\n\n失敗詳情:\n${errorMessages}`);
+      } else {
+        alert(`成功下載並上傳 ${results.successCount} 張圖片到 Supabase Storage！`);
+      }
+    } catch (error) {
+      console.error("批量下載並上傳失敗:", error);
+      setUploadProgress({});
+      if (onUploadError) {
+        onUploadError(error);
+      }
+      alert(`批量下載失敗: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // 批量上傳檔案
   const handleFileUpload = async () => {
     if (previewImages.length === 0) {
@@ -313,10 +340,11 @@ const RestaurantImageUpload = ({
     try {
       const uploadPromises = previewImages.map((preview, index) =>
         uploadSingleFile(preview.file, {
-          altText: `${restaurantId} 照片 ${index + 1}`,
+          altText: `餐廳照片 ${index + 1}`,
           imageType: "general",
           isPrimary: index === 0, // 第一張設為主要照片
           displayOrder: index,
+          uploadedBy: currentAdminName,
         })
       );
 
@@ -428,6 +456,8 @@ const RestaurantImageUpload = ({
       await handleFileUpload();
     } else if (uploadMode === "url") {
       await uploadExternalImages();
+    } else if (uploadMode === "download-url") {
+      await downloadAndUploadImages();
     } else if (uploadMode === "google-drive") {
       await handleGoogleDriveUpload();
     }
@@ -449,10 +479,11 @@ const RestaurantImageUpload = ({
     try {
       const uploadPromises = googleDriveFiles.map((preview, index) =>
         uploadGoogleDriveFile(preview.googleDriveFile, {
-          altText: `${restaurantId} Google Drive照片 ${index + 1}`,
+          altText: `餐廳照片 ${index + 1}`,
           imageType: "general",
           isPrimary: index === 0,
           displayOrder: index,
+          uploadedBy: currentAdminName,
         })
       );
 
@@ -511,6 +542,14 @@ const RestaurantImageUpload = ({
             disabled={uploading}
           >
             🔗 外部連結
+          </button>
+          <button
+            type="button"
+            className={`mode-btn ${uploadMode === "download-url" ? "active" : ""}`}
+            onClick={() => setUploadMode("download-url")}
+            disabled={uploading}
+          >
+            📥 下載上傳
           </button>
         </div>
       </div>
@@ -647,6 +686,63 @@ const RestaurantImageUpload = ({
         </div>
       )}
 
+      {/* 下載並上傳模式 */}
+      {uploadMode === "download-url" && (
+        <div className="download-url-mode">
+          <div className="url-input-section">
+            <h4>📥 從URL下載圖片並上傳到Supabase</h4>
+            <p className="mode-description">
+              輸入圖片URL，系統會自動下載圖片並上傳至Supabase Storage，
+              提供更好的載入速度和可靠性。
+            </p>
+
+            <div className="url-inputs">
+              {imageUrls.map((url, index) => (
+                <div key={index} className="url-input-group">
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={(e) => updateUrlInput(index, e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    disabled={uploading}
+                    className="url-input"
+                  />
+                  {imageUrls.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeUrlInput(index)}
+                      disabled={uploading}
+                      className="remove-url-btn"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {imageUrls.length < maxFiles && (
+              <button
+                type="button"
+                onClick={addUrlInput}
+                disabled={uploading}
+                className="add-url-btn"
+              >
+                + 新增連結
+              </button>
+            )}
+
+            <div className="download-info">
+              <p>• 支援格式: JPG, PNG, WebP, GIF, BMP</p>
+              <p>• 圖片會自動下載並上傳到Supabase Storage</p>
+              <p>• 提供更穩定的載入速度和存取控制</p>
+              <p>• 批量處理最多 {maxFiles} 張圖片</p>
+              <p>• 自動記錄原始來源URL</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 預覽區域 */}
       {previewImages.length > 0 && (
         <div className="preview-section">
@@ -690,21 +786,44 @@ const RestaurantImageUpload = ({
       )}
 
       {/* 上傳進度 */}
-      {Object.keys(uploadProgress).length > 0 && (
+      {(Object.keys(uploadProgress).length > 0 || uploadProgress.status) && (
         <div className="upload-progress-section">
-          <h4>上傳進度</h4>
-          {Object.entries(uploadProgress).map(([fileId, progress]) => (
-            <div key={fileId} className="progress-item">
-              <div className="progress-label">{fileId.split("-")[0]}</div>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${progress}%` }}
-                />
+          <h4>{uploadMode === "download-url" ? "下載上傳進度" : "上傳進度"}</h4>
+
+          {/* 批量下載進度 */}
+          {uploadProgress.status && (
+            <div className="batch-progress">
+              <div className="progress-item">
+                <div className="progress-label">{uploadProgress.status}</div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${uploadProgress.overall || 0}%` }}
+                  />
+                </div>
+                <span className="progress-text">{uploadProgress.overall || 0}%</span>
               </div>
-              <span className="progress-text">{progress}%</span>
             </div>
-          ))}
+          )}
+
+          {/* 單檔進度 */}
+          {Object.entries(uploadProgress).map(([fileId, progress]) => {
+            if (typeof progress === 'number') {
+              return (
+                <div key={fileId} className="progress-item">
+                  <div className="progress-label">{fileId.split("-")[0]}</div>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="progress-text">{progress}%</span>
+                </div>
+              );
+            }
+            return null;
+          })}
         </div>
       )}
 
@@ -716,7 +835,7 @@ const RestaurantImageUpload = ({
           disabled={
             uploading ||
             (uploadMode === "file" && previewImages.length === 0) ||
-            (uploadMode === "url" &&
+            ((uploadMode === "url" || uploadMode === "download-url") &&
               imageUrls.filter((url) => url.trim() !== "").length === 0) ||
             (uploadMode === "google-drive" &&
               previewImages.filter((img) => img.source === "google-drive")
@@ -727,9 +846,15 @@ const RestaurantImageUpload = ({
           {uploading
             ? uploadMode === "file"
               ? "上傳中..."
+              : uploadMode === "download-url"
+              ? "下載上傳中..."
               : "新增中..."
             : uploadMode === "file"
             ? `上傳 ${previewImages.length} 張圖片`
+            : uploadMode === "download-url"
+            ? `下載上傳 ${
+                imageUrls.filter((url) => url.trim() !== "").length
+              } 張圖片`
             : uploadMode === "google-drive"
             ? `上傳 ${
                 previewImages.filter((img) => img.source === "google-drive")

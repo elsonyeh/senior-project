@@ -139,7 +139,6 @@ export default function SwiftTaste() {
       setLoading(true);
       // 從 Supabase 載入餐廳資料
       const data = await restaurantService.getRestaurants({
-        featured: false, // 載入所有餐廳，不只是推薦餐廳
         minRating: 0     // 不限制評分
       });
       setRestaurants(data);
