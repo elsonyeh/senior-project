@@ -11,8 +11,8 @@ import ContactPage from '../components/profile/ContactPage';
 import AboutPage from '../components/profile/AboutPage';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { authService } from '../services/authService';
-import { 
-  IoLogInOutline, 
+import {
+  IoLogInOutline,
   IoPersonOutline,
   IoSettingsOutline,
   IoListOutline,
@@ -30,6 +30,44 @@ export default function UserProfilePage() {
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [lastScrollTop, setLastScrollTop] = useState(0);
+
+  // 滾動檢測 hook
+  useEffect(() => {
+    // 只在非主選單頁面啟用滾動隱藏功能
+    if (currentView === 'menu') {
+      setIsNavVisible(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+      // 向下滾動超過50px時隱藏導航欄，向上滾動時顯示
+      if (scrollTop > lastScrollTop && scrollTop > 50) {
+        // 向下滾動
+        setIsNavVisible(false);
+      } else {
+        // 向上滾動或接近頂部
+        setIsNavVisible(true);
+      }
+
+      setLastScrollTop(scrollTop <= 0 ? 0 : scrollTop);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [currentView, lastScrollTop]);
+
+  // 頁面切換時重置導航欄顯示狀態
+  useEffect(() => {
+    setIsNavVisible(true);
+    setLastScrollTop(0);
+  }, [currentView]);
 
   useEffect(() => {
     checkAuthStatus();
@@ -64,6 +102,14 @@ export default function UserProfilePage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  // 通知導航欄狀態變化
+  useEffect(() => {
+    // 設置全域變量供 App.jsx 使用
+    window.profileNavVisible = isNavVisible;
+    // 觸發自定義事件
+    window.dispatchEvent(new CustomEvent('profileNavChange', { detail: { isVisible: isNavVisible } }));
+  }, [isNavVisible]);
 
   // 檢查用戶登入狀態
   const checkAuthStatus = async () => {

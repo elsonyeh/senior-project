@@ -24,37 +24,32 @@ const BottomNavController = () => {
 
   // 判斷是否是管理頁面
   const isAdminPage = currentPath === '/admin' || currentPath === '/admin-login';
-  // 判斷是否是個人資料頁面
+  // 判斷是否是個人資料頁面 (包含所有子頁面)
   const isProfilePage = currentPath === '/profile';
 
   useEffect(() => {
-    // 只在個人資料頁面啟用滾動隱藏功能
+    // 如果不是個人資料頁面，總是顯示導航欄
     if (!isProfilePage) {
       setIsNavVisible(true);
       return;
     }
 
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-      // 向下滾動超過50px時隱藏導航欄，向上滾動時顯示
-      if (scrollTop > lastScrollTop && scrollTop > 50) {
-        // 向下滾動
-        setIsNavVisible(false);
-      } else {
-        // 向上滾動或接近頂部
-        setIsNavVisible(true);
-      }
-
-      setLastScrollTop(scrollTop <= 0 ? 0 : scrollTop);
+    // 監聽來自 UserProfilePage 的導航欄狀態變化
+    const handleProfileNavChange = (event) => {
+      setIsNavVisible(event.detail.isVisible);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('profileNavChange', handleProfileNavChange);
+
+    // 初始化狀態
+    if (window.profileNavVisible !== undefined) {
+      setIsNavVisible(window.profileNavVisible);
+    }
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('profileNavChange', handleProfileNavChange);
     };
-  }, [isProfilePage, lastScrollTop]);
+  }, [isProfilePage]);
 
   // 如果是管理頁面，不顯示底部導航欄
   if (isAdminPage) {

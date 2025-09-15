@@ -26,34 +26,44 @@ export default function MyLists({ user }) {
 
   // 載入用戶的收藏清單
   const loadUserLists = async () => {
-    if (!user) return;
-    
+    if (!user) {
+      console.log('MyLists: 沒有用戶資訊，跳過載入');
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log('MyLists: 開始載入用戶清單，用戶ID:', user.id);
+
       const result = await userDataService.getFavoriteLists(user.id, user.email);
-      
+
       if (result.success) {
-        console.log('載入收藏清單結果:', result.lists);
-        const processedLists = result.lists.map(list => ({
-          ...list,
-          places: list.favorite_list_places || list.places || []
-        }));
+        console.log('MyLists: 載入收藏清單成功:', result.lists);
+        console.log('MyLists: 清單數量:', result.lists.length);
+
+        const processedLists = result.lists.map((list, index) => {
+          console.log(`MyLists: 處理清單 ${index}:`, list.name, '地點數量:', list.favorite_list_places?.length || 0);
+          return {
+            ...list,
+            places: list.favorite_list_places || list.places || []
+          };
+        });
 
         if (processedLists.length > 0) {
+          console.log('MyLists: 設置清單數據:', processedLists);
           setLists(processedLists);
           setSelectedList(processedLists[0]);
         } else {
-          // 如果沒有清單，創建一個預設清單
-          console.log('沒有找到清單，創建預設清單...');
+          console.log('MyLists: 沒有找到清單，創建預設清單...');
           await createDefaultList();
         }
       } else {
-        console.error('載入收藏清單失敗:', result.error);
-        // 嘗試創建預設清單
+        console.error('MyLists: 載入收藏清單失敗:', result.error);
         await createDefaultList();
       }
     } catch (error) {
-      console.error('Error loading user lists:', error);
+      console.error('MyLists: 載入清單時發生錯誤:', error);
+      await createDefaultList();
     } finally {
       setLoading(false);
     }
