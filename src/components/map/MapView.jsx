@@ -8,13 +8,15 @@ import './MapView.css';
 const DEFAULT_CENTER = { lat: 25.0330, lng: 121.5654 };
 const DEFAULT_ZOOM = 15;
 
-export default function MapView({ 
-  center = DEFAULT_CENTER, 
+export default function MapView({
+  center = DEFAULT_CENTER,
   zoom = DEFAULT_ZOOM,
   searchLocation = null,
   onPlaceSelect,
   onFavoriteToggle,
-  favorites = []
+  favorites = [],
+  user = null,
+  favoriteLists = []
 }) {
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
@@ -211,7 +213,6 @@ export default function MapView({
         if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
           setSelectedPlace(place);
           showInfoWindow(place, marker);
-          onPlaceSelect?.(place);
         } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
           console.warn('Google Places API request denied for place details');
         } else {
@@ -228,26 +229,55 @@ export default function MapView({
     if (!infoWindowRef.current || !place) return;
 
     const isFavorite = favorites.some(fav => fav.place_id === place.place_id);
-    const photo = place.photos?.[0]?.getUrl({ maxWidth: 200, maxHeight: 150 });
+
+    // 處理圖片 - 優先使用餐廳資料庫的圖片
+    let photo = null;
+    if (place.isFromDatabase && place.primaryImage?.image_url) {
+      photo = place.primaryImage.image_url;
+    } else if (place.photos?.[0]) {
+      photo = place.photos[0].getUrl({ maxWidth: 200, maxHeight: 150 });
+    }
+
     const rating = place.rating ? place.rating.toFixed(1) : 'N/A';
     const reviewCount = place.user_ratings_total || 0;
+
+    // 生成收藏清單選項
+    const favoriteListsOptions = user && favoriteLists.length > 0
+      ? favoriteLists.map(list =>
+          `<option value="${list.id}">${list.name} (${list.places?.length || 0})</option>`
+        ).join('')
+      : '';
 
     const contentString = `
       <div class="custom-info-window">
         ${photo ? `<img src="${photo}" alt="${place.name}" class="place-photo" />` : ''}
         <div class="place-content">
           <h3 class="place-name">${place.name}</h3>
+          ${place.category ? `<p class="place-category">${place.category}</p>` : ''}
           <div class="place-rating">
             <span class="rating-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
-            <span class="rating-text">${rating} (${reviewCount})</span>
+            <span class="rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount})` : ''}</span>
           </div>
           <p class="place-address">${place.formatted_address || ''}</p>
           ${place.formatted_phone_number ? `<p class="place-phone">${place.formatted_phone_number}</p>` : ''}
+
           <div class="place-actions">
-            <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleFavorite('${place.place_id}')">
-              ${isFavorite ? '♥' : '♡'} ${isFavorite ? '已收藏' : '收藏'}
-            </button>
-            <button class="navigate-btn" onclick="openNavigation(${place.geometry.location.lat()}, ${place.geometry.location.lng()})">
+            ${user && favoriteLists.length > 0 ? `
+              <div class="favorite-section">
+                <select class="favorite-list-select" id="favoriteListSelect">
+                  <option value="">選擇收藏清單</option>
+                  ${favoriteListsOptions}
+                </select>
+                <button class="add-to-list-btn" onclick="addToFavoriteList('${place.place_id}')">
+                  📌 加入清單
+                </button>
+              </div>
+            ` : `
+              <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleFavorite('${place.place_id}')">
+                ${isFavorite ? '♥' : '♡'} ${isFavorite ? '已收藏' : '收藏'}
+              </button>
+            `}
+            <button class="navigate-btn" onclick="openNavigation(${place.isFromDatabase ? place.latitude : place.geometry.location.lat()}, ${place.isFromDatabase ? place.longitude : place.geometry.location.lng()})">
               🧭 導航
             </button>
           </div>
@@ -263,11 +293,26 @@ export default function MapView({
       onFavoriteToggle?.(place, !isFavorite);
     };
 
+    window.addToFavoriteList = (placeId) => {
+      const select = document.getElementById('favoriteListSelect');
+      const selectedListId = select?.value;
+
+      if (!selectedListId) {
+        alert('請先選擇一個收藏清單');
+        return;
+      }
+
+      const selectedList = favoriteLists.find(list => list.id === selectedListId);
+      if (selectedList && window.addPlaceToList) {
+        window.addPlaceToList(selectedListId, place);
+      }
+    };
+
     window.openNavigation = (lat, lng) => {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
       window.open(url, '_blank');
     };
-  }, [favorites, onFavoriteToggle]);
+  }, [favorites, onFavoriteToggle, user, favoriteLists]);
 
   // 清除所有標記
   const clearMarkers = useCallback(() => {
@@ -318,10 +363,19 @@ export default function MapView({
             formatted_address: restaurant.address,
             place_id: restaurant.id,
             rating: restaurant.rating,
-            isFromDatabase: true
+            category: restaurant.category,
+            primaryImage: restaurant.primaryImage,
+            isFromDatabase: true,
+            geometry: {
+              location: {
+                lat: () => parseFloat(restaurant.latitude),
+                lng: () => parseFloat(restaurant.longitude)
+              }
+            }
           };
 
           setSelectedPlace(restaurantPlace);
+          showInfoWindow(restaurantPlace, marker);
           onPlaceSelect?.(restaurantPlace);
         });
 

@@ -135,6 +135,8 @@
   background: white;
   transition: all 0.2s ease;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-input:focus,
@@ -167,6 +169,20 @@
 }
 
 .submit-success p {
+  margin: 0;
+}
+
+.submit-error {
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #c53030;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.submit-error p {
   margin: 0;
 }
 

@@ -10,6 +10,12 @@
   z-index: 1000;
   pointer-events: none;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  transition: transform 0.3s ease-out;
+}
+
+/* 導航欄隱藏狀態 */
+.floating-nav-container.nav-hidden {
+  transform: translateY(100%);
 }
 
 .floating-bottom-nav {

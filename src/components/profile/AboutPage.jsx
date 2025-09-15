@@ -38,12 +38,12 @@ export default function AboutPage() {
   const stats = [
     {
       icon: IoRestaurantOutline,
-      number: '10,000+',
+      number: '200+',
       label: '合作餐廳'
     },
     {
       icon: IoPeopleOutline,
-      number: '50,000+',
+      number: '500+',
       label: '活躍用戶'
     },
     {
@@ -60,26 +60,26 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: '陳執行長',
+      name: '李執行長',
       position: '創辦人 & CEO',
-      description: '10年餐飲科技經驗，致力於革新用餐體驗'
+      description: '跨域溝通社會觀察家，深入了解使用者需求'
     },
     {
-      name: '李技術長',
+      name: '葉技術長',
       position: 'CTO',
-      description: '資深AI工程師，專精機器學習與推薦系統'
+      description: '跨域全端開發者，網址的架設者'
     },
     {
-      name: '王設計師',
+      name: '林設計師',
       position: '首席設計師',
-      description: 'UX/UI專家，打造直觀優美的用戶介面'
+      description: 'UX/UI專家，打造精美的使用者介面'
     }
   ];
 
   return (
     <div className="about-content">
       <div className="about-intro">
-        <h2 className="about-title">關於 SwiftTaste</h2>
+        <h2 className="about-title">關於 TasteBuddies</h2>
         <p className="about-description">
           讓每一次用餐選擇都變得簡單而愉快
         </p>
@@ -90,7 +90,7 @@ export default function AboutPage() {
         <h3 className="section-title">我們的故事</h3>
         <div className="story-content">
           <p>
-            SwiftTaste 誕生於一個簡單的想法：「為什麼選擇餐廳總是這麼困難？」
+            TasteBuddies 誕生於一個簡單的想法：「為什麼選擇餐廳總是這麼困難？」
           </p>
           <p>
             創辦團隊在無數次「今天吃什麼？」的討論中，發現了一個普遍存在的問題 - 
@@ -99,7 +99,7 @@ export default function AboutPage() {
           </p>
           <p>
             於是，我們決定運用科技的力量來解決這個問題。透過智能推薦算法
-            和創新的多人協作模式，SwiftTaste 讓用餐選擇變得輕鬆、快速且令人滿意。
+            和創新的多人協作模式，TasteBuddies 讓用餐選擇變得輕鬆、快速且令人滿意。
           </p>
         </div>
       </div>
@@ -169,13 +169,13 @@ export default function AboutPage() {
 
       {/* 聯繫資訊 */}
       <div className="contact-cta">
-        <h3 className="cta-title">加入 SwiftTaste 大家庭</h3>
+        <h3 className="cta-title">加入 TasteBuddies 大家庭</h3>
         <p className="cta-description">
           如果您是餐廳業者，歡迎與我們合作；
           如果您有任何建議，歡迎隨時聯繫我們。
         </p>
         <p className="cta-email">
-          商務合作：<a href="mailto:business@swifttaste.com">business@swifttaste.com</a>
+          商務合作：<a href="mailto:elson921121@gmail.com">elson921121@gmail.com</a>
         </p>
       </div>
     </div>

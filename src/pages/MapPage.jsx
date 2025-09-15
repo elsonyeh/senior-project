@@ -35,9 +35,9 @@ export default function MapPage() {
         setUser(null);
       }
     };
-    
+
     loadUser();
-    
+
     // 監聽認證狀態變化
     const subscription = authService.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
@@ -46,6 +46,7 @@ export default function MapPage() {
         setUser(null);
         setSelectedList(null);
         setShowFavoriteLists(false);
+        setFavoriteLists([]);
       }
     });
 
@@ -53,6 +54,86 @@ export default function MapPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  // 顯示通知消息
+  const showNotificationMessage = (message, type = 'success') => {
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setShowNotification(true);
+
+    // 3秒後自動隱藏
+    setTimeout(() => {
+      setShowNotification(false);
+    }, 3000);
+  };
+
+  // 設置全域函數供InfoWindow使用
+  useEffect(() => {
+    window.addPlaceToList = async (listId, place) => {
+      try {
+        const { userDataService } = await import('../services/userDataService');
+
+        const placeData = {
+          place_id: place.place_id,
+          name: place.name,
+          address: place.formatted_address || '',
+          rating: place.rating || null,
+          photo_url: place.photos?.[0]?.getUrl({ maxWidth: 200 }) || place.primaryImage?.image_url || null,
+          notes: ''
+        };
+
+        const result = await userDataService.addPlaceToList(listId, placeData);
+
+        if (result.success) {
+          showNotificationMessage('已加入收藏清單！', 'success');
+          // 重新載入清單數據
+          const favListsResult = await userDataService.getFavoriteLists(user.id, user.email);
+          if (favListsResult.success) {
+            setFavoriteLists(favListsResult.lists);
+          }
+        } else {
+          showNotificationMessage(result.error || '加入收藏失敗', 'error');
+        }
+      } catch (error) {
+        console.error('加入收藏清單錯誤:', error);
+        showNotificationMessage('加入收藏失敗，請重試', 'error');
+      }
+    };
+
+    return () => {
+      delete window.addPlaceToList;
+    };
+  }, [user, showNotificationMessage]);
+
+  // 載入用戶的收藏清單
+  useEffect(() => {
+    const loadFavoriteLists = async () => {
+      if (!user) {
+        setFavoriteLists([]);
+        return;
+      }
+
+      try {
+        const { userDataService } = await import('../services/userDataService');
+        const result = await userDataService.getFavoriteLists(user.id, user.email);
+
+        if (result.success) {
+          setFavoriteLists(result.lists.map(list => ({
+            ...list,
+            places: list.favorite_list_places || []
+          })));
+        } else {
+          console.error('載入收藏清單失敗:', result.error);
+          setFavoriteLists([]);
+        }
+      } catch (error) {
+        console.error('載入收藏清單錯誤:', error);
+        setFavoriteLists([]);
+      }
+    };
+
+    loadFavoriteLists();
+  }, [user]);
 
   // 頁面載入時自動請求定位
   useEffect(() => {
@@ -150,18 +231,6 @@ export default function MapPage() {
     }
   }, [selectedList]);
 
-  // 顯示通知消息
-  const showNotificationMessage = (message, type = 'success') => {
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setShowNotification(true);
-    
-    // 3秒後自動隱藏
-    setTimeout(() => {
-      setShowNotification(false);
-    }, 3000);
-  };
-
   // 取得收藏的地點ID列表（用於地圖標記）
   const getFavoriteIds = () => {
     if (!selectedList) return [];
@@ -220,6 +289,8 @@ export default function MapPage() {
           onPlaceSelect={handlePlaceSelect}
           onFavoriteToggle={handleFavoriteToggle}
           favorites={selectedList ? (selectedList.places || selectedList.favorite_list_places || []) : []}
+          user={user}
+          favoriteLists={favoriteLists}
         />
       </div>
 

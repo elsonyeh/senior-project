@@ -34,8 +34,28 @@ export default function ContactPage() {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
-    // 模擬提交過程
-    setTimeout(() => {
+    try {
+      // 準備郵件內容
+      const emailBody = `
+姓名: ${formData.name}
+電子郵件: ${formData.email}
+主題: ${formData.subject}
+
+訊息內容:
+${formData.message}
+
+---
+此訊息來自 TasteBuddies 聯絡表單
+時間: ${new Date().toLocaleString('zh-TW')}
+      `.trim();
+
+      // 使用 mailto 鏈接直接打開用戶的郵件客戶端
+      const mailtoLink = `mailto:elson921121@gmail.com?subject=${encodeURIComponent(`[TasteBuddies聯絡] ${formData.subject}`)}&body=${encodeURIComponent(emailBody)}`;
+
+      // 打開郵件客戶端
+      window.location.href = mailtoLink;
+
+      // 顯示成功訊息
       setIsSubmitting(false);
       setSubmitStatus('success');
       setFormData({
@@ -48,28 +68,37 @@ export default function ContactPage() {
       // 清除成功訊息
       setTimeout(() => {
         setSubmitStatus(null);
+      }, 5000);
+
+    } catch (error) {
+      console.error('發送郵件失敗:', error);
+      setIsSubmitting(false);
+      setSubmitStatus('error');
+
+      setTimeout(() => {
+        setSubmitStatus(null);
       }, 3000);
-    }, 1500);
+    }
   };
 
   const contactInfo = [
     {
       icon: IoMailOutline,
       title: '電子郵件',
-      content: 'support@swifttaste.com',
+      content: 'elson921121@gmail.com',
       description: '我們會在24小時內回覆您'
     },
     {
       icon: IoCallOutline,
       title: '客服專線',
-      content: '+886-2-1234-5678',
+      content: '0988111203',
       description: '週一至週五 09:00-18:00'
     },
     {
       icon: IoLocationOutline,
       title: '公司地址',
-      content: '台北市信義區信義路五段7號',
-      description: '台北101大樓'
+      content: '804高雄市鼓山區蓮海路70號',
+      description: '國立中山大學'
     },
     {
       icon: IoTimeOutline,
@@ -81,7 +110,7 @@ export default function ContactPage() {
 
   const socialLinks = [
     { icon: IoLogoFacebook, name: 'Facebook', url: '#' },
-    { icon: IoLogoInstagram, name: 'Instagram', url: '#' },
+    { icon: IoLogoInstagram, name: 'Instagram', url: 'https://www.instagram.com/tttastebuddies?igsh=ZWFrNjU3bjlrMnh1&utm_source=qr' },
     { icon: IoLogoTwitter, name: 'Twitter', url: '#' }
   ];
 
@@ -173,7 +202,13 @@ export default function ContactPage() {
 
           {submitStatus === 'success' && (
             <div className="submit-success">
-              <p>✅ 訊息已成功發送！我們會盡快與您聯繫。</p>
+              <p>✅ 已為您打開郵件應用程式！請確認發送郵件給我們。</p>
+            </div>
+          )}
+
+          {submitStatus === 'error' && (
+            <div className="submit-error">
+              <p>❌ 郵件發送失敗，請直接聯絡 elson921121@gmail.com</p>
             </div>
           )}
 

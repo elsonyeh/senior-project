@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { IoMapOutline, IoRestaurantOutline, IoPersonOutline } from "react-icons/io5";
 import "./BottomNav.css";
 
-export default function BottomNav() {
+export default function BottomNav({ isVisible = true }) {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("");
   const [currentMode, setCurrentMode] = useState(null);
@@ -70,8 +70,8 @@ export default function BottomNav() {
   };
 
   return (
-    <div className="floating-nav-container">
-      <nav 
+    <div className={`floating-nav-container ${!isVisible ? 'nav-hidden' : ''}`}>
+      <nav
         className={`floating-bottom-nav ${isInitialRender ? 'initializing' : ''}`}
         ref={navRef}
       >

@@ -33,20 +33,24 @@ export default function MyLists({ user }) {
       const result = await userDataService.getFavoriteLists(user.id, user.email);
       
       if (result.success) {
-        if (result.lists.length > 0) {
-          setLists(result.lists);
-          setSelectedList(result.lists[0]);
+        console.log('載入收藏清單結果:', result.lists);
+        const processedLists = result.lists.map(list => ({
+          ...list,
+          places: list.favorite_list_places || list.places || []
+        }));
+
+        if (processedLists.length > 0) {
+          setLists(processedLists);
+          setSelectedList(processedLists[0]);
         } else {
-          // 如果沒有清單，顯示空狀態
-          setLists([]);
-          setSelectedList(null);
+          // 如果沒有清單，創建一個預設清單
+          console.log('沒有找到清單，創建預設清單...');
+          await createDefaultList();
         }
       } else {
         console.error('載入收藏清單失敗:', result.error);
-        // 顯示範例數據以便開發測試
-        const sampleList = userDataService.generateSampleFavoriteList();
-        setLists([sampleList]);
-        setSelectedList(sampleList);
+        // 嘗試創建預設清單
+        await createDefaultList();
       }
     } catch (error) {
       console.error('Error loading user lists:', error);
@@ -55,34 +59,30 @@ export default function MyLists({ user }) {
     }
   };
 
-  // 生成範例地點數據
-  const generateSamplePlaces = () => {
-    return [
-      {
-        place_id: 'sample_1',
-        name: '鼎泰豐',
-        address: '台北市大安區信義路二段194號',
-        rating: 4.5,
-        photo: 'https://images.unsplash.com/photo-1563379091303-2b7035a95648?w=200&h=150&fit=crop',
-        added_at: new Date(Date.now() - 86400000).toISOString() // 1天前
-      },
-      {
-        place_id: 'sample_2',
-        name: '阿宗麵線',
-        address: '台北市萬華區峨眉街8-1號',
-        rating: 4.2,
-        photo: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200&h=150&fit=crop',
-        added_at: new Date(Date.now() - 172800000).toISOString() // 2天前
-      },
-      {
-        place_id: 'sample_3',
-        name: '春水堂',
-        address: '台北市大安區復興南路一段390號',
-        rating: 4.3,
-        photo: 'https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=200&h=150&fit=crop',
-        added_at: new Date(Date.now() - 259200000).toISOString() // 3天前
+  // 創建預設清單
+  const createDefaultList = async () => {
+    try {
+      const result = await userDataService.createFavoriteList(
+        user.id,
+        {
+          name: '我的最愛',
+          description: '預設收藏清單',
+          color: getRandomColor()
+        },
+        user.email
+      );
+
+      if (result.success) {
+        const newList = { ...result.list, favorite_list_places: [] };
+        setLists([newList]);
+        setSelectedList(newList);
+        console.log('已創建預設清單:', newList);
+      } else {
+        console.error('創建預設清單失敗:', result.error);
       }
-    ];
+    } catch (error) {
+      console.error('創建預設清單錯誤:', error);
+    }
   };
 
   // 創建新清單

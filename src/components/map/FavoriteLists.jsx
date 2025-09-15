@@ -1,26 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  IoHeartOutline, 
-  IoHeart, 
-  IoAddOutline, 
-  IoCreateOutline, 
+import {
+  IoHeartOutline,
+  IoHeart,
+  IoAddOutline,
+  IoCreateOutline,
   IoTrashOutline,
   IoChevronDownOutline,
   IoListOutline,
-  IoRestaurantOutline
+  IoRestaurantOutline,
+  IoCloseOutline,
+  IoCheckmarkCircleOutline,
+  IoWarningOutline,
+  IoAlertCircleOutline
 } from 'react-icons/io5';
 import { userDataService } from '../../services/userDataService';
 import { authService } from '../../services/authService';
 import './FavoriteLists.css';
 
-export default function FavoriteLists({ 
+export default function FavoriteLists({
   user,
-  onListSelect, 
-  onPlaceAdd, 
+  onListSelect,
+  onPlaceAdd,
   onListUpdate,
   selectedPlace,
   isOpen,
-  onToggle 
+  onToggle
 }) {
   const [favoriteLists, setFavoriteLists] = useState([]);
   const [selectedListId, setSelectedListId] = useState(null);
@@ -29,6 +33,8 @@ export default function FavoriteLists({
   const [editingListId, setEditingListId] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // 載入喜愛清單
   useEffect(() => {
@@ -37,48 +43,69 @@ export default function FavoriteLists({
     }
   }, [user]);
 
-  const loadFavoriteLists = async () => {
+  const loadFavoriteLists = async (showLoadingIndicator = true) => {
     if (!user) return;
-    
+
     try {
-      setLoading(true);
+      if (showLoadingIndicator) {
+        setLoading(true);
+      }
+
       const result = await userDataService.getFavoriteLists(user.id, user.email);
-      
+
       if (result.success) {
         // 轉換數據格式以兼容現有的地圖頁邏輯
         const listsWithPlaces = result.lists.map(list => ({
           ...list,
           places: list.favorite_list_places || []
         }));
-        
+
         setFavoriteLists(listsWithPlaces);
-        if (listsWithPlaces.length > 0) {
+
+        // 只在初次載入時自動選擇第一個清單
+        if (isInitialLoad && listsWithPlaces.length > 0) {
           setSelectedListId(listsWithPlaces[0].id);
           onListSelect?.(listsWithPlaces[0]);
-          
+
           // 通知父組件清單已更新
           if (onListUpdate) {
             onListUpdate(listsWithPlaces[0]);
           }
+          setIsInitialLoad(false);
+        } else if (!isInitialLoad) {
+          // 非初次載入時，保持當前選中的清單
+          const currentList = listsWithPlaces.find(list => list.id === selectedListId);
+          if (currentList && onListUpdate) {
+            onListUpdate(currentList);
+          }
         }
       } else {
         console.error('載入收藏清單失敗:', result.error);
-        // 創建預設清單
-        const defaultList = {
-          id: 'default',
-          name: '我的最愛',
-          places: [],
-          created_at: new Date().toISOString(),
-          color: '#ff6b35'
-        };
-        setFavoriteLists([defaultList]);
-        setSelectedListId(defaultList.id);
-        onListSelect?.(defaultList);
+        if (isInitialLoad) {
+          // 創建預設清單
+          const defaultList = {
+            id: 'default',
+            name: '我的最愛',
+            places: [],
+            created_at: new Date().toISOString(),
+            color: '#ff6b35'
+          };
+          setFavoriteLists([defaultList]);
+          setSelectedListId(defaultList.id);
+          onListSelect?.(defaultList);
+          setIsInitialLoad(false);
+        }
       }
     } catch (error) {
       console.error('Error loading favorite lists:', error);
+      if (isInitialLoad) {
+        showNotification('載入清單失敗，請重新整理頁面', 'error');
+        setIsInitialLoad(false);
+      }
     } finally {
-      setLoading(false);
+      if (showLoadingIndicator) {
+        setLoading(false);
+      }
     }
   };
 
@@ -108,11 +135,11 @@ export default function FavoriteLists({
         setNewListName('');
         setShowCreateForm(false);
       } else {
-        alert(result.error || '創建清單失敗');
+        showNotification(result.error || '創建清單失敗', 'error');
       }
     } catch (error) {
       console.error('創建清單錯誤:', error);
-      alert('創建清單失敗，請重試');
+      showNotification('創建清單失敗，請重試', 'error');
     } finally {
       setLoading(false);
     }
@@ -120,11 +147,11 @@ export default function FavoriteLists({
 
   const deleteList = async (listId) => {
     if (favoriteLists.length === 1) {
-      alert('至少需要保留一個清單');
+      showNotification('至少需要保留一個清單', 'warning');
       return;
     }
-    
-    if (confirm('確定要刪除這個清單嗎？')) {
+
+    if (confirm('確定要刪除這個清單嗎？此操作不可復原。')) {
       try {
         setLoading(true);
         const result = await userDataService.deleteFavoriteList(listId);
@@ -138,11 +165,11 @@ export default function FavoriteLists({
             onListSelect?.(updatedLists[0]);
           }
         } else {
-          alert(result.error || '刪除清單失敗');
+          showNotification(result.error || '刪除清單失敗', 'error');
         }
       } catch (error) {
         console.error('刪除清單錯誤:', error);
-        alert('刪除清單失敗，請重試');
+        showNotification('刪除清單失敗，請重試', 'error');
       } finally {
         setLoading(false);
       }
@@ -166,11 +193,11 @@ export default function FavoriteLists({
         setEditingListId(null);
         setEditingName('');
       } else {
-        alert(result.error || '更新清單失敗');
+        showNotification(result.error || '更新清單失敗', 'error');
       }
     } catch (error) {
       console.error('更新清單錯誤:', error);
-      alert('更新清單失敗，請重試');
+      showNotification('更新清單失敗，請重試', 'error');
     } finally {
       setLoading(false);
     }
@@ -189,16 +216,16 @@ export default function FavoriteLists({
       });
 
       if (result.success) {
-        // 重新載入清單以確保數據同步
-        await loadFavoriteLists();
+        // 重新載入清單以確保數據同步（不顯示載入指示器）
+        await loadFavoriteLists(false);
         onPlaceAdd?.();
-        alert('已加入收藏清單！');
+        showNotification('已加入收藏清單！', 'success');
       } else {
-        alert(result.error || '加入收藏失敗');
+        showNotification(result.error || '加入收藏失敗', 'error');
       }
     } catch (error) {
       console.error('加入收藏錯誤:', error);
-      alert('加入收藏失敗，請重試');
+      showNotification('加入收藏失敗，請重試', 'error');
     } finally {
       setLoading(false);
     }
@@ -210,23 +237,34 @@ export default function FavoriteLists({
       const result = await userDataService.removePlaceFromListByPlaceId(listId, placeId);
       
       if (result.success) {
-        // 重新載入清單以確保數據同步
-        await loadFavoriteLists();
-        alert('已移除收藏！');
+        // 重新載入清單以確保數據同步（不顯示載入指示器）
+        await loadFavoriteLists(false);
+        showNotification('已移除收藏！', 'success');
       } else {
-        alert(result.error || '移除收藏失敗');
+        showNotification(result.error || '移除收藏失敗', 'error');
       }
     } catch (error) {
       console.error('移除收藏錯誤:', error);
-      alert('移除收藏失敗，請重試');
+      showNotification('移除收藏失敗，請重試', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const getRandomColor = () => {
-    const colors = ['#ff6b35', '#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
+    const colors = ['#ff6b35', '#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16', '#f97316'];
     return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
+  const dismissNotification = () => {
+    setNotification({ show: false, message: '', type: 'success' });
   };
 
   const selectedList = favoriteLists.find(list => list.id === selectedListId);
@@ -255,6 +293,25 @@ export default function FavoriteLists({
 
   return (
     <div className={`favorite-lists-container ${isOpen ? 'open' : ''}`}>
+      {/* 通知消息 */}
+      {notification.show && (
+        <div className={`list-notification ${notification.type}`}>
+          <div className="notification-content">
+            {notification.type === 'success' && <IoCheckmarkCircleOutline className="notification-icon" />}
+            {notification.type === 'error' && <IoAlertCircleOutline className="notification-icon" />}
+            {notification.type === 'warning' && <IoWarningOutline className="notification-icon" />}
+            <span className="notification-message">{notification.message}</span>
+          </div>
+          <button
+            className="notification-dismiss"
+            onClick={dismissNotification}
+            title="關閉"
+          >
+            <IoCloseOutline />
+          </button>
+        </div>
+      )}
+
       {/* 標題欄 */}
       <div className="lists-header" onClick={onToggle}>
         <div className="header-content">
@@ -268,6 +325,12 @@ export default function FavoriteLists({
       {/* 清單內容 */}
       {isOpen && (
         <div className="lists-content">
+          {loading && (
+            <div className="lists-loading">
+              <div className="loading-spinner"></div>
+              <span>載入中...</span>
+            </div>
+          )}
           {/* 清單選擇器 */}
           <div className="lists-selector">
             {favoriteLists.map(list => (

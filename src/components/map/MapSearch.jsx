@@ -19,7 +19,6 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
       const restaurants = await restaurantService.getRestaurants();
 
       if (!restaurants || restaurants.length === 0) {
-        console.warn('餐廳資料庫為空或無法載入');
         return [];
       }
 
@@ -46,11 +45,10 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
         const foundInCategory = category.includes(searchLower);
         const foundInTags = tags.includes(searchLower);
 
-        // 任一欄位包含搜尋關鍵字就符合
         return foundInName || foundInCategory || foundInTags;
       });
 
-      return filtered.slice(0, 5);
+      return filtered.slice(0, 10);
     } catch (error) {
       console.error('Error searching restaurant database:', error);
       return [];
@@ -67,7 +65,7 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
 
         if (!isMounted || !window.google || !window.google.maps || !window.google.maps.places) return;
 
-        if (searchTerm.length > 2) {
+        if (searchTerm.length > 0) {
           // 清除之前的timeout
           if (suggestionsTimeoutRef.current) {
             clearTimeout(suggestionsTimeoutRef.current);
@@ -99,7 +97,7 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
                       },
                       (predictions, status) => {
                         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-                          resolve(predictions.slice(0, 4)); // 減少 Google Places 結果為 4 個
+                          resolve(predictions.slice(0, 3)); // 減少 Google Places 結果為 3 個，讓餐廳資料庫結果更突出
                         } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
                           console.warn('Google Places API request denied - using database only');
                           resolve([]);
@@ -276,7 +274,7 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
       </form>
 
       {/* 搜尋建議 */}
-      {showSuggestions && (suggestions.length > 0 || restaurantSuggestions.length > 0) && (
+      {(showSuggestions || showNoResults) && (suggestions.length > 0 || restaurantSuggestions.length > 0) && (
         <div className="search-suggestions">
           {/* 餐廳資料庫結果 */}
           {restaurantSuggestions.length > 0 && (
