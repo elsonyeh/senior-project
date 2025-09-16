@@ -224,62 +224,62 @@
 
 /* Google Maps 控制項自定義 */
 .gm-style .gm-style-iw-gm {
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .gm-style .gm-style-iw-ch {
-  padding: 16px !important;
+  padding: 16px;
 }
 
 .gm-style .gm-style-iw-tc::after {
-  background: white !important;
+  background: white;
 }
 
 /* Google Maps 縮放控制項位置調整 */
-.gm-style .gmnoprint .gm-bundled-control {
-  top: 90px !important; /* 將縮放控制項往下移動 */
-  right: 10px !important;
+.map-view-container .gm-style .gmnoprint .gm-bundled-control {
+  top: 90px;
+  right: 10px;
 }
 
 /* 調整 gm-control-active 位置避免被導航列擋住 */
-.gm-style .gm-control-active,
-.gm-style .gmnoprint {
-  top: 120px !important;
-  right: 10px !important;
+.map-view-container .gm-style .gm-control-active,
+.map-view-container .gm-style .gmnoprint {
+  top: 120px;
+  right: 10px;
 }
 
 /* 調整所有Google Maps控制項位置 */
-.gm-style [class*="gm-control"] {
-  top: 120px !important;
+.map-view-container .gm-style [class*="gm-control"] {
+  top: 120px;
 }
 
 /* 針對不同螢幕尺寸調整控制項位置 */
 @media (max-width: 768px) {
-  .gm-style .gmnoprint .gm-bundled-control {
-    top: 80px !important;
-    right: 8px !important;
+  .map-view-container .gm-style .gmnoprint .gm-bundled-control {
+    top: 80px;
+    right: 8px;
   }
 
-  .gm-style .gm-control-active,
-  .gm-style .gmnoprint,
-  .gm-style [class*="gm-control"] {
-    top: 100px !important;
-    right: 8px !important;
+  .map-view-container .gm-style .gm-control-active,
+  .map-view-container .gm-style .gmnoprint,
+  .map-view-container .gm-style [class*="gm-control"] {
+    top: 100px;
+    right: 8px;
   }
 }
 
 @media (max-width: 480px) {
-  .gm-style .gmnoprint .gm-bundled-control {
-    top: 70px !important;
-    right: 6px !important;
+  .map-view-container .gm-style .gmnoprint .gm-bundled-control {
+    top: 70px;
+    right: 6px;
   }
 
-  .gm-style .gm-control-active,
-  .gm-style .gmnoprint,
-  .gm-style [class*="gm-control"] {
-    top: 90px !important;
-    right: 6px !important;
+  .map-view-container .gm-style .gm-control-active,
+  .map-view-container .gm-style .gmnoprint,
+  .map-view-container .gm-style [class*="gm-control"] {
+    top: 90px;
+    right: 6px;
   }
 }
 
