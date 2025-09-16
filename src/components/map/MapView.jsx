@@ -49,12 +49,12 @@ export default function MapView({
       center: center,
       zoom: zoom,
       mapTypeControl: false,
-      fullscreenControl: false,
-      streetViewControl: false,
-      zoomControl: true,
-      zoomControlOptions: {
+      fullscreenControl: true,
+      fullscreenControlOptions: {
         position: window.google.maps.ControlPosition.RIGHT_BOTTOM
       },
+      streetViewControl: false,
+      zoomControl: false,
       styles: [
         {
           featureType: 'poi',
@@ -114,10 +114,9 @@ export default function MapView({
         try {
           service.nearbySearch(request, (results, status) => {
             clearTimeout(timeoutId);
+            console.log('Google Places API status:', status, 'Results:', results?.length);
 
-            console.log('Google Places API status:', status);
-
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+            if (status === 'OK' && results) {
               resolve({ results, status });
             } else {
               reject(new Error(`Places API error: ${status}`));
@@ -182,9 +181,9 @@ export default function MapView({
       };
 
       service.nearbySearch(fallbackRequest, (fallbackResults, fallbackStatus) => {
-        console.log('Fallback search status:', fallbackStatus);
+        console.log('Fallback search status:', fallbackStatus, 'Results:', fallbackResults?.length);
 
-        if (fallbackStatus === window.google.maps.places.PlacesServiceStatus.OK && fallbackResults) {
+        if (fallbackStatus === 'OK' && fallbackResults) {
           fallbackResults.slice(0, 10).forEach(place => {
             createMarker(place, 'google-fallback');
           });

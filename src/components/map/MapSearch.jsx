@@ -88,16 +88,16 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
                       return;
                     }
 
-                    // 使用新版 Places API 的 AutocompleteRequest
-                    const { PlacesService } = await window.google.maps.importLibrary("places");
+                    // 使用新版 Places API
+                    const { AutocompleteService } = await window.google.maps.importLibrary("places");
 
-                    if (!window.google.maps.places.AutocompleteService) {
-                      console.warn('AutocompleteService not available, using fallback');
+                    if (!AutocompleteService) {
+                      console.warn('New AutocompleteService not available, using fallback');
                       resolve([]);
                       return;
                     }
 
-                    const autocomplete = new window.google.maps.places.AutocompleteService();
+                    const autocomplete = new AutocompleteService();
                     autocomplete.getPlacePredictions(
                       {
                         input: searchTerm,
