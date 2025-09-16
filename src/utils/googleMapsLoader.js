@@ -48,9 +48,9 @@ class GoogleMapsLoader {
         return;
       }
 
-      // 創建 script 標籤
+      // 創建 script 標籤 - 使用新版 Places API
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=zh-TW&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=maps,places&language=zh-TW&loading=async&v=weekly`;
       script.async = true;
       script.defer = true;
 

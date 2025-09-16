@@ -78,11 +78,21 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
             try {
               // 同時搜尋 Google Places 和餐廳資料庫
               const [placePredictions, restaurantMatches] = await Promise.allSettled([
-                // Google Places 搜尋 (with error handling for legacy API)
-                new Promise((resolve, reject) => {
+                // Google Places 搜尋 (using new Places API)
+                new Promise(async (resolve, reject) => {
                   try {
+                    // 檢查新版 Places API 是否可用
+                    if (!window.google?.maps?.places) {
+                      console.warn('Google Places API not available, skipping Google Places search');
+                      resolve([]);
+                      return;
+                    }
+
+                    // 使用新版 Places API 的 AutocompleteRequest
+                    const { PlacesService } = await window.google.maps.importLibrary("places");
+
                     if (!window.google.maps.places.AutocompleteService) {
-                      console.warn('Google Places AutocompleteService not available, skipping Google Places search');
+                      console.warn('AutocompleteService not available, using fallback');
                       resolve([]);
                       return;
                     }
@@ -97,18 +107,19 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
                       },
                       (predictions, status) => {
                         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-                          resolve(predictions.slice(0, 3)); // 減少 Google Places 結果為 3 個，讓餐廳資料庫結果更突出
+                          resolve(predictions.slice(0, 3));
                         } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
                           console.warn('Google Places API request denied - using database only');
                           resolve([]);
                         } else {
+                          console.warn('Places API status:', status);
                           resolve([]);
                         }
                       }
                     );
                   } catch (error) {
                     console.warn('Google Places API error:', error);
-                    resolve([]); // 如果 Google Places API 失敗，只使用資料庫搜尋
+                    resolve([]);
                   }
                 }),
                 // 餐廳資料庫搜尋
@@ -164,18 +175,23 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
     }
   };
 
-  const handleSuggestionClick = (suggestion) => {
+  const handleSuggestionClick = async (suggestion) => {
     try {
       // 檢查是否有 Google Places API 可用
-      if (!window.google.maps.places?.PlacesService) {
+      if (!window.google?.maps?.places) {
         console.warn('Google Places API not available for suggestion click');
         return;
       }
 
-      const placesService = new window.google.maps.places.PlacesService(document.createElement('div'));
+      // 使用新版 Places API
+      const { PlacesService } = await window.google.maps.importLibrary("places");
+      const placesService = new PlacesService(document.createElement('div'));
 
       placesService.getDetails(
-        { placeId: suggestion.place_id },
+        {
+          placeId: suggestion.place_id,
+          fields: ['name', 'geometry', 'formatted_address', 'place_id']
+        },
         (place, status) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place.geometry) {
             setSearchTerm(suggestion.description);
