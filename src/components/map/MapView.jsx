@@ -49,10 +49,7 @@ export default function MapView({
       center: center,
       zoom: zoom,
       mapTypeControl: false,
-      fullscreenControl: true,
-      fullscreenControlOptions: {
-        position: window.google.maps.ControlPosition.RIGHT_BOTTOM
-      },
+      fullscreenControl: false,
       streetViewControl: false,
       zoomControl: false,
       styles: [

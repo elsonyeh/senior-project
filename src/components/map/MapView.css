@@ -242,10 +242,29 @@
   right: 10px !important;
 }
 
+/* 調整 gm-control-active 位置避免被導航列擋住 */
+.gm-style .gm-control-active,
+.gm-style .gmnoprint {
+  top: 120px !important;
+  right: 10px !important;
+}
+
+/* 調整所有Google Maps控制項位置 */
+.gm-style [class*="gm-control"] {
+  top: 120px !important;
+}
+
 /* 針對不同螢幕尺寸調整控制項位置 */
 @media (max-width: 768px) {
   .gm-style .gmnoprint .gm-bundled-control {
     top: 80px !important;
+    right: 8px !important;
+  }
+
+  .gm-style .gm-control-active,
+  .gm-style .gmnoprint,
+  .gm-style [class*="gm-control"] {
+    top: 100px !important;
     right: 8px !important;
   }
 }
@@ -253,6 +272,13 @@
 @media (max-width: 480px) {
   .gm-style .gmnoprint .gm-bundled-control {
     top: 70px !important;
+    right: 6px !important;
+  }
+
+  .gm-style .gm-control-active,
+  .gm-style .gmnoprint,
+  .gm-style [class*="gm-control"] {
+    top: 90px !important;
     right: 6px !important;
   }
 }
