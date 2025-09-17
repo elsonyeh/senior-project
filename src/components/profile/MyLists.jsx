@@ -24,6 +24,26 @@ export default function MyLists({ user }) {
   const [editingListId, setEditingListId] = useState(null);
   const [editingListName, setEditingListName] = useState('');
 
+  // 獲取餐廳圖片的函數，使用與 SwiftTaste 相同的邏輯
+  const getRestaurantImage = (restaurant) => {
+    // 優先使用 primaryImage，然後是 allImages 中的第一張，最後是預設圖片
+    let imageUrl = restaurant.primaryImage?.image_url ||
+                   (restaurant.allImages && restaurant.allImages.length > 0 ? restaurant.allImages[0]?.image_url : null) ||
+                   (restaurant.restaurant_images && restaurant.restaurant_images.length > 0 ? restaurant.restaurant_images[0]?.image_url : null) ||
+                   restaurant.photoURL || // 支援舊格式
+                   restaurant.image_url || // 支援其他格式
+                   restaurant.photo || // 收藏清單中的照片欄位
+                   restaurant.photo_url || // 收藏清單中的照片 URL 欄位
+                   `https://source.unsplash.com/400x300/restaurant,food/?${restaurant.name || 'restaurant'}`;
+
+    // 確保 URL 有效
+    if (!imageUrl || imageUrl === 'null') {
+      imageUrl = `https://source.unsplash.com/400x300/restaurant,food/?${restaurant.name || 'restaurant'}`;
+    }
+
+    return imageUrl;
+  };
+
   useEffect(() => {
     loadUserLists();
   }, [user]);
@@ -436,7 +456,7 @@ export default function MyLists({ user }) {
                     <div key={place.place_id} className="place-card">
                       <div className="place-image-container">
                         <img
-                          src={place.photo || '/default-restaurant.jpg'}
+                          src={getRestaurantImage(place)}
                           alt={place.name}
                           className="place-image"
                           onError={(e) => {

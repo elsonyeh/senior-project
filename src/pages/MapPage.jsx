@@ -62,6 +62,18 @@ export default function MapPage() {
 
   // 地圖互動檢測和導航欄自動收合
   useEffect(() => {
+    // 處理點擊導航欄以外的區域時收合導航欄
+    const handleClickOutsideNav = (event) => {
+      // 如果導航欄已收合，不做任何操作
+      if (isNavCollapsed) return;
+
+      // 檢查點擊的元素是否在導航欄內
+      const navElement = document.querySelector('.floating-nav-container');
+      if (navElement && !navElement.contains(event.target)) {
+        setIsNavCollapsed(true);
+      }
+    };
+
     const handleMapInteraction = () => {
       lastInteractionRef.current = Date.now();
 
@@ -82,6 +94,10 @@ export default function MapPage() {
       }, 1500);
     };
 
+    // 添加全局點擊事件監聽器
+    document.addEventListener('click', handleClickOutsideNav);
+    document.addEventListener('touchstart', handleClickOutsideNav);
+
     const mapContainer = mapViewRef.current;
     if (mapContainer) {
       // 監聽各種地圖互動事件
@@ -96,6 +112,10 @@ export default function MapPage() {
       });
 
       return () => {
+        // 移除全局事件監聽器
+        document.removeEventListener('click', handleClickOutsideNav);
+        document.removeEventListener('touchstart', handleClickOutsideNav);
+
         events.forEach(event => {
           mapContainer.removeEventListener(event, handleMapInteraction);
         });
@@ -104,6 +124,15 @@ export default function MapPage() {
         }
       };
     }
+
+    // 如果沒有地圖容器，仍然需要清理全局事件監聽器
+    return () => {
+      document.removeEventListener('click', handleClickOutsideNav);
+      document.removeEventListener('touchstart', handleClickOutsideNav);
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
+      }
+    };
   }, [isNavCollapsed]);
 
   // 處理導航欄展開

@@ -84,11 +84,14 @@
   align-items: center;
   gap: 12px;
   z-index: 1000;
+  max-width: calc(100vw - 40px);
+  box-sizing: border-box;
 }
 
 .search-container {
   flex: 1;
   max-width: 400px;
+  min-width: 200px;
 }
 
 .control-buttons {
@@ -98,9 +101,9 @@
 }
 
 .menu-button {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
   border: none;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -109,7 +112,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   color: #666;
   transition: all 0.3s ease;
 }
@@ -119,6 +122,11 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
   color: #ff6b35;
+}
+
+.menu-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .menu-button.active {
@@ -168,35 +176,35 @@
     left: 16px;
     right: 16px;
     gap: 10px;
+    max-width: calc(100vw - 32px);
   }
 
   .search-container {
     max-width: none;
+    min-width: 160px;
   }
 
   .menu-button {
-    width: 44px;
-    height: 44px;
-    font-size: 1.2rem;
+    width: 52px;
+    height: 52px;
+    font-size: 1.4rem;
   }
 
-  /* 側邊欄改為底部彈出 */
+  /* 側邊欄從上方對齊 */
   .map-sidebar {
-    top: auto;
-    bottom: 80px; /* 避免被底部導航遮擋 */
-    right: 0;
-    left: 0;
-    width: 100%;
-    max-height: calc(70vh - 80px); /* 減去底部導航高度 */
-    border-radius: 16px 16px 0 0;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    transform: translateY(calc(100% + 80px)); /* 調整隱藏位置 */
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
+    top: calc(16px + 52px + 10px); /* top + button height + gap */
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-height: calc(100vh - 88px); /* 調整以適應新的 top 值 */
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
   }
 
   .map-sidebar.open {
-    transform: translateY(0);
+    transform: translateX(0);
+    opacity: 1;
   }
 
   /* 通知消息位置調整 */
@@ -217,25 +225,43 @@
     left: 12px;
     right: 12px;
     gap: 8px;
+    max-width: calc(100vw - 24px);
+  }
+
+  .search-container {
+    min-width: 150px;
+  }
+
+  .control-buttons {
+    gap: 6px;
   }
 
   .menu-button {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
-    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+    border-radius: 12px;
   }
 
   .map-sidebar {
-    max-height: calc(75vh - 80px); /* 減去底部導航高度 */
-    border-radius: 12px 12px 0 0;
-    bottom: 80px; /* 確保不被導航遮擋 */
-    transform: translateY(calc(100% + 80px)); /* 調整隱藏位置 */
+    top: calc(12px + 48px + 8px); /* top + button height + gap */
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100vh - 80px);
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .map-sidebar.open {
+    transform: translateX(0);
+    opacity: 1;
   }
 
   .notification {
-    top: 70px;
-    max-width: 260px;
+    top: 16px;
+    max-width: 280px;
     width: calc(100% - 24px);
     font-size: 0.85rem;
     padding: 8px 12px;
@@ -243,11 +269,50 @@
 
 }
 
+/* 375px 螢幕適配 */
+@media (max-width: 375px) {
+  .map-controls {
+    left: 12px;
+    right: 12px;
+    top: 10px;
+    gap: 6px;
+    max-width: calc(100vw - 24px);
+  }
+
+  .search-container {
+    max-width: none;
+    min-width: 180px;
+  }
+
+  .menu-button {
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+  }
+
+  .map-sidebar {
+    top: calc(10px + 48px + 6px); /* top + button height + gap */
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100vh - 76px);
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .map-sidebar.open {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* 更小螢幕適配 */
 @media (max-width: 420px) {
   .map-controls {
     left: 16px;
     right: 16px;
+    max-width: calc(100vw - 32px);
   }
   
   .search-container {
@@ -255,52 +320,29 @@
   }
   
   .menu-button {
-    width: 44px;
-    height: 44px;
-    font-size: 1.3rem;
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
   }
   
   .map-sidebar {
-    top: 70px;
+    top: calc(16px + 48px + 10px); /* top + button height + gap */
     right: 16px;
     left: 16px;
     width: auto;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 84px);
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .map-sidebar.open {
+    transform: translateX(0);
+    opacity: 1;
   }
   
 }
 
-@media (max-width: 480px) {
-  .map-controls {
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    gap: 8px;
-  }
-  
-  .control-buttons {
-    gap: 6px;
-  }
-  
-  .menu-button {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
-  
-  .map-sidebar {
-    top: 60px;
-    right: 12px;
-    left: 12px;
-    max-height: calc(100vh - 120px);
-  }
-  
-  .notification {
-    top: 16px;
-    max-width: 280px;
-    width: calc(100% - 24px);
-  }
-}
 
 /* 深色模式支援 */
 @media (prefers-color-scheme: dark) {

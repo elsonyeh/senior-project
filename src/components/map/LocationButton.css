@@ -1,9 +1,9 @@
 /* Location Button Component Styles */
 .location-button {
   position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
   border: none;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -41,7 +41,7 @@
 }
 
 .location-icon {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   color: #666;
   transition: all 0.3s ease;
   z-index: 2;
@@ -165,28 +165,61 @@
 /* 平板適配 */
 @media (max-width: 768px) {
   .location-button {
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     border-radius: 10px;
   }
-  
+
   .location-icon {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+  }
+}
+
+/* 375px 螢幕適配 */
+@media (max-width: 375px) {
+  .location-button {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    min-height: 48px; /* 確保觸控區域足夠 */
+    min-width: 48px;
+  }
+
+  .location-icon {
+    font-size: 1.4rem;
+  }
+
+  .location-success-indicator {
+    width: 8px;
+    height: 8px;
+    top: -2px;
+    right: -2px;
+  }
+
+  /* 增大觸控區域 */
+  .location-button::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    z-index: -1;
   }
 }
 
 /* 手機適配 */
 @media (max-width: 480px) {
   .location-button {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    min-height: 40px; /* 確保觸控區域足夠 */
-    min-width: 40px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    min-height: 48px; /* 確保觸控區域足夠 */
+    min-width: 48px;
   }
-  
+
   .location-icon {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
   }
   
   .location-success-indicator {
