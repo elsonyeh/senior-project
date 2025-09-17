@@ -11,6 +11,7 @@
   pointer-events: none;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
   transition: transform 0.3s ease-out;
+  touch-action: pan-y; /* 確保導航容器支持垂直滑動手勢 */
 }
 
 /* 導航欄隱藏狀態 */
@@ -27,9 +28,9 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 100px;
-  padding: 8px 8px;
-  width: 85%;
-  max-width: 320px;
+  padding: 6px 6px;
+  width: 75%;
+  max-width: 260px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   pointer-events: auto;
   transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
@@ -47,7 +48,7 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  padding: 8px 4px;
+  padding: 6px 3px;
   color: #777;
   transition: all 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
   flex: 1;
@@ -68,7 +69,7 @@
 
 .pill-icon {
   display: flex;
-  font-size: 20px;
+  font-size: 18px;
   transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
   margin-bottom: 2px;
   color: #4b4b4b;
@@ -86,12 +87,12 @@
 
 /* 活躍項目樣式 - 增強選擇器特異性 */
 .nav-pill.active {
-  color: #fff !important;
+  color: #fff;
 }
 
 .nav-pill.active .pill-label,
 .nav-pill.active .pill-icon {
-  color: #fff !important;
+  color: #fff;
   opacity: 1;
 }
 
@@ -100,8 +101,8 @@
   position: absolute;
   border-radius: 50%;
   background: linear-gradient(135deg, #FF6B6B, #FF9F68);
-  width: 55px;
-  height: 55px;
+  width: 45px;
+  height: 45px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 1;
@@ -142,7 +143,7 @@
   /* 確保深色模式下激活顏色保持白色 */
   .nav-pill.active .pill-label,
   .nav-pill.active .pill-icon {
-    color: #fff !important;
+    color: #fff;
   }
   
   .nav-pill-background {
@@ -160,5 +161,118 @@
     .floating-bottom-nav {
       background: rgba(40, 40, 40, 0.95);
     }
+  }
+}
+
+/* 地圖模式收合狀態 */
+.floating-nav-container.nav-collapsed {
+  transform: translateY(0);
+}
+
+.floating-bottom-nav.collapsed {
+  width: 55px;
+  height: 55px;
+  border-radius: 27.5px;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+  touch-action: pan-y; /* 只允許垂直滑動，防止水平滑動和縮放 */
+}
+
+.floating-bottom-nav.collapsed .nav-pill {
+  margin: 0;
+  width: auto;
+  height: auto;
+  min-width: auto;
+  background: transparent;
+  border-radius: 0;
+  transition: all 0.3s ease;
+}
+
+.floating-bottom-nav.collapsed .nav-pill .pill-content {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.floating-bottom-nav.collapsed .nav-pill .pill-icon {
+  font-size: 18px;
+  color: #333;
+}
+
+.floating-bottom-nav.collapsed .nav-pill .pill-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #333;
+  opacity: 0.8;
+}
+
+.floating-bottom-nav.collapsed .nav-pill-background {
+  display: none;
+}
+
+/* 展開指示器 */
+.nav-expand-indicator {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.expand-handle {
+  width: 24px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+  animation: handlePulse 2s ease-in-out infinite;
+}
+
+@keyframes handlePulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+/* 收合狀態下的懸停效果 */
+.floating-bottom-nav.collapsed:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+}
+
+.floating-bottom-nav.collapsed:active {
+  transform: scale(0.95);
+}
+
+/* 暗色模式下的收合樣式 */
+@media (prefers-color-scheme: dark) {
+  .floating-bottom-nav.collapsed {
+    background: rgba(30, 30, 30, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .floating-bottom-nav.collapsed .nav-pill .pill-icon,
+  .floating-bottom-nav.collapsed .nav-pill .pill-label {
+    color: #f5f5f5;
+  }
+
+  .expand-handle {
+    background: rgba(255, 255, 255, 0.5);
   }
 }

@@ -381,7 +381,7 @@
 }
 
 /* 清單內容 */
-.lists-content {
+.favorite-lists-container .lists-content {
   padding: 4px 28px 28px 28px;
   max-height: calc(85vh - 140px);
   overflow-y: auto;
@@ -1032,8 +1032,8 @@
 }
 
 .empty-hint {
-  font-size: 0.8rem !important;
-  color: #999 !important;
+  font-size: 0.8rem;
+  color: #999;
 }
 
 /* 地點項目 */
@@ -1262,24 +1262,24 @@
 }
 
 /* 滾動條樣式 */
-.lists-content::-webkit-scrollbar,
-.places-list::-webkit-scrollbar {
+.favorite-lists-container .lists-content::-webkit-scrollbar,
+.favorite-lists-container .places-list::-webkit-scrollbar {
   width: 4px;
 }
 
-.lists-content::-webkit-scrollbar-track,
-.places-list::-webkit-scrollbar-track {
+.favorite-lists-container .lists-content::-webkit-scrollbar-track,
+.favorite-lists-container .places-list::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.lists-content::-webkit-scrollbar-thumb,
-.places-list::-webkit-scrollbar-thumb {
+.favorite-lists-container .lists-content::-webkit-scrollbar-thumb,
+.favorite-lists-container .places-list::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 2px;
 }
 
-.lists-content::-webkit-scrollbar-thumb:hover,
-.places-list::-webkit-scrollbar-thumb:hover {
+.favorite-lists-container .lists-content::-webkit-scrollbar-thumb:hover,
+.favorite-lists-container .places-list::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
 
@@ -1302,7 +1302,7 @@
     font-size: 1.1rem;
   }
 
-  .lists-content {
+  .favorite-lists-container .lists-content {
     padding: 4px 22px 22px 22px;
     max-height: calc(90vh - 120px);
   }
@@ -1354,7 +1354,7 @@
     padding: 3px 10px;
   }
 
-  .lists-content {
+  .favorite-lists-container .lists-content {
     padding: 4px 20px 20px 20px;
     max-height: calc(95vh - 110px);
   }

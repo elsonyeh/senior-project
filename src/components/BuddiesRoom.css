@@ -93,11 +93,11 @@
 
 /* 掃描按鈕特殊樣式 */
 .scan-button {
-  background-color: #6874E8 !important;
+  background-color: #6874E8;
 }
 
 .scan-button:hover {
-  background-color: #5563d7 !important;
+  background-color: #5563d7;
 }
 
 /* 按鈕活動狀態 */
@@ -105,7 +105,7 @@
 .share-button-active {
   margin: 0.5rem;
   padding: 12px 20px;
-  background-color: #FF6B6B !important;
+  background-color: #FF6B6B;
   border: none;
   color: white;
   font-weight: 600;

@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { IoMapOutline, IoRestaurantOutline, IoPersonOutline } from "react-icons/io5";
 import "./BottomNav.css";
 
-export default function BottomNav({ isVisible = true }) {
+export default function BottomNav({ isVisible = true, isCollapsed = false, onExpand }) {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("");
   const [currentMode, setCurrentMode] = useState(null);
   const [isInitialRender, setIsInitialRender] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
   const navRef = useRef(null);
   const pillBackgroundRef = useRef(null);
+  const isMapPage = location.pathname.includes("/map");
 
   // 初始化當前激活的標籤並檢測URL參數中的模式
   useEffect(() => {
@@ -69,11 +72,47 @@ export default function BottomNav({ isVisible = true }) {
     return location.pathname.includes(path);
   };
 
+  // 處理觸摸和滑動事件
+  const handleTouchStart = useCallback((e) => {
+    if (!isMapPage || !isCollapsed) return;
+    setIsDragging(true);
+    setDragStartY(e.touches[0].clientY);
+  }, [isMapPage, isCollapsed]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging || !isCollapsed) return;
+    // 不調用preventDefault，依賴CSS touch-action屬性控制
+  }, [isDragging, isCollapsed]);
+
+  const handleTouchEnd = useCallback((e) => {
+    if (!isDragging || !isCollapsed) return;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaY = dragStartY - touchEndY;
+
+    // 如果向上滑動超過30px，展開導航欄
+    if (deltaY > 30 && onExpand) {
+      onExpand();
+    }
+
+    setIsDragging(false);
+    setDragStartY(0);
+  }, [isDragging, isCollapsed, dragStartY, onExpand]);
+
+  const handleClick = () => {
+    if (isCollapsed && onExpand) {
+      onExpand();
+    }
+  };
+
   return (
-    <div className={`floating-nav-container ${!isVisible ? 'nav-hidden' : ''}`}>
+    <div className={`floating-nav-container ${!isVisible ? 'nav-hidden' : ''} ${isCollapsed && isMapPage ? 'nav-collapsed' : ''}`}>
       <nav
-        className={`floating-bottom-nav ${isInitialRender ? 'initializing' : ''}`}
+        className={`floating-bottom-nav ${isInitialRender ? 'initializing' : ''} ${isCollapsed && isMapPage ? 'collapsed' : ''}`}
         ref={navRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
       >
         {/* 背景圓圈 */}
         <div 
@@ -81,54 +120,68 @@ export default function BottomNav({ isVisible = true }) {
           ref={pillBackgroundRef}
           style={{
             left: getCirclePosition(),
-            marginLeft: "-27.5px", // 圓圈半徑為 27.5px (55px/2)
+            marginLeft: "-22.5px", // 圓圈半徑為 22.5px (45px/2)
             opacity: isInitialRender ? "0" : "1", // 初始載入時隱藏
             transition: "opacity 0.2s ease, left 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6)"
           }}
         ></div>
         
-        <NavLink 
-          to="/map" 
-          className={({isActive}) => 
-            `nav-pill ${isActive || activeTab === "map" ? "active" : ""}`
-          }
-          onClick={() => setActiveTab("map")}
-        >
-          <div className="pill-content">
-            <div className="pill-icon">
-              <IoMapOutline />
+        {/* 在收合狀態下只顯示當前激活項目，否則顯示所有項目 */}
+        {(!isCollapsed || !isMapPage || activeTab === "map") && (
+          <NavLink
+            to="/map"
+            className={({isActive}) =>
+              `nav-pill ${isActive || activeTab === "map" ? "active" : ""}`
+            }
+            onClick={() => setActiveTab("map")}
+          >
+            <div className="pill-content">
+              <div className="pill-icon">
+                <IoMapOutline />
+              </div>
+              <span className="pill-label">探索</span>
             </div>
-            <span className="pill-label">探索</span>
-          </div>
-        </NavLink>
-        
-        <NavLink 
-          to={getRouteWithMode("/swift")}
-          className={`nav-pill ${isNavLinkActive("/swift") ? "active" : ""}`}
-          onClick={() => setActiveTab("swift")}
-        >
-          <div className="pill-content">
-            <div className="pill-icon">
-              <IoRestaurantOutline />
+          </NavLink>
+        )}
+
+        {(!isCollapsed || !isMapPage || activeTab === "swift") && (
+          <NavLink
+            to={getRouteWithMode("/swift")}
+            className={`nav-pill ${isNavLinkActive("/swift") ? "active" : ""}`}
+            onClick={() => setActiveTab("swift")}
+          >
+            <div className="pill-content">
+              <div className="pill-icon">
+                <IoRestaurantOutline />
+              </div>
+              <span className="pill-label">今天吃啥</span>
             </div>
-            <span className="pill-label">今天吃啥</span>
-          </div>
-        </NavLink>
-        
-        <NavLink 
-          to="/profile" 
-          className={({isActive}) => 
-            `nav-pill ${isActive || activeTab === "profile" ? "active" : ""}`
-          }
-          onClick={() => setActiveTab("profile")}
-        >
-          <div className="pill-content">
-            <div className="pill-icon">
-              <IoPersonOutline />
+          </NavLink>
+        )}
+
+        {(!isCollapsed || !isMapPage || activeTab === "profile") && (
+          <NavLink
+            to="/profile"
+            className={({isActive}) =>
+              `nav-pill ${isActive || activeTab === "profile" ? "active" : ""}`
+            }
+            onClick={() => setActiveTab("profile")}
+          >
+            <div className="pill-content">
+              <div className="pill-icon">
+                <IoPersonOutline />
+              </div>
+              <span className="pill-label">我的</span>
             </div>
-            <span className="pill-label">我的</span>
+          </NavLink>
+        )}
+
+        {/* 收合狀態下的展開指示器 */}
+        {isCollapsed && isMapPage && (
+          <div className="nav-expand-indicator">
+            <div className="expand-handle"></div>
           </div>
-        </NavLink>
+        )}
       </nav>
     </div>
   );

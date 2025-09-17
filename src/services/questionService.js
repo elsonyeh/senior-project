@@ -1,7 +1,7 @@
 // Question Service for Supabase
 // Handles fetching and managing questions for both SwiftTaste and Buddies modes
 
-import { supabase } from './supabase.js';
+import { supabase } from './supabaseService.js';
 
 /**
  * Get basic questions for SwiftTaste mode (all basic questions)

@@ -90,38 +90,67 @@ export default function MapView({
         return;
       }
 
-      // 使用新版 Places API
-      const { PlacesService } = await window.google.maps.importLibrary("places");
-      const service = new PlacesService(googleMapRef.current);
+      // 使用新版 Places API (New)
+      const { Place } = await window.google.maps.importLibrary("places");
 
-      // 包裝在 Promise 中以更好地處理錯誤
-      const searchPlaces = new Promise((resolve, reject) => {
-        const request = {
-          location: new window.google.maps.LatLng(location.lat, location.lng),
-          radius: 1500, // 1.5公里範圍
-          type: ['restaurant'],
-          language: 'zh-TW'
-        };
-
-        // 添加超時保護
-        const timeoutId = setTimeout(() => {
-          reject(new Error('Google Places API request timeout'));
-        }, 10000);
-
+      // 使用新版 Places API 的 searchNearby 方法
+      const searchPlaces = new Promise(async (resolve, reject) => {
         try {
-          service.nearbySearch(request, (results, status) => {
-            clearTimeout(timeoutId);
-            console.log('Google Places API status:', status, 'Results:', results?.length);
+          const request = {
+            fields: ['displayName', 'location', 'rating', 'userRatingCount', 'priceLevel'],
+            locationRestriction: {
+              center: { lat: location.lat, lng: location.lng },
+              radius: 1500
+            },
+            includedTypes: ['restaurant'],
+            maxResultCount: 20,
+          };
 
-            if (status === 'OK' && results) {
-              resolve({ results, status });
+          // 添加超時保護
+          const timeoutId = setTimeout(() => {
+            reject(new Error('Google Places API request timeout'));
+          }, 10000);
+
+          try {
+            const { places } = await Place.searchNearby(request);
+            clearTimeout(timeoutId);
+            console.log('Google Places API (New) Results:', places?.length);
+
+            if (places && places.length > 0) {
+              // 轉換為舊格式以保持相容性
+              const convertedResults = places.map(place => {
+                // 確保坐標是有效的數字
+                const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
+                const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+
+                if (lat === null || lng === null) {
+                  console.warn('Invalid coordinates for place:', place.displayName, { lat, lng });
+                  return null;
+                }
+
+                return {
+                  name: place.displayName,
+                  geometry: {
+                    location: {
+                      lat: () => lat,
+                      lng: () => lng
+                    }
+                  },
+                  rating: place.rating,
+                  place_id: place.id,
+                  user_ratings_total: place.userRatingCount
+                };
+              }).filter(Boolean); // 過濾掉null值
+              resolve({ results: convertedResults, status: 'OK' });
             } else {
-              reject(new Error(`Places API error: ${status}`));
+              reject(new Error('No places found'));
             }
-          });
-        } catch (apiError) {
-          clearTimeout(timeoutId);
-          reject(apiError);
+          } catch (apiError) {
+            clearTimeout(timeoutId);
+            reject(apiError);
+          }
+        } catch (error) {
+          reject(error);
         }
       });
 
@@ -155,7 +184,7 @@ export default function MapView({
           }
 
           // 只有在其他錯誤的情況下才嘗試備用搜尋
-          tryFallbackSearch(service, location);
+          tryFallbackSearch(location);
         });
 
     } catch (error) {
@@ -164,31 +193,53 @@ export default function MapView({
     }
   }, []);
 
-  // 備用搜尋方法
-  const tryFallbackSearch = useCallback(async (service, location) => {
-    if (!service || !location) return;
+  // 備用搜尋方法（使用新版API）
+  const tryFallbackSearch = useCallback(async (location) => {
+    if (!location) return;
 
     try {
+      const { Place } = await window.google.maps.importLibrary("places");
+
       const fallbackRequest = {
-        location: new window.google.maps.LatLng(location.lat, location.lng),
-        radius: 2000,
-        keyword: '餐廳',
-        language: 'zh-TW',
-        fields: ['name', 'geometry', 'place_id', 'rating', 'formatted_address']
+        fields: ['displayName', 'location', 'rating', 'userRatingCount', 'formattedAddress'],
+        locationRestriction: {
+          center: { lat: location.lat, lng: location.lng },
+          radius: 2000
+        },
+        includedTypes: ['restaurant', 'food'],
+        maxResultCount: 10
       };
 
-      service.nearbySearch(fallbackRequest, (fallbackResults, fallbackStatus) => {
-        console.log('Fallback search status:', fallbackStatus, 'Results:', fallbackResults?.length);
+      const { places } = await Place.searchNearby(fallbackRequest);
+      console.log('Fallback search results:', places?.length);
 
-        if (fallbackStatus === 'OK' && fallbackResults) {
-          fallbackResults.slice(0, 10).forEach(place => {
-            createMarker(place, 'google-fallback');
-          });
-          console.log(`備用搜尋找到 ${fallbackResults.length} 個結果`);
-        } else {
-          console.warn('Fallback search also failed:', fallbackStatus);
-        }
-      });
+      if (places && places.length > 0) {
+        places.forEach(place => {
+          // 驗證坐標有效性
+          const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
+          const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+
+          if (lat === null || lng === null) {
+            console.warn('Invalid coordinates for fallback place:', place.displayName, { lat, lng });
+            return;
+          }
+
+          const convertedPlace = {
+            name: place.displayName,
+            geometry: {
+              location: {
+                lat: () => lat,
+                lng: () => lng
+              }
+            },
+            rating: place.rating,
+            place_id: place.id,
+            formatted_address: place.formattedAddress
+          };
+          createMarker(convertedPlace, 'google-fallback');
+        });
+        console.log(`備用搜尋找到 ${places.length} 個結果`);
+      }
     } catch (error) {
       console.error('Fallback search error:', error);
     }
@@ -344,27 +395,52 @@ export default function MapView({
         return;
       }
 
-      // 使用新版 Places API
-      const { PlacesService } = await window.google.maps.importLibrary("places");
-      const service = new PlacesService(googleMapRef.current);
+      // 使用新版 Places API 獲取詳細資訊
+      const { Place } = await window.google.maps.importLibrary("places");
 
-      service.getDetails({
-        placeId: placeId,
-        fields: [
-          'name', 'formatted_address', 'formatted_phone_number',
-          'rating', 'user_ratings_total', 'opening_hours',
-          'photos', 'geometry', 'place_id', 'website'
-        ]
-      }, (place, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-          setSelectedPlace(place);
-          showInfoWindow(place, marker);
-        } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
-          console.warn('Google Places API request denied for place details');
-        } else {
-          console.warn('Place details request failed:', status);
-        }
+      const place = new Place({
+        id: placeId,
+        requestedLanguage: 'zh-TW'
       });
+
+      await place.fetchFields({
+        fields: [
+          'displayName', 'formattedAddress', 'nationalPhoneNumber',
+          'rating', 'userRatingCount', 'regularOpeningHours',
+          'photos', 'location', 'id', 'websiteURI'
+        ]
+      });
+
+      // 驗證坐標有效性
+      const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
+      const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+
+      if (lat === null || lng === null) {
+        console.warn('Invalid coordinates for place details:', place.displayName, { lat, lng });
+        return;
+      }
+
+      // 轉換為舊格式以保持相容性
+      const convertedPlace = {
+        name: place.displayName,
+        formatted_address: place.formattedAddress,
+        formatted_phone_number: place.nationalPhoneNumber,
+        rating: place.rating,
+        user_ratings_total: place.userRatingCount,
+        opening_hours: place.regularOpeningHours,
+        photos: place.photos,
+        geometry: {
+          location: {
+            lat: () => lat,
+            lng: () => lng
+          }
+        },
+        place_id: place.id,
+        website: place.websiteURI
+      };
+
+      setSelectedPlace(convertedPlace);
+      showInfoWindow(convertedPlace, marker);
     } catch (error) {
       console.error('Error in getPlaceDetails:', error);
     }
@@ -602,6 +678,7 @@ export default function MapView({
     }
   }, [searchLocation, searchNearbyRestaurants]);
 
+
   // 清理函數
   useEffect(() => {
     return () => {
@@ -613,12 +690,12 @@ export default function MapView({
 
   return (
     <div className="map-view-container">
-      <div 
-        ref={mapRef} 
+      <div
+        ref={mapRef}
         className="google-map"
         style={{ width: '100%', height: '100%' }}
       />
-      
+
       {!mapLoaded && (
         <div className="map-loading">
           <div className="loading-spinner"></div>

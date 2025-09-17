@@ -73,13 +73,13 @@
 }
 
 /* 導航箭頭 */
-.nav-arrow {
+.settings-content .nav-arrow {
   color: #a0aec0;
   font-size: 20px;
   transition: transform 0.2s ease;
 }
 
-.settings-item:hover .nav-arrow {
+.settings-content .settings-item:hover .nav-arrow {
   transform: translateX(2px);
   color: #667eea;
 }
@@ -135,7 +135,7 @@ input:checked + .toggle-slider:before {
 
 /* 特殊項目樣式 */
 .logout-item {
-  color: #e53e3e !important;
+  color: #e53e3e;
 }
 
 .logout-item .settings-item-icon {
@@ -147,7 +147,7 @@ input:checked + .toggle-slider:before {
 }
 
 .delete-item {
-  color: #c53030 !important;
+  color: #c53030;
 }
 
 .delete-item .settings-item-icon {
@@ -159,7 +159,7 @@ input:checked + .toggle-slider:before {
 }
 
 .login-item {
-  color: #3182ce !important;
+  color: #3182ce;
 }
 
 .login-item .settings-item-icon {
@@ -171,7 +171,7 @@ input:checked + .toggle-slider:before {
 }
 
 .register-item {
-  color: #38a169 !important;
+  color: #38a169;
 }
 
 .register-item .settings-item-icon {
@@ -309,10 +309,12 @@ input:checked + .toggle-slider:before {
 
 /* 無障礙支援 */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .settings-content *,
+  .settings-items-container *,
+  .promotion-banner * {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
   }
 }
 

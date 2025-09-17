@@ -35,10 +35,18 @@ export default function UserProfilePage() {
 
   // 滾動檢測 hook
   useEffect(() => {
-    // 只在非主選單頁面啟用滾動隱藏功能
-    if (currentView === 'menu') {
-      setIsNavVisible(true);
+    // 在我的清單、選擇紀錄、設定頁面及其子頁面隱藏導航列（像地圖模式一樣）
+    if (['lists', 'history', 'settings', 'faq', 'contact', 'about'].includes(currentView)) {
+      setIsNavVisible(false);
       return;
+    }
+
+    // 只在主選單頁面和個人資料頁面啟用滾動檢測
+    if (['menu', 'profile'].includes(currentView)) {
+      if (currentView === 'menu') {
+        setIsNavVisible(true);
+        return;
+      }
     }
 
     const handleScroll = () => {
@@ -65,7 +73,12 @@ export default function UserProfilePage() {
 
   // 頁面切換時重置導航欄顯示狀態
   useEffect(() => {
-    setIsNavVisible(true);
+    // 在我的清單、選擇紀錄、設定頁面及其子頁面隱藏導航列
+    if (['lists', 'history', 'settings', 'faq', 'contact', 'about'].includes(currentView)) {
+      setIsNavVisible(false);
+    } else {
+      setIsNavVisible(true);
+    }
     setLastScrollTop(0);
   }, [currentView]);
 

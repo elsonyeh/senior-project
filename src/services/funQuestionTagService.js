@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from './supabaseService.js';
 
 // 趣味問題標籤服務
 let cachedTagsMap = null;

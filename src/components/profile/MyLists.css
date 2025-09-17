@@ -40,7 +40,7 @@
   margin: 0 0 8px 0;
   font-size: 1.3rem;
   font-weight: 700;
-  color: #333 !important;
+  color: #333;
 }
 
 .title-icon {
@@ -60,7 +60,7 @@
 .lists-content {
   display: flex;
   min-height: 500px;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 /* 清單側邊欄 */
@@ -71,7 +71,6 @@
   padding: 20px;
   background: #fafafa;
   overflow-y: auto;
-  overflow-x: hidden;
   max-height: 500px;
 }
 
@@ -79,7 +78,7 @@
   background: white;
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 12px;
+  margin: 0 16px 12px 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 2px solid transparent;
@@ -99,6 +98,7 @@
 .list-card-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
 }
@@ -115,11 +115,16 @@
   min-width: 0;
 }
 
+.list-card-details {
+  display: flex;
+  flex-direction: column;
+}
+
 .list-card-name {
   margin: 0 0 4px 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #333 !important;
+  color: #333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -128,31 +133,125 @@
 .list-card-count {
   margin: 0;
   font-size: 0.8rem;
-  color: #666 !important;
+  color: #666;
+}
+
+/* 編輯輸入框 */
+.edit-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  padding: 2px 4px;
+  border-bottom: 2px solid #ff6b35;
+  width: 100%;
+  margin: 0 0 4px 0;
+}
+
+.list-card-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.list-menu-trigger {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #666;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.list-card:hover .list-menu-trigger {
+  opacity: 1;
+}
+
+.list-menu-trigger:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
 }
 
 .list-card-actions {
-  display: flex;
-  gap: 4px;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 120px;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.2s ease;
 }
 
-.list-card:hover .list-card-actions {
+.list-card-actions.show {
   opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* 菜單項目圖標 */
+.list-action-btn .action-icon {
+  font-size: 0.9rem;
+  width: 16px;
+  text-align: center;
+}
+
+/* 菜單背景覆蓋層（用於點擊外部關閉） */
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: none;
+}
+
+.menu-overlay.active {
+  display: block;
 }
 
 .list-action-btn {
   background: none;
   border: none;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 12px 16px;
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border-radius: 0;
+}
+
+.list-action-btn:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.list-action-btn:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.list-action-btn:only-child {
+  border-radius: 8px;
+}
+
+.list-action-btn:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .edit-btn {
@@ -179,7 +278,7 @@
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: 12px;
+  margin: 0 16px 12px 16px;
 }
 
 .create-list-input {
@@ -233,7 +332,8 @@
 }
 
 .create-list-btn {
-  width: 100%;
+  width: calc(100% - 32px);
+  margin: 0 16px;
   padding: 12px 16px;
   background: transparent;
   border: 2px dashed #ccc;
@@ -261,7 +361,6 @@
   min-width: 0;
   padding: 20px;
   overflow-y: auto;
-  overflow-x: hidden;
   max-height: 500px;
 }
 
@@ -280,13 +379,6 @@
   font-size: 1.2rem;
   font-weight: 600;
   color: #333;
-}
-
-.list-content-description {
-  margin: 0;
-  color: #666;
-  font-size: 0.9rem;
-  line-height: 1.5;
 }
 
 .list-meta {
@@ -383,7 +475,7 @@
   margin: 0 0 6px 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #333 !important;
+  color: #333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -521,6 +613,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -553,33 +646,37 @@
   .lists-content {
     flex-direction: column;
     min-height: auto;
-    overflow-x: hidden;
+    overflow: visible;
   }
-  
+
   .lists-sidebar {
     width: 100%;
     min-width: unset;
     max-height: 250px;
     border-right: none;
     border-bottom: 1px solid #f0f0f0;
-    padding: 16px;
+    padding: 16px 0;
     margin: 0;
   }
-  
+
   .list-content-area {
     max-height: 400px;
     min-width: unset;
   }
-  
+
   .places-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .place-card-actions {
     opacity: 1;
   }
-  
+
+  .list-menu-trigger {
+    opacity: 1;
+  }
+
   .create-list-input {
     width: calc(100% - 24px);
     box-sizing: border-box;
@@ -590,31 +687,31 @@
   .lists-header {
     padding: 20px 16px 12px;
   }
-  
+
   .lists-sidebar {
-    padding: 12px;
+    padding: 12px 0;
   }
-  
+
   .list-content-area {
     padding: 16px;
   }
-  
+
   .list-card {
     padding: 12px;
   }
-  
+
   .place-card-content {
     padding: 12px;
   }
-  
+
   .lists-title {
     font-size: 1.2rem;
   }
-  
+
   .empty-list-message {
     padding: 40px 16px;
   }
-  
+
   .create-list-input {
     width: calc(100% - 24px);
     padding: 10px 12px;

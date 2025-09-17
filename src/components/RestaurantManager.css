@@ -114,11 +114,11 @@
 }
 
 .btn-cancel {
-  background: linear-gradient(135deg, #dc3545, #c82333) !important;
+  background: linear-gradient(135deg, #dc3545, #c82333);
 }
 
 .btn-cancel:hover {
-  background: linear-gradient(135deg, #c82333, #bd2130) !important;
+  background: linear-gradient(135deg, #c82333, #bd2130);
 }
 
 .btn-success {
@@ -229,8 +229,8 @@
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* 按鈕尺寸變體 */

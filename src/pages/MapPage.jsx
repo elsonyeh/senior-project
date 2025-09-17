@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import MapView from '../components/map/MapView';
 import MapSearch from '../components/map/MapSearch';
 import LocationButton from '../components/map/LocationButton';
 import FavoriteLists from '../components/map/FavoriteLists';
 import { authService } from '../services/authService';
+import { useNavContext } from '../App';
 import { IoMenuOutline, IoCloseOutline } from 'react-icons/io5';
 import './MapPage.css';
 
@@ -19,6 +20,10 @@ export default function MapPage() {
   const [notificationType, setNotificationType] = useState('success'); // success, error
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
   const [user, setUser] = useState(null);
+  const { isNavCollapsed, setIsNavCollapsed } = useNavContext();
+  const mapViewRef = useRef(null);
+  const interactionTimeoutRef = useRef(null);
+  const lastInteractionRef = useRef(Date.now());
 
   // 載入用戶認證狀態
   useEffect(() => {
@@ -53,6 +58,63 @@ export default function MapPage() {
     return () => {
       subscription.unsubscribe();
     };
+  }, []);
+
+  // 地圖互動檢測和導航欄自動收合
+  useEffect(() => {
+    const handleMapInteraction = () => {
+      lastInteractionRef.current = Date.now();
+
+      // 如果導航欄已收合，不做任何操作
+      if (isNavCollapsed) return;
+
+      // 清除之前的定時器
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
+      }
+
+      // 設置新的定時器，1.5秒後收合導航欄
+      interactionTimeoutRef.current = setTimeout(() => {
+        const timeSinceLastInteraction = Date.now() - lastInteractionRef.current;
+        if (timeSinceLastInteraction >= 1400) { // 略小於延遲時間以確保準確性
+          setIsNavCollapsed(true);
+        }
+      }, 1500);
+    };
+
+    const mapContainer = mapViewRef.current;
+    if (mapContainer) {
+      // 監聽各種地圖互動事件
+      const events = [
+        'touchstart', 'touchmove', 'touchend',
+        'mousedown', 'mousemove', 'mouseup',
+        'wheel', 'scroll'
+      ];
+
+      events.forEach(event => {
+        mapContainer.addEventListener(event, handleMapInteraction, { passive: true });
+      });
+
+      return () => {
+        events.forEach(event => {
+          mapContainer.removeEventListener(event, handleMapInteraction);
+        });
+        if (interactionTimeoutRef.current) {
+          clearTimeout(interactionTimeoutRef.current);
+        }
+      };
+    }
+  }, [isNavCollapsed]);
+
+  // 處理導航欄展開
+  const handleNavExpand = useCallback(() => {
+    setIsNavCollapsed(false);
+    lastInteractionRef.current = Date.now();
+
+    // 清除自動收合定時器
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current);
+    }
   }, []);
 
   // 顯示通知消息
@@ -282,7 +344,7 @@ export default function MapPage() {
       </div>
 
       {/* 地圖主體 */}
-      <div className="map-main">
+      <div className="map-main" ref={mapViewRef}>
         <MapView
           center={currentLocation}
           searchLocation={searchLocation}
@@ -307,24 +369,6 @@ export default function MapPage() {
         />
       </div>
 
-      {/* 底部資訊欄 */}
-      {selectedPlace && (
-        <div className="place-info-bar">
-          <div className="place-info-content">
-            <h3 className="place-info-name">{selectedPlace.name}</h3>
-            <p className="place-info-address">{selectedPlace.formatted_address}</p>
-            {selectedPlace.rating && (
-              <div className="place-info-rating">
-                <span className="rating-stars">
-                  {'★'.repeat(Math.floor(selectedPlace.rating))}
-                  {'☆'.repeat(5 - Math.floor(selectedPlace.rating))}
-                </span>
-                <span className="rating-text">{selectedPlace.rating}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -3,8 +3,6 @@
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: 16px;
-  overflow: hidden;
   background: #f5f5f5;
 }
 
@@ -236,76 +234,46 @@
   background: white;
 }
 
-/* Google Maps 縮放控制項位置調整 */
-.map-view-container .gm-style .gmnoprint .gm-bundled-control {
-  top: 90px;
-  right: 10px;
+/* 攝影機控制項位置調整 - 移至navbar上方 */
+.gm-style .gmnoprint[title] {
+  bottom: 140px !important;
 }
 
-/* 調整 gm-control-active 位置避免被導航列擋住 */
-.map-view-container .gm-style .gm-control-active,
-.map-view-container .gm-style .gmnoprint {
-  top: 120px;
-  right: 10px;
+/* 調整縮放控制項位置 */
+.gm-style .gm-bundled-control {
+  bottom: 140px !important;
 }
 
-/* 調整所有Google Maps控制項位置 */
-.map-view-container .gm-style [class*="gm-control"] {
-  top: 120px;
-}
-
-/* 針對不同螢幕尺寸調整控制項位置 */
-@media (max-width: 768px) {
-  .map-view-container .gm-style .gmnoprint .gm-bundled-control {
-    top: 80px;
-    right: 8px;
-  }
-
-  .map-view-container .gm-style .gm-control-active,
-  .map-view-container .gm-style .gmnoprint,
-  .map-view-container .gm-style [class*="gm-control"] {
-    top: 100px;
-    right: 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .map-view-container .gm-style .gmnoprint .gm-bundled-control {
-    top: 70px;
-    right: 6px;
-  }
-
-  .map-view-container .gm-style .gm-control-active,
-  .map-view-container .gm-style .gmnoprint,
-  .map-view-container .gm-style [class*="gm-control"] {
-    top: 90px;
-    right: 6px;
-  }
-}
 
 /* 手機適配 */
 @media (max-width: 480px) {
   .custom-info-window {
     max-width: 240px;
   }
-  
+
   .place-photo {
     height: 100px;
   }
-  
+
   .place-name {
     font-size: 1rem;
   }
-  
+
   .place-actions {
     flex-direction: column;
     gap: 6px;
   }
-  
+
   .favorite-btn,
   .navigate-btn {
     font-size: 0.8rem;
     padding: 6px 10px;
+  }
+
+  /* 手機版控制項位置調整 */
+  .gm-style .gmnoprint[title],
+  .gm-style .gm-bundled-control {
+    bottom: 120px !important;
   }
 }
 

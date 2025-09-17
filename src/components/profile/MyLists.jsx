@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { userDataService } from '../../services/userDataService';
-import { 
-  IoListOutline, 
-  IoHeartOutline, 
+import {
+  IoListOutline,
+  IoHeartOutline,
   IoRestaurantOutline,
   IoTrashOutline,
   IoCreateOutline,
   IoAddOutline,
   IoNavigateOutline,
+  IoEllipsisVertical,
   IoStarOutline,
   IoTimeOutline
 } from 'react-icons/io5';
@@ -19,10 +20,25 @@ export default function MyLists({ user }) {
   const [selectedList, setSelectedList] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingListId, setEditingListId] = useState(null);
+  const [editingListName, setEditingListName] = useState('');
 
   useEffect(() => {
     loadUserLists();
   }, [user]);
+
+  // 點擊外部關閉菜單
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openMenuId && !event.target.closest('.list-card-menu')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuId]);
 
   // 載入用戶的收藏清單
   const loadUserLists = async () => {
@@ -152,11 +168,63 @@ export default function MyLists({ user }) {
     }
   };
 
+  // 開始編輯清單
+  const startEditList = (list) => {
+    setEditingListId(list.id);
+    setEditingListName(list.name);
+    setOpenMenuId(null);
+  };
+
+  // 確認編輯清單
+  const confirmEditList = async () => {
+    if (!editingListName.trim()) {
+      alert('清單名稱不能為空');
+      return;
+    }
+
+    try {
+      const result = await userDataService.updateFavoriteList(editingListId, {
+        name: editingListName.trim()
+      });
+
+      if (result.success) {
+        const updatedLists = lists.map(list =>
+          list.id === editingListId
+            ? { ...list, name: editingListName.trim() }
+            : list
+        );
+        setLists(updatedLists);
+
+        if (selectedList?.id === editingListId) {
+          setSelectedList({ ...selectedList, name: editingListName.trim() });
+        }
+
+        setEditingListId(null);
+        setEditingListName('');
+      } else {
+        alert(result.error || '更新清單失敗');
+      }
+    } catch (error) {
+      console.error('更新清單錯誤:', error);
+      alert('更新清單失敗，請重試');
+    }
+  };
+
+  // 取消編輯清單
+  const cancelEditList = () => {
+    setEditingListId(null);
+    setEditingListName('');
+  };
+
   // 從清單移除地點
   const removePlaceFromList = async (listId, placeId) => {
+    if (!confirm('確定要從此清單中移除這個收藏嗎？')) {
+      return;
+    }
+
     try {
       const result = await userDataService.removePlaceFromListByPlaceId(listId, placeId);
-      
+
       if (result.success) {
         // 重新載入清單以確保數據同步
         await loadUserLists();
@@ -231,39 +299,73 @@ export default function MyLists({ user }) {
               onClick={() => setSelectedList(list)}
             >
               <div className="list-card-header">
-                <div
-                  className="list-color-indicator"
-                  style={{ backgroundColor: list.color }}
-                ></div>
                 <div className="list-card-info">
-                  <h3 className="list-card-name">{list.name}</h3>
-                  <p className="list-card-count">{list.places?.length || list.favorite_list_places?.length || 0} 個地點</p>
+                  <div
+                    className="list-color-indicator"
+                    style={{ backgroundColor: list.color }}
+                  ></div>
+                  <div className="list-card-details">
+                    {editingListId === list.id ? (
+                      <input
+                        type="text"
+                        value={editingListName}
+                        onChange={(e) => setEditingListName(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            confirmEditList();
+                          } else if (e.key === 'Escape') {
+                            cancelEditList();
+                          }
+                        }}
+                        onBlur={confirmEditList}
+                        className="edit-input"
+                        autoFocus
+                      />
+                    ) : (
+                      <h3 className="list-card-name">{list.name}</h3>
+                    )}
+                    <p className="list-card-count">{list.places?.length || list.favorite_list_places?.length || 0} 個地點</p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="list-card-actions">
-                <button
-                  className="list-action-btn edit-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // 編輯功能可以後續添加
-                  }}
-                  title="編輯清單"
-                >
-                  <IoCreateOutline />
-                </button>
-                {lists.length > 1 && (
+
+                <div className="list-card-menu">
                   <button
-                    className="list-action-btn delete-btn"
+                    className="list-menu-trigger"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteList(list.id);
+                      setOpenMenuId(openMenuId === list.id ? null : list.id);
                     }}
-                    title="刪除清單"
+                    title="更多選項"
                   >
-                    <IoTrashOutline />
+                    <IoEllipsisVertical />
                   </button>
-                )}
+
+                  <div className={`list-card-actions ${openMenuId === list.id ? 'show' : ''}`}>
+                    <button
+                      className="list-action-btn edit-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditList(list);
+                      }}
+                    >
+                      <span className="action-icon"><IoCreateOutline /></span>
+                      編輯清單
+                    </button>
+                    {lists.length > 1 && (
+                      <button
+                        className="list-action-btn delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(null);
+                          deleteList(list.id);
+                        }}
+                      >
+                        <span className="action-icon"><IoTrashOutline /></span>
+                        刪除清單
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -313,9 +415,6 @@ export default function MyLists({ user }) {
               <div className="list-content-header">
                 <div className="list-info">
                   <h3 className="list-content-title">{selectedList.name}</h3>
-                  <p className="list-content-description">
-                    {selectedList.description || '沒有描述'}
-                  </p>
                 </div>
                 <div className="list-meta">
                   <span className="place-count">{selectedList.places?.length || selectedList.favorite_list_places?.length || 0} 個地點</span>

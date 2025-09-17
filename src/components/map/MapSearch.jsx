@@ -88,35 +88,58 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
                       return;
                     }
 
-                    // 使用新版 Places API
-                    const { AutocompleteService } = await window.google.maps.importLibrary("places");
+                    // 使用新版 Places API 的文字搜尋
+                    const { Place } = await window.google.maps.importLibrary("places");
 
-                    if (!AutocompleteService) {
-                      console.warn('New AutocompleteService not available, using fallback');
-                      resolve([]);
-                      return;
-                    }
-
-                    const autocomplete = new AutocompleteService();
-                    autocomplete.getPlacePredictions(
-                      {
-                        input: searchTerm,
-                        componentRestrictions: { country: 'tw' },
-                        types: ['restaurant', 'food', 'establishment'],
-                        language: 'zh-TW'
+                    // 使用 searchByText 進行搜尋
+                    const request = {
+                      textQuery: searchTerm + ' 台灣 餐廳',
+                      fields: ['displayName', 'formattedAddress', 'location', 'id'],
+                      locationBias: {
+                        center: { lat: 25.0330, lng: 121.5654 }, // 台北101 作為中心點
+                        radius: 50000 // 50公里範圍
                       },
-                      (predictions, status) => {
-                        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-                          resolve(predictions.slice(0, 3));
-                        } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
-                          console.warn('Google Places API request denied - using database only');
-                          resolve([]);
-                        } else {
-                          console.warn('Places API status:', status);
-                          resolve([]);
-                        }
+                      maxResultCount: 3,
+                    };
+
+                    try {
+                      const { places } = await Place.searchByText(request);
+
+                      if (places && places.length > 0) {
+                        // 轉換為 autocomplete 格式
+                        const predictions = places.map(place => {
+                          // 驗證坐標有效性
+                          const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
+                          const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+
+                          if (lat === null || lng === null) {
+                            console.warn('Invalid coordinates for search prediction:', place.displayName, { lat, lng });
+                            return null;
+                          }
+
+                          return {
+                            description: `${place.displayName} - ${place.formattedAddress}`,
+                            place_id: place.id,
+                            structured_formatting: {
+                              main_text: place.displayName,
+                              secondary_text: place.formattedAddress
+                            },
+                            geometry: {
+                              location: {
+                                lat: () => lat,
+                                lng: () => lng
+                              }
+                            }
+                          };
+                        }).filter(Boolean); // 過濾掉null值
+                        resolve(predictions);
+                      } else {
+                        resolve([]);
                       }
-                    );
+                    } catch (searchError) {
+                      console.warn('Places API text search error:', searchError);
+                      resolve([]);
+                    }
                   } catch (error) {
                     console.warn('Google Places API error:', error);
                     resolve([]);
@@ -183,33 +206,50 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
         return;
       }
 
-      // 使用新版 Places API
-      const { PlacesService } = await window.google.maps.importLibrary("places");
-      const placesService = new PlacesService(document.createElement('div'));
+      // 如果suggestion已經包含位置信息，直接使用
+      if (suggestion.geometry && suggestion.geometry.location) {
+        setSearchTerm(suggestion.description);
+        setShowSuggestions(false);
+        setShowNoResults(false);
+        onLocationSelect({
+          lat: suggestion.geometry.location.lat(),
+          lng: suggestion.geometry.location.lng(),
+          name: suggestion.structured_formatting?.main_text || suggestion.description,
+          address: suggestion.structured_formatting?.secondary_text || ''
+        });
+        return;
+      }
 
-      placesService.getDetails(
-        {
-          placeId: suggestion.place_id,
-          fields: ['name', 'geometry', 'formatted_address', 'place_id']
-        },
-        (place, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && place.geometry) {
-            setSearchTerm(suggestion.description);
-            setShowSuggestions(false);
-            setShowNoResults(false);
-            onLocationSelect({
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              name: place.name,
-              address: place.formatted_address
-            });
-          } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
-            console.warn('Google Places API request denied for suggestion details');
-          } else {
-            console.warn('Failed to get place details:', status);
-          }
-        }
-      );
+      // 使用新版 Places API 獲取詳細資訊
+      const { Place } = await window.google.maps.importLibrary("places");
+
+      const place = new Place({
+        id: suggestion.place_id,
+        requestedLanguage: 'zh-TW'
+      });
+
+      await place.fetchFields({
+        fields: ['displayName', 'location', 'formattedAddress', 'id']
+      });
+
+      setSearchTerm(suggestion.description);
+      setShowSuggestions(false);
+      setShowNoResults(false);
+      // 驗證坐標有效性
+      const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
+      const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+
+      if (lat === null || lng === null) {
+        console.warn('Invalid coordinates for location select:', place.displayName, { lat, lng });
+        return;
+      }
+
+      onLocationSelect({
+        lat: lat,
+        lng: lng,
+        name: place.displayName,
+        address: place.formattedAddress
+      });
     } catch (error) {
       console.error('Error in handleSuggestionClick:', error);
     }
