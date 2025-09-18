@@ -12,66 +12,104 @@
 }
 
 /* 通知消息 */
-.notification {
+.map-notification {
   position: fixed;
-  top: 20px;
+  top: 90px;
   left: 50%;
   transform: translateX(-50%) translateY(-100px);
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
   z-index: 10000;
-  max-width: 320px;
+  max-width: 340px;
   width: calc(100% - 40px);
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.notification.show {
+.map-notification.map-show {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
   pointer-events: auto;
+  animation: slideInBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.notification.success {
+.map-notification.map-success {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.95) 0%, rgba(220, 252, 231, 0.95) 100%);
   border-left: 4px solid #22c55e;
-  background: #f0fdf4;
+  box-shadow:
+    0 8px 32px rgba(34, 197, 94, 0.15),
+    0 1px 2px rgba(34, 197, 94, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-.notification.error {
+.map-notification.map-error {
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.95) 0%, rgba(252, 226, 226, 0.95) 100%);
   border-left: 4px solid #ef4444;
-  background: #fef2f2;
+  box-shadow:
+    0 8px 32px rgba(239, 68, 68, 0.15),
+    0 1px 2px rgba(239, 68, 68, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-.notification span {
-  color: #333;
+.map-notification span {
+  color: #1f2937;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   flex: 1;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
 }
 
-.notification-close {
+.map-notification-close {
   background: none;
   border: none;
-  color: #666;
-  font-size: 1.1rem;
+  color: #6b7280;
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: 2px;
-  border-radius: 4px;
+  padding: 4px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  width: 24px;
+  height: 24px;
 }
 
-.notification-close:hover {
-  color: #333;
+.map-notification-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #374151;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* 通知動畫 */
+@keyframes slideInBounce {
+  0% {
+    transform: translateX(-50%) translateY(-100px) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-50%) translateY(10px) scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 /* 頂部控制欄 */
@@ -208,8 +246,8 @@
   }
 
   /* 通知消息位置調整 */
-  .notification {
-    top: 80px;
+  .map-notification {
+    top: calc(16px + 52px + 10px + 10px); /* top + button height + gap + 額外間隙 */
     max-width: 280px;
     width: calc(100% - 32px);
     font-size: 0.9rem;
@@ -259,8 +297,8 @@
     opacity: 1;
   }
 
-  .notification {
-    top: 16px;
+  .map-notification {
+    top: calc(12px + 48px + 8px + 8px); /* top + button height + gap + 額外間隙 */
     max-width: 280px;
     width: calc(100% - 24px);
     font-size: 0.85rem;
@@ -350,12 +388,12 @@
     background: #1a1a1a;
   }
   
-  .notification.success {
+  .map-notification.map-success {
     background: #064e3b;
     color: #d1fae5;
   }
   
-  .notification.error {
+  .map-notification.map-error {
     background: #7f1d1d;
     color: #fecaca;
   }
@@ -374,15 +412,15 @@
   }
   
   
-  .notification {
+  .map-notification {
     border: 2px solid #ccc;
   }
   
-  .notification.success {
+  .map-notification.map-success {
     border-color: #22c55e;
   }
   
-  .notification.error {
+  .map-notification.map-error {
     border-color: #ef4444;
   }
 }

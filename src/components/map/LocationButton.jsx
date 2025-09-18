@@ -2,36 +2,50 @@ import React, { useState } from 'react';
 import { IoLocateOutline, IoLocateSharp } from 'react-icons/io5';
 import './LocationButton.css';
 
-export default function LocationButton({ onLocationFound, onLocationError }) {
+export default function LocationButton({ onLocationFound, onLocationError, onRelocate }) {
   const [isLocating, setIsLocating] = useState(false);
   const [hasLocation, setHasLocation] = useState(false);
+  const [isRelocating, setIsRelocating] = useState(false);
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = (forceRelocate = false) => {
     if (!navigator.geolocation) {
       onLocationError?.('您的瀏覽器不支援定位功能');
       return;
     }
 
-    setIsLocating(true);
+    if (forceRelocate) {
+      setIsRelocating(true);
+    } else {
+      setIsLocating(true);
+    }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setIsLocating(false);
+        setIsRelocating(false);
         setHasLocation(true);
-        
-        onLocationFound?.({
-          lat: latitude,
-          lng: longitude
-        });
 
-        // 3秒後重置狀態
+        if (forceRelocate) {
+          onRelocate?.({
+            lat: latitude,
+            lng: longitude
+          });
+        } else {
+          onLocationFound?.({
+            lat: latitude,
+            lng: longitude
+          });
+        }
+
+        // 2秒後重置狀態
         setTimeout(() => {
           setHasLocation(false);
-        }, 3000);
+        }, 2000);
       },
       (error) => {
         setIsLocating(false);
+        setIsRelocating(false);
         let errorMessage = '定位失敗';
         
         switch (error.code) {
@@ -54,17 +68,17 @@ export default function LocationButton({ onLocationFound, onLocationError }) {
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 60000 // 使用1分鐘內的緩存位置
+        maximumAge: forceRelocate ? 0 : 60000 // 重新定位時不使用緩存
       }
     );
   };
 
   return (
     <button
-      className={`location-button ${isLocating ? 'locating' : ''} ${hasLocation ? 'located' : ''}`}
-      onClick={getCurrentLocation}
-      disabled={isLocating}
-      title={isLocating ? '定位中...' : hasLocation ? '已定位' : '定位到我的位置'}
+      className={`location-button ${isLocating ? 'locating' : ''} ${isRelocating ? 'relocating' : ''} ${hasLocation ? 'location-found' : ''}`}
+      onClick={() => hasLocation ? getCurrentLocation(true) : getCurrentLocation(false)}
+      disabled={isLocating || isRelocating}
+      title={isLocating ? '定位中...' : isRelocating ? '重新定位中...' : hasLocation ? '重新定位' : '定位到我的位置'}
     >
       <div className="location-icon-wrapper">
         {hasLocation ? (
@@ -73,17 +87,16 @@ export default function LocationButton({ onLocationFound, onLocationError }) {
           <IoLocateOutline className="location-icon" />
         )}
         
-        {isLocating && (
-          <div className="location-pulse-ring"></div>
+        {(isLocating || isRelocating) && (
+          <>
+            <div className={`location-pulse-ring ${isRelocating ? 'relocating-ring' : ''}`}></div>
+            <div className={`location-pulse-ring ${isRelocating ? 'relocating-ring' : ''}`}></div>
+            <div className={`location-pulse-ring ${isRelocating ? 'relocating-ring' : ''}`}></div>
+            <div className={`location-pulse-ring ${isRelocating ? 'relocating-ring' : ''}`}></div>
+          </>
         )}
       </div>
       
-      {/* 定位成功提示 */}
-      {hasLocation && (
-        <div className="location-success-indicator">
-          <div className="success-dot"></div>
-        </div>
-      )}
     </button>
   );
 }

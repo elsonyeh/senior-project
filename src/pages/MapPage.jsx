@@ -152,10 +152,10 @@ export default function MapPage() {
     setNotificationType(type);
     setShowNotification(true);
 
-    // 3秒後自動隱藏
+    // 2秒後自動隱藏
     setTimeout(() => {
       setShowNotification(false);
-    }, 3000);
+    }, 2000);
   };
 
   // 設置全域函數供InfoWindow使用
@@ -278,6 +278,13 @@ export default function MapPage() {
     showNotificationMessage('定位成功！', 'success');
   }, []);
 
+  // 處理重新定位
+  const handleRelocate = useCallback((location) => {
+    setCurrentLocation(location);
+    setSearchLocation(location);
+    showNotificationMessage('重新定位成功！', 'success');
+  }, []);
+
   // 處理定位錯誤
   const handleLocationError = useCallback((error) => {
     showNotificationMessage(error, 'error');
@@ -333,10 +340,10 @@ export default function MapPage() {
     <div className="map-page">
       {/* 通知消息 */}
       {showNotification && (
-        <div className={`notification ${notificationType} ${showNotification ? 'show' : ''}`}>
+        <div className={`map-notification map-${notificationType} ${showNotification ? 'map-show' : ''}`}>
           <span>{notificationMessage}</span>
           <button 
-            className="notification-close"
+            className="map-notification-close"
             onClick={() => setShowNotification(false)}
           >
             <IoCloseOutline />
@@ -360,6 +367,7 @@ export default function MapPage() {
           <LocationButton
             onLocationFound={handleLocationFound}
             onLocationError={handleLocationError}
+            onRelocate={handleRelocate}
           />
           
           <button
