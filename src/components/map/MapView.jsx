@@ -252,25 +252,23 @@ export default function MapView({
   const showDatabaseRestaurants = useCallback((location) => {
     if (!restaurants.length) return;
 
-    // 計算距離並顯示附近的資料庫餐廳
-    const nearbyRestaurants = restaurants
-      .filter(restaurant => restaurant.latitude && restaurant.longitude)
-      .map(restaurant => {
-        const distance = calculateDistance(
-          location.lat, location.lng,
-          restaurant.latitude, restaurant.longitude
-        );
-        return { ...restaurant, distance };
-      })
-      .filter(restaurant => restaurant.distance <= 3) // 3公里內
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 10);
+    // 清除之前的資料庫餐廳標記
+    markersRef.current.forEach(marker => {
+      if (marker.markerType === 'database') {
+        marker.setMap(null);
+      }
+    });
+    markersRef.current = markersRef.current.filter(marker => marker.markerType !== 'database');
 
-    nearbyRestaurants.forEach(restaurant => {
+    // 顯示所有資料庫餐廳（不限制距離，與初始載入一樣）
+    const validRestaurants = restaurants
+      .filter(restaurant => restaurant.latitude && restaurant.longitude);
+
+    validRestaurants.forEach(restaurant => {
       createDatabaseRestaurantMarker(restaurant);
     });
 
-    console.log(`資料庫找到 ${nearbyRestaurants.length} 間附近餐廳`);
+    console.log(`資料庫顯示 ${validRestaurants.length} 間餐廳`);
   }, [restaurants]);
 
   // 計算兩點之間的距離（公里）
