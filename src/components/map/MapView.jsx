@@ -68,7 +68,10 @@ export default function MapView({
     googleMapRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
     
     // 初始化InfoWindow
-    infoWindowRef.current = new window.google.maps.InfoWindow();
+    infoWindowRef.current = new window.google.maps.InfoWindow({
+      maxWidth: 300,
+      disableAutoPan: false
+    });
     
     // 搜尋附近餐廳
     searchNearbyRestaurants(center);
@@ -446,7 +449,7 @@ export default function MapView({
     }
   }, [onPlaceSelect]);
 
-  // 顯示資訊視窗
+  // 顯示資訊視窗（使用原生 InfoWindow 但自定義內容）
   const showInfoWindow = useCallback((place, marker) => {
     if (!infoWindowRef.current || !place) return;
 
@@ -457,7 +460,7 @@ export default function MapView({
     if (place.isFromDatabase && place.primaryImage?.image_url) {
       photo = place.primaryImage.image_url;
     } else if (place.photos?.[0]) {
-      photo = place.photos[0].getUrl({ maxWidth: 200, maxHeight: 150 });
+      photo = place.photos[0].getUrl({ maxWidth: 300, maxHeight: 140 });
     }
 
     const rating = place.rating ? place.rating.toFixed(1) : 'N/A';
@@ -466,24 +469,29 @@ export default function MapView({
     // 生成收藏清單選項
     const favoriteListsOptions = user && favoriteLists.length > 0
       ? favoriteLists.map(list =>
-          `<option value="${list.id}">${list.name} (${list.places?.length || 0})</option>`
+          `<option value="${list.list_id}">${list.name} (${list.favorite_list_places?.length || 0})</option>`
         ).join('')
       : '';
 
     const contentString = `
-      <div class="custom-info-window">
-        ${photo ? `<img src="${photo}" alt="${place.name}" class="place-photo" />` : ''}
-        <div class="place-content">
-          <h3 class="place-name">${place.name}</h3>
-          ${place.category ? `<p class="place-category">${place.category}</p>` : ''}
-          <div class="place-rating">
-            <span class="rating-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
-            <span class="rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount})` : ''}</span>
+      <div class="fixed-width-info-window">
+        <button class="custom-close-btn" onclick="closeInfoWindow()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <path d="M11 1L1 11M1 1l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        ${photo ? `<img src="${photo}" alt="${place.name}" class="info-place-photo" />` : ''}
+        <div class="info-place-content">
+          <h3 class="info-place-name">${place.name}</h3>
+          ${place.category ? `<p class="info-place-category">${place.category}</p>` : ''}
+          <div class="info-place-rating">
+            <span class="info-rating-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
+            <span class="info-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount})` : ''}</span>
           </div>
-          <p class="place-address">${place.formatted_address || ''}</p>
-          ${place.formatted_phone_number ? `<p class="place-phone">${place.formatted_phone_number}</p>` : ''}
+          <p class="info-place-address">${place.formatted_address || ''}</p>
+          ${place.formatted_phone_number ? `<p class="info-place-phone">${place.formatted_phone_number}</p>` : ''}
 
-          <div class="place-actions">
+          <div class="info-place-actions">
             ${user && favoriteLists.length > 0 ? `
               <div class="favorite-section">
                 <select class="favorite-list-select" id="favoriteListSelect">
@@ -499,8 +507,12 @@ export default function MapView({
                 ${isFavorite ? '♥' : '♡'} ${isFavorite ? '已收藏' : '收藏'}
               </button>
             `}
-            <button class="navigate-btn" onclick="openNavigation(${place.isFromDatabase ? place.latitude : place.geometry.location.lat()}, ${place.isFromDatabase ? place.longitude : place.geometry.location.lng()})">
-              🧭 導航
+            <button class="info-navigate-btn" onclick="openNavigation(${place.isFromDatabase ? place.latitude : place.geometry.location.lat()}, ${place.isFromDatabase ? place.longitude : place.geometry.location.lng()})">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              前往餐廳
             </button>
           </div>
         </div>
@@ -515,6 +527,10 @@ export default function MapView({
       onFavoriteToggle?.(place, !isFavorite);
     };
 
+    window.closeInfoWindow = () => {
+      infoWindowRef.current.close();
+    };
+
     window.addToFavoriteList = (placeId) => {
       const select = document.getElementById('favoriteListSelect');
       const selectedListId = select?.value;
@@ -524,7 +540,7 @@ export default function MapView({
         return;
       }
 
-      const selectedList = favoriteLists.find(list => list.id === selectedListId);
+      const selectedList = favoriteLists.find(list => list.list_id === selectedListId);
       if (selectedList && window.addPlaceToList) {
         window.addPlaceToList(selectedListId, place);
       }
@@ -535,6 +551,7 @@ export default function MapView({
       window.open(url, '_blank');
     };
   }, [favorites, onFavoriteToggle, user, favoriteLists]);
+
 
   // 清除所有標記
   const clearMarkers = useCallback(() => {
@@ -702,6 +719,7 @@ export default function MapView({
           <p>載入地圖中...</p>
         </div>
       )}
+
     </div>
   );
 }
