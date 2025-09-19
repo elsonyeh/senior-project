@@ -13,12 +13,6 @@ console.log('📍 Supabase URL:', supabaseUrl);
 console.log('🔑 Anon Key exists:', !!supabaseAnonKey);
 console.log('⚡ Service Key exists:', !!supabaseServiceKey);
 
-if (supabaseServiceKey) {
-  console.log('✅ Service Key 格式:', supabaseServiceKey.substring(0, 20) + '...');
-} else {
-  console.log('❌ Service Key 未設置');
-}
-
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase 配置缺失，請檢查環境變數');
   console.error('VITE_SUPABASE_URL:', supabaseUrl);
@@ -42,27 +36,38 @@ export const supabase = (() => {
           eventsPerSecond: 10, // 限制每秒事件數量
         },
       },
+      global: {
+        headers: {
+          'X-Client-Info': 'swifttaste-user-client' // 唯一標識符
+        }
+      }
     });
   }
   return supabaseClient;
 })();
 
-// 創建 Supabase 管理客戶端（具有完整權限）
-export const supabaseAdmin = (() => {
+// 延遲創建 Supabase 管理客戶端（只有需要時才創建）
+export const getSupabaseAdmin = () => {
   if (!supabaseAdminClient && supabaseUrl && supabaseServiceKey) {
+    console.log('🔧 創建 Admin Supabase 客戶端...');
     supabaseAdminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
         storageKey: 'swifttaste-admin-auth', // 唯一的儲存鍵
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'swifttaste-admin-client' // 唯一標識符
+        }
       }
     });
   }
   return supabaseAdminClient;
-})();
+};
 
-// 在創建客戶端後檢查 supabaseAdmin 可用性
-console.log('🔧 supabaseAdmin 可用:', !!supabaseAdmin);
+// 為了向後兼容，延遲創建管理客戶端
+export const supabaseAdmin = supabaseServiceKey ? getSupabaseAdmin() : null;
 
 // 監聽器管理 - 防止重複監聽和內存洩漏
 const activeSubscriptions = new Map();

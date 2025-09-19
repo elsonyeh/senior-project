@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  IoTimeOutline, 
-  IoRestaurantOutline, 
+import {
+  IoTimeOutline,
+  IoRestaurantOutline,
   IoCheckmarkOutline,
   IoPersonOutline,
   IoFastFoodOutline,
@@ -11,6 +11,7 @@ import {
   IoRefreshOutline,
   IoTrashOutline
 } from 'react-icons/io5';
+import selectionHistoryService from '../../services/selectionHistoryService';
 import './SwiftTasteHistory.css';
 
 export default function SwiftTasteHistory({ user }) {
@@ -26,104 +27,124 @@ export default function SwiftTasteHistory({ user }) {
   const loadSwiftTasteHistory = async () => {
     try {
       setLoading(true);
-      // 這裡應該從 Supabase 載入用戶的 SwiftTaste 記錄
-      // 暫時使用模擬數據
-      const mockHistory = generateMockHistory();
-      setHistory(mockHistory);
+      console.log('Loading user selection history...');
+
+      // 從 Supabase 載入用戶的選擇記錄
+      const result = await selectionHistoryService.getUserHistory(50);
+
+      if (result.success) {
+        // 轉換資料格式以相容現有UI
+        const formattedHistory = result.data.map(record => convertRecordToDisplayFormat(record));
+        setHistory(formattedHistory);
+        console.log(`Loaded ${formattedHistory.length} history records`);
+      } else {
+        console.error('Failed to load history:', result.error);
+        // 如果載入失敗，顯示空陣列
+        setHistory([]);
+      }
     } catch (error) {
       console.error('Error loading SwiftTaste history:', error);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 生成模擬歷史數據
-  const generateMockHistory = () => {
-    const mockData = [
-      {
-        id: 'st_1',
-        timestamp: new Date(Date.now() - 3600000).toISOString(), // 1小時前
-        mode: 'swifttaste',
-        answers: {
-          dining_companions: '多人',
-          price_level: '奢華美食',
-          meal_type: '吃',
-          portion_size: '吃飽',
-          spice_level: '辣'
-        },
-        fun_answers: [],
-        recommended_restaurant: {
-          name: '鼎泰豐',
-          address: '台北市大安區信義路二段194號',
-          rating: 4.5,
-          photo: 'https://images.unsplash.com/photo-1563379091303-2b7035a95648?w=200&h=150&fit=crop',
-          reason: '符合您的高級餐廳偏好，適合多人聚餐'
-        },
-        session_duration: 45 // 秒
-      },
-      {
-        id: 'st_2',
-        timestamp: new Date(Date.now() - 86400000).toISOString(), // 1天前
-        mode: 'buddies',
-        answers: {
-          dining_companions: '多人',
-          price_level: '平價美食',
-          meal_type: '喝',
-          portion_size: null,
-          spice_level: null
-        },
-        fun_answers: [
-          { question: '貓派v.s.狗派', answer: '貓派' },
-          { question: '你是Ｉ人還是Ｅ人', answer: 'Ｉ人' },
-          { question: '側背包 v.s. 後背包', answer: '後背包' }
-        ],
-        recommended_restaurant: {
-          name: '春水堂',
-          address: '台北市大安區復興南路一段390號',
-          rating: 4.3,
-          photo: 'https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=200&h=150&fit=crop',
-          reason: '適合內向型人格的安靜飲品店'
-        },
-        session_duration: 89
-      },
-      {
-        id: 'st_3',
-        timestamp: new Date(Date.now() - 172800000).toISOString(), // 2天前
-        mode: 'swifttaste',
-        answers: {
-          dining_companions: '單人',
-          price_level: '平價美食',
-          meal_type: '吃',
-          portion_size: '吃一點',
-          spice_level: '不辣'
-        },
-        fun_answers: [],
-        recommended_restaurant: {
-          name: '阿宗麵線',
-          address: '台北市萬華區峨眉街8-1號',
-          rating: 4.2,
-          photo: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200&h=150&fit=crop',
-          reason: '單人用餐友好的小份量選擇'
-        },
-        session_duration: 32
-      }
-    ];
+  // 轉換資料庫記錄到顯示格式
+  const convertRecordToDisplayFormat = (record) => {
+    // 轉換基本答案為物件格式
+    const answers = {};
+    const basicAnswers = record.basic_answers || [];
 
-    return mockData;
+    // 根據答案內容推斷欄位
+    basicAnswers.forEach(answer => {
+      if (['單人', '多人'].includes(answer)) {
+        answers.dining_companions = answer;
+      } else if (['平價美食', '奢華美食'].includes(answer)) {
+        answers.price_level = answer;
+      } else if (['吃', '喝'].includes(answer)) {
+        answers.meal_type = answer;
+      } else if (['吃一點', '吃飽'].includes(answer)) {
+        answers.portion_size = answer;
+      } else if (['辣', '不辣'].includes(answer)) {
+        answers.spice_level = answer;
+      }
+    });
+
+    // 轉換趣味問題答案
+    const funAnswers = (record.fun_answers || []).map((answer, index) => ({
+      question: `趣味問題 ${index + 1}`,
+      answer: answer
+    }));
+
+    // 找到推薦的餐廳（優先使用final_restaurant，否則使用第一個推薦餐廳）
+    let recommendedRestaurant = null;
+    if (record.final_restaurant) {
+      recommendedRestaurant = {
+        name: record.final_restaurant.name || '未知餐廳',
+        address: record.final_restaurant.address || record.final_restaurant.vicinity || '地址未提供',
+        rating: record.final_restaurant.rating || record.final_restaurant.user_ratings_total || 4.0,
+        photo: record.final_restaurant.photos?.[0] || record.final_restaurant.photo ||
+               record.final_restaurant.photoURL || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=150&fit=crop',
+        reason: '根據您的喜好推薦'
+      };
+    } else if (record.recommended_restaurants && record.recommended_restaurants.length > 0) {
+      const firstRec = record.recommended_restaurants[0];
+      recommendedRestaurant = {
+        name: firstRec.name || '未知餐廳',
+        address: firstRec.address || firstRec.vicinity || '地址未提供',
+        rating: firstRec.rating || firstRec.user_ratings_total || 4.0,
+        photo: firstRec.photos?.[0] || firstRec.photo || firstRec.photoURL ||
+               'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=150&fit=crop',
+        reason: '根據您的喜好推薦'
+      };
+    }
+
+    return {
+      id: record.id,
+      timestamp: record.started_at || record.created_at,
+      mode: record.mode,
+      answers,
+      fun_answers: funAnswers,
+      recommended_restaurant: recommendedRestaurant,
+      session_duration: record.session_duration || 0
+    };
   };
 
   // 清除歷史記錄
   const clearHistory = async () => {
     if (confirm('確定要清除所有SwiftTaste記錄嗎？這個操作無法復原。')) {
-      setHistory([]);
-      // 這裡應該調用API刪除後端數據
+      try {
+        const result = await selectionHistoryService.clearAllHistory();
+        if (result.success) {
+          setHistory([]);
+          console.log('History cleared successfully');
+        } else {
+          console.error('Failed to clear history:', result.error);
+          alert('清除失敗，請稍後再試');
+        }
+      } catch (error) {
+        console.error('Error clearing history:', error);
+        alert('清除失敗，請稍後再試');
+      }
     }
   };
 
   // 刪除單個記錄
   const deleteRecord = async (recordId) => {
-    setHistory(prev => prev.filter(record => record.id !== recordId));
-    // 這裡應該調用API刪除後端數據
+    try {
+      const result = await selectionHistoryService.deleteSession(recordId);
+      if (result.success) {
+        setHistory(prev => prev.filter(record => record.id !== recordId));
+        console.log('Record deleted successfully:', recordId);
+      } else {
+        console.error('Failed to delete record:', result.error);
+        alert('刪除失敗，請稍後再試');
+      }
+    } catch (error) {
+      console.error('Error deleting record:', error);
+      alert('刪除失敗，請稍後再試');
+    }
   };
 
   // 重新執行SwiftTaste

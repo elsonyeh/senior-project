@@ -304,11 +304,10 @@ export const authService = {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/avatar.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, {
+        .upload(fileName, file, {
           upsert: true
         });
 
@@ -316,7 +315,7 @@ export const authService = {
 
       const { data } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       // 更新用戶頭像URL
       const updateResult = await this.updateUser({

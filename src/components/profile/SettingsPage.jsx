@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { 
+import {
   IoChevronForwardOutline,
-  IoHelpCircleOutline,
-  IoMailOutline,
-  IoInformationCircleOutline,
   IoLogOutOutline,
   IoTrashOutline,
   IoNotificationsOutline,
@@ -12,11 +9,14 @@ import {
   IoLogInOutline,
   IoPersonAddOutline
 } from 'react-icons/io5';
+import ConfirmDialog from '../common/ConfirmDialog';
 import './SettingsPage.css';
 
 export default function SettingsPage({ user, onLogout, onDeleteAccount, onShowAuthModal, onNavigate }) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleToggle = (setting, value) => {
     switch (setting) {
@@ -30,15 +30,21 @@ export default function SettingsPage({ user, onLogout, onDeleteAccount, onShowAu
   };
 
   const handleLogout = () => {
-    if (confirm('確定要登出嗎？')) {
-      onLogout();
-    }
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutDialog(false);
+    onLogout();
   };
 
   const handleDeleteAccount = () => {
-    if (confirm('確定要刪除帳號嗎？此操作無法復原。')) {
-      onDeleteAccount();
-    }
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteAccount = () => {
+    setShowDeleteDialog(false);
+    onDeleteAccount();
   };
 
   // 未登入用戶的設定項目
@@ -62,29 +68,17 @@ export default function SettingsPage({ user, onLogout, onDeleteAccount, onShowAu
   // 已登入用戶的設定項目
   const userSettingsItems = [
     {
+      icon: IoPersonOutline,
+      label: '個人資料',
+      type: 'nav',
+      onClick: () => onNavigate && onNavigate('profileEdit')
+    },
+    {
       icon: IoNotificationsOutline,
       label: '通知設定',
       type: 'toggle',
       value: notificationsEnabled,
       onChange: (value) => handleToggle('notifications', value)
-    },
-    {
-      icon: IoHelpCircleOutline,
-      label: '常見問題',
-      type: 'nav',
-      onClick: () => onNavigate && onNavigate('faq')
-    },
-    {
-      icon: IoMailOutline,
-      label: '聯絡客服',
-      type: 'nav',
-      onClick: () => onNavigate && onNavigate('contact')
-    },
-    {
-      icon: IoInformationCircleOutline,
-      label: '關於我們',
-      type: 'nav',
-      onClick: () => onNavigate && onNavigate('about')
     },
     {
       icon: IoLogOutOutline,
@@ -141,6 +135,30 @@ export default function SettingsPage({ user, onLogout, onDeleteAccount, onShowAu
           </div>
         ))}
       </div>
+
+      {/* 登出確認對話框 */}
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={confirmLogout}
+        title="登出確認"
+        message="您確定要登出嗎？您的個人設定和偏好將會保留，下次登入時可以繼續使用。"
+        confirmText="確認登出"
+        cancelText="取消"
+        type="logout"
+      />
+
+      {/* 刪除帳號確認對話框 */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmDeleteAccount}
+        title="刪除帳號"
+        message="確定要刪除帳號嗎？此操作無法復原，將會刪除所有相關數據。"
+        confirmText="確認刪除"
+        cancelText="取消"
+        type="danger"
+      />
     </div>
   );
 }

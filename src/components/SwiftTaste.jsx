@@ -8,6 +8,7 @@ import { roomService, memberService, recommendationService } from "../services/s
 import { restaurantService } from "../services/restaurantService";
 import { funQuestionTagService } from "../services/funQuestionTagService";
 import { getBasicQuestionsForSwiftTaste, getFunQuestions } from "../services/questionService";
+import selectionHistoryService from "../services/selectionHistoryService";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
@@ -49,7 +50,11 @@ export default function SwiftTaste() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showIdleHint, setShowIdleHint] = useState(false);
   const [idleTimer, setIdleTimer] = useState(null);
-  
+
+  // 選擇紀錄相關狀態
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
+
   // Current questions being shown
   const currentQuestions = phase === 'questions' ? basicQuestions : (phase === 'funQuestions' ? funQuestions : []);
 
@@ -152,17 +157,21 @@ export default function SwiftTaste() {
     }
   };
 
-  const handleModeSelect = (direction) => {
+  const handleModeSelect = async (direction) => {
     // 將滑動方向轉換為模式
     const mode = direction === "left" ? "buddies" : "single";
     setSelectedMode(mode);
+
+    // 開始選擇紀錄會話
+    await startSelectionSession(mode === "single" ? "swifttaste" : "buddies");
+
     if (mode === "buddies") {
       setPhase("buddiesRoom");
     } else {
       // 清理之前的保存餐廳記錄
       localStorage.removeItem("savedRestaurants");
       console.log("Cleared previous saved restaurants");
-      
+
       // 檢查是否已經看過引導動畫
       const hasSeenOnboardingBefore = localStorage.getItem("hasSeenSwipeOnboarding");
       if (!hasSeenOnboardingBefore) {
@@ -216,12 +225,86 @@ export default function SwiftTaste() {
     startIdleTimer();
   };
 
-  const handleBasicQuestionsComplete = (answers) => {
+  // 選擇紀錄相關函數
+  const startSelectionSession = async (mode) => {
+    try {
+      console.log(`Starting ${mode} selection session...`);
+      setSessionStartTime(new Date());
+
+      const result = await selectionHistoryService.startSession(mode, {
+        user_location: await getCurrentLocation()
+      });
+
+      if (result.success) {
+        setCurrentSessionId(result.sessionId);
+        console.log('Selection session started:', result.sessionId);
+      } else {
+        console.error('Failed to start session:', result.error);
+      }
+    } catch (error) {
+      console.error('Error starting selection session:', error);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    return new Promise((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              timestamp: new Date().toISOString()
+            });
+          },
+          (error) => {
+            console.warn('Location access denied:', error);
+            resolve(null);
+          },
+          { timeout: 10000 }
+        );
+      } else {
+        resolve(null);
+      }
+    });
+  };
+
+  const recordSwipeAction = async () => {
+    if (currentSessionId) {
+      await selectionHistoryService.incrementSwipeCount(currentSessionId);
+    }
+  };
+
+  const recordLikedRestaurant = async (restaurant) => {
+    if (currentSessionId) {
+      await selectionHistoryService.addLikedRestaurant(currentSessionId, restaurant);
+    }
+  };
+
+  const completeSession = async (finalRestaurant = null) => {
+    if (currentSessionId) {
+      const completionData = {
+        started_at: sessionStartTime?.toISOString(),
+        final_restaurant: finalRestaurant
+      };
+
+      await selectionHistoryService.completeSession(currentSessionId, completionData);
+      console.log('Selection session completed');
+    }
+  };
+
+  const handleBasicQuestionsComplete = async (answers) => {
     console.log('Basic questions completed with answers:', answers);
     const basicAnswersList = answers.answers || [];
     setBasicAnswers(basicAnswersList);
     basicAnswersRef.current = basicAnswersList;  // 同時存儲到ref中
     console.log('Stored basic answers in ref:', basicAnswersRef.current);
+
+    // 記錄基本答案
+    if (currentSessionId) {
+      await selectionHistoryService.saveBasicAnswers(currentSessionId, basicAnswersList);
+    }
+
     setPhase("funQuestions"); // 轉到趣味問題
   };
 
@@ -229,25 +312,30 @@ export default function SwiftTaste() {
     console.log('Fun questions completed with answers:', answers);
     const funAnswersList = answers.answers || [];
     setFunAnswers(funAnswersList);
-    
+
+    // 記錄趣味問題答案
+    if (currentSessionId) {
+      await selectionHistoryService.saveFunAnswers(currentSessionId, funAnswersList);
+    }
+
     // 使用ref中的基本答案，確保數據正確
     const currentBasicAnswers = basicAnswersRef.current;
     console.log('Using basic answers from ref:', currentBasicAnswers);
     console.log('Using fun answers:', funAnswersList);
-    
+
     if (currentBasicAnswers.length === 0) {
       console.error('Basic answers are empty! This should not happen.');
       // 如果基本答案為空，回到基本問題
       setPhase("questions");
       return;
     }
-    
+
     // 確保標籤映射已載入
     if (Object.keys(funQuestionTagsMap).length === 0 && !loadingTags) {
       console.log('Fun question tags not loaded, loading now...');
       await loadFunQuestionTagsMap(true); // 這時需要顯示載入動畫
     }
-    
+
     await filterRestaurantsByAnswers(currentBasicAnswers, funAnswersList);
     setPhase("restaurants"); // 轉到餐廳推薦
   };
@@ -500,7 +588,12 @@ export default function SwiftTaste() {
       })));
       
       setFilteredRestaurants(selected);
-      
+
+      // 記錄推薦結果
+      if (currentSessionId) {
+        await selectionHistoryService.saveRecommendations(currentSessionId, selected);
+      }
+
     } catch (error) {
       console.error('Error filtering restaurants:', error);
       setError('篩選餐廳時發生錯誤');
@@ -514,12 +607,16 @@ export default function SwiftTaste() {
     return shuffled.slice(0, count);
   };
 
-  const handleSave = (restaurant) => {
+  const handleSave = async (restaurant) => {
     console.log('Saving restaurant:', restaurant);
+
+    // 記錄用戶喜歡的餐廳
+    await recordLikedRestaurant(restaurant);
+
     // 單人模式：直接保存到本地
     if (selectedMode === "single") {
       const saved = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
-      
+
       // 避免重複保存相同餐廳
       const alreadySaved = saved.some(r => r.id === restaurant.id || r.name === restaurant.name);
       if (!alreadySaved) {
@@ -532,7 +629,13 @@ export default function SwiftTaste() {
     }
   };
 
-  const handleRestaurantFinish = () => {
+  const handleRestaurantFinish = async () => {
+    // 完成選擇會話，記錄最終選擇的餐廳（如果有的話）
+    const savedRestaurants = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
+    const finalRestaurant = savedRestaurants.length > 0 ? savedRestaurants[0] : null;
+
+    await completeSession(finalRestaurant);
+
     if (selectedMode === "single") {
       setPhase("result");
     } else if (selectedMode === "buddies") {
@@ -642,7 +745,10 @@ export default function SwiftTaste() {
             resetIdleTimer();
             handleRestaurantFinish(...args);
           }}
-          onSwipe={resetIdleTimer} // 每次滑動重置計時器
+          onSwipe={(...args) => {
+            resetIdleTimer(); // 每次滑動重置計時器
+            recordSwipeAction(); // 記錄滑動動作
+          }}
         />
       )}
 
@@ -660,10 +766,12 @@ export default function SwiftTaste() {
           onRoomCreated={(roomData) => {
             setRoomData(roomData);
             setRoomId(roomData.roomId);
+            // Buddies 會話已在 BuddiesRoom 中開始
           }}
           onJoinRoom={(roomData) => {
             setRoomData(roomData);
             setRoomId(roomData.roomId);
+            // Buddies 會話已在 BuddiesRoom 中開始
           }}
           onStartQuestions={() => setPhase("buddiesQuestions")}
           onBack={handleBackToStart}

@@ -14,6 +14,7 @@ import {
   recommendationService,
   cleanupAllSubscriptions
 } from "../services/supabaseService";
+import selectionHistoryService from "../services/selectionHistoryService";
 
 export default function BuddiesRoom() {
   const [roomId, setRoomId] = useState("");
@@ -40,6 +41,10 @@ export default function BuddiesRoom() {
 
   // Cleanup functions for subscriptions
   const [subscriptionCleanups, setSubscriptionCleanups] = useState([]);
+
+  // 選擇紀錄相關狀態
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
 
   function ToastNotification({ message, type, visible, onHide }) {
     if (!visible) return null;
@@ -169,6 +174,64 @@ export default function BuddiesRoom() {
     }
   }, [joined, roomId]);
 
+  // 選擇紀錄相關函數
+  const startBuddiesSession = async (buddiesRoomId) => {
+    try {
+      console.log('Starting Buddies selection session for room:', buddiesRoomId);
+      setSessionStartTime(new Date());
+
+      const result = await selectionHistoryService.startSession('buddies', {
+        user_location: await getCurrentLocation()
+      });
+
+      if (result.success) {
+        setCurrentSessionId(result.sessionId);
+        // 設置 Buddies 房間 ID
+        await selectionHistoryService.setBuddiesRoomId(result.sessionId, buddiesRoomId);
+        console.log('Buddies session started:', result.sessionId);
+      } else {
+        console.error('Failed to start Buddies session:', result.error);
+      }
+    } catch (error) {
+      console.error('Error starting Buddies session:', error);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    return new Promise((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              timestamp: new Date().toISOString()
+            });
+          },
+          (error) => {
+            console.warn('Location access denied:', error);
+            resolve(null);
+          },
+          { timeout: 10000 }
+        );
+      } else {
+        resolve(null);
+      }
+    });
+  };
+
+  const completeBuddiesSession = async (finalRestaurant = null) => {
+    if (currentSessionId) {
+      const completionData = {
+        started_at: sessionStartTime?.toISOString(),
+        final_restaurant: finalRestaurant
+      };
+
+      await selectionHistoryService.completeSession(currentSessionId, completionData);
+      console.log('Buddies session completed');
+    }
+  };
+
   // 創建房間
   const handleCreateRoom = async () => {
     if (!userName.trim()) {
@@ -189,6 +252,9 @@ export default function BuddiesRoom() {
         setIsHost(true);
         setJoined(true);
         setPhase("waiting");
+
+        // 開始 Buddies 選擇會話
+        await startBuddiesSession(response.roomId);
 
         navigate(`/buddies?roomId=${response.roomId}`, { replace: true });
       } else {
@@ -231,6 +297,9 @@ export default function BuddiesRoom() {
         setJoined(true);
         setPhase("waiting");
         setIsHost(response.isHost || false);
+
+        // 開始 Buddies 選擇會話
+        await startBuddiesSession(roomIdInput.toUpperCase());
 
         // 獲取當前房間成員
         const membersResult = await memberService.getRoomMembers(roomIdInput.toUpperCase());
@@ -412,6 +481,24 @@ export default function BuddiesRoom() {
         questionSources
       );
 
+      // 記錄答案到選擇歷史
+      if (currentSessionId) {
+        // 分離基本答案和趣味答案
+        const basicAnswersList = [];
+        const funAnswersList = [];
+
+        answers.forEach((answer, index) => {
+          if (questionSources[index] === 'basic') {
+            basicAnswersList.push(answer);
+          } else {
+            funAnswersList.push(answer);
+          }
+        });
+
+        await selectionHistoryService.saveBasicAnswers(currentSessionId, basicAnswersList);
+        await selectionHistoryService.saveFunAnswers(currentSessionId, funAnswersList);
+      }
+
       if (result.success) {
         setPhase("waiting-recommendations");
         
@@ -585,6 +672,10 @@ export default function BuddiesRoom() {
             roomId={roomId}
             restaurants={recommendations}
             onBack={() => setPhase("waiting")}
+            onComplete={(finalRestaurant) => {
+              // 記錄最終選擇的餐廳
+              completeBuddiesSession(finalRestaurant);
+            }}
           />
         );
 

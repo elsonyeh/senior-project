@@ -20,7 +20,16 @@
       "Bash(git push:*)",
       "Read(//c/Users/elson/OneDrive/文件/**)",
       "Bash(curl:*)",
-      "Bash(start http://localhost:5174)"
+      "Bash(start http://localhost:5174)",
+      "Bash(start http://localhost:5174/schema-migration-check.html)",
+      "Bash(start http://localhost:5174/database-test.html)",
+      "Bash(start http://localhost:5174/database-debug.html)",
+      "Bash(del schema-migration-check.html database-test.html database-debug.html test-database-connection.js schema-migration-script.sql)",
+      "Bash(start http://localhost:5174/admin)",
+      "Bash(start http://localhost:5175/admin)",
+      "Bash(npx supabase:*)",
+      "Bash(del \"C:\\Projects\\SwiftTaste-demo\\src\\test-supabase.js\")",
+      "Bash(start http://localhost:5175)"
     ],
     "deny": [],
     "ask": []

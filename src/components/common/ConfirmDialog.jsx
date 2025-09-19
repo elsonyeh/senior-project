@@ -1,5 +1,5 @@
 import React from 'react';
-import { IoWarningOutline, IoCheckmarkOutline, IoCloseOutline } from 'react-icons/io5';
+import { IoWarningOutline, IoCheckmarkOutline, IoCloseOutline, IoLogOutOutline, IoExitOutline, IoPowerOutline, IoTrashOutline, IoPersonRemoveOutline } from 'react-icons/io5';
 import './ConfirmDialog.css';
 
 export default function ConfirmDialog({ 
@@ -23,9 +23,11 @@ export default function ConfirmDialog({
   const getIcon = () => {
     switch (type) {
       case 'danger':
-        return <IoWarningOutline className="dialog-icon danger" />;
+        return <IoPersonRemoveOutline className="dialog-icon danger" />;
       case 'info':
         return <IoCheckmarkOutline className="dialog-icon info" />;
+      case 'logout':
+        return <IoPowerOutline className="dialog-icon logout-type" />;
       default:
         return <IoWarningOutline className="dialog-icon warning" />;
     }
@@ -52,7 +54,7 @@ export default function ConfirmDialog({
             {cancelText}
           </button>
           <button
-            className={`dialog-button confirm-button ${type}`}
+            className={`dialog-button confirm-button ${type === 'logout' ? 'logout-type' : type}`}
             onClick={onConfirm}
           >
             <IoCheckmarkOutline />

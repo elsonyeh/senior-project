@@ -1,11 +1,13 @@
 import React from 'react';
-import { 
+import {
   IoChevronForwardOutline,
   IoListOutline,
   IoTimeOutline,
   IoSettingsOutline,
-  IoLogOutOutline,
-  IoPersonOutline
+  IoPersonOutline,
+  IoHelpCircleOutline,
+  IoMailOutline,
+  IoInformationCircleOutline
 } from 'react-icons/io5';
 import './ProfileMenu.css';
 
@@ -22,15 +24,24 @@ export default function ProfileMenu({ user, onNavigate, onLogout }) {
       action: () => onNavigate('history')
     },
     {
+      icon: IoHelpCircleOutline,
+      label: '常見問題',
+      action: () => onNavigate('faq')
+    },
+    {
+      icon: IoMailOutline,
+      label: '聯絡客服',
+      action: () => onNavigate('contact')
+    },
+    {
+      icon: IoInformationCircleOutline,
+      label: '關於我們',
+      action: () => onNavigate('about')
+    },
+    {
       icon: IoSettingsOutline,
       label: '設定',
       action: () => onNavigate('settings')
-    },
-    {
-      icon: IoLogOutOutline,
-      label: '登出',
-      action: onLogout,
-      className: 'logout-item'
     }
   ];
 

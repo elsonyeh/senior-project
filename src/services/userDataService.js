@@ -77,7 +77,12 @@ export const userDataService = {
         .insert({
           id: userId,
           email: userEmail,
-          name: userName || userEmail.split('@')[0]
+          name: userName || userEmail.split('@')[0],
+          avatar_url: null,
+          bio: '',
+          favorite_lists_count: 0,
+          swifttaste_count: 0,
+          buddies_count: 0
         });
 
       if (insertError) {
@@ -360,6 +365,74 @@ export const userDataService = {
       return {
         success: false,
         error: this.getErrorMessage(error)
+      };
+    }
+  },
+
+  // 更新用戶個人資料
+  async updateUserProfile(userId, profileData) {
+    try {
+      // 確保用戶檔案存在
+      await this.ensureUserProfile(userId, profileData.email, profileData.name);
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({
+          name: profileData.name,
+          bio: profileData.bio,
+          avatar_url: profileData.avatar_url,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        profile: data,
+        message: '個人資料已更新'
+      };
+    } catch (error) {
+      console.error('更新用戶個人資料失敗:', error);
+      return {
+        success: false,
+        error: this.getErrorMessage(error)
+      };
+    }
+  },
+
+  // 獲取用戶個人資料
+  async getUserProfile(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        // 如果用戶檔案不存在，返回預設值
+        if (error.code === 'PGRST116') {
+          return {
+            success: true,
+            profile: null
+          };
+        }
+        throw error;
+      }
+
+      return {
+        success: true,
+        profile: data
+      };
+    } catch (error) {
+      console.error('獲取用戶個人資料失敗:', error);
+      return {
+        success: false,
+        error: this.getErrorMessage(error),
+        profile: null
       };
     }
   },

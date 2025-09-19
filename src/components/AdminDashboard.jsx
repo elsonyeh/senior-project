@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../services/supabaseService";
 import RestaurantManager from "./RestaurantManager";
+import DataAnalyticsPage from "./admin/DataAnalyticsPage";
 import { InputModal, ConfirmModal, NotificationModal, AdminFormModal } from "./CustomModal";
 import "./AdminDashboard.css";
 
@@ -416,11 +417,19 @@ export default function AdminDashboard() {
         >
           管理員管理
         </button>
+        <button
+          className={`tab-button ${activeTab === "analytics" ? "active" : ""}`}
+          onClick={() => setActiveTab("analytics")}
+        >
+          資料分析
+        </button>
       </div>
 
       {/* 內容區域 */}
       <div className="dashboard-content">
         {activeTab === "restaurants" && <RestaurantManager />}
+
+        {activeTab === "analytics" && <DataAnalyticsPage />}
         
         {activeTab === "buddies" && (
           <div className="buddies-section">

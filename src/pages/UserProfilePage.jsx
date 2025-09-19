@@ -9,6 +9,7 @@ import PageWrapper from '../components/profile/PageWrapper';
 import FAQPage from '../components/profile/FAQPage';
 import ContactPage from '../components/profile/ContactPage';
 import AboutPage from '../components/profile/AboutPage';
+import UserProfileEditPage from '../components/profile/UserProfilePage';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { authService } from '../services/authService';
 import {
@@ -26,7 +27,7 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [currentView, setCurrentView] = useState('menu'); // menu, profile, lists, history, settings, faq, contact, about
+  const [currentView, setCurrentView] = useState('menu'); // menu, profile, lists, history, settings, faq, contact, about, profileEdit
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -36,7 +37,7 @@ export default function UserProfilePage() {
   // 滾動檢測 hook
   useEffect(() => {
     // 在我的清單、選擇紀錄、設定頁面及其子頁面隱藏導航列（像地圖模式一樣）
-    if (['lists', 'history', 'settings', 'faq', 'contact', 'about'].includes(currentView)) {
+    if (['lists', 'history', 'settings', 'faq', 'contact', 'about', 'profileEdit'].includes(currentView)) {
       setIsNavVisible(false);
       return;
     }
@@ -74,7 +75,7 @@ export default function UserProfilePage() {
   // 頁面切換時重置導航欄顯示狀態
   useEffect(() => {
     // 在我的清單、選擇紀錄、設定頁面及其子頁面隱藏導航列
-    if (['lists', 'history', 'settings', 'faq', 'contact', 'about'].includes(currentView)) {
+    if (['lists', 'history', 'settings', 'faq', 'contact', 'about', 'profileEdit'].includes(currentView)) {
       setIsNavVisible(false);
     } else {
       setIsNavVisible(true);
@@ -352,6 +353,12 @@ export default function UserProfilePage() {
             <AboutPage />
           </PageWrapper>
         );
+      case 'profileEdit':
+        return (
+          <PageWrapper title="個人資料" onBack={handleBack}>
+            <UserProfileEditPage />
+          </PageWrapper>
+        );
       default:
         return null;
     }
@@ -424,10 +431,10 @@ export default function UserProfilePage() {
         onClose={() => setShowLogoutDialog(false)}
         onConfirm={confirmLogout}
         title="登出確認"
-        message="您確定要登出嗎？登出後您的帐號狀態將會被清除。"
+        message="您確定要登出嗎？您的個人設定和偏好將會保留，下次登入時可以繼續使用。"
         confirmText="確認登出"
         cancelText="取消"
-        type="warning"
+        type="logout"
       />
 
       {/* 刪除帳號確認對話框 */}
