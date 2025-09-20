@@ -50,6 +50,8 @@ export default function SwiftTaste() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showIdleHint, setShowIdleHint] = useState(false);
   const [idleTimer, setIdleTimer] = useState(null);
+  const [selectedFunQuestions, setSelectedFunQuestions] = useState([]);
+  const [loadingModeSelection, setLoadingModeSelection] = useState(false);
 
   // 選擇紀錄相關狀態
   const [currentSessionId, setCurrentSessionId] = useState(null);
@@ -71,7 +73,7 @@ export default function SwiftTaste() {
   // 監聽phase變化，管理停留時間提示
   useEffect(() => {
     // 在這些階段啟動停留時間計時器
-    const phasesWithIdleTimer = ['selectMode', 'questions', 'funQuestions', 'restaurants'];
+    const phasesWithIdleTimer = ['selectMode', 'questions', 'funQuestions', 'restaurants', 'result'];
     
     if (phasesWithIdleTimer.includes(phase) && !showOnboarding) {
       startIdleTimer();
@@ -162,23 +164,37 @@ export default function SwiftTaste() {
     const mode = direction === "left" ? "buddies" : "single";
     setSelectedMode(mode);
 
-    // 開始選擇紀錄會話
-    await startSelectionSession(mode === "single" ? "swifttaste" : "buddies");
+    // 立即顯示載入動畫
+    setLoadingModeSelection(true);
 
-    if (mode === "buddies") {
-      setPhase("buddiesRoom");
-    } else {
-      // 清理之前的保存餐廳記錄
-      localStorage.removeItem("savedRestaurants");
-      console.log("Cleared previous saved restaurants");
+    try {
+      // 開始選擇紀錄會話
+      await startSelectionSession(mode === "single" ? "swifttaste" : "buddies");
 
-      // 檢查是否已經看過引導動畫
-      const hasSeenOnboardingBefore = localStorage.getItem("hasSeenSwipeOnboarding");
-      if (!hasSeenOnboardingBefore) {
-        setShowOnboarding(true);
+      if (mode === "buddies") {
+        setLoadingModeSelection(false);
+        setPhase("buddiesRoom");
       } else {
-        setPhase("questions");
+        // 清理之前的保存餐廳記錄
+        localStorage.removeItem("savedRestaurants");
+        console.log("Cleared previous saved restaurants");
+
+        // 檢查是否已經看過引導動畫
+        const hasSeenOnboardingBefore = localStorage.getItem("hasSeenSwipeOnboarding");
+
+        // 短暫延遲確保動畫可見
+        setTimeout(() => {
+          setLoadingModeSelection(false);
+          if (!hasSeenOnboardingBefore) {
+            setShowOnboarding(true);
+          } else {
+            setPhase("questions");
+          }
+        }, 500);
       }
+    } catch (error) {
+      console.error('Error in mode selection:', error);
+      setLoadingModeSelection(false);
     }
   };
 
@@ -206,9 +222,13 @@ export default function SwiftTaste() {
   // 停留時間管理
   const startIdleTimer = () => {
     clearIdleTimer(); // 清除之前的計時器
+
+    // 最終推薦頁面使用10秒計時，其他頁面使用15秒
+    const timeout = phase === 'result' ? 10000 : 15000;
+
     const timer = setTimeout(() => {
       setShowIdleHint(true);
-    }, 15000); // 15秒後顯示提示
+    }, timeout);
     setIdleTimer(timer);
   };
 
@@ -305,7 +325,27 @@ export default function SwiftTaste() {
       await selectionHistoryService.saveBasicAnswers(currentSessionId, basicAnswersList);
     }
 
-    setPhase("funQuestions"); // 轉到趣味問題
+    // 立即顯示載入動畫 (準備趣味問題)
+    setLoadingTags(true);
+
+    // 選擇固定的3題趣味問題
+    const randomFunQuestions = getRandomFunQuestions(funQuestions, 3);
+    setSelectedFunQuestions(randomFunQuestions);
+    console.log('Selected fixed fun questions:', randomFunQuestions.map(q => q.text));
+
+    // 短暫延遲確保動畫顯示，然後切換到趣味問題
+    setTimeout(() => {
+      setLoadingTags(false);
+      if (randomFunQuestions.length > 0) {
+        setPhase("funQuestions"); // 轉到趣味問題
+      } else {
+        console.warn('No fun questions available, skipping to restaurants');
+        // 如果沒有趣味問題，直接跳到餐廳選擇
+        setLoadingRestaurantFilter(true);
+        filterRestaurantsByAnswers(basicAnswersList, []);
+        setPhase("restaurants");
+      }
+    }, 500);
   };
 
   const handleFunQuestionsComplete = async (answers) => {
@@ -330,6 +370,9 @@ export default function SwiftTaste() {
       return;
     }
 
+    // 立即顯示載入動畫
+    setLoadingRestaurantFilter(true);
+
     // 確保標籤映射已載入
     if (Object.keys(funQuestionTagsMap).length === 0 && !loadingTags) {
       console.log('Fun question tags not loaded, loading now...');
@@ -342,7 +385,6 @@ export default function SwiftTaste() {
 
   const filterRestaurantsByAnswers = async (basic, fun) => {
     console.log('Filtering restaurants with basic:', basic, 'fun:', fun);
-    setLoadingRestaurantFilter(true);
     
     try {
       // 處理答案格式 - 檢查是否已經是字串陣列
@@ -603,8 +645,24 @@ export default function SwiftTaste() {
   };
 
   const getRandomFunQuestions = (questions, count = 3) => {
-    const shuffled = [...questions].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
+    if (!Array.isArray(questions) || questions.length === 0) {
+      console.warn('No fun questions available');
+      return [];
+    }
+
+    // 確保不超過可用問題數量
+    const actualCount = Math.min(count, questions.length);
+
+    // 使用 Fisher-Yates 洗牌算法確保真正隨機
+    const shuffled = [...questions];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const selected = shuffled.slice(0, actualCount);
+    console.log(`Selected ${selected.length} fun questions from ${questions.length} available`);
+    return selected;
   };
 
   const handleSave = async (restaurant) => {
@@ -647,6 +705,12 @@ export default function SwiftTaste() {
     setPhase("selectMode");
     setSelectedMode(null);
     setUserAnswers([]);
+    setBasicAnswers([]);
+    setFunAnswers([]);
+    setSelectedFunQuestions([]);
+    setLoadingModeSelection(false);
+    basicAnswersRef.current = [];
+
     // 如果是多人模式，回到房間而不是回到起點
     if (selectedMode === "buddies" && roomId) {
       navigate(`/buddies?roomId=${roomId}`);
@@ -724,7 +788,7 @@ export default function SwiftTaste() {
 
       {phase === "funQuestions" && (
         <QuestionSwiperMotion
-          questions={getRandomFunQuestions(funQuestions, 3)}
+          questions={selectedFunQuestions.length > 0 ? selectedFunQuestions : []}
           onComplete={(answers) => {
             resetIdleTimer();
             handleFunQuestionsComplete(answers);
@@ -757,6 +821,7 @@ export default function SwiftTaste() {
           saved={JSON.parse(localStorage.getItem("savedRestaurants") || "[]")}
           alternatives={filteredRestaurants}
           onRetry={handleBackToStart}
+          onInteraction={resetIdleTimer} // 添加互動回調
         />
       )}
 
@@ -809,10 +874,17 @@ export default function SwiftTaste() {
       />
 
       {/* 餐廳篩選載入動畫 */}
-      <LoadingOverlay 
+      <LoadingOverlay
         show={loadingRestaurantFilter}
         message="分析您的喜好中"
         subMessage="正在根據您的選擇篩選最適合的餐廳..."
+      />
+
+      {/* 模式選擇載入動畫 */}
+      <LoadingOverlay
+        show={loadingModeSelection}
+        message="準備開始"
+        subMessage="正在初始化問題"
       />
     </div>
   );

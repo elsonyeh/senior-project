@@ -157,7 +157,7 @@ export default function QuestionSwiperMotion({ questions, onComplete, tutorialMo
   }
 
   if (remainingQuestions.length === 0) {
-    return <div>所有問題已回答，處理中...</div>;
+    return null; // 不顯示任何文字，讓切換動畫立即顯示
   }
 
   return (

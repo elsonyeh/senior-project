@@ -33,6 +33,14 @@ const IdleHint = ({ show, phase, onDismiss }) => {
           icon: "🍽️",
           action: "滑動做選擇"
         };
+      case 'result':
+      case 'finalRecommendation':
+        return {
+          title: "你的命定餐廳已選定！",
+          subtitle: "點選前往餐廳或再試一次",
+          icon: "🎯",
+          action: "點選按鈕操作"
+        };
       default:
         return {
           title: "繼續操作",
@@ -91,41 +99,43 @@ const IdleHint = ({ show, phase, onDismiss }) => {
             
             <h3 className="hint-title">{hintContent.title}</h3>
             <p className="hint-subtitle">{hintContent.subtitle}</p>
-            
-            {/* 滑動指示動畫 */}
-            <div className="swipe-animation">
-              <motion.div
-                className="swipe-demo"
-                animate={{
-                  x: [-30, 30, -30],
-                  opacity: [0.5, 1, 0.5]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatType: "loop",
-                  ease: "easeInOut"
-                }}
-              >
-                👆
-              </motion.div>
-              <div className="swipe-arrows">
-                <motion.span
-                  className="arrow-left"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+
+            {/* 滑動指示動畫 - 最終推薦頁面不顯示 */}
+            {phase !== 'finalRecommendation' && phase !== 'result' && (
+              <div className="swipe-animation">
+                <motion.div
+                  className="swipe-demo"
+                  animate={{
+                    x: [-30, 30, -30],
+                    opacity: [0.5, 1, 0.5]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatType: "loop",
+                    ease: "easeInOut"
+                  }}
                 >
-                  ←
-                </motion.span>
-                <motion.span
-                  className="arrow-right"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
-                >
-                  →
-                </motion.span>
+                  👆
+                </motion.div>
+                <div className="swipe-arrows">
+                  <motion.span
+                    className="arrow-left"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+                  >
+                    ←
+                  </motion.span>
+                  <motion.span
+                    className="arrow-right"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+                  >
+                    →
+                  </motion.span>
+                </div>
               </div>
-            </div>
+            )}
             
             <motion.button
               className="hint-action-button"

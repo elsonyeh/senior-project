@@ -9,6 +9,7 @@ export default function RecommendationResult({
   extraButton,
   votes = {}, // 新增投票數據
   roomMode = false,
+  onInteraction, // 新增互動回調
 }) {
   const [selected, setSelected] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -91,6 +92,7 @@ export default function RecommendationResult({
   }, [showConfetti]); // 只依賴showConfetti
 
   const goToGoogleMaps = (place) => {
+    onInteraction?.(); // 觸發互動回調
     const query = encodeURIComponent(place);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${query}`,
@@ -100,6 +102,8 @@ export default function RecommendationResult({
 
   // 選擇另一家餐廳
   const selectAnother = () => {
+    onInteraction?.(); // 觸發互動回調
+
     if (alternativesPool.length === 0) {
       setNoMoreAlternatives(true);
       return;
@@ -107,14 +111,14 @@ export default function RecommendationResult({
 
     // 從顯示餐廳中移除第一家
     const updatedDisplayed = [...displayedAlternatives.slice(1)];
-    
+
     // 添加一家尚未顯示的餐廳到顯示列表末尾
     const newRestaurantToDisplay = alternativesPool[0];
     updatedDisplayed.push(newRestaurantToDisplay);
-    
+
     // 更新剩餘的備選餐廳池
     const updatedPool = alternativesPool.slice(1);
-    
+
     // 更新狀態
     setDisplayedAlternatives(updatedDisplayed);
     setAlternativesPool(updatedPool);
@@ -158,7 +162,10 @@ export default function RecommendationResult({
               className="btn-restart"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={onRetry}
+              onClick={() => {
+                onInteraction?.(); // 觸發互動回調
+                onRetry();
+              }}
             >
               🔄 再試一次
             </motion.button>
@@ -327,7 +334,10 @@ export default function RecommendationResult({
           className="btn-restart"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={onRetry}
+          onClick={() => {
+            onInteraction?.(); // 觸發互動回調
+            onRetry();
+          }}
         >
           🔁 再試一次
         </motion.button>
