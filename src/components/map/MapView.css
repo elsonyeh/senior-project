@@ -323,6 +323,287 @@
   }
 }
 
+/* =================== Google Places 專用樣式優化 =================== */
+
+/* 只針對Google Places餐廳的InfoWindow容器進行優化 */
+.google-places-info-window {
+  width: 320px !important;
+  max-width: 320px !important;
+  min-width: 320px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif !important;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+/* Google Places專用的Google Maps InfoWindow容器樣式覆蓋 */
+.google-places-info-window ~ div.gm-style div.gm-style-iw-d,
+div.gm-style div.gm-style-iw-d:has(.google-places-info-window) {
+  width: 320px !important;
+  max-width: 320px !important;
+  min-width: 320px !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18) !important;
+  overflow: hidden !important;
+}
+
+div.gm-style div.gm-style-iw-c:has(.google-places-info-window) {
+  width: 320px !important;
+  max-width: 320px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+}
+
+/* Google Places圖片 */
+.google-places-photo {
+  width: 100% !important;
+  height: 160px !important;
+  object-fit: cover;
+  display: block;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Google Places內容區域 */
+.google-places-content {
+  padding: 16px 20px 20px 20px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+/* Google Places名稱 */
+.google-places-name {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #1a202c !important;
+  margin: 0 0 8px 0 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Google Places分類 */
+.google-places-category {
+  font-size: 0.8rem !important;
+  color: #667eea !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(102, 126, 234, 0.08) 100%) !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  display: inline-block !important;
+  margin: 0 0 10px 0 !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(102, 126, 234, 0.15) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Google Places評分區域 */
+.google-places-rating {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+  padding: 8px 12px !important;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 193, 7, 0.04) 100%) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 193, 7, 0.2) !important;
+}
+
+.google-places-stars {
+  color: #ffc107 !important;
+  font-size: 1rem !important;
+  letter-spacing: 2px !important;
+  text-shadow: 0 1px 2px rgba(255, 193, 7, 0.3) !important;
+}
+
+.google-places-rating-text {
+  color: #4a5568 !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  margin-left: auto !important;
+}
+
+/* Google Places地址 */
+.google-places-address {
+  color: #718096 !important;
+  font-size: 0.9rem !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+
+.google-places-address::before {
+  content: '📍';
+  font-size: 0.8rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Google Places電話 */
+.google-places-phone {
+  color: #718096 !important;
+  font-size: 0.9rem !important;
+  margin: 0 0 16px 0 !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.google-places-phone::before {
+  content: '📞';
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* Google Places操作區域 */
+.google-places-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  margin-top: 16px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Google Places收藏區域 */
+.google-places-favorite-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding: 16px !important;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.06) 0%, rgba(255, 107, 53, 0.03) 100%) !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 107, 53, 0.2) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Google Places選擇器 */
+.google-places-select {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  border: 1px solid rgba(255, 107, 53, 0.3) !important;
+  border-radius: 12px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #333 !important;
+  outline: none !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.google-places-select:hover {
+  border-color: rgba(255, 107, 53, 0.5) !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+.google-places-select:focus {
+  border-color: #ff6b35 !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15), 0 4px 16px rgba(255, 107, 53, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Google Places加入清單按鈕 */
+.google-places-add-btn {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
+}
+
+.google-places-add-btn:hover {
+  background: linear-gradient(135deg, #e55a2b 0%, #d14d1f 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4) !important;
+}
+
+/* Google Places收藏按鈕 */
+.google-places-favorite-btn {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  border: 1px solid rgba(255, 107, 53, 0.3) !important;
+  border-radius: 12px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #666 !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+.google-places-favorite-btn:hover {
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%) !important;
+  color: white !important;
+  border-color: #ff6b35 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
+}
+
+.google-places-favorite-btn.favorited {
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%) !important;
+  color: white !important;
+  border-color: #ff6b35 !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
+}
+
+/* Google Places導航按鈕 */
+.google-places-navigate-btn {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  background: linear-gradient(135deg, #007AFF 0%, #0056CC 100%) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3) !important;
+}
+
+.google-places-navigate-btn:hover {
+  background: linear-gradient(135deg, #0056CC 0%, #004299 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4) !important;
+}
+
 /* 深色模式支援 */
 @media (prefers-color-scheme: dark) {
   .map-loading {
@@ -336,5 +617,91 @@
   .loading-spinner {
     border-color: #404040;
     border-top-color: #ff6b35;
+  }
+
+  /* Google Places 深色模式 */
+  .google-places-info-window {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%) !important;
+  }
+
+  div.gm-style div.gm-style-iw-c:has(.google-places-info-window) {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .google-places-content {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%) !important;
+  }
+
+  .google-places-name {
+    color: #f7fafc !important;
+  }
+
+  .google-places-category {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(102, 126, 234, 0.1) 100%) !important;
+    border: 1px solid rgba(102, 126, 234, 0.25) !important;
+    color: #a0aec0 !important;
+  }
+
+  .google-places-rating {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%) !important;
+    border: 1px solid rgba(255, 193, 7, 0.25) !important;
+  }
+
+  .google-places-rating-text {
+    color: #a0aec0 !important;
+  }
+
+  .google-places-address,
+  .google-places-phone {
+    color: #a0aec0 !important;
+  }
+
+  .google-places-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .google-places-favorite-section {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(255, 107, 53, 0.04) 100%) !important;
+    border: 1px solid rgba(255, 107, 53, 0.25) !important;
+  }
+
+  .google-places-select,
+  .google-places-favorite-btn {
+    background: rgba(45, 55, 72, 0.9) !important;
+    color: #f7fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .google-places-select:focus,
+  .google-places-favorite-btn:hover {
+    border-color: rgba(255, 107, 53, 0.5) !important;
+  }
+}
+
+/* 響應式設計 - 只針對Google Places */
+@media (max-width: 480px) {
+  .google-places-info-window {
+    width: 280px !important;
+    max-width: 280px !important;
+    min-width: 280px !important;
+  }
+
+  div.gm-style div.gm-style-iw-d:has(.google-places-info-window),
+  div.gm-style div.gm-style-iw-c:has(.google-places-info-window) {
+    width: 280px !important;
+    max-width: 280px !important;
+  }
+
+  .google-places-content {
+    padding: 14px 16px 18px 16px !important;
+  }
+
+  .google-places-name {
+    font-size: 1.1rem !important;
+  }
+
+  .google-places-favorite-section {
+    padding: 12px !important;
   }
 }

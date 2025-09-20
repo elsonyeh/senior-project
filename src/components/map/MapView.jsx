@@ -329,7 +329,7 @@ export default function MapView({
     if (!infoWindowRef.current) return;
 
     const content = `
-      <div class="map-info-window">
+      <div class="map-info-window database-restaurant-info-window" id="database-restaurant-${restaurant.id}">
         <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">${restaurant.name}</h3>
         <p style="margin: 4px 0; font-size: 14px; color: #666;">${restaurant.address || '地址未提供'}</p>
         ${restaurant.category ? `<p style="margin: 4px 0; font-size: 12px; color: #888;">${restaurant.category}</p>` : ''}
@@ -472,40 +472,40 @@ export default function MapView({
       : '';
 
     const contentString = `
-      <div class="fixed-width-info-window">
+      <div class="fixed-width-info-window google-places-info-window" id="google-places-${place.place_id}">
         <button class="custom-close-btn" onclick="closeInfoWindow()">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
             <path d="M11 1L1 11M1 1l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
-        ${photo ? `<img src="${photo}" alt="${place.name}" class="info-place-photo" />` : ''}
-        <div class="info-place-content">
-          <h3 class="info-place-name">${place.name}</h3>
-          ${place.category ? `<p class="info-place-category">${place.category}</p>` : ''}
-          <div class="info-place-rating">
-            <span class="info-rating-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
-            <span class="info-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount})` : ''}</span>
+        ${photo ? `<img src="${photo}" alt="${place.name}" class="info-place-photo google-places-photo" />` : ''}
+        <div class="info-place-content google-places-content">
+          <h3 class="info-place-name google-places-name">${place.name}</h3>
+          ${place.category ? `<p class="info-place-category google-places-category">${place.category}</p>` : ''}
+          <div class="info-place-rating google-places-rating">
+            <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
+            <span class="info-rating-text google-places-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount})` : ''}</span>
           </div>
-          <p class="info-place-address">${place.formatted_address || ''}</p>
-          ${place.formatted_phone_number ? `<p class="info-place-phone">${place.formatted_phone_number}</p>` : ''}
+          <p class="info-place-address google-places-address">${place.formatted_address || ''}</p>
+          ${place.formatted_phone_number ? `<p class="info-place-phone google-places-phone">${place.formatted_phone_number}</p>` : ''}
 
-          <div class="info-place-actions">
+          <div class="info-place-actions google-places-actions">
             ${user && favoriteLists.length > 0 ? `
-              <div class="favorite-section">
-                <select class="favorite-list-select" id="favoriteListSelect">
+              <div class="favorite-section google-places-favorite-section">
+                <select class="favorite-list-select google-places-select" id="favoriteListSelect">
                   <option value="">選擇收藏清單</option>
                   ${favoriteListsOptions}
                 </select>
-                <button class="add-to-list-btn" onclick="addToFavoriteList('${place.place_id}')">
+                <button class="add-to-list-btn google-places-add-btn" onclick="addToFavoriteList('${place.place_id}')">
                   📌 加入清單
                 </button>
               </div>
             ` : `
-              <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleFavorite('${place.place_id}')">
+              <button class="favorite-btn google-places-favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleFavorite('${place.place_id}')">
                 ${isFavorite ? '♥' : '♡'} ${isFavorite ? '已收藏' : '收藏'}
               </button>
             `}
-            <button class="info-navigate-btn" onclick="openNavigation(${place.isFromDatabase ? place.latitude : place.geometry.location.lat()}, ${place.isFromDatabase ? place.longitude : place.geometry.location.lng()})">
+            <button class="info-navigate-btn google-places-navigate-btn" onclick="openNavigation(${place.isFromDatabase ? place.latitude : place.geometry.location.lat()}, ${place.isFromDatabase ? place.longitude : place.geometry.location.lng()})">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
