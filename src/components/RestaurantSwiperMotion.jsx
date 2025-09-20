@@ -47,18 +47,29 @@ export default function RestaurantSwiperMotion({
 
   const background = (r) => {
     // 優先使用 primaryImage，然後是 allImages 中的第一張，最後是預設圖片
-    let imageUrl = r.primaryImage?.image_url || 
+    let imageUrl = r.primaryImage?.image_url ||
                    (r.allImages && r.allImages.length > 0 ? r.allImages[0]?.image_url : null) ||
                    (r.restaurant_images && r.restaurant_images.length > 0 ? r.restaurant_images[0]?.image_url : null) ||
                    r.photoURL || // 支援舊格式
                    r.image_url || // 支援其他格式
+                   r.photo || // 支援教學模式的格式
+                   r.photos?.[0] || // 支援教學模式的格式
                    `https://source.unsplash.com/400x300/restaurant,food/?${r.name || 'restaurant'}`;
-    
+
     // 確保 URL 有效
     if (!imageUrl || imageUrl === 'null') {
       imageUrl = `https://source.unsplash.com/400x300/restaurant,food/?${r.name || 'restaurant'}`;
     }
-    
+
+    // 添加除錯日誌
+    console.log(`Restaurant ${r.name} background image:`, {
+      primaryImage: r.primaryImage?.image_url,
+      allImages: r.allImages?.length,
+      photo: r.photo,
+      photos: r.photos?.length,
+      finalUrl: imageUrl
+    });
+
     return {
       backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${imageUrl})`,
       backgroundSize: 'cover',

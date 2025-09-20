@@ -210,8 +210,8 @@
 /* 📦 包住文字的模糊區塊 */
 .restaurant-info-blur {
   backdrop-filter: blur(8px);
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 1.5rem;
   border-radius: 16px;
   position: relative;

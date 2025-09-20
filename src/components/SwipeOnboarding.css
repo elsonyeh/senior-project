@@ -3,7 +3,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
@@ -13,20 +13,29 @@
   z-index: 10000;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .onboarding-content {
   text-align: center;
-  max-width: 350px;
-  padding: 40px 20px;
-  position: relative;
+  max-width: 90vw;
   width: 100%;
+  height: 100vh;
+  padding: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .skip-button {
-  position: absolute;
-  top: -20px;
-  right: 0;
+  position: fixed;
+  top: 20px;
+  right: 20px;
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: none;
@@ -36,6 +45,7 @@
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
+  z-index: 10001;
 }
 
 .skip-button:hover {
@@ -44,21 +54,28 @@
 }
 
 .step-content {
-  min-height: 400px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
+  width: 100%;
+  position: absolute;
+  top: 80px;
+  left: 0;
+  right: 0;
+  height: calc(100vh - 220px);
 }
 
 .step-animation {
   position: relative;
-  height: 200px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   margin-bottom: 20px;
+  width: 100%;
+  max-height: 50vh;
 }
 
 .step-icon {
@@ -85,11 +102,14 @@
 /* 卡片演示容器 */
 .card-demo-container {
   position: relative;
-  height: 350px;
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
+  max-height: 55vh;
+  min-height: 320px;
+  margin-top: -30px;
 }
 
 .demo-card-wrapper {
@@ -99,83 +119,92 @@
 
 /* 演示卡片樣式 */
 .demo-card {
-  width: 350px;
-  height: 280px;
-  max-width: none;
-  max-height: none;
-  padding: 25px;
+  width: min(320px, 80vw);
+  height: min(480px, 55vh);
+  max-width: 360px;
+  max-height: 540px;
+  padding: 8vh 4vw 2vh;
   font-size: 1rem;
   background: white;
   color: #333;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   text-align: center;
+  box-sizing: border-box;
+  aspect-ratio: 21/32;
 }
 
-.demo-card .question-wrapper h2 {
+.onboarding-demo-card .question-wrapper h2 {
   font-size: 1.6rem;
   margin-bottom: 20px;
   color: #333;
   font-weight: 600;
 }
 
-.demo-card .options-display {
+.onboarding-demo-card .question-wrapper .question-text {
+  color: #333;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.onboarding-demo-card .options-display {
   font-size: 1.2rem;
   margin: 20px 0;
 }
 
-.demo-card .options-display .left,
-.demo-card .options-display .right {
+.onboarding-demo-card .options-display .left,
+.onboarding-demo-card .options-display .right {
   padding: 12px 10px;
   font-size: 1.1rem;
   font-weight: 500;
+  color: #333;
 }
 
 /* 餐廳卡片樣式 */
-.demo-card .restaurant-info {
+.onboarding-demo-card .restaurant-info {
   width: 100%;
   text-align: center;
 }
 
-.demo-card .restaurant-name {
+.onboarding-demo-card .restaurant-name {
   font-size: 1.8rem;
   margin-bottom: 12px;
   color: #333;
   font-weight: 700;
 }
 
-.demo-card .restaurant-category {
+.onboarding-demo-card .restaurant-category {
   color: #666;
   margin-bottom: 12px;
   font-size: 1.1rem;
   font-weight: 500;
 }
 
-.demo-card .restaurant-rating {
+.onboarding-demo-card .restaurant-rating {
   color: #ffc107;
   margin-bottom: 12px;
   font-weight: 600;
   font-size: 1.2rem;
 }
 
-.demo-card .restaurant-address {
+.onboarding-demo-card .restaurant-address {
   color: #888;
   font-size: 1rem;
   margin-bottom: 16px;
 }
 
-.demo-card .restaurant-tags {
+.onboarding-demo-card .restaurant-tags {
   display: flex;
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
 }
 
-.demo-card .tag {
+.onboarding-demo-card .tag {
   background: #e9ecef;
   color: #495057;
   padding: 6px 12px;
@@ -206,13 +235,13 @@
 }
 
 .right-indicator {
-  top: 20%;
-  right: -60px;
+  top: 35%;
+  right: 5px;
 }
 
 .left-indicator {
-  top: 20%;
-  left: -60px;
+  top: 35%;
+  left: 5px;
 }
 
 .like-indicator {
@@ -227,33 +256,19 @@
   background: rgba(108, 117, 125, 0.9);
 }
 
-/* 滑動演示卡片（舊版本，保持兼容） */
-.swipe-demo-card {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-}
-
-.demo-card-content {
-  font-size: 2rem;
-}
 
 /* 步驟指示器 */
 .step-indicators {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin: 20px 0 30px 0;
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10001;
+  padding: 15px 0;
+  margin: 10px 0;
 }
 
 .step-indicator {
@@ -277,6 +292,13 @@
 /* 操作按鈕 */
 .onboarding-actions {
   width: 100%;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .next-button,
@@ -318,53 +340,51 @@
 /* 滑動提示 */
 .swipe-hint {
   position: absolute;
-  bottom: 60px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   text-align: center;
+  z-index: 10001;
+  pointer-events: none;
+  background: transparent;
 }
 
 .finger-icon {
-  font-size: 2rem;
-  margin-bottom: 10px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-.swipe-text {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  margin: 0;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-size: 2.5rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
 }
 
 /* 響應式設計 */
 @media (max-width: 480px) {
   .onboarding-content {
-    max-width: 320px;
-    padding: 30px 15px;
+    max-width: 100vw;
+    padding: 15px;
   }
-  
+
   .step-title {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
-  
+
   .step-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
-  
+
   .step-icon {
     font-size: 3rem;
   }
-  
+
   /* 手機版卡片演示 */
   .card-demo-container {
-    height: 250px;
+    min-height: 280px;
+    max-height: 45vh;
   }
-  
+
   .demo-card {
-    width: 240px;
-    height: 160px;
-    padding: 15px;
+    width: min(220px, 70vw);
+    height: min(330px, 40vh);
+    max-width: 240px;
+    max-height: 360px;
+    padding: 6vh 3vw 1.5vh;
   }
   
   .demo-card .restaurant-name {
@@ -381,13 +401,13 @@
   
   /* 手機版滑動指示器 */
   .right-indicator {
-    right: -50px;
+    right: 10px;
     font-size: 0.8rem;
     padding: 6px 10px;
   }
-  
+
   .left-indicator {
-    left: -50px;
+    left: 10px;
     font-size: 0.8rem;
     padding: 6px 10px;
   }
@@ -396,15 +416,6 @@
   .skip-indicator {
     font-size: 0.8rem;
     padding: 6px 10px;
-  }
-  
-  .swipe-demo-card {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .demo-card-content {
-    font-size: 1.5rem;
   }
   
   .next-button,
@@ -416,26 +427,40 @@
 
 @media (max-height: 600px) {
   .step-content {
-    min-height: 300px;
+    min-height: 50vh;
+    max-height: 70vh;
   }
-  
+
   .step-animation {
-    height: 150px;
+    max-height: 35vh;
   }
-  
+
   .step-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+  }
+
+  .step-title {
+    font-size: 1.3rem;
+    margin: 10px 0 5px 0;
+  }
+
+  .step-subtitle {
+    font-size: 0.9rem;
     margin-bottom: 15px;
   }
-  
-  .step-title {
-    font-size: 1.5rem;
-    margin: 15px 0 8px 0;
+
+  .card-demo-container {
+    min-height: 200px;
+    max-height: 35vh;
   }
-  
-  .step-subtitle {
-    font-size: 1rem;
-    margin-bottom: 20px;
+
+  .demo-card {
+    width: min(200px, 65vw);
+    height: min(300px, 30vh);
+    max-width: 220px;
+    max-height: 330px;
+    padding: 4vh 2vw 1vh;
   }
 }
 
@@ -471,89 +496,75 @@
   }
 }
 
-/* 互動式卡片滑動提示 */
-.interactive-card {
-  position: relative;
-  cursor: grab;
-}
-
-.interactive-card:active {
-  cursor: grabbing;
-}
-
-.swipe-hints {
-  position: absolute;
-  bottom: 20px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 30px;
-  pointer-events: none;
-  opacity: 0.8;
-}
-
-.hint-left,
-.hint-right {
-  font-size: 1.5rem;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(5px);
-  animation: pulse-hint 2s infinite;
-}
-
-.hint-left {
-  background: rgba(255, 107, 107, 0.8);
-}
-
-.hint-right {
-  background: rgba(76, 175, 80, 0.8);
-}
-
-@keyframes pulse-hint {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-}
 
 /* 教學模式特殊樣式 */
 .tutorial-swiper-container {
   position: relative;
   width: 100%;
-  height: 350px;
+  flex: 1;
+  max-height: 55vh;
+  min-height: 320px;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: 0;
 }
 
 .tutorial-swiper-container .motion-swiper-container {
   position: relative;
-  width: 380px;
-  height: 320px;
+  width: min(360px, 85vw);
+  height: min(540px, 55vh);
   padding: 0;
   background: transparent;
 }
 
 .tutorial-swiper-container .motion-card {
-  width: 350px;
-  height: 280px;
-  max-width: none;
-  max-height: none;
-  padding: 25px;
+  width: min(320px, 80vw);
+  height: min(480px, 55vh);
+  max-width: 360px;
+  max-height: 540px;
+  padding: 8vh 4vw 2vh;
   font-size: 1rem;
   position: relative;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  aspect-ratio: 21/32;
+  background: white;
+  color: #333;
+}
+
+/* 教學卡片文字樣式 */
+.tutorial-swiper-container .motion-card .question-wrapper h2,
+.tutorial-swiper-container .motion-card .question-text {
+  color: #333;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.tutorial-swiper-container .motion-card .options-display .left,
+.tutorial-swiper-container .motion-card .options-display .right {
+  color: #333;
+  font-weight: 500;
+}
+
+.tutorial-swiper-container .motion-card .restaurant-name {
+  color: #333;
+  font-weight: 700;
+}
+
+.tutorial-swiper-container .motion-card .restaurant-category,
+.tutorial-swiper-container .motion-card .restaurant-address {
+  color: #666;
+}
+
+.tutorial-swiper-container .motion-card .restaurant-rating {
+  color: #ffc107;
+}
+
+.tutorial-swiper-container .motion-card .tag {
+  background: #e9ecef;
+  color: #495057;
 }
 
 /* 為教學卡片添加特殊提示 */
