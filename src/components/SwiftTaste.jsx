@@ -717,13 +717,7 @@ export default function SwiftTaste() {
     }
   };
 
-  if ((loading || questionsLoading) && phase === "selectMode") {
-    return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        <h2>載入中...</h2>
-      </div>
-    );
-  }
+  // 使用LoadingOverlay替代文字載入提示
 
   if (error) {
     return (
@@ -885,6 +879,13 @@ export default function SwiftTaste() {
         show={loadingModeSelection}
         message="準備開始"
         subMessage="正在初始化問題"
+      />
+
+      {/* 初始載入動畫 - selectMode階段的資料載入 */}
+      <LoadingOverlay
+        show={(loading || questionsLoading) && phase === "selectMode"}
+        message="載入中"
+        subMessage="正在準備選擇模式..."
       />
     </div>
   );

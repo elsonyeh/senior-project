@@ -11,6 +11,7 @@ import ContactPage from '../components/profile/ContactPage';
 import AboutPage from '../components/profile/AboutPage';
 import UserProfileEditPage from '../components/profile/UserProfilePage';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import LoadingOverlay from '../components/LoadingOverlay';
 import { authService } from '../services/authService';
 import {
   IoLogInOutline,
@@ -33,6 +34,31 @@ export default function UserProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollTop, setLastScrollTop] = useState(0);
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+
+  // 處理載入動畫的延遲邏輯
+  useEffect(() => {
+    let timer;
+
+    if (loading) {
+      // 延遲0.1秒後才顯示載入動畫
+      timer = setTimeout(() => {
+        setShowLoadingOverlay(true);
+      }, 100);
+    } else {
+      // 立即隱藏載入動畫
+      setShowLoadingOverlay(false);
+      if (timer) {
+        clearTimeout(timer);
+      }
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [loading]);
 
   // 滾動檢測 hook
   useEffect(() => {
@@ -364,14 +390,7 @@ export default function UserProfilePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="profile-loading">
-        <div className="loading-spinner"></div>
-        <p>載入中...</p>
-      </div>
-    );
-  }
+  // 使用LoadingOverlay替代簡單的載入提示
 
   return (
     <div className="user-profile-page">
@@ -379,7 +398,7 @@ export default function UserProfilePage() {
       {notification.show && (
         <div className={`notification ${notification.type} show`}>
           <span>{notification.message}</span>
-          <button 
+          <button
             className="notification-close"
             onClick={() => setNotification({ show: false, message: '', type: 'success' })}
           >
@@ -388,31 +407,36 @@ export default function UserProfilePage() {
         </div>
       )}
 
-      {/* 未登入狀態 */}
-      {!user ? (
-        <div className="profile-auth-container">
-          <div className="auth-welcome">
-            <div className="welcome-icon">
-              <IoPersonOutline />
+      {/* 只有在不載入時才顯示內容 */}
+      {!loading && (
+        <>
+          {/* 未登入狀態 */}
+          {!user ? (
+            <div className="profile-auth-container">
+              <div className="auth-welcome">
+                <div className="welcome-icon">
+                  <IoPersonOutline />
+                </div>
+                <h2 className="welcome-title">歡迎使用 SwiftTaste</h2>
+                <p className="welcome-description">
+                  登入後即可管理您的收藏清單、查看SwiftTaste歷史記錄，享受更個人化的美食探索體驗
+                </p>
+                <button
+                  className="auth-action-btn"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  <IoLogInOutline />
+                  登入 / 註冊
+                </button>
+              </div>
             </div>
-            <h2 className="welcome-title">歡迎使用 SwiftTaste</h2>
-            <p className="welcome-description">
-              登入後即可管理您的收藏清單、查看SwiftTaste歷史記錄，享受更個人化的美食探索體驗
-            </p>
-            <button
-              className="auth-action-btn"
-              onClick={() => setShowAuthModal(true)}
-            >
-              <IoLogInOutline />
-              登入 / 註冊
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* 已登入狀態 */
-        <div className="profile-main-container">
-          {renderCurrentView()}
-        </div>
+          ) : (
+            /* 已登入狀態 */
+            <div className="profile-main-container">
+              {renderCurrentView()}
+            </div>
+          )}
+        </>
       )}
 
       {/* 登入/註冊模態框 */}
@@ -447,6 +471,13 @@ export default function UserProfilePage() {
         confirmText="確認刪除"
         cancelText="取消"
         type="danger"
+      />
+
+      {/* 個人頁面載入動畫 - 延遲0.1秒後顯示 */}
+      <LoadingOverlay
+        show={showLoadingOverlay}
+        message="載入個人資料"
+        subMessage="正在檢查登入狀態..."
       />
     </div>
   );

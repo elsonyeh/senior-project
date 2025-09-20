@@ -477,7 +477,7 @@ export default function AdminDashboard() {
                         <td>{room.memberCount}</td>
                         <td>
                           <span className={`status-${room.status}`}>
-                            {room.status === 'waiting' ? '等待中' : 
+                            {room.status === 'waiting' ? '準備中' :
                              room.status === 'vote' ? '投票中' :
                              room.status === 'recommend' ? '推薦中' :
                              room.status === 'completed' ? '已完成' : room.status}
