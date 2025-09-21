@@ -118,16 +118,39 @@ export default function MapView({
             const { places } = await Place.searchNearby(request);
             clearTimeout(timeoutId);
             console.log('Google Places API (New) Results:', places?.length);
+            console.log('First place object:', places?.[0]);
 
             if (places && places.length > 0) {
               // 轉換為舊格式以保持相容性
               const convertedResults = places.map(place => {
-                // 確保坐標是有效的數字
-                const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
-                const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+                // 新版API的坐標訪問方式
+                let lat = null;
+                let lng = null;
 
-                if (lat === null || lng === null) {
-                  console.warn('Invalid coordinates for place:', place.displayName, { lat, lng });
+                // 嘗試多種坐標訪問方式
+                if (place.location) {
+                  // 方式1: 直接訪問 lat/lng 屬性
+                  if (typeof place.location.lat === 'number' && typeof place.location.lng === 'number') {
+                    lat = place.location.lat;
+                    lng = place.location.lng;
+                  }
+                  // 方式2: 調用 lat()/lng() 函數
+                  else if (typeof place.location.lat === 'function' && typeof place.location.lng === 'function') {
+                    lat = place.location.lat();
+                    lng = place.location.lng();
+                  }
+                  // 方式3: 檢查 toJSON() 方法
+                  else if (typeof place.location.toJSON === 'function') {
+                    const coords = place.location.toJSON();
+                    lat = coords.lat;
+                    lng = coords.lng;
+                  }
+                }
+
+                console.log('Place coordinates for', place.displayName, ':', { lat, lng, location: place.location });
+
+                if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+                  console.warn('Invalid coordinates for place:', place.displayName, { lat, lng, location: place.location });
                   return null;
                 }
 
@@ -135,12 +158,13 @@ export default function MapView({
                   name: place.displayName,
                   geometry: {
                     location: {
-                      lat: () => lat,
-                      lng: () => lng
+                      lat: lat,
+                      lng: lng
                     }
                   },
                   rating: place.rating,
                   place_id: place.id,
+                  place_obj: place, // Store the original Place object
                   user_ratings_total: place.userRatingCount
                 };
               }).filter(Boolean); // 過濾掉null值
@@ -169,7 +193,8 @@ export default function MapView({
             .sort((a, b) => (b.rating || 0) - (a.rating || 0))
             .slice(0, 20);
 
-          sortedResults.forEach(place => {
+          sortedResults.forEach((place, index) => {
+            console.log(`Creating Google Places marker ${index + 1}:`, place.name, place.place_id);
             createMarker(place, 'google');
           });
 
@@ -218,12 +243,28 @@ export default function MapView({
 
       if (places && places.length > 0) {
         places.forEach(place => {
-          // 驗證坐標有效性
-          const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
-          const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+          // 驗證坐標有效性 - 使用相同的多重檢測邏輯
+          let lat = null;
+          let lng = null;
 
-          if (lat === null || lng === null) {
-            console.warn('Invalid coordinates for fallback place:', place.displayName, { lat, lng });
+          if (place.location) {
+            if (typeof place.location.lat === 'number' && typeof place.location.lng === 'number') {
+              lat = place.location.lat;
+              lng = place.location.lng;
+            }
+            else if (typeof place.location.lat === 'function' && typeof place.location.lng === 'function') {
+              lat = place.location.lat();
+              lng = place.location.lng();
+            }
+            else if (typeof place.location.toJSON === 'function') {
+              const coords = place.location.toJSON();
+              lat = coords.lat;
+              lng = coords.lng;
+            }
+          }
+
+          if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+            console.warn('Invalid coordinates for fallback place:', place.displayName, { lat, lng, location: place.location });
             return;
           }
 
@@ -231,12 +272,13 @@ export default function MapView({
             name: place.displayName,
             geometry: {
               location: {
-                lat: () => lat,
-                lng: () => lng
+                lat: lat,
+                lng: lng
               }
             },
             rating: place.rating,
             place_id: place.id,
+            place_obj: place, // Store the original Place object
             formatted_address: place.formattedAddress
           };
           createMarker(convertedPlace, 'google-fallback');
@@ -328,27 +370,136 @@ export default function MapView({
   const showDatabaseRestaurantInfo = useCallback((restaurant, marker) => {
     if (!infoWindowRef.current) return;
 
-    const content = `
-      <div class="database-restaurant-info-window" id="database-restaurant-${restaurant.id}">
-        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; padding: 16px 16px 0 16px;">${restaurant.name}</h3>
-        <p style="margin: 4px 0; font-size: 14px; color: #666; padding: 0 16px;">${restaurant.address || '地址未提供'}</p>
-        ${restaurant.category ? `<p style="margin: 4px 0; font-size: 12px; color: #888; padding: 0 16px;">${restaurant.category}</p>` : ''}
-        ${restaurant.rating ? `<p style="margin: 4px 0; font-size: 12px; padding: 0 16px;"><span style="color: #ffa500;">★</span> ${restaurant.rating}</p>` : ''}
-        <p style="margin: 8px 0 4px 0; font-size: 11px; color: #999; padding: 0 16px 16px 16px;">來源：資料庫</p>
+    console.log('showDatabaseRestaurantInfo called:', restaurant.name);
+
+    const isFavorite = favorites.some(fav =>
+      fav.place_id === restaurant.id || fav.name === restaurant.name
+    );
+
+    // 處理圖片 - 優先使用餐廳資料庫的圖片
+    let photo = null;
+    if (restaurant.primaryImage?.image_url) {
+      photo = restaurant.primaryImage.image_url;
+    }
+
+    const rating = restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A';
+
+    // 生成收藏清單選項
+    const favoriteListsOptions = user && favoriteLists.length > 0
+      ? favoriteLists.map(list =>
+          `<option value="${list.list_id}">${list.name} (${list.favorite_list_places?.length || 0})</option>`
+        ).join('')
+      : '';
+
+    const contentString = `
+      <div class="google-places-info-window" id="database-restaurant-${restaurant.id}">
+        <button class="custom-close-btn" onclick="closeInfoWindow()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <path d="M11 1L1 11M1 1l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        ${photo ? `<img src="${photo}" alt="${restaurant.name}" class="info-place-photo google-places-photo" />` : ''}
+        <div class="info-place-content google-places-content">
+          <h3 class="info-place-name google-places-name">${restaurant.name}</h3>
+          ${restaurant.category ? `<p class="info-place-category google-places-category">${restaurant.category}</p>` : ''}
+          <div class="info-place-rating google-places-rating">
+            <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(restaurant.rating || 0))}${'☆'.repeat(5 - Math.floor(restaurant.rating || 0))}</span>
+            <span class="info-rating-text google-places-rating-text">${rating}</span>
+          </div>
+          <p class="info-place-address google-places-address">${restaurant.address || '地址未提供'}</p>
+
+          <div class="info-place-actions google-places-actions">
+            ${user && favoriteLists.length > 0 ? `
+              <div class="favorite-section google-places-favorite-section">
+                <select class="favorite-list-select google-places-select" id="databaseFavoriteListSelect">
+                  <option value="">選擇收藏清單</option>
+                  ${favoriteListsOptions}
+                </select>
+                <button class="add-to-list-btn google-places-add-btn" onclick="addToDatabaseFavoriteList('${restaurant.id}')">
+                  📌 加入清單
+                </button>
+              </div>
+            ` : `
+              <button class="favorite-btn google-places-favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleDatabaseFavorite('${restaurant.id}')">
+                ${isFavorite ? '♥' : '♡'} ${isFavorite ? '已收藏' : '收藏'}
+              </button>
+            `}
+            <button class="info-navigate-btn google-places-navigate-btn" onclick="openNavigation(${restaurant.latitude}, ${restaurant.longitude})">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              前往餐廳
+            </button>
+          </div>
+          <p style="color: #a0aec0; font-size: 0.75rem; margin: 16px 0 0 0; padding: 8px 12px; background: rgba(160, 174, 192, 0.1); border-radius: 8px; text-align: center; font-weight: 500;">來源：資料庫</p>
+        </div>
       </div>
     `;
 
-    infoWindowRef.current.setContent(content);
+    infoWindowRef.current.setContent(contentString);
     infoWindowRef.current.open(googleMapRef.current, marker);
 
-    // 為資料庫餐廳隱藏 gm-style-iw-ch 容器
+    // 移除Database Restaurant InfoWindow的padding-top
     setTimeout(() => {
       const iwCh = document.querySelector('.gm-style-iw-ch');
-      if (iwCh && document.querySelector('.database-restaurant-info-window')) {
-        iwCh.style.display = 'none';
+      if (iwCh && document.querySelector('.google-places-info-window')) {
+        iwCh.style.paddingTop = '0px';
       }
     }, 100);
-  }, []);
+
+    // 全域函數供InfoWindow使用
+    window.toggleDatabaseFavorite = (restaurantId) => {
+      // 轉換為Google Places格式以使用現有的收藏功能
+      const restaurantPlace = {
+        place_id: restaurant.id,
+        name: restaurant.name,
+        formatted_address: restaurant.address,
+        rating: restaurant.rating,
+        category: restaurant.category,
+        primaryImage: restaurant.primaryImage,
+        isFromDatabase: true,
+        geometry: {
+          location: {
+            lat: () => parseFloat(restaurant.latitude),
+            lng: () => parseFloat(restaurant.longitude)
+          }
+        }
+      };
+      onFavoriteToggle?.(restaurantPlace, !isFavorite);
+    };
+
+    window.addToDatabaseFavoriteList = (restaurantId) => {
+      const select = document.getElementById('databaseFavoriteListSelect');
+      const selectedListId = select?.value;
+
+      if (!selectedListId) {
+        alert('請先選擇一個收藏清單');
+        return;
+      }
+
+      const selectedList = favoriteLists.find(list => list.list_id === selectedListId);
+      if (selectedList && window.addPlaceToList) {
+        // 轉換為Google Places格式
+        const restaurantPlace = {
+          place_id: restaurant.id,
+          name: restaurant.name,
+          formatted_address: restaurant.address,
+          rating: restaurant.rating,
+          category: restaurant.category,
+          primaryImage: restaurant.primaryImage,
+          isFromDatabase: true,
+          geometry: {
+            location: {
+              lat: () => parseFloat(restaurant.latitude),
+              lng: () => parseFloat(restaurant.longitude)
+            }
+          }
+        };
+        window.addPlaceToList(selectedListId, restaurantPlace);
+      }
+    };
+  }, [favorites, onFavoriteToggle, user, favoriteLists]);
 
   // 創建標記（修改版本以支持類型）
   const createMarker = useCallback((place, markerType = 'google') => {
@@ -385,8 +536,11 @@ export default function MapView({
 
     marker.markerType = markerType;
     marker.placeData = place;
+    console.log('Marker created with placeData:', place.name, 'has place_obj:', !!place.place_obj);
 
     marker.addListener('click', () => {
+      console.log('Google Places marker clicked:', place.name, place.place_id);
+      console.log('Marker placeData:', marker.placeData);
       getPlaceDetails(place.place_id, marker);
     });
 
@@ -395,6 +549,7 @@ export default function MapView({
 
   // 取得地點詳細資訊
   const getPlaceDetails = useCallback(async (placeId, marker) => {
+    console.log('getPlaceDetails called with placeId:', placeId);
     if (!googleMapRef.current || !placeId) return;
 
     try {
@@ -404,28 +559,62 @@ export default function MapView({
         return;
       }
 
-      // 使用新版 Places API 獲取詳細資訊
-      const { Place } = await window.google.maps.importLibrary("places");
+      let place;
 
-      const place = new Place({
-        id: placeId,
-        requestedLanguage: 'zh-TW'
-      });
+      // 檢查marker是否已經有Place對象
+      if (marker.placeData?.place_obj) {
+        console.log('Using existing Place object');
+        place = marker.placeData.place_obj;
 
-      await place.fetchFields({
-        fields: [
-          'displayName', 'formattedAddress', 'nationalPhoneNumber',
-          'rating', 'userRatingCount', 'regularOpeningHours',
-          'photos', 'location', 'id', 'websiteURI'
-        ]
-      });
+        // 確保已經有必要的字段
+        await place.fetchFields({
+          fields: [
+            'displayName', 'formattedAddress', 'nationalPhoneNumber',
+            'rating', 'userRatingCount', 'regularOpeningHours',
+            'photos', 'location', 'id', 'websiteURI'
+          ]
+        });
+      } else {
+        console.log('Creating new Place object');
+        // 使用新版 Places API 獲取詳細資訊
+        const { Place } = await window.google.maps.importLibrary("places");
 
-      // 驗證坐標有效性
-      const lat = typeof place.location?.lat === 'number' ? place.location.lat : null;
-      const lng = typeof place.location?.lng === 'number' ? place.location.lng : null;
+        place = new Place({
+          id: placeId,
+          requestedLanguage: 'zh-TW'
+        });
 
-      if (lat === null || lng === null) {
-        console.warn('Invalid coordinates for place details:', place.displayName, { lat, lng });
+        await place.fetchFields({
+          fields: [
+            'displayName', 'formattedAddress', 'nationalPhoneNumber',
+            'rating', 'userRatingCount', 'regularOpeningHours',
+            'photos', 'location', 'id', 'websiteURI'
+          ]
+        });
+      }
+
+      // 驗證坐標有效性 - 使用相同的多重檢測邏輯
+      let lat = null;
+      let lng = null;
+
+      if (place.location) {
+        if (typeof place.location.lat === 'number' && typeof place.location.lng === 'number') {
+          lat = place.location.lat;
+          lng = place.location.lng;
+        }
+        else if (typeof place.location.lat === 'function' && typeof place.location.lng === 'function') {
+          lat = place.location.lat();
+          lng = place.location.lng();
+        }
+        else if (typeof place.location.toJSON === 'function') {
+          const coords = place.location.toJSON();
+          lat = coords.lat;
+          lng = coords.lng;
+        }
+      }
+
+      if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+        console.warn('Invalid coordinates for place details:', place.displayName, { lat, lng, location: place.location });
         return;
       }
 
@@ -449,6 +638,7 @@ export default function MapView({
       };
 
       setSelectedPlace(convertedPlace);
+      console.log('Calling showInfoWindow with convertedPlace:', convertedPlace.name);
       showInfoWindow(convertedPlace, marker);
     } catch (error) {
       console.error('Error in getPlaceDetails:', error);
@@ -459,6 +649,8 @@ export default function MapView({
   const showInfoWindow = useCallback((place, marker) => {
     if (!infoWindowRef.current || !place) return;
 
+    console.log('showInfoWindow called for Google Places:', place.name);
+
     const isFavorite = favorites.some(fav => fav.place_id === place.place_id);
 
     // 處理圖片 - 優先使用餐廳資料庫的圖片
@@ -466,7 +658,22 @@ export default function MapView({
     if (place.isFromDatabase && place.primaryImage?.image_url) {
       photo = place.primaryImage.image_url;
     } else if (place.photos?.[0]) {
-      photo = place.photos[0].getUrl({ maxWidth: 300, maxHeight: 140 });
+      // 新版Google Places API照片處理
+      try {
+        if (typeof place.photos[0].getURI === 'function') {
+          // 新版API使用 getURI
+          photo = place.photos[0].getURI({ maxWidth: 300, maxHeight: 140 });
+        } else if (typeof place.photos[0].getUrl === 'function') {
+          // 舊版API使用 getUrl
+          photo = place.photos[0].getUrl({ maxWidth: 300, maxHeight: 140 });
+        } else if (place.photos[0].uri) {
+          // 直接使用uri屬性
+          photo = place.photos[0].uri;
+        }
+      } catch (error) {
+        console.warn('Error getting photo URL:', error);
+        photo = null;
+      }
     }
 
     const rating = place.rating ? place.rating.toFixed(1) : 'N/A';
@@ -628,7 +835,7 @@ export default function MapView({
           };
 
           setSelectedPlace(restaurantPlace);
-          showInfoWindow(restaurantPlace, marker);
+          showDatabaseRestaurantInfo(restaurant, marker);
           onPlaceSelect?.(restaurantPlace);
         });
 

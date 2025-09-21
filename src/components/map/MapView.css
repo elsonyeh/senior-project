@@ -52,46 +52,9 @@
   }
 }
 
-/* 資料庫餐廳 InfoWindow 內容 */
-.database-restaurant-info-window {
-  width: 300px !important;
-  max-width: 300px !important;
-  min-width: 300px !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  position: relative;
-  box-sizing: border-box;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  background: #fff;
-}
+/* =================== 資料庫餐廳 InfoWindow 樣式（已使用Google Places樣式） =================== */
 
-/* 資料庫餐廳 InfoWindow 容器樣式 */
-.gm-style .gm-style-iw-d:has(.database-restaurant-info-window) {
-  overflow: hidden !important;
-  width: 300px !important;
-  max-width: 300px !important;
-  min-width: 300px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-.gm-style .gm-style-iw-c:has(.database-restaurant-info-window) {
-  padding: 0 !important;
-  margin: 0 !important;
-  max-width: 300px !important;
-  width: 300px !important;
-}
-
-.gm-style .gm-style-iw:has(.database-restaurant-info-window) {
-  max-width: 300px !important;
-  width: 300px !important;
-}
-
-.gm-style .gm-style-iw-ch:has(.database-restaurant-info-window) {
-  padding: 0 !important;
-  margin: 0 !important;
-}
+/* 由於Database Restaurant現在使用google-places-info-window類，所有樣式都統一了 */
 
 /* Google Places 自定義關閉按鈕 */
 .google-places-info-window .custom-close-btn {
@@ -119,42 +82,48 @@
 
 /* Google Places 通用樣式 */
 .google-places-info-window .info-place-photo {
-  width: calc(100% - 32px);
-  height: 140px;
+  width: 100%;
+  height: 160px;
   object-fit: cover;
   display: block;
-  margin: 16px 16px 0 16px;
-  border-radius: 8px;
+  margin: 0;
+  border-radius: 0;
 }
 
 .google-places-info-window .info-place-content {
-  padding: 12px 16px 16px 16px;
+  padding: 18px 20px 20px 20px;
 }
 
 .google-places-info-window .info-place-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 6px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 10px 0;
   line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 
 .google-places-info-window .info-place-category {
   font-size: 0.8rem;
   color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  padding: 2px 8px;
-  border-radius: 12px;
+  background: rgba(102, 126, 234, 0.12);
+  padding: 4px 12px;
+  border-radius: 16px;
   display: inline-block;
-  margin: 0 0 8px 0;
-  font-weight: 500;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+  border: 1px solid rgba(102, 126, 234, 0.2);
 }
 
 .google-places-info-window .info-place-rating {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 193, 7, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 193, 7, 0.2);
 }
 
 .google-places-info-window .info-rating-stars {
@@ -169,23 +138,27 @@
 }
 
 .google-places-info-window .info-place-address {
-  color: #666;
-  font-size: 0.85rem;
-  margin: 0 0 4px 0;
-  line-height: 1.4;
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .google-places-info-window .info-place-phone {
-  color: #666;
-  font-size: 0.85rem;
-  margin: 0 0 12px 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin: 0 0 16px 0;
+  font-weight: 500;
 }
 
 .google-places-info-window .info-place-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .google-places-info-window .favorite-section {
