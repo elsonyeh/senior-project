@@ -329,17 +329,25 @@ export default function MapView({
     if (!infoWindowRef.current) return;
 
     const content = `
-      <div class="map-info-window database-restaurant-info-window" id="database-restaurant-${restaurant.id}">
-        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">${restaurant.name}</h3>
-        <p style="margin: 4px 0; font-size: 14px; color: #666;">${restaurant.address || '地址未提供'}</p>
-        ${restaurant.category ? `<p style="margin: 4px 0; font-size: 12px; color: #888;">${restaurant.category}</p>` : ''}
-        ${restaurant.rating ? `<p style="margin: 4px 0; font-size: 12px;"><span style="color: #ffa500;">★</span> ${restaurant.rating}</p>` : ''}
-        <p style="margin: 8px 0 4px 0; font-size: 11px; color: #999;">來源：資料庫</p>
+      <div class="database-restaurant-info-window" id="database-restaurant-${restaurant.id}">
+        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; padding: 16px 16px 0 16px;">${restaurant.name}</h3>
+        <p style="margin: 4px 0; font-size: 14px; color: #666; padding: 0 16px;">${restaurant.address || '地址未提供'}</p>
+        ${restaurant.category ? `<p style="margin: 4px 0; font-size: 12px; color: #888; padding: 0 16px;">${restaurant.category}</p>` : ''}
+        ${restaurant.rating ? `<p style="margin: 4px 0; font-size: 12px; padding: 0 16px;"><span style="color: #ffa500;">★</span> ${restaurant.rating}</p>` : ''}
+        <p style="margin: 8px 0 4px 0; font-size: 11px; color: #999; padding: 0 16px 16px 16px;">來源：資料庫</p>
       </div>
     `;
 
     infoWindowRef.current.setContent(content);
     infoWindowRef.current.open(googleMapRef.current, marker);
+
+    // 為資料庫餐廳隱藏 gm-style-iw-ch 容器
+    setTimeout(() => {
+      const iwCh = document.querySelector('.gm-style-iw-ch');
+      if (iwCh && document.querySelector('.database-restaurant-info-window')) {
+        iwCh.style.display = 'none';
+      }
+    }, 100);
   }, []);
 
   // 創建標記（修改版本以支持類型）
@@ -472,7 +480,7 @@ export default function MapView({
       : '';
 
     const contentString = `
-      <div class="fixed-width-info-window google-places-info-window" id="google-places-${place.place_id}">
+      <div class="google-places-info-window" id="google-places-${place.place_id}">
         <button class="custom-close-btn" onclick="closeInfoWindow()">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
             <path d="M11 1L1 11M1 1l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -519,6 +527,14 @@ export default function MapView({
 
     infoWindowRef.current.setContent(contentString);
     infoWindowRef.current.open(googleMapRef.current, marker);
+
+    // 移除Google Places InfoWindow的padding-top
+    setTimeout(() => {
+      const iwCh = document.querySelector('.gm-style-iw-ch');
+      if (iwCh && document.querySelector('.google-places-info-window')) {
+        iwCh.style.paddingTop = '0px';
+      }
+    }, 100);
 
     // 全域函數供InfoWindow使用
     window.toggleFavorite = (placeId) => {
