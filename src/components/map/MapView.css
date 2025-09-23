@@ -169,6 +169,9 @@
   background: rgba(255, 107, 53, 0.05);
   border-radius: 12px;
   border: 1px solid rgba(255, 107, 53, 0.15);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
 }
 
 .google-places-info-window .favorite-list-select {
@@ -184,6 +187,16 @@
   transition: all 0.3s ease;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  /* 自訂下拉箭頭 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
 }
 
 .google-places-info-window .favorite-list-select:hover {
@@ -194,6 +207,85 @@
 .google-places-info-window .favorite-list-select:focus {
   border-color: #ff6b35;
   box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1), 0 2px 8px rgba(255, 107, 53, 0.15);
+}
+
+/* 自訂下拉選單樣式 */
+.restaurant-select-wrapper {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.restaurant-select {
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+.restaurant-select:hover {
+  border-color: rgba(255, 107, 53, 0.5);
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.1);
+}
+
+.restaurant-select-text {
+  flex: 1;
+  color: #333;
+}
+
+.restaurant-select-arrow {
+  font-size: 0.8rem;
+  color: #666;
+  transition: transform 0.3s ease;
+  margin-left: 8px;
+}
+
+.restaurant-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-width: 100%;
+  background: white;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  max-height: 120px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.restaurant-option {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.restaurant-option:last-child {
+  border-bottom: none;
+}
+
+.restaurant-option:hover {
+  background-color: rgba(255, 107, 53, 0.1);
+  color: #ff6b35;
 }
 
 .google-places-info-window .add-to-list-btn {

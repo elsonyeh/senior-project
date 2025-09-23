@@ -29,7 +29,8 @@
       "Bash(start http://localhost:5175/admin)",
       "Bash(npx supabase:*)",
       "Bash(del \"C:\\Projects\\SwiftTaste-demo\\src\\test-supabase.js\")",
-      "Bash(start http://localhost:5175)"
+      "Bash(start http://localhost:5175)",
+      "Bash(git clean:*)"
     ],
     "deny": [],
     "ask": []

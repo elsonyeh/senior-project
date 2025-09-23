@@ -26,6 +26,10 @@ export default function MyLists({ user }) {
 
   // 獲取餐廳圖片的函數，使用與 SwiftTaste 相同的邏輯
   const getRestaurantImage = (restaurant) => {
+    if (!restaurant) {
+      return `https://source.unsplash.com/400x300/restaurant,food/?default`;
+    }
+
     // 優先使用 primaryImage，然後是 allImages 中的第一張，最後是預設圖片
     let imageUrl = restaurant.primaryImage?.image_url ||
                    (restaurant.allImages && restaurant.allImages.length > 0 ? restaurant.allImages[0]?.image_url : null) ||
@@ -33,12 +37,11 @@ export default function MyLists({ user }) {
                    restaurant.photoURL || // 支援舊格式
                    restaurant.image_url || // 支援其他格式
                    restaurant.photo || // 收藏清單中的照片欄位
-                   restaurant.photo_url || // 收藏清單中的照片 URL 欄位
-                   `https://source.unsplash.com/400x300/restaurant,food/?${restaurant.name || 'restaurant'}`;
+                   restaurant.photo_url; // 收藏清單中的照片 URL 欄位
 
     // 確保 URL 有效
-    if (!imageUrl || imageUrl === 'null') {
-      imageUrl = `https://source.unsplash.com/400x300/restaurant,food/?${restaurant.name || 'restaurant'}`;
+    if (!imageUrl || imageUrl === 'null' || imageUrl === 'undefined') {
+      imageUrl = `https://source.unsplash.com/400x300/restaurant,food/?${encodeURIComponent(restaurant.name || 'restaurant')}`;
     }
 
     return imageUrl;
@@ -79,9 +82,39 @@ export default function MyLists({ user }) {
 
         const processedLists = result.lists.map((list, index) => {
           console.log(`MyLists: 處理清單 ${index}:`, list.name, '地點數量:', list.favorite_list_places?.length || 0);
+
+          // 轉換餐廳資訊格式
+          const places = (list.favorite_list_places || []).map(place => {
+            console.log('MyLists: 處理餐廳資料:', place);
+
+            return {
+              place_id: place.restaurant_id,
+              restaurant_id: place.restaurant_id,
+              id: place.id,
+              notes: place.notes,
+              added_at: place.added_at,
+              // 從關聯的餐廳資料取得詳細資訊
+              name: place.restaurants?.name || '未知餐廳',
+              address: place.restaurants?.address || '',
+              rating: place.restaurants?.rating || 0,
+              latitude: place.restaurants?.latitude,
+              longitude: place.restaurants?.longitude,
+              category: place.restaurants?.category,
+              // 處理餐廳圖片
+              restaurant_images: place.restaurants?.restaurant_images || [],
+              primaryImage: place.restaurants?.restaurant_images?.find(img => img.is_primary) ||
+                           place.restaurants?.restaurant_images?.[0] || null,
+              allImages: place.restaurants?.restaurant_images || [],
+              photo: place.restaurants?.restaurant_images?.find(img => img.is_primary)?.image_url ||
+                     place.restaurants?.restaurant_images?.[0]?.image_url || null,
+              photo_url: place.restaurants?.restaurant_images?.find(img => img.is_primary)?.image_url ||
+                        place.restaurants?.restaurant_images?.[0]?.image_url || null
+            };
+          });
+
           return {
             ...list,
-            places: list.favorite_list_places || list.places || []
+            places: places
           };
         });
 
@@ -452,65 +485,72 @@ export default function MyLists({ user }) {
                     <p>開始在地圖上收藏餐廳吧！</p>
                   </div>
                 ) : (
-                  (selectedList.places || selectedList.favorite_list_places || []).map(place => (
-                    <div key={place.place_id} className="place-card">
-                      <div className="place-image-container">
-                        <img
-                          src={getRestaurantImage(place)}
-                          alt={place.name}
-                          className="place-image"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextElementSibling.style.display = 'flex';
-                          }}
-                        />
-                        <div className="place-image-fallback">
-                          <IoRestaurantOutline />
-                        </div>
-                      </div>
-                      
-                      <div className="place-card-content">
-                        <h4 className="place-name">{place.name}</h4>
-                        <p className="place-address">{place.address}</p>
-                        
-                        <div className="place-rating">
-                          <div className="rating-stars">
-                            {Array.from({ length: 5 }, (_, i) => (
-                              <IoStarOutline
-                                key={i}
-                                className={i < Math.floor(place.rating) ? 'star-filled' : 'star-empty'}
-                              />
-                            ))}
-                          </div>
-                          <span className="rating-value">{place.rating}</span>
-                        </div>
-                        
-                        <div className="place-meta">
-                          <div className="added-time">
-                            <IoTimeOutline />
-                            {formatTimeAgo(place.added_at)}
+                  (selectedList.places || selectedList.favorite_list_places || []).map(place => {
+                    // 增加除錯日誌
+                    console.log('MyLists: 渲染餐廳卡片:', place);
+
+                    return (
+                      <div key={place.place_id || place.restaurant_id || place.id} className="place-card">
+                        <div className="place-image-container">
+                          <img
+                            src={getRestaurantImage(place)}
+                            alt={place.name || '餐廳'}
+                            className="place-image"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display = 'flex';
+                            }}
+                          />
+                          <div className="place-image-fallback">
+                            <IoRestaurantOutline />
                           </div>
                         </div>
+
+                        <div className="place-card-content">
+                          <h4 className="place-name">{place.name || '未知餐廳'}</h4>
+                          <p className="place-address">{place.address || '地址未提供'}</p>
+
+                          {place.rating && place.rating > 0 && (
+                            <div className="place-rating">
+                              <div className="rating-stars">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <IoStarOutline
+                                    key={i}
+                                    className={i < Math.floor(place.rating) ? 'star-filled' : 'star-empty'}
+                                  />
+                                ))}
+                              </div>
+                              <span className="rating-value">{place.rating}</span>
+                            </div>
+                          )}
+
+                          <div className="place-meta">
+                            <div className="added-time">
+                              <IoTimeOutline />
+                              {place.added_at ? formatTimeAgo(place.added_at) : '最近添加'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="place-card-actions">
+                          <button
+                            className="place-action-btn navigate-btn"
+                            onClick={() => navigateToPlace(place)}
+                            title="導航"
+                          >
+                            <IoNavigateOutline />
+                          </button>
+                          <button
+                            className="place-action-btn remove-btn"
+                            onClick={() => removePlaceFromList(selectedList.id, place.place_id || place.restaurant_id)}
+                            title="移除"
+                          >
+                            <IoTrashOutline />
+                          </button>
+                        </div>
                       </div>
-                      
-                      <div className="place-card-actions">
-                        <button
-                          className="place-action-btn navigate-btn"
-                          onClick={() => navigateToPlace(place)}
-                          title="導航"
-                        >
-                          <IoNavigateOutline />
-                        </button>
-                        <button
-                          className="place-action-btn remove-btn"
-                          onClick={() => removePlaceFromList(selectedList.id, place.place_id)}
-                          title="移除"
-                        >
-                          <IoTrashOutline />
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </>

@@ -340,38 +340,44 @@ export default function SwiftTasteHistory({ user }) {
                   </div>
 
                   {/* 推薦結果 */}
-                  <div className="recommendation-result">
-                    <h4 className="result-title">推薦餐廳</h4>
-                    <div className="restaurant-card">
-                      <div className="restaurant-image-container">
-                        <img
-                          src={record.recommended_restaurant.photo}
-                          alt={record.recommended_restaurant.name}
-                          className="restaurant-image"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextElementSibling.style.display = 'flex';
-                          }}
-                        />
-                        <div className="restaurant-image-fallback">
-                          <IoRestaurantOutline />
+                  {record.recommended_restaurant && (
+                    <div className="recommendation-result">
+                      <h4 className="result-title">推薦餐廳</h4>
+                      <div className="restaurant-card">
+                        <div className="restaurant-image-container">
+                          <img
+                            src={record.recommended_restaurant.photo || '/default-restaurant.jpg'}
+                            alt={record.recommended_restaurant.name || '餐廳'}
+                            className="restaurant-image"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display = 'flex';
+                            }}
+                          />
+                          <div className="restaurant-image-fallback">
+                            <IoRestaurantOutline />
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="restaurant-info">
-                        <h5 className="restaurant-name">{record.recommended_restaurant.name}</h5>
-                        <p className="restaurant-address">{record.recommended_restaurant.address}</p>
-                        <div className="restaurant-rating">
-                          <span className="rating-stars">
-                            {'★'.repeat(Math.floor(record.recommended_restaurant.rating))}
-                            {'☆'.repeat(5 - Math.floor(record.recommended_restaurant.rating))}
-                          </span>
-                          <span className="rating-value">{record.recommended_restaurant.rating}</span>
+
+                        <div className="restaurant-info">
+                          <h5 className="restaurant-name">{record.recommended_restaurant.name || '未知餐廳'}</h5>
+                          <p className="restaurant-address">{record.recommended_restaurant.address || '地址未提供'}</p>
+                          {record.recommended_restaurant.rating && (
+                            <div className="restaurant-rating">
+                              <span className="rating-stars">
+                                {'★'.repeat(Math.floor(record.recommended_restaurant.rating))}
+                                {'☆'.repeat(5 - Math.floor(record.recommended_restaurant.rating))}
+                              </span>
+                              <span className="rating-value">{record.recommended_restaurant.rating}</span>
+                            </div>
+                          )}
+                          {record.recommended_restaurant.reason && (
+                            <p className="recommendation-reason">{record.recommended_restaurant.reason}</p>
+                          )}
                         </div>
-                        <p className="recommendation-reason">{record.recommended_restaurant.reason}</p>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             ))}

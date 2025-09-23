@@ -547,14 +547,117 @@ class DataAnalyticsService {
     return address.substring(0, 10);
   }
 
+  // 獲取用戶人口統計分析
+  async getUserDemographics() {
+    return await this.getCachedData('userDemographics', async () => {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('gender, birth_date, occupation, location, created_at')
+          .not('gender', 'is', null)
+          .or('birth_date.not.is.null,occupation.not.is.null,location.not.is.null');
+
+        if (error) {
+          console.warn('Failed to get user demographics:', error);
+          return {
+            genderDistribution: {},
+            ageGroups: {},
+            occupationCategories: {},
+            locationDistribution: {},
+            totalProfilesWithData: 0
+          };
+        }
+
+        const genderStats = {};
+        const ageStats = {};
+        const occupationStats = {};
+        const locationStats = {};
+
+        const currentYear = new Date().getFullYear();
+
+        profiles?.forEach(profile => {
+          // 性別統計
+          if (profile.gender) {
+            const genderLabel = this.getGenderLabel(profile.gender);
+            genderStats[genderLabel] = (genderStats[genderLabel] || 0) + 1;
+          }
+
+          // 年齡組統計（基於生日計算）
+          if (profile.birth_date) {
+            const birthYear = new Date(profile.birth_date).getFullYear();
+            const age = currentYear - birthYear;
+            const ageGroup = this.getAgeGroup(age);
+            ageStats[ageGroup] = (ageStats[ageGroup] || 0) + 1;
+          }
+
+          // 職業統計
+          if (profile.occupation) {
+            const occupation = profile.occupation.trim();
+            if (occupation) {
+              occupationStats[occupation] = (occupationStats[occupation] || 0) + 1;
+            }
+          }
+
+          // 地理位置統計
+          if (profile.location) {
+            const location = profile.location.trim();
+            if (location) {
+              locationStats[location] = (locationStats[location] || 0) + 1;
+            }
+          }
+        });
+
+        return {
+          genderDistribution: genderStats,
+          ageGroups: ageStats,
+          occupationCategories: occupationStats,
+          locationDistribution: locationStats,
+          totalProfilesWithData: profiles?.length || 0
+        };
+      } catch (error) {
+        console.error('Error in getUserDemographics:', error);
+        return {
+          genderDistribution: {},
+          ageGroups: {},
+          occupationCategories: {},
+          locationDistribution: {},
+          totalProfilesWithData: 0
+        };
+      }
+    });
+  }
+
+  // 獲取性別標籤
+  getGenderLabel(gender) {
+    const genderLabels = {
+      'male': '男性',
+      'female': '女性',
+      'other': '其他',
+      'prefer_not_to_say': '不願透露'
+    };
+    return genderLabels[gender] || '未設定';
+  }
+
+  // 獲取年齡組
+  getAgeGroup(age) {
+    if (age < 18) return '18歲以下';
+    if (age <= 25) return '18-25歲';
+    if (age <= 35) return '26-35歲';
+    if (age <= 45) return '36-45歲';
+    if (age <= 55) return '46-55歲';
+    if (age <= 65) return '56-65歲';
+    return '65歲以上';
+  }
+
   // 獲取總覽統計
   async getOverviewStats() {
-    const [userStats, modeStats, interactionStats, questionStats, restaurantStats] = await Promise.all([
+    const [userStats, modeStats, interactionStats, questionStats, restaurantStats, userDemographics] = await Promise.all([
       this.getUserStats(),
       this.getModeStats(),
       this.getInteractionStats(),
       this.getQuestionStats(),
-      this.getRestaurantStats()
+      this.getRestaurantStats(),
+      this.getUserDemographics()
     ]);
 
     return {
@@ -563,6 +666,7 @@ class DataAnalyticsService {
       interactions: interactionStats,
       questions: questionStats,
       restaurants: restaurantStats,
+      demographics: userDemographics,
       lastUpdated: new Date().toISOString()
     };
   }

@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IoPersonOutline,
   IoMailOutline,
   IoSaveOutline,
   IoCheckmarkCircleOutline,
   IoAlertCircleOutline,
-  IoCameraOutline
+  IoCameraOutline,
+  IoCalendarOutline,
+  IoBagOutline,
+  IoLocationOutline
 } from 'react-icons/io5';
 import { authService } from '../../services/authService.js';
 import { userDataService } from '../../services/userDataService.js';
@@ -13,6 +16,58 @@ import ImageCropper from '../common/ImageCropper.jsx';
 import './UserProfilePage.css';
 
 export default function UserProfilePage() {
+  // 選項常數
+  const GENDER_OPTIONS = [
+    { value: 'male', label: '男性', icon: '👨' },
+    { value: 'female', label: '女性', icon: '👩' },
+    { value: 'other', label: '其他', icon: '🏳️‍⚧️' },
+    { value: 'prefer_not_to_say', label: '不願透露', icon: '🤷' }
+  ];
+
+  const OCCUPATION_OPTIONS = [
+    '學生',
+    '軟體工程師',
+    '設計師',
+    '金融業',
+    '教育業',
+    '醫療保健',
+    '服務業',
+    '製造業',
+    '建築業',
+    '販售業',
+    '公務員',
+    '自由業',
+    '家管',
+    '退休',
+    '其他'
+  ];
+
+  const TAIWAN_CITIES = [
+    '台北市',
+    '新北市',
+    '桃園市',
+    '台中市',
+    '台南市',
+    '高雄市',
+    '基隆市',
+    '新竹市',
+    '嘉義市',
+    '新竹縣',
+    '苗栗縣',
+    '彰化縣',
+    '南投縣',
+    '雲林縣',
+    '嘉義縣',
+    '屏東縣',
+    '宜蘭縣',
+    '花蓮縣',
+    '台東縣',
+    '澎湖縣',
+    '金門縣',
+    '連江縣'
+  ];
+
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -25,15 +80,39 @@ export default function UserProfilePage() {
     email: '',
     bio: '',
     avatar_url: '',
+    gender: '',
+    birth_date: '',
+    occupation: '',
+    location: '',
     favorite_lists_count: 0,
     swifttaste_count: 0,
     buddies_count: 0
   });
+  const [customOccupation, setCustomOccupation] = useState('');
+  const [showCustomOccupation, setShowCustomOccupation] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [showOccupationDropdown, setShowOccupationDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [originalProfile, setOriginalProfile] = useState({});
 
   useEffect(() => {
     loadUserProfile();
   }, []);
+
+  // 點擊外部關閉下拉選單
+  const handleClickOutside = useCallback((event) => {
+    if (!event.target.closest('.custom-select')) {
+      setShowOccupationDropdown(false);
+      setShowLocationDropdown(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [handleClickOutside]);
 
   const loadUserProfile = async () => {
     setLoading(true);
@@ -53,6 +132,10 @@ export default function UserProfilePage() {
         email: currentUser.user.email || '',
         bio: profileResult.profile?.bio || '',
         avatar_url: profileResult.profile?.avatar_url || '',
+        gender: profileResult.profile?.gender || '',
+        birth_date: profileResult.profile?.birth_date || '',
+        occupation: profileResult.profile?.occupation || '',
+        location: profileResult.profile?.location || '',
         favorite_lists_count: statsResult.stats?.favorite_lists_count || 0,
         swifttaste_count: statsResult.stats?.swifttaste_count || 0,
         buddies_count: statsResult.stats?.buddies_count || 0
@@ -60,6 +143,12 @@ export default function UserProfilePage() {
 
       setUserProfile(profile);
       setOriginalProfile({ ...profile });
+
+      // 處理自訂職業
+      if (profile.occupation && !OCCUPATION_OPTIONS.includes(profile.occupation)) {
+        setShowCustomOccupation(true);
+        setCustomOccupation(profile.occupation);
+      }
     } catch (error) {
       console.error('載入用戶資料失敗:', error);
       setMessage({ type: 'error', text: '載入用戶資料失敗' });
@@ -73,7 +162,80 @@ export default function UserProfilePage() {
       ...prev,
       [field]: value
     }));
+
+    // 清除該欄位的錯誤訊息
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: null
+      }));
+    }
   };
+
+  // 處理性別選擇
+  const handleGenderSelect = (gender) => {
+    handleInputChange('gender', gender);
+  };
+
+  // 處理職業選擇
+  const handleOccupationSelect = (value) => {
+    if (value === '其他') {
+      setShowCustomOccupation(true);
+      handleInputChange('occupation', customOccupation);
+    } else {
+      setShowCustomOccupation(false);
+      setCustomOccupation('');
+      handleInputChange('occupation', value);
+    }
+    setShowOccupationDropdown(false);
+  };
+
+  // 處理居住地選擇
+  const handleLocationSelect = (value) => {
+    handleInputChange('location', value);
+    setShowLocationDropdown(false);
+  };
+
+  // 處理自訂職業輸入
+  const handleCustomOccupationChange = (value) => {
+    setCustomOccupation(value);
+    handleInputChange('occupation', value);
+  };
+
+  // 驗證生日
+  const validateBirthDate = (date) => {
+    if (!date) return null;
+
+    const birthDate = new Date(date);
+    const today = new Date();
+    const minDate = new Date('1900-01-01');
+
+    if (birthDate > today) {
+      return '生日不能大於今日';
+    }
+
+    if (birthDate < minDate) {
+      return '請輸入有效的生日';
+    }
+
+    const age = today.getFullYear() - birthDate.getFullYear();
+    if (age > 120) {
+      return '請輸入有效的生日';
+    }
+
+    return null;
+  };
+
+  // 處理生日變更
+  const handleBirthDateChange = (date) => {
+    const error = validateBirthDate(date);
+    setErrors(prev => ({
+      ...prev,
+      birth_date: error
+    }));
+    handleInputChange('birth_date', date);
+  };
+
 
   // 處理文件選擇
   const handleFileSelect = (event) => {
@@ -204,7 +366,11 @@ export default function UserProfilePage() {
       // 檢查是否有變更
       const hasChanges = userProfile.name !== originalProfile.name ||
                         userProfile.bio !== originalProfile.bio ||
-                        userProfile.avatar_url !== originalProfile.avatar_url;
+                        userProfile.avatar_url !== originalProfile.avatar_url ||
+                        userProfile.gender !== originalProfile.gender ||
+                        userProfile.birth_date !== originalProfile.birth_date ||
+                        userProfile.occupation !== originalProfile.occupation ||
+                        userProfile.location !== originalProfile.location;
       if (!hasChanges) {
         setMessage({ type: 'info', text: '沒有變更需要保存' });
         return;
@@ -221,7 +387,11 @@ export default function UserProfilePage() {
         name: userProfile.name.trim(),
         bio: userProfile.bio.trim(),
         email: userProfile.email,
-        avatar_url: userProfile.avatar_url
+        avatar_url: userProfile.avatar_url,
+        gender: userProfile.gender || null,
+        birth_date: userProfile.birth_date || null,
+        occupation: userProfile.occupation.trim() || null,
+        location: userProfile.location.trim() || null
       });
 
       if (!updateResult.success) {
@@ -231,6 +401,9 @@ export default function UserProfilePage() {
 
       // 更新原始資料
       setOriginalProfile({ ...userProfile });
+
+      // 重設錯誤訊息
+      setErrors({});
 
       setMessage({ type: 'success', text: '個人資料已成功更新' });
 
@@ -247,7 +420,11 @@ export default function UserProfilePage() {
 
   const hasChanges = userProfile.name !== originalProfile.name ||
                     userProfile.bio !== originalProfile.bio ||
-                    userProfile.avatar_url !== originalProfile.avatar_url;
+                    userProfile.avatar_url !== originalProfile.avatar_url ||
+                    userProfile.gender !== originalProfile.gender ||
+                    userProfile.birth_date !== originalProfile.birth_date ||
+                    userProfile.occupation !== originalProfile.occupation ||
+                    userProfile.location !== originalProfile.location;
 
   if (loading) {
     return (
@@ -362,6 +539,142 @@ export default function UserProfilePage() {
             <small className="field-note">最多200個字符</small>
           </div>
         </div>
+
+        <div className="form-section">
+          <h3>個人資訊</h3>
+
+          <div className="form-group">
+            <label>
+              <IoPersonOutline className="field-icon" />
+              性別
+            </label>
+            <div className="gender-selection-compact">
+              {GENDER_OPTIONS.map(option => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`gender-option-compact ${userProfile.gender === option.value ? 'selected' : ''}`}
+                  onClick={() => handleGenderSelect(option.value)}
+                  title={option.label}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="birth_date">
+              <IoCalendarOutline className="field-icon" />
+              生日
+            </label>
+            <input
+              id="birth_date"
+              type="date"
+              value={userProfile.birth_date}
+              onChange={(e) => handleBirthDateChange(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              min="1900-01-01"
+              className={errors.birth_date ? 'error' : ''}
+              onFocus={(e) => {
+                if (!e.target.value) {
+                  e.target.value = '2000-01-01';
+                  handleBirthDateChange('2000-01-01');
+                }
+              }}
+            />
+            {errors.birth_date && (
+              <small className="field-error">{errors.birth_date}</small>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label>
+              <IoBagOutline className="field-icon" />
+              職業
+            </label>
+            <div className="custom-select">
+              <button
+                type="button"
+                className="select-button"
+                onClick={() => setShowOccupationDropdown(!showOccupationDropdown)}
+              >
+                <span
+                  className="select-value"
+                  data-placeholder="請選擇職業"
+                >
+                  {userProfile.occupation}
+                </span>
+                <span className={`select-arrow ${showOccupationDropdown ? 'open' : ''}`}>▼</span>
+              </button>
+              {showOccupationDropdown && (
+                <div className="select-dropdown">
+                  <div className="select-option-list">
+                    {OCCUPATION_OPTIONS.map(option => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`select-option ${userProfile.occupation === option ? 'selected' : ''}`}
+                        onClick={() => handleOccupationSelect(option)}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            {showCustomOccupation && (
+              <input
+                type="text"
+                value={customOccupation}
+                onChange={(e) => handleCustomOccupationChange(e.target.value)}
+                placeholder="請輸入您的職業"
+                maxLength="100"
+                className="custom-occupation-input"
+              />
+            )}
+          </div>
+
+          <div className="form-group">
+            <label>
+              <IoLocationOutline className="field-icon" />
+              居住城市
+            </label>
+            <div className="custom-select">
+              <button
+                type="button"
+                className="select-button"
+                onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+              >
+                <span
+                  className="select-value"
+                  data-placeholder="請選擇居住城市"
+                >
+                  {userProfile.location}
+                </span>
+                <span className={`select-arrow ${showLocationDropdown ? 'open' : ''}`}>▼</span>
+              </button>
+              {showLocationDropdown && (
+                <div className="select-dropdown">
+                  <div className="select-option-list">
+                    {TAIWAN_CITIES.map(city => (
+                      <button
+                        key={city}
+                        type="button"
+                        className={`select-option ${userProfile.location === city ? 'selected' : ''}`}
+                        onClick={() => handleLocationSelect(city)}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
 
         <div className="form-section">
           <h3>使用統計</h3>

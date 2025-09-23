@@ -1,29 +1,57 @@
-import React, { useState, useRef } from 'react';
-import { 
-  IoCameraOutline, 
-  IoCreateOutline, 
-  IoCheckmarkOutline, 
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  IoCameraOutline,
+  IoCreateOutline,
+  IoCheckmarkOutline,
   IoCloseOutline,
   IoPersonOutline,
   IoMailOutline,
-  IoCalendarOutline
+  IoCalendarOutline,
+  IoLocationOutline,
+  IoBagOutline
 } from 'react-icons/io5';
+import { userDataService } from '../../services/userDataService.js';
 import './ProfileHeader.css';
 
-export default function ProfileHeader({ 
-  user, 
-  onAvatarUpdate, 
+export default function ProfileHeader({
+  user,
+  onAvatarUpdate,
   onProfileUpdate,
   isEditing,
-  onEditToggle 
+  onEditToggle
 }) {
   const [uploading, setUploading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [editData, setEditData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     bio: user?.bio || ''
   });
   const fileInputRef = useRef(null);
+
+  // 載入完整的用戶個人資料
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const result = await userDataService.getUserProfile(user.id);
+        if (result.success && result.profile) {
+          setUserProfile(result.profile);
+        }
+      } catch (error) {
+        console.error('載入用戶個人資料失敗:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, [user?.id]);
 
   // 處理頭像上傳
   const handleAvatarUpload = async (event) => {
@@ -244,7 +272,23 @@ export default function ProfileHeader({
                 <IoMailOutline className="detail-icon" />
                 <span className="detail-text">{user?.email || '未設定郵件'}</span>
               </div>
-              
+
+
+              {userProfile?.occupation && (
+                <div className="detail-item">
+                  <IoBagOutline className="detail-icon" />
+                  <span className="detail-text">{userProfile.occupation}</span>
+                </div>
+              )}
+
+              {userProfile?.location && (
+                <div className="detail-item">
+                  <IoLocationOutline className="detail-icon" />
+                  <span className="detail-text">{userProfile.location}</span>
+                </div>
+              )}
+
+
               {user?.created_at && (
                 <div className="detail-item">
                   <IoCalendarOutline className="detail-icon" />

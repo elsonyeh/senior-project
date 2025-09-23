@@ -404,6 +404,38 @@
     font-size: 24px;
   }
 
+  /* 性別選擇器響應式 */
+  .gender-selection-compact {
+    gap: 6px;
+  }
+
+  .gender-option-compact {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 60px;
+  }
+
+  /* 下拉選單響應式 */
+  .select-button {
+    padding: 12px 14px;
+    font-size: 15px;
+    height: 48px;
+  }
+
+  .select-option {
+    padding: 12px 14px;
+    font-size: 14px;
+    height: 48px;
+  }
+
+  .select-dropdown {
+    max-height: 200px;
+  }
+
+  .select-option:hover {
+    padding-left: 18px;
+  }
+
   .save-button {
     padding: 12px 28px;
     font-size: 15px;
@@ -453,6 +485,47 @@
 
   .form-group {
     margin-bottom: 20px;
+  }
+
+  /* 手機版性別選擇器 */
+  .gender-selection-compact {
+    gap: 4px;
+  }
+
+  .gender-option-compact {
+    padding: 8px 10px;
+    font-size: 12px;
+    min-width: 50px;
+  }
+
+  /* 手機版下拉選單 */
+  .select-button {
+    padding: 12px 14px;
+    font-size: 15px;
+    height: 46px;
+  }
+
+  .select-option {
+    padding: 10px 14px;
+    font-size: 14px;
+    height: 46px;
+  }
+
+  .custom-occupation-input {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .select-dropdown {
+    max-height: 180px;
+  }
+
+  .select-option:hover {
+    padding-left: 16px;
+  }
+
+  .select-arrow {
+    font-size: 12px;
   }
 
   .form-actions {
@@ -583,5 +656,392 @@
 
   .stat-item {
     border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* 簡化性別選擇器樣式 */
+.gender-selection-compact {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.gender-option-compact {
+  padding: 10px 16px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  min-width: 70px;
+  text-align: center;
+}
+
+.gender-option-compact:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.gender-option-compact.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* 自製下拉選單樣式 - 符合頁面風格 */
+.custom-select {
+  position: relative;
+  width: 100%;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.custom-select:focus,
+.custom-select:focus-visible,
+.custom-select:focus-within {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.select-button {
+  width: 100%;
+  padding: 14px 16px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  box-sizing: border-box;
+  height: 52px;
+  gap: 12px;
+}
+
+.select-button:hover {
+  border-color: #d1d5db;
+}
+
+.select-button:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 移除所有可能的外框樣式 */
+.custom-select,
+.custom-select:focus,
+.custom-select:focus-within,
+.custom-select:focus-visible,
+.custom-select:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.custom-select *,
+.custom-select *:focus,
+.custom-select *:focus-within,
+.custom-select *:focus-visible {
+  outline: none !important;
+}
+
+/* 確保按鈕本身沒有外框 */
+.custom-select button {
+  outline: none !important;
+}
+
+.custom-select button:focus {
+  outline: none !important;
+}
+
+.select-value {
+  flex: 1;
+  color: #374151;
+  font-weight: 500;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+}
+
+.select-value:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  font-weight: normal;
+}
+
+.select-arrow {
+  font-size: 14px;
+  color: #667eea;
+  transition: all 0.3s ease;
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
+}
+
+.select-arrow.open {
+  transform: rotate(180deg);
+  color: #764ba2;
+}
+
+.select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 240px;
+  overflow: hidden;
+  animation: dropdownSlideIn 0.2s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.select-option-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb #f8fafc;
+}
+
+.select-option-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.select-option-list::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 3px;
+}
+
+.select-option-list::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 3px;
+}
+
+.select-option-list::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+.select-option {
+  padding: 14px 16px;
+  background: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 16px;
+  color: #374151;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+  font-weight: 500;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.select-option:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #667eea;
+  padding-left: 20px;
+}
+
+.select-option.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  position: relative;
+}
+
+.select-option.selected::after {
+  content: '✓';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.select-option:last-child {
+  border-bottom: none;
+  border-radius: 0 0 10px 10px;
+}
+
+.select-option:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
+/* 自訂職業輸入框 */
+.custom-occupation-input {
+  margin-top: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  background: white;
+  color: #333;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.custom-occupation-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 錯誤狀態樣式 */
+.form-group input.error,
+.form-group textarea.error,
+.form-group select.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* 下拉選單樣式 */
+.form-group select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  background: white;
+  color: #333;
+  box-sizing: border-box;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group select:hover {
+  border-color: #d1d5db;
+}
+
+/* 多選框組樣式 */
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.checkbox-item {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: normal !important;
+  margin: 0 !important;
+  min-height: auto;
+}
+
+.checkbox-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: auto !important;
+  margin: 0;
+  padding: 0;
+  border: none;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.checkbox-item input[type="checkbox"]:checked + span {
+  color: #667eea;
+  font-weight: 500;
+}
+
+.checkbox-item span {
+  font-size: 14px;
+  color: #374151;
+  transition: color 0.2s ease;
+}
+
+/* 深色模式下的多選框 */
+@media (prefers-color-scheme: dark) {
+  .form-group select {
+    background: #374151;
+    color: #f9fafb;
+    border-color: #4b5563;
+  }
+
+  .form-group select:focus {
+    border-color: #667eea;
+  }
+
+  .checkbox-item {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .checkbox-item:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+
+  .checkbox-item span {
+    color: #f9fafb;
+  }
+
+  .checkbox-item input[type="checkbox"]:checked + span {
+    color: #93c5fd;
   }
 }

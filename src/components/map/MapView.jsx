@@ -73,8 +73,8 @@ export default function MapView({
       disableAutoPan: false
     });
     
-    // 搜尋附近餐廳
-    searchNearbyRestaurants(center);
+    // 只顯示資料庫餐廳，不搜尋 Google Places 附近餐廳
+    // searchNearbyRestaurants(center); // 已關閉以節省 API 費用
     
     setMapLoaded(true);
   }, [center, zoom]);
@@ -368,7 +368,10 @@ export default function MapView({
 
   // 顯示資料庫餐廳資訊
   const showDatabaseRestaurantInfo = useCallback((restaurant, marker) => {
-    if (!infoWindowRef.current) return;
+    if (!infoWindowRef.current) {
+      console.error('InfoWindow not initialized');
+      return;
+    }
 
     console.log('showDatabaseRestaurantInfo called:', restaurant.name);
 
@@ -387,7 +390,7 @@ export default function MapView({
     // 生成收藏清單選項
     const favoriteListsOptions = user && favoriteLists.length > 0
       ? favoriteLists.map(list =>
-          `<option value="${list.list_id}">${list.name} (${list.favorite_list_places?.length || 0})</option>`
+          `<option value="${list.id}">${list.name} (${list.favorite_list_places?.length || 0})</option>`
         ).join('')
       : '';
 
@@ -405,16 +408,26 @@ export default function MapView({
           <div class="info-place-rating google-places-rating">
             <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(restaurant.rating || 0))}${'☆'.repeat(5 - Math.floor(restaurant.rating || 0))}</span>
             <span class="info-rating-text google-places-rating-text">${rating}</span>
+            ${restaurant.user_ratings_total ? `<span class="info-rating-count google-places-rating-count"> (${restaurant.user_ratings_total})</span>` : ''}
           </div>
           <p class="info-place-address google-places-address">${restaurant.address || '地址未提供'}</p>
 
           <div class="info-place-actions google-places-actions">
-            ${user && favoriteLists.length > 0 ? `
+            ${user ? (favoriteLists.length > 0 ? `
               <div class="favorite-section google-places-favorite-section">
-                <select class="favorite-list-select google-places-select" id="databaseFavoriteListSelect">
-                  <option value="">選擇收藏清單</option>
-                  ${favoriteListsOptions}
-                </select>
+                <div class="restaurant-select-wrapper">
+                  <div class="restaurant-select" id="databaseCustomSelect" onclick="toggleDatabaseDropdown()">
+                    <span class="restaurant-select-text">選擇收藏清單</span>
+                    <span class="restaurant-select-arrow">▼</span>
+                  </div>
+                  <div class="restaurant-options" id="databaseCustomOptions" style="display: none;">
+                    ${favoriteLists.map(list => `
+                      <div class="restaurant-option" data-value="${list.id}" onclick="selectDatabaseOption('${list.id}', '${list.name}')">
+                        ${list.name} (${list.favorite_list_places?.length || 0})
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
                 <button class="add-to-list-btn google-places-add-btn" onclick="addToDatabaseFavoriteList('${restaurant.id}')">
                   📌 加入清單
                 </button>
@@ -423,6 +436,10 @@ export default function MapView({
               <button class="favorite-btn google-places-favorite-btn ${isFavorite ? 'favorited' : ''}" onclick="toggleDatabaseFavorite('${restaurant.id}')">
                 ${isFavorite ? '♥' : '♡'} ${isFavorite ? '已收藏' : '收藏'}
               </button>
+            `) : `
+              <div class="login-prompt" style="text-align: center; color: #6b7280; font-size: 0.875rem; margin: 8px 0;">
+                <p>請先登入才能使用收藏功能</p>
+              </div>
             `}
             <button class="info-navigate-btn google-places-navigate-btn" onclick="openNavigation(${restaurant.latitude}, ${restaurant.longitude})">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -432,21 +449,39 @@ export default function MapView({
               前往餐廳
             </button>
           </div>
-          <p style="color: #a0aec0; font-size: 0.75rem; margin: 16px 0 0 0; padding: 8px 12px; background: rgba(160, 174, 192, 0.1); border-radius: 8px; text-align: center; font-weight: 500;">來源：資料庫</p>
         </div>
       </div>
     `;
 
-    infoWindowRef.current.setContent(contentString);
-    infoWindowRef.current.open(googleMapRef.current, marker);
+    // 強制立即顯示 InfoWindow
+    infoWindowRef.current.close(); // 先關閉任何現有的 InfoWindow
 
-    // 移除Database Restaurant InfoWindow的padding-top
-    setTimeout(() => {
-      const iwCh = document.querySelector('.gm-style-iw-ch');
-      if (iwCh && document.querySelector('.google-places-info-window')) {
-        iwCh.style.paddingTop = '0px';
+    // 使用 requestAnimationFrame 確保在下一個渲染週期執行
+    requestAnimationFrame(() => {
+      try {
+        infoWindowRef.current.setContent(contentString);
+        infoWindowRef.current.open(googleMapRef.current, marker);
+
+        // 立即套用樣式修正
+        setTimeout(() => {
+          const iwCh = document.querySelector('.gm-style-iw-ch');
+          const infoWindow = document.querySelector('.google-places-info-window');
+          const iwContainer = document.querySelector('.gm-style-iw');
+
+          if (iwCh && infoWindow) {
+            iwCh.style.paddingTop = '0px';
+          }
+          if (iwContainer) {
+            iwContainer.style.display = 'block';
+            iwContainer.style.visibility = 'visible';
+            iwContainer.style.zIndex = '999999';
+          }
+        }, 50);
+
+      } catch (error) {
+        console.error('Error opening InfoWindow:', error);
       }
-    }, 100);
+    });
 
     // 全域函數供InfoWindow使用
     window.toggleDatabaseFavorite = (restaurantId) => {
@@ -469,16 +504,41 @@ export default function MapView({
       onFavoriteToggle?.(restaurantPlace, !isFavorite);
     };
 
-    window.addToDatabaseFavoriteList = (restaurantId) => {
-      const select = document.getElementById('databaseFavoriteListSelect');
-      const selectedListId = select?.value;
+    // 自訂下拉選單函數
+    window.toggleDatabaseDropdown = () => {
+      const options = document.getElementById('databaseCustomOptions');
+      const arrow = document.querySelector('#databaseCustomSelect .restaurant-select-arrow');
+      if (options.style.display === 'none') {
+        options.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+      } else {
+        options.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    };
+
+    window.selectDatabaseOption = (value, text) => {
+      const selectText = document.querySelector('#databaseCustomSelect .restaurant-select-text');
+      const options = document.getElementById('databaseCustomOptions');
+      const arrow = document.querySelector('#databaseCustomSelect .restaurant-select-arrow');
+
+      selectText.textContent = text;
+      selectText.dataset.value = value;
+      options.style.display = 'none';
+      arrow.style.transform = 'rotate(0deg)';
+    };
+
+    window.addToDatabaseFavoriteList = async (restaurantId) => {
+      const selectText = document.querySelector('#databaseCustomSelect .restaurant-select-text');
+      const selectedListId = selectText?.dataset.value;
 
       if (!selectedListId) {
         alert('請先選擇一個收藏清單');
         return;
       }
 
-      const selectedList = favoriteLists.find(list => list.list_id === selectedListId);
+      const selectedList = favoriteLists.find(list => list.id === selectedListId);
+
       if (selectedList && window.addPlaceToList) {
         // 轉換為Google Places格式
         const restaurantPlace = {
@@ -496,7 +556,27 @@ export default function MapView({
             }
           }
         };
-        window.addPlaceToList(selectedListId, restaurantPlace);
+
+        await window.addPlaceToList(selectedListId, restaurantPlace);
+      }
+    };
+
+    // 全域導航函數
+    window.openNavigation = (lat, lng) => {
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // 手機版使用 Google Maps app
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+      } else {
+        // 桌面版開啟 Google Maps 網頁版
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+      }
+    };
+
+    window.closeInfoWindow = () => {
+      if (infoWindowRef.current) {
+        infoWindowRef.current.close();
       }
     };
   }, [favorites, onFavoriteToggle, user, favoriteLists]);
@@ -682,7 +762,7 @@ export default function MapView({
     // 生成收藏清單選項
     const favoriteListsOptions = user && favoriteLists.length > 0
       ? favoriteLists.map(list =>
-          `<option value="${list.list_id}">${list.name} (${list.favorite_list_places?.length || 0})</option>`
+          `<option value="${list.id}">${list.name} (${list.favorite_list_places?.length || 0})</option>`
         ).join('')
       : '';
 
@@ -707,10 +787,19 @@ export default function MapView({
           <div class="info-place-actions google-places-actions">
             ${user && favoriteLists.length > 0 ? `
               <div class="favorite-section google-places-favorite-section">
-                <select class="favorite-list-select google-places-select" id="favoriteListSelect">
-                  <option value="">選擇收藏清單</option>
-                  ${favoriteListsOptions}
-                </select>
+                <div class="restaurant-select-wrapper">
+                  <div class="restaurant-select" id="googleCustomSelect" onclick="toggleGoogleDropdown()">
+                    <span class="restaurant-select-text">選擇收藏清單</span>
+                    <span class="restaurant-select-arrow">▼</span>
+                  </div>
+                  <div class="restaurant-options" id="googleCustomOptions" style="display: none;">
+                    ${favoriteLists.map(list => `
+                      <div class="restaurant-option" data-value="${list.id}" onclick="selectGoogleOption('${list.id}', '${list.name}')">
+                        ${list.name} (${list.favorite_list_places?.length || 0})
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
                 <button class="add-to-list-btn google-places-add-btn" onclick="addToFavoriteList('${place.place_id}')">
                   📌 加入清單
                 </button>
@@ -752,18 +841,41 @@ export default function MapView({
       infoWindowRef.current.close();
     };
 
-    window.addToFavoriteList = (placeId) => {
-      const select = document.getElementById('favoriteListSelect');
-      const selectedListId = select?.value;
+    window.toggleGoogleDropdown = () => {
+      const options = document.getElementById('googleCustomOptions');
+      const arrow = document.querySelector('#googleCustomSelect .restaurant-select-arrow');
+      if (options.style.display === 'none') {
+        options.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+      } else {
+        options.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    };
+
+    window.selectGoogleOption = (value, text) => {
+      const selectText = document.querySelector('#googleCustomSelect .restaurant-select-text');
+      const options = document.getElementById('googleCustomOptions');
+      const arrow = document.querySelector('#googleCustomSelect .restaurant-select-arrow');
+
+      selectText.textContent = text;
+      selectText.dataset.value = value;
+      options.style.display = 'none';
+      arrow.style.transform = 'rotate(0deg)';
+    };
+
+    window.addToFavoriteList = async (placeId) => {
+      const selectText = document.querySelector('#googleCustomSelect .restaurant-select-text');
+      const selectedListId = selectText?.dataset.value;
 
       if (!selectedListId) {
         alert('請先選擇一個收藏清單');
         return;
       }
 
-      const selectedList = favoriteLists.find(list => list.list_id === selectedListId);
+      const selectedList = favoriteLists.find(list => list.id === selectedListId);
       if (selectedList && window.addPlaceToList) {
-        window.addPlaceToList(selectedListId, place);
+        await window.addPlaceToList(selectedListId, place);
       }
     };
 
@@ -906,15 +1018,16 @@ export default function MapView({
     }
   }, [mapLoaded, restaurants, favorites, createRestaurantMarkers]);
 
-  // 當搜尋位置改變時，移動地圖中心並搜尋
+  // 當搜尋位置改變時，移動地圖中心（不搜尋附近餐廳）
   useEffect(() => {
     if (searchLocation && googleMapRef.current) {
       const newCenter = new window.google.maps.LatLng(searchLocation.lat, searchLocation.lng);
       googleMapRef.current.setCenter(newCenter);
       googleMapRef.current.setZoom(16);
-      searchNearbyRestaurants(searchLocation);
+      // 不再搜尋附近餐廳，只顯示資料庫餐廳
+      // searchNearbyRestaurants(searchLocation); // 已關閉以節省 API 費用
     }
-  }, [searchLocation, searchNearbyRestaurants]);
+  }, [searchLocation]);
 
 
   // 清理函數

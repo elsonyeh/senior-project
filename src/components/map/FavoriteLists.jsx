@@ -13,6 +13,7 @@ import {
   IoWarningOutline,
   IoAlertCircleOutline,
   IoEllipsisVertical,
+  IoNavigateOutline,
 } from "react-icons/io5";
 import { userDataService } from "../../services/userDataService";
 import { authService } from "../../services/authService";
@@ -76,13 +77,42 @@ export default function FavoriteLists({
 
       if (result.success) {
         // 轉換數據格式以兼容現有的地圖頁邏輯
-        const listsWithPlaces = result.lists.map((list) => ({
-          ...list,
-          places: (list.favorite_list_places || []).map(place => ({
-            ...place,
-            photo: place.photo_url // 將 photo_url 轉換為 photo 欄位
-          })),
-        }));
+        const listsWithPlaces = result.lists.map((list) => {
+          console.log('List data from API:', list); // 除錯日誌
+
+          return {
+            ...list,
+            places: (list.favorite_list_places || []).map(place => {
+              console.log('Place from API:', place); // 除錯日誌
+              console.log('Restaurant data:', place.restaurants); // 除錯日誌
+
+              return {
+                // 使用 restaurant_id 作為 place_id 以保持相容性
+                place_id: place.restaurant_id,
+                restaurant_id: place.restaurant_id,
+                id: place.id,
+                notes: place.notes,
+                added_at: place.added_at,
+                // 從關聯的餐廳資料取得詳細資訊
+                name: place.restaurants?.name || '未知餐廳',
+                address: place.restaurants?.address || '',
+                rating: place.restaurants?.rating || 0,
+                latitude: place.restaurants?.latitude,
+                longitude: place.restaurants?.longitude,
+                category: place.restaurants?.category,
+                // 處理餐廳圖片
+                restaurant_images: place.restaurants?.restaurant_images || [],
+                primaryImage: place.restaurants?.restaurant_images?.find(img => img.is_primary) ||
+                             place.restaurants?.restaurant_images?.[0] || null,
+                allImages: place.restaurants?.restaurant_images || [],
+                photo: place.restaurants?.restaurant_images?.find(img => img.is_primary)?.image_url ||
+                       place.restaurants?.restaurant_images?.[0]?.image_url || null,
+                photo_url: place.restaurants?.restaurant_images?.find(img => img.is_primary)?.image_url ||
+                          place.restaurants?.restaurant_images?.[0]?.image_url || null
+              };
+            }),
+          };
+        });
 
         setFavoriteLists(listsWithPlaces);
 
@@ -238,33 +268,6 @@ export default function FavoriteLists({
     }
   };
 
-  const addPlaceToList = async (listId, place) => {
-    try {
-      setLoading(true);
-      const result = await userDataService.addPlaceToList(listId, {
-        place_id: place.place_id,
-        name: place.name,
-        address: place.formatted_address || "",
-        rating: place.rating || null,
-        photo_url: place.photos?.[0]?.getUrl({ maxWidth: 200 }) || null,
-        notes: "",
-      });
-
-      if (result.success) {
-        // 重新載入清單以確保數據同步（不顯示載入指示器）
-        await loadFavoriteLists(false);
-        onPlaceAdd?.();
-        showNotification("已加入收藏清單！", "success");
-      } else {
-        showNotification(result.error || "加入收藏失敗", "error");
-      }
-    } catch (error) {
-      console.error("加入收藏錯誤:", error);
-      showNotification("加入收藏失敗，請重試", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const removePlaceFromList = async (listId, placeId) => {
     try {
@@ -528,18 +531,6 @@ export default function FavoriteLists({
             <div className="map-current-list-content">
               <div className="map-list-header">
                 <h4 className="map-list-title">{selectedList.name}</h4>
-                {selectedPlace && (
-                  <button
-                    className="map-add-place-btn"
-                    onClick={() =>
-                      addPlaceToList(selectedList.id, selectedPlace)
-                    }
-                    title="將選中的地點加入此清單"
-                  >
-                    <IoAddOutline />
-                    加入地點
-                  </button>
-                )}
               </div>
 
               <div className="map-places-list">
@@ -550,51 +541,72 @@ export default function FavoriteLists({
                     <p className="map-empty-hint">點選地圖上的餐廳加入收藏</p>
                   </div>
                 ) : (
-                  selectedList.places.map((place) => (
-                    <div key={place.place_id} className="map-place-item">
-                      {place.photo ? (
-                        <img
-                          src={place.photo}
-                          alt={place.name}
-                          className="map-place-image"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextElementSibling.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="map-place-image-fallback"
-                        style={{ display: place.photo ? 'none' : 'flex' }}
-                      >
-                        <IoRestaurantOutline />
+                  selectedList.places.map((place) => {
+                    // 增加除錯日誌以協助調試
+                    console.log('Place data:', place);
+
+                    return (
+                      <div key={place.place_id || place.restaurant_id || place.id} className="map-place-item">
+                        {place.photo ? (
+                          <img
+                            src={place.photo}
+                            alt={place.name || '餐廳'}
+                            className="map-place-image"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="map-place-image-fallback"
+                          style={{ display: place.photo ? 'none' : 'flex' }}
+                        >
+                          <IoRestaurantOutline />
+                        </div>
+                        <div className="map-place-info">
+                          <h5 className="map-place-name">{place.name || '未知餐廳'}</h5>
+                          <p className="map-place-address">{place.address || '地址未提供'}</p>
+                          {place.rating && place.rating > 0 && (
+                            <div className="map-place-rating">
+                              <span className="map-rating-stars">
+                                {"★".repeat(Math.floor(place.rating))}
+                                {"☆".repeat(5 - Math.floor(place.rating))}
+                              </span>
+                              <span className="map-rating-value">
+                                {place.rating}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="map-place-actions">
+                          <button
+                            className="map-navigate-place-btn"
+                            onClick={() => {
+                              const lat = place.latitude || place.geometry?.location?.lat();
+                              const lng = place.longitude || place.geometry?.location?.lng();
+                              if (lat && lng) {
+                                const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+                                window.open(url, '_blank');
+                              }
+                            }}
+                            title="前往此地點"
+                          >
+                            <IoNavigateOutline />
+                          </button>
+                          <button
+                            className="map-remove-place-btn"
+                            onClick={() =>
+                              removePlaceFromList(selectedList.id, place.place_id || place.restaurant_id)
+                            }
+                            title="移除此地點"
+                          >
+                            <IoTrashOutline />
+                          </button>
+                        </div>
                       </div>
-                      <div className="map-place-info">
-                        <h5 className="map-place-name">{place.name}</h5>
-                        <p className="map-place-address">{place.address}</p>
-                        {place.rating && (
-                          <div className="map-place-rating">
-                            <span className="map-rating-stars">
-                              {"★".repeat(Math.floor(place.rating))}
-                              {"☆".repeat(5 - Math.floor(place.rating))}
-                            </span>
-                            <span className="map-rating-value">
-                              {place.rating}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        className="map-remove-place-btn"
-                        onClick={() =>
-                          removePlaceFromList(selectedList.id, place.place_id)
-                        }
-                        title="移除此地點"
-                      >
-                        <IoTrashOutline />
-                      </button>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

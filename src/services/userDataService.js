@@ -23,13 +23,23 @@ export const userDataService = {
           updated_at,
           favorite_list_places (
             id,
-            place_id,
-            name,
-            address,
-            rating,
-            photo_url,
+            restaurant_id,
             notes,
-            added_at
+            added_at,
+            restaurants (
+              id,
+              name,
+              address,
+              rating,
+              latitude,
+              longitude,
+              category,
+              restaurant_images (
+                image_url,
+                is_primary,
+                display_order
+              )
+            )
           )
         `)
         .eq('user_id', userId)
@@ -194,12 +204,16 @@ export const userDataService = {
   async addPlaceToList(listId, placeData) {
     try {
       // 檢查地點是否已存在
-      const { data: existingPlace } = await supabase
+      const { data: existingPlace, error: checkError } = await supabase
         .from('favorite_list_places')
         .select('id')
         .eq('list_id', listId)
-        .eq('place_id', placeData.place_id)
-        .single();
+        .eq('restaurant_id', placeData.place_id)
+        .maybeSingle(); // 使用 maybeSingle() 避免 406 錯誤
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
 
       if (existingPlace) {
         return {
@@ -208,21 +222,66 @@ export const userDataService = {
         };
       }
 
+      // 首先確保餐廳資訊存在於 restaurants 表格中
+      const restaurantData = {
+        id: placeData.place_id,
+        name: placeData.name || '未知餐廳',
+        address: placeData.address || '',
+        rating: placeData.rating || null,
+        latitude: placeData.latitude || null,
+        longitude: placeData.longitude || null,
+        category: placeData.category || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // 使用 upsert 來插入或更新餐廳資訊
+      const { error: restaurantError } = await supabase
+        .from('restaurants')
+        .upsert(restaurantData, {
+          onConflict: 'id',
+          ignoreDuplicates: false
+        });
+
+      if (restaurantError) {
+        console.warn('餐廳資訊存儲失敗:', restaurantError);
+        // 繼續執行，不要因為餐廳資訊存儲失敗而中斷
+      }
+
+      // 如果有照片 URL，嘗試存儲餐廳圖片
+      if (placeData.photo_url) {
+        const { error: imageError } = await supabase
+          .from('restaurant_images')
+          .upsert({
+            restaurant_id: placeData.place_id,
+            image_url: placeData.photo_url,
+            is_primary: true,
+            display_order: 1,
+            created_at: new Date().toISOString()
+          }, {
+            onConflict: 'restaurant_id,image_url',
+            ignoreDuplicates: true
+          });
+
+        if (imageError) {
+          console.warn('餐廳圖片存儲失敗:', imageError);
+        }
+      }
+
+      // 添加到收藏清單
       const { data, error } = await supabase
         .from('favorite_list_places')
         .insert([{
           list_id: listId,
-          place_id: placeData.place_id,
-          name: placeData.name,
-          address: placeData.address || '',
-          rating: placeData.rating || null,
-          photo_url: placeData.photo_url || null,
+          restaurant_id: placeData.place_id,
           notes: placeData.notes || ''
         }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return {
         success: true,
@@ -268,7 +327,7 @@ export const userDataService = {
         .from('favorite_list_places')
         .delete()
         .eq('list_id', listId)
-        .eq('place_id', placeId);
+        .eq('restaurant_id', placeId);
 
       if (error) throw error;
 
@@ -375,14 +434,23 @@ export const userDataService = {
       // 確保用戶檔案存在
       await this.ensureUserProfile(userId, profileData.email, profileData.name);
 
+      // 構建更新數據對象
+      const updateData = {
+        name: profileData.name,
+        bio: profileData.bio,
+        avatar_url: profileData.avatar_url,
+        updated_at: new Date().toISOString()
+      };
+
+      // 添加基本個人資料欄位
+      if (profileData.gender !== undefined) updateData.gender = profileData.gender;
+      if (profileData.birth_date !== undefined) updateData.birth_date = profileData.birth_date;
+      if (profileData.occupation !== undefined) updateData.occupation = profileData.occupation;
+      if (profileData.location !== undefined) updateData.location = profileData.location;
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .update({
-          name: profileData.name,
-          bio: profileData.bio,
-          avatar_url: profileData.avatar_url,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', userId)
         .select()
         .single();
@@ -481,28 +549,7 @@ export const userDataService = {
       places_count: 5,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      favorite_list_places: [
-        {
-          id: `place_${Date.now()}_1`,
-          place_id: 'ChIJ_sample_1',
-          name: '鼎泰豐',
-          address: '台北市信義區市府路45號',
-          rating: 4.5,
-          photo_url: null,
-          notes: '小籠包很讚！',
-          added_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: `place_${Date.now()}_2`,
-          place_id: 'ChIJ_sample_2',
-          name: '阿宗麵線',
-          address: '台北市萬華區峨眉街8-1號',
-          rating: 4.2,
-          photo_url: null,
-          notes: '經典台灣小吃',
-          added_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-        }
-      ]
+      favorite_list_places: []
     };
   },
 

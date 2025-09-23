@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { adminService } from "../services/supabaseService";
 import RestaurantManager from "./RestaurantManager";
 import DataAnalyticsPage from "./admin/DataAnalyticsPage";
+import RestaurantRatingUpdater from "./admin/RestaurantRatingUpdater";
 import { InputModal, ConfirmModal, NotificationModal, AdminFormModal } from "./CustomModal";
 import "./AdminDashboard.css";
 
@@ -418,6 +419,12 @@ export default function AdminDashboard() {
           管理員管理
         </button>
         <button
+          className={`tab-button ${activeTab === "ratings" ? "active" : ""}`}
+          onClick={() => setActiveTab("ratings")}
+        >
+          評分更新
+        </button>
+        <button
           className={`tab-button ${activeTab === "analytics" ? "active" : ""}`}
           onClick={() => setActiveTab("analytics")}
         >
@@ -428,6 +435,8 @@ export default function AdminDashboard() {
       {/* 內容區域 */}
       <div className="dashboard-content">
         {activeTab === "restaurants" && <RestaurantManager />}
+
+        {activeTab === "ratings" && <RestaurantRatingUpdater />}
 
         {activeTab === "analytics" && <DataAnalyticsPage />}
         

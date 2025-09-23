@@ -76,10 +76,16 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
             if (!isMounted) return;
 
             try {
-              // 同時搜尋 Google Places 和餐廳資料庫
+              // 只搜尋餐廳資料庫，不使用 Google Places API 以節省費用
               const [placePredictions, restaurantMatches] = await Promise.allSettled([
-                // Google Places 搜尋 (using new Places API)
+                // Google Places 搜尋已關閉以節省 API 費用
                 new Promise(async (resolve, reject) => {
+                  console.log('Google Places 搜尋已關閉以節省 API 費用');
+                  resolve([]); // 直接返回空陣列
+                  return;
+
+                  // 以下程式碼已被註解掉
+                  /*
                   try {
                     // 檢查新版 Places API 是否可用
                     if (!window.google?.maps?.places) {
@@ -144,6 +150,7 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
                     console.warn('Google Places API error:', error);
                     resolve([]);
                   }
+                  */
                 }),
                 // 餐廳資料庫搜尋
                 searchRestaurantDatabase(searchTerm)

@@ -520,6 +520,203 @@ const DataAnalyticsPage = () => {
           </div>
         </div>
 
+        {/* 用戶人口統計分析 */}
+        {stats?.demographics && (
+          <>
+            <div className="demographics-section">
+              <h3 className="section-title">👥 用戶組成分析</h3>
+              <div className="charts-grid">
+                {/* 性別分布 */}
+                {Object.keys(stats.demographics.genderDistribution).length > 0 && (
+                  <div className="chart-card">
+                    <div className="chart-header">
+                      <h3 className="chart-title">⚧️ 性別分布</h3>
+                      <button
+                        onClick={() => handleExport('demographics-gender')}
+                        className="export-button"
+                      >
+                        📊 導出
+                      </button>
+                    </div>
+                    <div className="chart-container">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={Object.entries(stats.demographics.genderDistribution).map(([key, value]) => ({
+                              name: key,
+                              value
+                            }))}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {Object.entries(stats.demographics.genderDistribution).map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, name) => [value, name]}
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {/* 年齡組分布 */}
+                {Object.keys(stats.demographics.ageGroups).length > 0 && (
+                  <div className="chart-card">
+                    <div className="chart-header">
+                      <h3 className="chart-title">🎂 年齡組分布</h3>
+                      <button
+                        onClick={() => handleExport('demographics-age')}
+                        className="export-button"
+                      >
+                        📊 導出
+                      </button>
+                    </div>
+                    <div className="chart-container">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={Object.entries(stats.demographics.ageGroups).map(([key, value]) => ({
+                            ageGroup: key,
+                            count: value
+                          }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="ageGroup" tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                            }}
+                          />
+                          <Bar dataKey="count" fill={COLORS[2]} radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 職業和地區分布 */}
+              <div className="charts-grid">
+                {/* 職業分佈 */}
+                {Object.keys(stats.demographics.occupationCategories).length > 0 && (
+                  <div className="chart-card">
+                    <div className="chart-header">
+                      <h3 className="chart-title">💼 職業分佈</h3>
+                      <button
+                        onClick={() => handleExport('demographics-occupation')}
+                        className="export-button"
+                      >
+                        📊 導出
+                      </button>
+                    </div>
+                    <div className="chart-container">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={Object.entries(stats.demographics.occupationCategories)
+                            .sort(([, a], [, b]) => b - a)
+                            .slice(0, 10)
+                            .map(([key, value]) => ({
+                              occupation: key.length > 15 ? key.substring(0, 15) + '...' : key,
+                              count: value,
+                              fullName: key
+                            }))}
+                          layout="horizontal"
+                          margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis type="number" tick={{ fontSize: 12 }} />
+                          <YAxis
+                            dataKey="occupation"
+                            type="category"
+                            width={80}
+                            tick={{ fontSize: 11 }}
+                          />
+                          <Tooltip
+                            formatter={(value, name, props) => [value, props.payload.fullName]}
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                            }}
+                          />
+                          <Bar dataKey="count" fill={COLORS[3]} radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {/* 地區分布 */}
+                {Object.keys(stats.demographics.locationDistribution).length > 0 && (
+                  <div className="chart-card">
+                    <div className="chart-header">
+                      <h3 className="chart-title">📍 地區分布</h3>
+                      <button
+                        onClick={() => handleExport('demographics-location')}
+                        className="export-button"
+                      >
+                        📊 導出
+                      </button>
+                    </div>
+                    <div className="chart-container">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={Object.entries(stats.demographics.locationDistribution)
+                            .sort(([, a], [, b]) => b - a)
+                            .slice(0, 10)
+                            .map(([key, value]) => ({
+                              location: key.length > 12 ? key.substring(0, 12) + '...' : key,
+                              count: value,
+                              fullName: key
+                            }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 45 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis
+                            dataKey="location"
+                            tick={{ fontSize: 10, angle: -45, textAnchor: 'end' }}
+                            height={60}
+                          />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip
+                            formatter={(value, name, props) => [value, props.payload.fullName]}
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                            }}
+                          />
+                          <Bar dataKey="count" fill={COLORS[4]} radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* 地理位置統計 */}
         {locationData.length > 0 && (
           <div className="chart-card full-width-chart">
@@ -718,6 +915,73 @@ const DataAnalyticsPage = () => {
                 </li>
               </ul>
             </div>
+
+            {/* 用戶組成統計 */}
+            {stats?.demographics && (
+              <div className="detail-section">
+                <h4>👥 用戶組成</h4>
+                <ul className="detail-list">
+                  <li className="detail-item">
+                    <span className="detail-label">有詳細資料用戶</span>
+                    <span className="detail-value">{stats.demographics.totalProfilesWithData?.toLocaleString() || 0}</span>
+                  </li>
+                  <li className="detail-item">
+                    <span className="detail-label">性別資料數</span>
+                    <span className="detail-value">
+                      {Object.values(stats.demographics.genderDistribution).reduce((sum, count) => sum + count, 0)}
+                    </span>
+                  </li>
+                  <li className="detail-item">
+                    <span className="detail-label">年齡資料數</span>
+                    <span className="detail-value">
+                      {Object.values(stats.demographics.ageGroups).reduce((sum, count) => sum + count, 0)}
+                    </span>
+                  </li>
+                  <li className="detail-item">
+                    <span className="detail-label">職業類別數</span>
+                    <span className="detail-value">
+                      {Object.keys(stats.demographics.occupationCategories).length}
+                    </span>
+                  </li>
+                  <li className="detail-item">
+                    <span className="detail-label">地區類別數</span>
+                    <span className="detail-value">
+                      {Object.keys(stats.demographics.locationDistribution).length}
+                    </span>
+                  </li>
+                  <li className="detail-item">
+                    <span className="detail-label">最常見性別</span>
+                    <span className="detail-value">
+                      {Object.keys(stats.demographics.genderDistribution).length > 0 ?
+                        Object.entries(stats.demographics.genderDistribution)
+                          .sort(([, a], [, b]) => b - a)[0]?.[0] || '無資料'
+                        : '無資料'
+                      }
+                    </span>
+                  </li>
+                  <li className="detail-item">
+                    <span className="detail-label">最常見年齡組</span>
+                    <span className="detail-value">
+                      {Object.keys(stats.demographics.ageGroups).length > 0 ?
+                        Object.entries(stats.demographics.ageGroups)
+                          .sort(([, a], [, b]) => b - a)[0]?.[0] || '無資料'
+                        : '無資料'
+                      }
+                    </span>
+                  </li>
+                  <li className="detail-item">
+                    <span className="detail-label">最常見職業</span>
+                    <span className="detail-value">
+                      {Object.keys(stats.demographics.occupationCategories).length > 0 ?
+                        Object.entries(stats.demographics.occupationCategories)
+                          .sort(([, a], [, b]) => b - a)[0]?.[0] || '無資料'
+                        : '無資料'
+                      }
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
