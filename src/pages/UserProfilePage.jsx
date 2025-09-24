@@ -13,6 +13,7 @@ import UserProfileEditPage from '../components/profile/UserProfilePage';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { authService } from '../services/authService';
+import { useNavContext } from '../App';
 import {
   IoLogInOutline,
   IoPersonOutline,
@@ -27,6 +28,7 @@ export default function UserProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const { setIsAuthModalOpen } = useNavContext();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [currentView, setCurrentView] = useState('menu'); // menu, profile, lists, history, settings, faq, contact, about, profileEdit
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
@@ -150,6 +152,11 @@ export default function UserProfilePage() {
     // 觸發自定義事件
     window.dispatchEvent(new CustomEvent('profileNavChange', { detail: { isVisible: isNavVisible } }));
   }, [isNavVisible]);
+
+  // 同步AuthModal狀態到context
+  useEffect(() => {
+    setIsAuthModalOpen(showAuthModal);
+  }, [showAuthModal, setIsAuthModalOpen]);
 
   // 檢查用戶登入狀態
   const checkAuthStatus = async () => {

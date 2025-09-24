@@ -32,7 +32,7 @@ const BottomNavController = () => {
   const currentPath = location.pathname;
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollTop, setLastScrollTop] = useState(0);
-  const { isNavCollapsed, handleNavExpand } = useNavContext();
+  const { isNavCollapsed, handleNavExpand, isAuthModalOpen } = useNavContext();
 
   // 判斷是否是管理頁面
   const isAdminPage = currentPath === '/admin' || currentPath === '/admin-login';
@@ -68,6 +68,11 @@ const BottomNavController = () => {
     return null;
   }
 
+  // 如果AuthModal開啟，隱藏底部導航欄
+  if (isAuthModalOpen) {
+    return null;
+  }
+
   // 否則顯示底部導航欄，在個人資料頁面時根據滾動狀態控制顯示
   return (
     <BottomNav
@@ -82,6 +87,7 @@ const BottomNavController = () => {
 // NavProvider組件
 const NavProvider = ({ children }) => {
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const handleNavExpand = () => {
     setIsNavCollapsed(false);
@@ -90,7 +96,9 @@ const NavProvider = ({ children }) => {
   const navContextValue = {
     isNavCollapsed,
     setIsNavCollapsed,
-    handleNavExpand
+    handleNavExpand,
+    isAuthModalOpen,
+    setIsAuthModalOpen
   };
 
   return (
