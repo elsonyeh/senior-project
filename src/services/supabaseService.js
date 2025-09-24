@@ -54,7 +54,7 @@ export const getSupabaseAdmin = () => {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
-        storageKey: 'swifttaste-admin-auth', // 唯一的儲存鍵
+        storageKey: 'swifttaste-admin-unique', // 管理员专用储存键
       },
       global: {
         headers: {
@@ -81,8 +81,11 @@ const activeSubscriptions = new Map();
  * @return {Function} 清理函數
  */
 const addSubscription = (table, filter, callback, subscriptionId) => {
+  console.log("🔌 建立 Supabase 訂閱:", { table, filter, subscriptionId });
+
   // 如果已經有相同ID的訂閱，先清理
   if (activeSubscriptions.has(subscriptionId)) {
+    console.log("🧹 清理現有訂閱:", subscriptionId);
     const existingSubscription = activeSubscriptions.get(subscriptionId);
     existingSubscription.unsubscribe();
   }
@@ -94,12 +97,30 @@ const addSubscription = (table, filter, callback, subscriptionId) => {
       schema: 'public',
       table: table,
       filter: filter,
-    }, callback)
-    .subscribe();
+    }, (payload) => {
+      console.log("📨 Supabase 訂閱收到原始資料:", {
+        subscriptionId,
+        table,
+        filter,
+        payload
+      });
+      callback(payload);
+    })
+    .subscribe((status, err) => {
+      // 只在重要狀態變化時記錄日誌，避免過多輸出
+      if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR' || err) {
+        console.log("📡 Supabase 訂閱狀態:", {
+          subscriptionId,
+          status,
+          error: err
+        });
+      }
+    });
 
   activeSubscriptions.set(subscriptionId, subscription);
 
   const cleanup = () => {
+    console.log("🗑️ 清理訂閱:", subscriptionId);
     subscription.unsubscribe();
     activeSubscriptions.delete(subscriptionId);
   };
@@ -191,17 +212,49 @@ export const roomService = {
   listenRoomStatus(roomId, callback) {
     if (!roomId || typeof callback !== 'function') return () => {};
 
+    console.log("🔗 設置房間狀態監聽器", { roomId, subscriptionId: `roomStatus_${roomId}` });
+
     const subscriptionId = `roomStatus_${roomId}`;
     return addSubscription(
       'buddies_rooms',
       `id=eq.${roomId}`,
       (payload) => {
+        console.log("📡 房間狀態監聽器收到資料:", {
+          payload,
+          event: payload.eventType,
+          oldStatus: payload.old?.status,
+          newStatus: payload.new?.status,
+          roomId
+        });
+
         if (payload.new) {
           callback(payload.new.status || 'waiting');
         }
       },
       subscriptionId
     );
+  },
+
+  /**
+   * 獲取房間當前狀態
+   * @param {String} roomId - 房間ID
+   * @return {Promise<Object>} 房間狀態
+   */
+  async getRoomStatus(roomId) {
+    try {
+      const { data, error } = await supabase
+        .from('buddies_rooms')
+        .select('status')
+        .eq('id', roomId)
+        .single();
+
+      if (error) throw error;
+
+      return { success: true, status: data?.status || 'waiting' };
+    } catch (error) {
+      console.error('獲取房間狀態失敗:', error);
+      return { success: false, error: error.message };
+    }
   },
 
   /**
@@ -214,7 +267,7 @@ export const roomService = {
     try {
       const { data, error } = await supabase
         .from('buddies_rooms')
-        .update({ 
+        .update({
           status,
           last_updated: new Date().toISOString(),
         })
@@ -410,11 +463,17 @@ export const questionService = {
     try {
       const { data, error } = await supabase
         .from('buddies_questions')
-        .upsert({
-          room_id: roomId,
-          questions: questions,
-          created_at: new Date().toISOString(),
-        })
+        .upsert(
+          {
+            room_id: roomId,
+            questions: questions,
+            created_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'room_id', // 指定衝突解決的欄位
+            ignoreDuplicates: false // 更新而不是忽略重複
+          }
+        )
         .select()
         .single();
 
@@ -438,7 +497,7 @@ export const questionService = {
         .from('buddies_questions')
         .select('questions')
         .eq('room_id', roomId)
-        .single();
+        .maybeSingle(); // 使用 maybeSingle() 處理可能為空的結果
 
       if (error) throw error;
 
@@ -482,6 +541,15 @@ export const questionService = {
    */
   async submitAnswers(roomId, userId, answers, questionTexts = [], questionSources = []) {
     try {
+      console.log('📝 提交答案到數據庫:', {
+        roomId,
+        userId,
+        answersCount: answers.length,
+        answers,
+        questionTexts,
+        questionSources
+      });
+
       const { data, error } = await supabase
         .from('buddies_answers')
         .upsert({
@@ -491,15 +559,22 @@ export const questionService = {
           question_texts: questionTexts,
           question_sources: questionSources,
           submitted_at: new Date().toISOString(),
+        }, {
+          onConflict: 'room_id,user_id', // 指定衝突解決的欄位組合
+          ignoreDuplicates: false // 更新而不是忽略重複
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase 提交答案錯誤:', error);
+        throw error;
+      }
 
+      console.log('✅ 答案提交成功:', data);
       return { success: true, data };
     } catch (error) {
-      console.error('提交答案失敗:', error);
+      console.error('❌ 提交答案失敗:', error);
       return { success: false, error: error.message };
     }
   },
@@ -598,7 +673,7 @@ export const recommendationService = {
         .from('buddies_recommendations')
         .select('restaurants')
         .eq('room_id', roomId)
-        .single();
+        .maybeSingle(); // 使用 maybeSingle() 處理可能為空的結果
 
       if (error) throw error;
 

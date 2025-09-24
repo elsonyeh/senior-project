@@ -28,7 +28,7 @@ const RestaurantManager = () => {
     website_url: '',
     tags: [],
     suggested_people: '1~4',
-    is_spicy: false,
+    is_spicy: 'false',
     images: []
   });
   
@@ -202,7 +202,7 @@ const RestaurantManager = () => {
       price_range: restaurant.price_range || 1,
       rating: restaurant.rating || 0,
       suggested_people: restaurant.suggested_people || '1~4',
-      is_spicy: restaurant.is_spicy || false
+      is_spicy: restaurant.is_spicy || 'false'
     });
   };
 
@@ -272,7 +272,7 @@ const RestaurantManager = () => {
         website_url: '',
         tags: [],
         suggested_people: '1~4',
-        is_spicy: false,
+        is_spicy: 'false',
         images: []
       });
       setShowAddForm(false);
@@ -420,7 +420,8 @@ const RestaurantManager = () => {
         restaurant.price_range,
         restaurant.rating,
         restaurant.suggested_people,
-        restaurant.is_spicy ? '是' : '否',
+        restaurant.is_spicy === 'true' ? '是' :
+        restaurant.is_spicy === 'both' ? '兩種都有' : '否',
         Array.isArray(restaurant.tags) ? restaurant.tags.join('; ') : restaurant.tags || '',
         restaurant.website_url || '',
         restaurant.longitude || '',
@@ -567,10 +568,11 @@ const RestaurantManager = () => {
                 <label>辣味</label>
                 <select
                   value={newRestaurant.is_spicy}
-                  onChange={(e) => setNewRestaurant({...newRestaurant, is_spicy: e.target.value === 'true'})}
+                  onChange={(e) => setNewRestaurant({...newRestaurant, is_spicy: e.target.value})}
                 >
-                  <option value={false}>不辣</option>
-                  <option value={true}>辣</option>
+                  <option value="false">不辣</option>
+                  <option value="true">辣</option>
+                  <option value="both">兩種都有</option>
                 </select>
               </div>
             </div>
@@ -875,14 +877,16 @@ const RestaurantManager = () => {
                     {editingRestaurant === restaurant.id ? (
                       <select
                         value={editData.is_spicy}
-                        onChange={(e) => setEditData({...editData, is_spicy: e.target.value === 'true'})}
+                        onChange={(e) => setEditData({...editData, is_spicy: e.target.value})}
                         className="edit-select"
                       >
-                        <option value={false}>不辣</option>
-                        <option value={true}>辣</option>
+                        <option value="false">不辣</option>
+                        <option value="true">辣</option>
+                        <option value="both">兩種都有</option>
                       </select>
                     ) : (
-                      restaurant.is_spicy ? '辣' : '不辣'
+                      restaurant.is_spicy === 'true' ? '辣' :
+                      restaurant.is_spicy === 'both' ? '兩種都有' : '不辣'
                     )}
                   </td>
                   <td>

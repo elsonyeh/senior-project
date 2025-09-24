@@ -10,6 +10,7 @@ export default function QuestionSwiperMotionSingle({
   onAnswer,
   voteStats,
   disableClickToVote = false,
+  userId,
 }) {
   const [lastDirection, setLastDirection] = useState("");
   const [hasVoted, setHasVoted] = useState(false);
@@ -70,13 +71,19 @@ export default function QuestionSwiperMotionSingle({
         });
 
         // 檢查當前用戶是否已投票
+        console.log("🔍 檢查用戶投票狀態:", {
+          userId,
+          voteStatsUserData: voteStats.userData,
+          hasUserVoted: voteStats.userData?.some((vote) => vote.id === userId)
+        });
+
         const hasUserVoted = voteStats.userData?.some(
-          (vote) => vote.id === socket.id
+          (vote) => vote.id === userId
         );
         setHasVoted(hasUserVoted);
       }
     }
-  }, [voteStats, question, socket.id]);
+  }, [voteStats, question, userId]);
 
   // 處理滑動時的視覺反饋
   const handleLocalSwipe = (dir) => {
@@ -85,7 +92,17 @@ export default function QuestionSwiperMotionSingle({
 
   // 處理最終滑動提交
   const handleSwipe = (dir, item) => {
-    if (hasVoted) return; // 防止重複投票
+    console.log("🎯 handleSwipe 被調用:", {
+      dir,
+      hasVoted,
+      userId,
+      questionId: question?.id
+    });
+
+    if (hasVoted) {
+      console.log("⚠️ 用戶已投票，忽略此次滑動");
+      return; // 防止重複投票
+    }
 
     // 提交答案
     const answer =
@@ -96,6 +113,8 @@ export default function QuestionSwiperMotionSingle({
         : item
         ? item.leftOption
         : question.leftOption;
+
+    console.log("📝 提交答案:", { answer, userId });
 
     setHasVoted(true);
     // 調用父組件的答案處理函數

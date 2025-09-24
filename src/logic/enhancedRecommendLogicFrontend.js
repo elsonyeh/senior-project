@@ -59,7 +59,8 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
   const userCount = options.userCount || 1;
   const strictBasicMatch = options.strictBasicMatch === true;
 
-  const { priceRange, type, isSpicy, suggested_people, tags, rating, reviews, likes, location } = restaurant || {};
+  const { priceRange, type, is_spicy, suggested_people, tags, rating, reviews, likes, location } = restaurant || {};
+  const isSpicy = is_spicy; // 保持向後兼容性
   const restaurantType = type ? type.split(/[,、，]/).map(t => t.trim()) : [];
   const restaurantTags = Array.isArray(tags) ? tags : tags ? [tags] : [];
   if (restaurantType.length > 0) restaurantTags.push(...restaurantType);
@@ -74,10 +75,10 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
       return WEIGHT.MIN_SCORE;
     }
 
-    // 優先檢查「吃」選項 - 如果沒有「吃一點」或「飽足」標籤，立即返回最低分
+    // 優先檢查「吃」選項 - 如果沒有「吃一點」或「吃飽」標籤，立即返回最低分
     if (basicAnswers.includes("吃") &&
       !normalizedTags.includes("吃一點") &&
-      !normalizedTags.includes("飽足")) {
+      !normalizedTags.includes("吃飽")) {
       return WEIGHT.MIN_SCORE;
     }
   }
@@ -117,8 +118,8 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
         case "奢華美食": matched = priceRange === "$$$" || priceRange === "$$"; break;
         case "平價美食": matched = priceRange === "$" || priceRange === "$$"; break;
         case "吃": {
-          // 檢查是否有"吃一點"或"飽足"標籤
-          const isEatingPlace = normalizedTags.includes("吃一點") || normalizedTags.includes("飽足");
+          // 檢查是否有"吃一點"或"吃飽"標籤
+          const isEatingPlace = normalizedTags.includes("吃一點") || normalizedTags.includes("吃飽");
 
           // 如果選擇了「吃」但餐廳沒有吃的相關標籤，給予最低分
           if (!isEatingPlace) {
@@ -157,8 +158,8 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
           break;
         }
         case "吃飽": {
-          // 必須有"飽足"標籤
-          const hasFullMealTag = normalizedTags.includes("飽足");
+          // 必須有"吃飽"標籤
+          const hasFullMealTag = normalizedTags.includes("吃飽");
 
           if (!hasFullMealTag) {
             score = WEIGHT.MIN_SCORE;
@@ -184,8 +185,8 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
           }
           break;
         }
-        case "辣": matched = isSpicy === true; break;
-        case "不辣": matched = isSpicy === false; break;
+        case "辣": matched = isSpicy === true || isSpicy === 'true' || isSpicy === 'both'; break;
+        case "不辣": matched = isSpicy === false || isSpicy === 'false' || isSpicy === 'both'; break;
         case "單人": matched = suggested_people && suggested_people.includes("1"); break;
         case "多人": matched = suggested_people && suggested_people.includes("~"); break;
         default: matched = tagMatch([answer]);
@@ -199,8 +200,9 @@ function calculateMatchScore(restaurant, basicAnswers, basicQuestions, funAnswer
     });
   }
 
-  if (strictBasicMatch && basicMismatchCount > 0) return WEIGHT.MIN_SCORE;
-  if (basicMatchCount === 0 && basicAnswers.length > 0) score = WEIGHT.MIN_SCORE;
+  if (strictBasicMatch && basicMismatchCount > 0) return 0;
+  // 嚴格基本匹配：必須符合所有基本條件，否則直接返回0分
+  if (basicAnswers.length > 0 && basicMatchCount < basicAnswers.length) return 0;
 
   if (Array.isArray(funAnswers)) {
     funAnswers.forEach(answer => {
@@ -339,10 +341,10 @@ function recommendRestaurants(answers, restaurants, options = {}) {
       return [];
     }
   } else if (basicAnswers.includes("吃飽")) {
-    // 僅保留有「飽足」標籤的餐廳
+    // 僅保留有「吃飽」標籤的餐廳
     restaurants = restaurants.filter(r =>
       r.tags && Array.isArray(r.tags) && r.tags.some(tag =>
-        typeof tag === 'string' && tag.toLowerCase().trim() === "飽足"
+        typeof tag === 'string' && tag.toLowerCase().trim() === "吃飽"
       )
     );
 
@@ -372,8 +374,10 @@ function recommendRestaurants(answers, restaurants, options = {}) {
   const sortedRestaurants = scoredRestaurants.sort((a, b) => b.matchScore - a.matchScore);
   const minScoreThreshold = options.minScoreThreshold || (WEIGHT.MIN_SCORE * 2);
 
-  // 過濾掉分數過低的餐廳
-  const filteredRestaurants = sortedRestaurants.filter(r => r.matchScore >= minScoreThreshold);
+  // 過濾掉不符合基本條件（分數為0）和分數過低的餐廳
+  const filteredRestaurants = sortedRestaurants.filter(r =>
+    r.matchScore > 0 && r.matchScore >= minScoreThreshold
+  );
 
   // 關鍵條件下不返回備選項，確保嚴格匹配
   if (options.strictBasicMatch &&

@@ -24,6 +24,7 @@ export default function BuddiesRecommendation({
   const [alternativeRestaurants, setAlternativeRestaurants] = useState([]);
   const [voteAnimation, setVoteAnimation] = useState(null);
   const [totalMembers, setTotalMembers] = useState(0);
+  const [showNoResultsModal, setShowNoResultsModal] = useState(false);
   const navigate = useNavigate();
 
   // 使用房間ID創建一個確定性的種子
@@ -237,6 +238,26 @@ export default function BuddiesRecommendation({
     };
   }, [roomId, restaurants, totalMembers, phase, handleFinishSwiping]);
 
+  // 處理無結果情況
+  const handleNoResults = () => {
+    console.log("Buddies 模式沒有餐廳被選擇，顯示可惜畫面");
+    setShowNoResultsModal(true);
+  };
+
+  const handleRetrySelection = () => {
+    setShowNoResultsModal(false);
+    setSaved([]);
+    setVotes({});
+    setUserVoted(false);
+    // 重新設置餐廳列表
+    if (restaurants && restaurants.length > 0) {
+      const randomizedRestaurants = shuffleArrayWithSeed(restaurants, generateSeedFromRoomId(roomId));
+      setLimitedRestaurants(randomizedRestaurants.slice(0, 10));
+      setAlternativeRestaurants(randomizedRestaurants.slice(10));
+    }
+    setPhase("recommend");
+  };
+
   // 保存用戶收藏的餐廳
   const handleSaveRestaurant = async (restaurant) => {
     if (!restaurant || !restaurant.id) return;
@@ -368,17 +389,56 @@ export default function BuddiesRecommendation({
           alternatives={alternativeRestaurants}
           onRetry={handleRestart}
           votes={votes} // 傳遞投票數據給結果組件
-          // 添加額外的返回房間按鈕
+          // 添加Buddies模式特有的信息和按鈕
           extraButton={
-            <motion.button
-              className="btn-restart"
-              style={{ background: "#6874E8", marginTop: "1rem" }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleBackToRoom}
-            >
-              👥 回到房間
-            </motion.button>
+            <div className="buddies-extra-info">
+              {/* 群組投票統計 */}
+              <div className="buddies-stats" style={{
+                background: "#f8f9fa",
+                padding: "1rem",
+                borderRadius: "8px",
+                marginBottom: "1rem",
+                textAlign: "center"
+              }}>
+                <h4 style={{ margin: "0 0 0.5rem 0", color: "#333" }}>🏆 群組選擇結果</h4>
+                <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "0.5rem" }}>
+                  <div>
+                    <strong>👥 參與成員</strong>
+                    <div>{totalMembers} 人</div>
+                  </div>
+                  <div>
+                    <strong>🗳️ 總投票數</strong>
+                    <div>{Object.values(votes).reduce((sum, count) => sum + count, 0)} 票</div>
+                  </div>
+                  <div>
+                    <strong>⭐ 收藏餐廳</strong>
+                    <div>{saved.length} 間</div>
+                  </div>
+                </div>
+                {finalResult && (
+                  <div style={{
+                    background: "#e8f5e8",
+                    padding: "0.5rem",
+                    borderRadius: "4px",
+                    marginTop: "0.5rem"
+                  }}>
+                    <strong>🎯 群組首選：{finalResult.name}</strong>
+                    {votes[finalResult.id] && <span> ({votes[finalResult.id]} 票)</span>}
+                  </div>
+                )}
+              </div>
+
+              {/* 返回房間按鈕 */}
+              <motion.button
+                className="btn-restart"
+                style={{ background: "#6874E8", width: "100%" }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleBackToRoom}
+              >
+                👥 回到房間
+              </motion.button>
+            </div>
           }
           // 將roomMode設為false，使其與SwiftTaste模式保持一致的顯示效果
           roomMode={false}
@@ -600,6 +660,34 @@ export default function BuddiesRecommendation({
           </button>
         )}
       </div>
+
+      {/* 無結果模態 */}
+      {showNoResultsModal && (
+        <div className="modal-overlay" onClick={() => setShowNoResultsModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">😔</div>
+            <h3>有點可惜呢</h3>
+            <p>看起來沒有餐廳符合大家的喜好，要不要再試一次？</p>
+            <div className="modal-buttons">
+              <button
+                className="retry-button"
+                onClick={handleRetrySelection}
+              >
+                再試一次
+              </button>
+              <button
+                className="back-button"
+                onClick={() => {
+                  setShowNoResultsModal(false);
+                  onBack();
+                }}
+              >
+                返回房間
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

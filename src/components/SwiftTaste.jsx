@@ -8,6 +8,7 @@ import { roomService, memberService, recommendationService } from "../services/s
 import { restaurantService } from "../services/restaurantService";
 import { funQuestionTagService } from "../services/funQuestionTagService";
 import { getBasicQuestionsForSwiftTaste, getFunQuestions } from "../services/questionService";
+import { dataValidator } from "../utils/dataValidator";
 import selectionHistoryService from "../services/selectionHistoryService";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
@@ -52,6 +53,7 @@ export default function SwiftTaste() {
   const [idleTimer, setIdleTimer] = useState(null);
   const [selectedFunQuestions, setSelectedFunQuestions] = useState([]);
   const [loadingModeSelection, setLoadingModeSelection] = useState(false);
+  const [showNoResultsModal, setShowNoResultsModal] = useState(false);
 
   // 選擇紀錄相關狀態
   const [currentSessionId, setCurrentSessionId] = useState(null);
@@ -72,10 +74,11 @@ export default function SwiftTaste() {
 
   // 監聽phase變化，管理停留時間提示
   useEffect(() => {
-    // 在這些階段啟動停留時間計時器
-    const phasesWithIdleTimer = ['selectMode', 'questions', 'funQuestions', 'restaurants', 'result'];
-    
-    if (phasesWithIdleTimer.includes(phase) && !showOnboarding) {
+    // 在這些階段啟動停留時間計時器，只排除 buddiesRoom 階段
+    const phasesWithIdleTimer = ['selectMode', 'questions', 'funQuestions', 'restaurants', 'result', 'buddiesQuestions', 'buddiesRecommendation', 'buddiesResult'];
+    const excludedPhases = ['buddiesRoom']; // 只排除房間階段
+
+    if (phasesWithIdleTimer.includes(phase) && !showOnboarding && !excludedPhases.includes(phase)) {
       startIdleTimer();
     } else {
       clearIdleTimer();
@@ -145,10 +148,15 @@ export default function SwiftTaste() {
     try {
       setLoading(true);
       // 從 Supabase 載入餐廳資料
-      const data = await restaurantService.getRestaurants({
+      const rawData = await restaurantService.getRestaurants({
         minRating: 0     // 不限制評分
       });
-      setRestaurants(data);
+
+      // 使用資料驗證器清理和驗證餐廳資料
+      const validatedData = dataValidator.validateRestaurantList(rawData);
+      console.log(`Successfully loaded and validated ${validatedData.length} restaurants`);
+
+      setRestaurants(validatedData);
     } catch (error) {
       console.error("載入餐廳失敗:", error);
       setError("載入餐廳失敗，請稍後重試");
@@ -406,16 +414,84 @@ export default function SwiftTaste() {
       MIN_SCORE: 1
     };
     
-    // 前置過濾：嚴格匹配關鍵條件
+    // 前置過濾：根據正確的資料庫欄位進行篩選
     let filteredRestaurants = restaurants;
     console.log(`Starting with ${restaurants.length} restaurants`);
-    
+
+    // 1. 人數篩選：suggested_people欄位 (一個人 vs 朋友)
+    if (basicAnswers.includes("單人")) {
+      console.log("Filtering for 單人 restaurants...");
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        // suggested_people 包含 1 就符合一個人
+        const suggestedPeople = r.suggested_people || '';
+        const hasOne = suggestedPeople.includes('1');
+        if (hasOne) {
+          console.log(`✓ Restaurant ${r.name} suitable for 單人 (suggested_people: ${suggestedPeople})`);
+        }
+        return hasOne;
+      });
+      console.log(`After 單人 filter: ${filteredRestaurants.length} restaurants`);
+    } else if (basicAnswers.includes("多人")) {
+      console.log("Filtering for 多人 restaurants...");
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        // suggested_people 包含 ~ 就是多人
+        const suggestedPeople = r.suggested_people || '';
+        const hasMultiple = suggestedPeople.includes('~');
+        if (hasMultiple) {
+          console.log(`✓ Restaurant ${r.name} suitable for 多人 (suggested_people: ${suggestedPeople})`);
+        }
+        return hasMultiple;
+      });
+      console.log(`After 多人 filter: ${filteredRestaurants.length} restaurants`);
+    }
+
+    // 2. 價格篩選：price_range欄位 (奢華 vs 平價)
+    if (basicAnswers.includes("奢華美食")) {
+      console.log("Filtering for 奢華美食 restaurants...");
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        const priceRange = r.price_range;
+        let isLuxury = false;
+
+        if (priceRange === 3) {
+          isLuxury = true; // 3 為奢侈
+        } else if (priceRange === 2) {
+          // 2 則是以 70% 的機率在奢侈
+          isLuxury = Math.random() < 0.7;
+        }
+
+        if (isLuxury) {
+          console.log(`✓ Restaurant ${r.name} matches 奢華美食 (price_range: ${priceRange})`);
+        }
+        return isLuxury;
+      });
+      console.log(`After 奢華美食 filter: ${filteredRestaurants.length} restaurants`);
+    } else if (basicAnswers.includes("平價美食")) {
+      console.log("Filtering for 平價美食 restaurants...");
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        const priceRange = r.price_range;
+        let isAffordable = false;
+
+        if (priceRange === 1) {
+          isAffordable = true; // 1 為平價
+        } else if (priceRange === 2) {
+          // 2 則是以 30% 的機率在平價
+          isAffordable = Math.random() < 0.3;
+        }
+
+        if (isAffordable) {
+          console.log(`✓ Restaurant ${r.name} matches 平價美食 (price_range: ${priceRange})`);
+        }
+        return isAffordable;
+      });
+      console.log(`After 平價美食 filter: ${filteredRestaurants.length} restaurants`);
+    }
+
+    // 3. 飲食類型篩選：tags欄位 (正餐 vs 飲料)
     if (basicAnswers.includes("喝")) {
       console.log("Filtering for 喝 restaurants...");
-      // 如果選擇了「喝」，只保留有「喝」標籤的餐廳
       filteredRestaurants = filteredRestaurants.filter(r => {
         const tags = r.tags ? (Array.isArray(r.tags) ? r.tags : [r.tags]) : [];
-        const hasTag = tags.some(tag => 
+        const hasTag = tags.some(tag =>
           typeof tag === 'string' && tag.toLowerCase().trim() === "喝"
         );
         if (hasTag) {
@@ -424,15 +500,8 @@ export default function SwiftTaste() {
         return hasTag;
       });
       console.log(`After 喝 filter: ${filteredRestaurants.length} restaurants`);
-      
-      if (filteredRestaurants.length === 0) {
-        console.warn("沒有找到符合「喝」條件的餐廳");
-        setFilteredRestaurants([]);
-        return;
-      }
     } else if (basicAnswers.includes("吃一點")) {
       console.log("Filtering for 吃一點 restaurants...");
-      // 只保留有「吃一點」標籤的餐廳
       filteredRestaurants = filteredRestaurants.filter(r => {
         const tags = r.tags ? (Array.isArray(r.tags) ? r.tags : [r.tags]) : [];
         const hasTag = tags.some(tag =>
@@ -444,40 +513,57 @@ export default function SwiftTaste() {
         return hasTag;
       });
       console.log(`After 吃一點 filter: ${filteredRestaurants.length} restaurants`);
-      
-      if (filteredRestaurants.length === 0) {
-        console.warn("沒有找到符合「吃一點」條件的餐廳");
-        setFilteredRestaurants([]);
-        return;
-      }
     } else if (basicAnswers.includes("吃飽")) {
       console.log("Filtering for 吃飽 restaurants...");
-      // 只保留有「飽足」標籤的餐廳
       filteredRestaurants = filteredRestaurants.filter(r => {
         const tags = r.tags ? (Array.isArray(r.tags) ? r.tags : [r.tags]) : [];
         const hasTag = tags.some(tag =>
-          typeof tag === 'string' && tag.toLowerCase().trim() === "飽足"
+          typeof tag === 'string' && tag.toLowerCase().trim() === "吃飽"
         );
         if (hasTag) {
-          console.log(`✓ Restaurant ${r.name} has 飽足 tag:`, tags);
+          console.log(`✓ Restaurant ${r.name} has 吃飽 tag:`, tags);
         }
         return hasTag;
       });
-      console.log(`After 飽足 filter: ${filteredRestaurants.length} restaurants`);
-      
-      if (filteredRestaurants.length === 0) {
-        console.warn("沒有找到符合「飽足」條件的餐廳");
-        setFilteredRestaurants([]);
-        return;
-      }
-    } else {
-      console.log("No critical filtering needed, proceeding with all restaurants");
+      console.log(`After 吃飽 filter: ${filteredRestaurants.length} restaurants`);
+    }
+
+    // 4. 辣度篩選：is_spicy欄位 (辣 vs 不辣 vs both)
+    if (basicAnswers.includes("辣")) {
+      console.log("Filtering for 辣 restaurants...");
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        // 支援 true、'true' 或 'both'
+        const isSpicy = r.is_spicy === true || r.is_spicy === 'true' || r.is_spicy === 'both';
+        if (isSpicy) {
+          console.log(`✓ Restaurant ${r.name} serves spicy food (is_spicy: ${r.is_spicy})`);
+        }
+        return isSpicy;
+      });
+      console.log(`After 辣 filter: ${filteredRestaurants.length} restaurants`);
+    } else if (basicAnswers.includes("不辣")) {
+      console.log("Filtering for 不辣 restaurants...");
+      filteredRestaurants = filteredRestaurants.filter(r => {
+        // 支援 false、'false' 或 'both'
+        const isNotSpicy = r.is_spicy === false || r.is_spicy === 'false' || r.is_spicy === 'both';
+        if (isNotSpicy) {
+          console.log(`✓ Restaurant ${r.name} serves non-spicy food (is_spicy: ${r.is_spicy})`);
+        }
+        return isNotSpicy;
+      });
+      console.log(`After 不辣 filter: ${filteredRestaurants.length} restaurants`);
+    }
+
+    // 檢查是否有餐廳符合條件
+    if (filteredRestaurants.length === 0) {
+      console.warn("沒有找到符合所有基本條件的餐廳");
+      setFilteredRestaurants([]);
+      return;
     }
     
     // 計算每個餐廳的匹配分數
     const scoredRestaurants = await Promise.all(filteredRestaurants.map(async restaurant => {
       let score = WEIGHT.MIN_SCORE;
-      const { price_range, tags, rating, isSpicy } = restaurant;
+      const { price_range, tags, rating, is_spicy } = restaurant;
       
       // 正規化餐廳標籤
       const restaurantTags = Array.isArray(tags) ? tags : (tags ? [tags] : []);
@@ -495,22 +581,22 @@ export default function SwiftTaste() {
         
         switch(answer) {
           case "奢華美食":
-            // 根據後端邏輯：價格範圍是 $$$ 或 $$
-            matched = price_range === "$$$" || price_range === "$$";
-            if (matched) console.log(`✓ ${restaurant.name} matches 奢華美食 (price: ${price_range})`);
+            // 使用正確的price_range欄位：3為奢侈，2則是70%機率匹配奢侈
+            matched = price_range === 3 || (price_range === 2 && Math.random() < 0.7);
+            if (matched) console.log(`✓ ${restaurant.name} matches 奢華美食 (price_range: ${price_range})`);
             break;
-            
+
           case "平價美食":
-            // 根據後端邏輯：價格範圍是 $ 或 $$
-            matched = price_range === "$" || price_range === "$$";
-            if (matched) console.log(`✓ ${restaurant.name} matches 平價美食 (price: ${price_range})`);
+            // 使用正確的price_range欄位：1為平價，2則是30%機率匹配平價
+            matched = price_range === 1 || (price_range === 2 && Math.random() < 0.3);
+            if (matched) console.log(`✓ ${restaurant.name} matches 平價美食 (price_range: ${price_range})`);
             break;
             
           case "吃":
-            // 檢查是否有"吃一點"或"飽足"標籤
-            matched = normalizedTags.includes("吃一點") || normalizedTags.includes("飽足");
+            // 檢查是否有"吃一點"或"吃飽"標籤
+            matched = normalizedTags.includes("吃一點") || normalizedTags.includes("吃飽");
             if (matched) {
-              console.log(`✓ ${restaurant.name} matches 吃 (has 吃一點 or 飽足 tag)`);
+              console.log(`✓ ${restaurant.name} matches 吃 (has 吃一點 or 吃飽 tag)`);
               score += WEIGHT.BASIC_MATCH; // 避免重複加分
             }
             break;
@@ -531,19 +617,19 @@ export default function SwiftTaste() {
             break;
             
           case "吃飽":
-            // 必須有"飽足"標籤
-            matched = normalizedTags.includes("飽足");
-            if (matched) console.log(`✓ ${restaurant.name} matches 吃飽 (has 飽足 tag)`);
+            // 必須有"吃飽"標籤
+            matched = normalizedTags.includes("吃飽");
+            if (matched) console.log(`✓ ${restaurant.name} matches 吃飽 (has 吃飽 tag)`);
             break;
             
           case "辣":
-            matched = isSpicy === true;
-            if (matched) console.log(`✓ ${restaurant.name} matches 辣 (isSpicy: ${isSpicy})`);
+            matched = is_spicy === true || is_spicy === 'true' || is_spicy === 'both';
+            if (matched) console.log(`✓ ${restaurant.name} matches 辣 (is_spicy: ${is_spicy})`);
             break;
-            
+
           case "不辣":
-            matched = isSpicy === false;
-            if (matched) console.log(`✓ ${restaurant.name} matches 不辣 (isSpicy: ${isSpicy})`);
+            matched = is_spicy === false || is_spicy === 'false' || is_spicy === 'both';
+            if (matched) console.log(`✓ ${restaurant.name} matches 不辣 (is_spicy: ${is_spicy})`);
             break;
             
           case "單人":
@@ -578,9 +664,10 @@ export default function SwiftTaste() {
         }
       });
       
-      // 如果沒有任何基本匹配，給予最低分
-      if (basicMatchCount === 0 && basicAnswers.length > 0) {
-        score = WEIGHT.MIN_SCORE;
+      // 嚴格基本匹配：必須符合所有基本條件，否則直接排除
+      if (basicAnswers.length > 0 && basicMatchCount < basicAnswers.length) {
+        // 不符合所有基本條件的餐廳直接返回最低分，確保被過濾掉
+        return { ...restaurant, calculatedScore: 0 };
       }
       
       // 處理趣味問題匹配（使用Supabase標籤映射）
@@ -610,9 +697,10 @@ export default function SwiftTaste() {
       return { ...restaurant, calculatedScore: score };
     }));
     
-    // 過濾掉分數過低的餐廳
-    const minScoreThreshold = WEIGHT.MIN_SCORE * 2;
-    const qualifiedRestaurants = scoredRestaurants.filter(r => r.calculatedScore >= minScoreThreshold);
+    // 過濾掉不符合基本條件的餐廳（分數為0）和分數過低的餐廳
+    const qualifiedRestaurants = scoredRestaurants.filter(r =>
+      r.calculatedScore > 0 && r.calculatedScore >= WEIGHT.MIN_SCORE
+    );
     
     // 按分數排序，選出前10名
     const sortedRestaurants = qualifiedRestaurants.length > 0 ? 
@@ -687,6 +775,20 @@ export default function SwiftTaste() {
     }
   };
 
+  const handleNoResults = () => {
+    console.log("沒有餐廳被選擇，顯示可惜畫面");
+    setShowNoResultsModal(true);
+  };
+
+  const handleRetrySelection = () => {
+    setShowNoResultsModal(false);
+    // 重新載入餐廳推薦
+    if (basicAnswers.length > 0) {
+      handleRestaurantRecommendation(basicAnswers, funAnswers);
+    }
+    setPhase("restaurants");
+  };
+
   const handleRestaurantFinish = async () => {
     // 完成選擇會話，記錄最終選擇的餐廳（如果有的話）
     const savedRestaurants = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
@@ -749,12 +851,14 @@ export default function SwiftTaste() {
         </div>
       )}
 
-      {/* 停留時間提示 */}
-      <IdleHint 
-        show={showIdleHint} 
-        phase={phase} 
-        onDismiss={resetIdleTimer} 
-      />
+      {/* 停留時間提示 - 只排除 buddiesRoom 階段 */}
+      {phase !== 'buddiesRoom' && (
+        <IdleHint
+          show={showIdleHint}
+          phase={phase}
+          onDismiss={resetIdleTimer}
+        />
+      )}
 
       {/* SwiftTaste 引導動畫 */}
       {showOnboarding && (
@@ -887,6 +991,34 @@ export default function SwiftTaste() {
         message="載入中"
         subMessage="正在準備選擇模式..."
       />
+
+      {/* 無結果模態 */}
+      {showNoResultsModal && (
+        <div className="modal-overlay" onClick={() => setShowNoResultsModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">😔</div>
+            <h3>有點可惜呢</h3>
+            <p>看起來沒有餐廳符合您的喜好，要不要再試一次？</p>
+            <div className="modal-buttons">
+              <button
+                className="retry-button"
+                onClick={handleRetrySelection}
+              >
+                再試一次
+              </button>
+              <button
+                className="back-button"
+                onClick={() => {
+                  setShowNoResultsModal(false);
+                  handleBackToStart();
+                }}
+              >
+                重新開始
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

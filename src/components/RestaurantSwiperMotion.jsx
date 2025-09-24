@@ -9,8 +9,10 @@ export default function RestaurantSwiperMotion({
   tutorialMode = false,
   onSingleSwipe,
   swipeDirection = "both",
+  onNoResults, // 新增：當沒有結果時的回調
 }) {
   const [seen, setSeen] = useState([]);
+  const [saved, setSaved] = useState([]);
 
   const handleSwipe = (dir, r) => {
     // 如果是教學模式，只處理單次滑動事件
@@ -19,11 +21,20 @@ export default function RestaurantSwiperMotion({
       return;
     }
 
-    if (dir === "right") onSave?.(r);
     const newSeen = [...seen, r.id];
     setSeen(newSeen);
+
+    if (dir === "right") {
+      onSave?.(r);
+      setSaved(prev => [...prev, r]);
+    }
+
+    // 檢查是否所有餐廳都被看完
     if (newSeen.length === restaurants.length) {
-      setTimeout(onFinish, 300);
+      setTimeout(() => {
+        // 保持原有行為：總是調用 onFinish，讓結果頁面處理無結果的情況
+        onFinish?.();
+      }, 300);
     }
   };
 

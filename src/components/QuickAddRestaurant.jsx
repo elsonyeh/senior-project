@@ -98,11 +98,23 @@ const QuickAddRestaurant = ({
           onChange={(e) => setNewRestaurant({...newRestaurant, suggested_people: e.target.value})}
           className="quick-select"
         >
-          <option value="1-4 人">1-4 人</option>
-          <option value="4-8 人">4-8 人</option>
-          <option value="1-8 人">1-8 人</option>
+          <option value="1~4">1~4 人</option>
+          <option value="4~8">4~8 人</option>
+          <option value="1~8">1~8 人</option>
         </select>
-        
+
+        {/* 辣度選擇 */}
+        <select
+          value={newRestaurant.is_spicy}
+          onChange={(e) => setNewRestaurant({...newRestaurant, is_spicy: e.target.value})}
+          className="quick-select"
+          disabled={loading}
+        >
+          <option value="false">不辣</option>
+          <option value="true">辣</option>
+          <option value="both">兩種都有</option>
+        </select>
+
         {/* 照片選擇按鈕 */}
         <input
           type="file"
@@ -133,17 +145,6 @@ const QuickAddRestaurant = ({
         <button type="submit" disabled={loading} className="quick-submit-btn">
           {loading ? '新增中...' : '新增餐廳'}
         </button>
-        
-        {/* 辣度選擇 */}
-        <label className="spicy-checkbox">
-          <input
-            type="checkbox"
-            checked={newRestaurant.is_spicy}
-            onChange={(e) => setNewRestaurant({...newRestaurant, is_spicy: e.target.checked})}
-            disabled={loading}
-          />
-          辣嗎？
-        </label>
         
         {/* 預覽圖片 */}
         {selectedImages.length > 0 && (
