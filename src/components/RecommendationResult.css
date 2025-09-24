@@ -1,7 +1,7 @@
 /* 基本推薦結果頁面樣式 */
 .recommend-screen {
   padding: 1rem;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   color: #333;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -28,10 +28,10 @@
 }
 
 /* 餐廳結果標題 */
-.result-title {
+h2.result-title {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #330609;
+  margin: 0 0 0.5rem 0;
+  color: #ff6b6b;
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -133,11 +133,11 @@
 
 /* 備選餐廳區塊 */
 .alternatives-section {
-  background-color: white;
-  border-radius: 12px;
-  padding: 1rem;
-  margin: 1.5rem 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+  margin: 1rem 0;
+  box-shadow: none;
 }
 
 .alternatives-header {
@@ -187,24 +187,26 @@
 .alternative-item {
   padding: 1rem;
   border-radius: 12px;
-  background-color: #f9f9f9;
-  margin-bottom: 0.9rem;
+  background-color: #ffffff;
+  margin-bottom: 1rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .alternative-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .alternative-content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.8rem;
 }
 
 .alternative-info {
-  flex: 1;
+  width: 100%;
 }
 
 .alternative-info h4 {
@@ -212,51 +214,71 @@
   font-size: 1.05rem;
   color: #330609;
   font-weight: 600;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 .alternative-info p {
   margin: 0 0 0.6rem 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #666;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .alternative-badges {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0.6rem;
 }
 
 .mini-badge {
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
 }
 
 .mini-badge.rating {
-  background-color: rgba(255, 183, 0, 0.15);
+  background-color: rgba(255, 183, 0, 0.2);
   color: #d99c16;
+  border: 1px solid rgba(255, 183, 0, 0.3);
+  margin: 0;
 }
 
 .mini-badge.type {
-  background-color: #f0f0f0;
-  color: #666;
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #495057;
+  border: 1px solid rgba(108, 117, 125, 0.2);
 }
 
 .mini-badge.votes {
-  background-color: rgba(102, 204, 153, 0.15);
-  color: #5da;
+  background-color: rgba(102, 204, 153, 0.2);
+  color: #28a745;
+  border: 1px solid rgba(102, 204, 153, 0.3);
 }
 
 .btn-mini-navigate {
   background-color: #FD963D;
   color: white;
   border: none;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
 }
 
 .btn-mini-navigate:hover {
@@ -355,13 +377,26 @@
     align-items: flex-start;
     gap: 0.3rem;
   }
-  
+
   .alternative-badges {
     flex-wrap: wrap;
+    margin-top: 0.5rem;
   }
-  
+
   .btn-navigate, .btn-restart {
     width: 100%;
     justify-content: center;
+  }
+
+  .alternative-item {
+    padding: 1rem;
+  }
+
+  .alternative-info h4 {
+    font-size: 1rem;
+  }
+
+  .alternative-info p {
+    font-size: 0.8rem;
   }
 }

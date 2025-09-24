@@ -381,7 +381,7 @@ export default function BuddiesRecommendation({
     }
 
     return (
-      <div className="recommend-screen">
+      <>
         {renderConfetti()}
 
         <RecommendationResult
@@ -392,42 +392,6 @@ export default function BuddiesRecommendation({
           // 添加Buddies模式特有的信息和按鈕
           extraButton={
             <div className="buddies-extra-info">
-              {/* 群組投票統計 */}
-              <div className="buddies-stats" style={{
-                background: "#f8f9fa",
-                padding: "1rem",
-                borderRadius: "8px",
-                marginBottom: "1rem",
-                textAlign: "center"
-              }}>
-                <h4 style={{ margin: "0 0 0.5rem 0", color: "#333" }}>🏆 群組選擇結果</h4>
-                <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "0.5rem" }}>
-                  <div>
-                    <strong>👥 參與成員</strong>
-                    <div>{totalMembers} 人</div>
-                  </div>
-                  <div>
-                    <strong>🗳️ 總投票數</strong>
-                    <div>{Object.values(votes).reduce((sum, count) => sum + count, 0)} 票</div>
-                  </div>
-                  <div>
-                    <strong>⭐ 收藏餐廳</strong>
-                    <div>{saved.length} 間</div>
-                  </div>
-                </div>
-                {finalResult && (
-                  <div style={{
-                    background: "#e8f5e8",
-                    padding: "0.5rem",
-                    borderRadius: "4px",
-                    marginTop: "0.5rem"
-                  }}>
-                    <strong>🎯 群組首選：{finalResult.name}</strong>
-                    {votes[finalResult.id] && <span> ({votes[finalResult.id]} 票)</span>}
-                  </div>
-                )}
-              </div>
-
               {/* 返回房間按鈕 */}
               <motion.button
                 className="btn-restart"
@@ -443,7 +407,7 @@ export default function BuddiesRecommendation({
           // 將roomMode設為false，使其與SwiftTaste模式保持一致的顯示效果
           roomMode={false}
         />
-      </div>
+      </>
     );
   }
 
@@ -484,8 +448,8 @@ export default function BuddiesRecommendation({
 
   // 推薦階段 - 使用滑動操作
   return (
-    <div className="swift-taste-container">
-      <div className="swift-taste-card">
+    <div className="buddies-container">
+      <div className="buddies-card">
         <h3 className="card-title">
           一起選餐廳 🍜 ({userVoted ? "已投票" : "滑動選擇"})
         </h3>
@@ -601,14 +565,14 @@ export default function BuddiesRecommendation({
 
         {/* 備選餐廳顯示 */}
         {alternativeRestaurants.length > 0 && (
-          <div className="alternatives-section">
+          <div className="buddies-alternatives-section">
             <h3>可能也適合的餐廳 🔍</h3>
-            <ul className="alternative-restaurant-list">
+            <ul className="buddies-alternative-restaurant-list">
               {alternativeRestaurants.map((r) => (
-                <li key={r.id} className="alternative-restaurant-item">
-                  <div className="alternative-restaurant-info">
-                    <div className="alternative-restaurant-name">{r.name}</div>
-                    <div className="alternative-restaurant-details">
+                <li key={r.id} className="buddies-alternative-restaurant-item">
+                  <div className="buddies-alternative-restaurant-info">
+                    <div className="buddies-alternative-restaurant-name">{r.name}</div>
+                    <div className="buddies-alternative-restaurant-details">
                       {r.type && (
                         <span className="restaurant-type">{r.type}</span>
                       )}

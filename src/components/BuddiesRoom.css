@@ -1,24 +1,4 @@
-/* BuddiesRoom.css - 優化版本 */
-.buddies-room {
-  padding: 2rem;
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: center;
-  font-family: sans-serif;
-  padding-top: 4rem;
-}
-
-.buddies-room h2 {
-  color: #FF6B6B;
-  margin: 4rem 0 3rem;
-  font-size: 1.6rem;
-}
-
-.buddies-room h4 {
-  color: #666;
-  margin: 2rem 0 1rem;
-  font-size: 1.1rem;
-}
+/* BuddiesRoom.css */
 
 /* Buddies 模式卡片標題樣式 */
 .card-title {
@@ -58,38 +38,8 @@
   max-width: 300px;
 }
 
-/* 統一按鈕樣式 */
-.buddies-room button,
-.copy-button,
-.share-button {
-  margin: 0;
-  padding: 12px 20px;
-  background-color: #ff9f68;
-  border: none;
-  color: white;
-  font-weight: 600;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(255, 159, 104, 0.2);
-  width: 100%;
-}
+/* 按鈕樣式 */
 
-.buddies-room button:hover,
-.copy-button:hover,
-.share-button:hover {
-  background-color: #ff7f36;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(255, 127, 54, 0.3);
-}
-
-.buddies-room button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
 
 /* 掃描按鈕特殊樣式 */
 .scan-button {
@@ -133,27 +83,6 @@
   animation: copyingShimmer 1.5s infinite;
 }
 
-.buddies-room ul {
-  list-style: none;
-  padding: 0;
-  margin: 1rem auto;
-  max-width: 80%;
-  text-align: left;
-}
-
-.buddies-room ul li {
-  margin: 0.5rem 0;
-  padding: 8px 15px;
-  background-color: #f8f8f8;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  transition: background-color 0.2s ease;
-}
-
-.buddies-room ul li:hover {
-  background-color: #f0f0f0;
-}
 
 /* 房間信息區塊 */
 .room-info {
@@ -558,11 +487,6 @@
     flex-direction: column;
   }
 
-  .buddies-room button {
-    width: 100%;
-    margin: 0.3rem 0;
-  }
-
   .toast-notification {
     top: 10px;
     max-width: 90%;
@@ -575,83 +499,4 @@
     width: 24px;
     height: 24px;
   }
-
-  .vote-status-container {
-    padding: 1rem;
-    margin: 1rem auto;
-  }
-
-  .vote-participants-avatars {
-    gap: 4px;
-  }
-
-  .vote-participant-avatar {
-    width: 25px;
-    height: 25px;
-    font-size: 0.8rem;
-  }
-
-  .host-badge {
-    font-size: 0.7rem;
-    padding: 2px 6px;
-  }
-}
-
-/* 房間內按鈕容器 */
-.room-actions {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 1rem auto;
-  width: 80%;
-  max-width: 300px;
-}
-
-.room-actions button {
-  flex: 1;
-  margin: 0;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  font-weight: 600;
-}
-
-.room-actions .copy-button,
-.room-actions .share-button {
-  margin: 0;
-  width: 100%;
-}
-
-.room-actions .copy-button-active,
-.room-actions .share-button-active {
-  margin: 0;
-  width: 100%;
-}
-
-/* 主持人標籤樣式 */
-.host-badge {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.8rem;
-  background: #ff9f68;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.2;
-}
-
-.buddies-title {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #FF6B6B;
-  margin: 4rem 0 1rem;
 }
