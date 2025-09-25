@@ -578,7 +578,7 @@ export default function BuddiesQuestionSwiper({
       {waiting ? (
         <div className="waiting-container">
           <div className="waiting-content">
-            <h3>等待其他成員回答...</h3>
+            <h2>等待其他成員回答...</h2>
             <div className="waiting-animation">
               <div className="waiting-dots">
                 <span></span>

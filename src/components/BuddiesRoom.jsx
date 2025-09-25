@@ -7,6 +7,7 @@ import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import BuddiesRecommendation from "./BuddiesRecommendation";
 import QRScannerModal from "./QRScannerModal";
 import BuddiesQuestionSwiper from "./BuddiesQuestionSwiper";
+import LoadingOverlay from "./LoadingOverlay";
 import {
   roomService,
   memberService,
@@ -29,6 +30,56 @@ export default function BuddiesRoom() {
   const [isHost, setIsHost] = useState(false);
   const [userId, setUserId] = useState("");
   const [phase, setPhaseState] = useState("lobby");
+  const [currentUser, setCurrentUser] = useState(null); // 當前登入用戶
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false); // 載入推薦動畫
+
+  // 獲取用戶頭貼URL的輔助函數
+  const getUserAvatarUrl = (member) => {
+    // 如果用戶已登入，優先通過ID匹配（現在真實用戶使用真實ID）
+    if (currentUser && (member.id === currentUser.id || member.user_id === currentUser.id)) {
+      const avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.avatar_url;
+      if (avatarUrl) {
+        console.log(`✅ 找到用戶頭貼 (ID匹配): ${member.name} -> ${avatarUrl.substring(0, 50)}...`);
+        return avatarUrl;
+      }
+    }
+
+    // 備用方案：通過姓名匹配（為了向後兼容）
+    if (currentUser && member.name && currentUser.user_metadata?.name === member.name) {
+      const avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.avatar_url;
+      if (avatarUrl) {
+        console.log(`✅ 找到用戶頭貼 (姓名匹配): ${member.name} -> ${avatarUrl.substring(0, 50)}...`);
+        return avatarUrl;
+      }
+    }
+
+    // 對於其他用戶，目前沒有頭貼資料
+    return null;
+  };
+
+  // 生成基於名稱的預設頭貼
+  const generateDefaultAvatar = (name) => {
+    if (!name) return null;
+
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const colors = [
+      '#ff6b35', '#22c55e', '#3b82f6', '#8b5cf6',
+      '#f59e0b', '#ef4444', '#06b6d4', '#84cc16'
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const bgColor = colors[Math.abs(hash) % colors.length];
+
+    return `data:image/svg+xml,${encodeURIComponent(`
+      <svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="40" cy="40" r="40" fill="${bgColor}"/>
+        <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-family="system-ui" font-size="24" fill="white" font-weight="600">${initials}</text>
+      </svg>
+    `)}`;
+  };
 
   // 包裝 setPhase 來追蹤所有變更
   const setPhase = (newPhase) => {
@@ -45,6 +96,20 @@ export default function BuddiesRoom() {
 
   // 使用 hook 載入問題集
   const { questions: allQuestions } = useQuestions('buddies');
+
+  // 監控關鍵狀態變化
+  React.useEffect(() => {
+    console.log('🔍 關鍵狀態更新:', {
+      phase: phase,
+      isHost: isHost,
+      joined: joined,
+      roomId: roomId,
+      userId: userId,
+      userName: userName,
+      membersCount: members.length,
+      currentUserLoggedIn: !!currentUser
+    });
+  }, [phase, isHost, joined, roomId, userId, userName, members.length, currentUser]);
   const [recommendations, setRecommendations] = useState([]);
   const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,19 +135,56 @@ export default function BuddiesRoom() {
 
     return (
       <div
-        className={`toast-notification ${type || "success"}`}
+        className={`buddies-toast-notification ${type || "success"}`}
         onClick={onHide}
       >
-        <div className="toast-icon">{type === "error" ? "✖" : "✓"}</div>
-        <div className="toast-message">{message}</div>
+        <div className="buddies-toast-icon">{type === "error" ? "✖" : "✓"}</div>
+        <div className="buddies-toast-message">{message}</div>
       </div>
     );
   }
 
+  // 檢查當前用戶登入狀態
+  useEffect(() => {
+    const checkCurrentUser = async () => {
+      try {
+        const result = await authService.getCurrentUser();
+        if (result.success && result.user) {
+          setCurrentUser(result.user);
+          console.log("當前登入用戶:", result.user);
+
+          // 如果用戶已登入，自動填入姓名
+          if (result.user.user_metadata?.name) {
+            setUserName(result.user.user_metadata.name);
+          }
+
+          console.log('=== CURRENT USER LOADED ===', {
+            userId: result.user.id,
+            name: result.user.user_metadata?.name,
+            avatarUrl: result.user.user_metadata?.avatar_url || result.user.avatar_url
+          });
+        }
+      } catch (error) {
+        console.error("檢查用戶登入狀態失敗:", error);
+      }
+    };
+
+    checkCurrentUser();
+  }, []);
+
   // 初始化用戶ID和處理URL參數
   useEffect(() => {
-    const storedUserId = roomService.getOrCreateUserId();
-    setUserId(storedUserId);
+    // 如果用戶已登入，使用真實用戶ID，否則使用臨時ID
+    const finalUserId = currentUser?.id || roomService.getOrCreateUserId();
+    setUserId(finalUserId);
+
+    console.log('=== USER ID INITIALIZED ===', {
+      currentUserId: currentUser?.id,
+      temporaryId: roomService.getOrCreateUserId(),
+      finalUserId: finalUserId,
+      isLoggedIn: !!currentUser,
+      usingRealId: !!currentUser?.id
+    });
 
     // 優先檢查是否有登入用戶
     const initUserName = async () => {
@@ -131,27 +233,31 @@ export default function BuddiesRoom() {
       cleanupAllSubscriptions();
       subscriptionCleanups.forEach(cleanup => cleanup());
     };
-  }, [location.search]);
+  }, [location.search, currentUser]);
 
   // 監聽房間成員變化
   useEffect(() => {
     if (joined && roomId) {
       const cleanup = memberService.listenRoomMembers(roomId, (membersObj) => {
         console.log("收到成員更新:", membersObj);
-        
+
         // 轉換成陣列格式
-        const membersList = Object.values(membersObj).map(member => ({
-          id: member.id,
-          name: member.name,
-          isHost: member.isHost,
-          uid: member.id
-        }));
+        const membersList = Object.values(membersObj).map(member => {
+          const avatarUrl = getUserAvatarUrl(member);
+          return {
+            id: member.id,
+            name: member.name,
+            isHost: member.isHost,
+            uid: member.id,
+            avatar: avatarUrl || generateDefaultAvatar(member.name)
+          };
+        });
 
         setMembers(membersList);
 
         // 檢查當前用戶是否為房主
-        const currentUser = membersObj[userId];
-        if (currentUser && currentUser.isHost) {
+        const currentUserFromMembers = membersObj[userId];
+        if (currentUserFromMembers && currentUserFromMembers.isHost) {
           setIsHost(true);
         }
       });
@@ -194,7 +300,7 @@ export default function BuddiesRoom() {
 
       return () => cleanup();
     }
-  }, [joined, roomId]);
+  }, [joined, roomId, currentUser]);
 
   // 監聽問題集變化
   useEffect(() => {
@@ -210,16 +316,35 @@ export default function BuddiesRoom() {
 
       return () => cleanup();
     }
-  }, [joined, roomId]);
+  }, [joined, roomId, currentUser]);
 
   // 監聽推薦變化
   useEffect(() => {
     if (joined && roomId) {
-      const cleanup = recommendationService.listenRecommendations(roomId, (recommendations) => {
+      const cleanup = recommendationService.listenRecommendations(roomId, async (recommendations) => {
         console.log("收到推薦更新:", recommendations);
         if (recommendations && recommendations.length > 0) {
           setRecommendations(recommendations);
           setPhase('recommend');
+
+          // 儲存 Buddies 使用紀錄（只有登入用戶才儲存）
+          if (currentUser) {
+            try {
+              await selectionHistoryService.saveBuddiesHistory({
+                roomId: roomId,
+                isHost: isHost,
+                roomMembers: members,
+                recommendations: recommendations,
+                selectedRestaurant: recommendations[0], // 假設第一個是主要推薦
+                startTime: localStorage.getItem('buddies_session_start') || new Date().toISOString(),
+                answers: {}, // 這裡可以從其他地方獲取答案資料
+                questionTexts: questions.map(q => q.question) || []
+              });
+              console.log('✅ Buddies 歷史已儲存');
+            } catch (error) {
+              console.error('❌ 儲存 Buddies 歷史失敗:', error);
+            }
+          }
         }
       });
 
@@ -227,7 +352,7 @@ export default function BuddiesRoom() {
 
       return () => cleanup();
     }
-  }, [joined, roomId]);
+  }, [joined, roomId, currentUser]);
 
   // 選擇紀錄相關函數
   const startBuddiesSession = async (buddiesRoomId) => {
@@ -300,7 +425,7 @@ export default function BuddiesRoom() {
     try {
       localStorage.setItem("userName", userName);
       
-      const response = await roomService.createRoom(userName);
+      const response = await roomService.createRoom(userName, userId);
 
       if (response.success) {
         setRoomId(response.roomId);
@@ -308,18 +433,26 @@ export default function BuddiesRoom() {
         setJoined(true);
         setPhase("waiting");
 
+        // 記錄 Buddies 會話開始時間
+        localStorage.setItem('buddies_session_start', new Date().toISOString());
+
         // 開始 Buddies 選擇會話
         await startBuddiesSession(response.roomId);
 
         // 獲取房間成員列表
         const membersResult = await memberService.getRoomMembers(response.roomId);
         if (membersResult.success) {
-          const membersList = membersResult.data.map(member => ({
-            id: member.user_id,
-            name: member.user_name,
-            isHost: member.is_host,
-            uid: member.user_id
-          }));
+          const membersList = membersResult.data.map(member => {
+            const memberObj = { id: member.user_id, name: member.user_name };
+            const avatarUrl = getUserAvatarUrl(memberObj);
+            return {
+              id: member.user_id,
+              name: member.user_name,
+              isHost: member.is_host,
+              uid: member.user_id,
+              avatar: avatarUrl || generateDefaultAvatar(member.user_name)
+            };
+          });
           setMembers(membersList);
           console.log("載入成員列表:", membersList);
         }
@@ -393,12 +526,17 @@ export default function BuddiesRoom() {
         // 獲取當前房間成員
         const membersResult = await memberService.getRoomMembers(roomIdInput.toUpperCase());
         if (membersResult.success) {
-          const membersList = membersResult.data.map(member => ({
-            id: member.user_id,
-            name: member.user_name,
-            isHost: member.is_host,
-            uid: member.user_id
-          }));
+          const membersList = membersResult.data.map(member => {
+            const memberObj = { id: member.user_id, name: member.user_name };
+            const avatarUrl = getUserAvatarUrl(memberObj);
+            return {
+              id: member.user_id,
+              name: member.user_name,
+              isHost: member.is_host,
+              uid: member.user_id,
+              avatar: avatarUrl || generateDefaultAvatar(member.user_name)
+            };
+          });
           setMembers(membersList);
         }
 
@@ -629,17 +767,23 @@ export default function BuddiesRoom() {
         if (saveResult.success) {
           console.log("✅ 推薦結果已保存到數據庫");
           setRecommendations(recommendations);
+
+          // 關閉載入動畫，切換到推薦階段
+          setLoadingRecommendations(false);
           setPhase("recommend");
         } else {
           console.error("❌ 保存推薦結果失敗:", saveResult.error);
+          setLoadingRecommendations(false);
           setError("生成推薦失敗");
         }
       } else {
         console.warn("⚠️ 沒有找到合適的餐廳推薦");
+        setLoadingRecommendations(false);
         setError("沒有找到合適的餐廳，請重新嘗試");
       }
     } catch (error) {
       console.error("❌ 生成推薦過程中發生錯誤:", error);
+      setLoadingRecommendations(false);
       setError("生成推薦時發生錯誤");
     }
   };
@@ -731,7 +875,9 @@ export default function BuddiesRoom() {
         if (completedMembers >= memberCount) {
           // 所有人都已完成全部問題
           console.log("✅ 所有成員都已完成全部問題，開始生成推薦");
-          setPhase("waiting-recommendations");
+
+          // 啟用載入動畫
+          setLoadingRecommendations(true);
 
           // 生成推薦餐廳
           await generateBuddiesRecommendations(roomId, allAnswers.data, questions);
@@ -834,65 +980,98 @@ export default function BuddiesRoom() {
     switch (phase) {
       case "waiting":
         return (
-          <>
-            <h3 className="buddies-title">房號：{roomId}</h3>
-            <QRCode
-              value={`${window.location.origin}/buddies?room=${roomId}`}
-              size={190}
-              fgColor="#333"
-              bgColor="#fff"
-              level="M"
-              includeMargin={false}
-            />
-            <div className="room-actions">
+          <div className="buddies-waiting-container">
+            <h2 className="buddies-waiting-title">房間已建立</h2>
+            <div className="buddies-room-info">
+              <h4 className="buddies-room-number">房號：{roomId}</h4>
+              <div className="buddies-qr-container">
+                <QRCode
+                  value={`${window.location.origin}/buddies?room=${roomId}`}
+                  size={160}
+                  fgColor="#333"
+                  bgColor="#fff"
+                  level="M"
+                  includeMargin={false}
+                />
+              </div>
+            </div>
+            <div className="buddies-room-actions">
               <button
                 onClick={copyToClipboard}
                 disabled={copyingRoom}
-                className={copyingRoom ? "copy-button-active" : "copy-button"}
+                className={copyingRoom ? "buddies-copy-button-active" : "buddies-copy-button"}
               >
                 {copyingRoom ? "複製中..." : "📋 複製房號"}
               </button>
               <button
                 onClick={shareRoom}
                 disabled={sharing}
-                className={sharing ? "share-button-active" : "share-button"}
+                className={sharing ? "buddies-share-button-active" : "buddies-share-button"}
               >
                 {sharing ? "分享中..." : "🔗 分享連結"}
               </button>
             </div>
-            <h4>目前成員：</h4>
-            <ul>
-              {members.map((m, i) => (
-                <li
-                  key={m.uid || m.id || i}
-                  style={{
-                    position: "relative",
-                    padding: "8px 40px 8px 15px",
-                  }}
-                >
-                  👤 {m.name || `成員 ${i + 1}`}
-                  {m.id === userId && (
-                    <span style={{ marginLeft: "0.5rem" }}>（你）</span>
-                  )}
-                  {m.isHost && <span className="host-badge">主持人</span>}
-                </li>
-              ))}
-            </ul>
-            {isHost && (
-              <button
-                onClick={handleStartQuestions}
-                disabled={loading || members.length < 1}
-                className="start-button"
-              >
-                👉 開始答題
-              </button>
-            )}
-            {!isHost && members.length > 0 && (
-              <div style={{ marginTop: "1rem", color: "#666" }}>
-                <p>等待主持人開始答題...</p>
+            <div className="buddies-members-section">
+              <h4 className="buddies-members-title">目前成員 ({members.length})</h4>
+              <div className="buddies-members-list">
+                {members.map((m, i) => (
+                  <div
+                    key={m.uid || m.id || i}
+                    className="buddies-member-item"
+                  >
+                    <div className="buddies-member-avatar">
+                      {m.avatar && m.avatar.startsWith('data:image/svg+xml') ? (
+                        <img
+                          src={m.avatar}
+                          alt={m.name || `成員${i + 1}`}
+                          className="buddies-avatar-image"
+                        />
+                      ) : m.avatar ? (
+                        <img
+                          src={m.avatar}
+                          alt={m.name || `成員${i + 1}`}
+                          className="buddies-avatar-image"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="buddies-avatar-fallback"
+                        style={{ display: m.avatar ? 'none' : 'flex' }}
+                      >
+                        {(m.name || `成員${i + 1}`).charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="buddies-member-info">
+                      <span className="buddies-member-name">
+                        {m.name || `成員 ${i + 1}`}
+                        {m.id === userId && <span className="buddies-member-you">（你）</span>}
+                      </span>
+                      {m.isHost && <span className="buddies-host-badge">主持人</span>}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </>
+            </div>
+            <div className="buddies-action-section">
+              {isHost && (
+                <button
+                  onClick={handleStartQuestions}
+                  disabled={loading || members.length < 1}
+                  className="buddies-start-button"
+                >
+                  🚀 開始答題
+                </button>
+              )}
+              {!isHost && members.length > 0 && (
+                <div className="buddies-waiting-message">
+                  <p>⏳ 等待主持人開始答題...</p>
+                </div>
+              )}
+            </div>
+          </div>
         );
 
       case "questions":
@@ -906,16 +1085,6 @@ export default function BuddiesRoom() {
           />
         );
 
-      case "waiting-recommendations":
-        return (
-          <div style={{ textAlign: "center", padding: "2rem 0" }}>
-            <h3>等待所有人完成答題...</h3>
-            <p>系統正在根據大家的答案生成推薦</p>
-            <div className="loading-spinner" style={{ margin: "2rem auto" }}>
-              <div className="spinner"></div>
-            </div>
-          </div>
-        );
 
       case "recommend":
         return (
@@ -969,28 +1138,32 @@ export default function BuddiesRoom() {
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
       {!joined ? (
-        <>
-          <h2>TasteBuddies - 一起選餐廳</h2>
+        <div className="buddies-entrance-container">
+          <h2 className="buddies-main-title">TasteBuddies - 一起選餐廳</h2>
           <input
+            className="buddies-name-input"
             placeholder="你的名稱"
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
             disabled={loading}
           />
           <input
+            className="buddies-room-input"
             placeholder="房號（若要加入）"
             value={roomId}
             onChange={(e) => setRoomId(e.target.value.toUpperCase())}
             disabled={loading}
           />
-          <div className="button-group">
+          <div className="buddies-button-group">
             <button
+              className="buddies-create-button"
               onClick={handleCreateRoom}
               disabled={loading}
             >
               {loading ? "處理中..." : "建立新房間"}
             </button>
             <button
+              className="buddies-join-button"
               onClick={() => handleJoinRoom()}
               disabled={loading}
             >
@@ -1000,7 +1173,7 @@ export default function BuddiesRoom() {
               <button
                 onClick={() => setShowScanner(true)}
                 disabled={loading}
-                className="scan-button"
+                className="buddies-scan-button"
               >
                 📷 掃描房號
               </button>
@@ -1025,12 +1198,19 @@ export default function BuddiesRoom() {
             />
           )}
           {error && (
-            <div className="error-message">⚠️ {error}</div>
+            <div className="buddies-error-message">⚠️ {error}</div>
           )}
-        </>
+        </div>
       ) : (
         renderPhaseContent()
       )}
+
+      {/* Buddies 推薦生成載入動畫 */}
+      <LoadingOverlay
+        show={loadingRecommendations}
+        message="分析大家的喜好中"
+        subMessage="正在根據所有成員的答案生成最適合的餐廳推薦..."
+      />
     </div>
   );
 }

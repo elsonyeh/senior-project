@@ -343,10 +343,10 @@
 
 /* 等待容器 */
 .waiting-container {
-  width: 100%;
+  width: auto;
   max-width: 90%;
   text-align: center;
-  padding: 2rem;
+  padding: 0;
   margin: 1rem auto;
 }
 

@@ -141,19 +141,23 @@ export const roomService = {
   /**
    * 創建房間
    * @param {String} hostName - 房主名稱
+   * @param {String} hostUserId - 房主用戶ID (可選，如不提供則自動生成)
    * @return {Promise<Object>} 創建結果
    */
-  async createRoom(hostName) {
+  async createRoom(hostName, hostUserId = null) {
     try {
       if (!supabase) {
         return { success: false, error: 'Supabase 配置錯誤，請檢查環境變數' };
       }
-      
+
       if (!hostName) return { success: false, error: '請輸入房主名稱' };
 
       // 生成房間ID
       const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const userId = this.getOrCreateUserId();
+      // 使用提供的用戶ID，如果沒有則生成臨時ID
+      const userId = hostUserId || this.getOrCreateUserId();
+
+      console.log('🏠 創建房間:', { roomId, hostName, userId, isRealUser: !!hostUserId });
 
       const { data, error } = await supabase
         .from('buddies_rooms')

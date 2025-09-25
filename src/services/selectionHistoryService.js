@@ -432,6 +432,55 @@ class OptimizedSelectionHistoryService {
       };
     }
   }
+
+  // 儲存 Buddies 模式的使用紀錄
+  async saveBuddiesHistory(buddiesData) {
+    try {
+      const currentUser = await authService.getCurrentUser();
+
+      if (!currentUser.success || !currentUser.user) {
+        console.log('用戶未登入，跳過 Buddies 歷史儲存');
+        return { success: false, error: '用戶未登入' };
+      }
+
+      const historyRecord = {
+        user_id: currentUser.user.id,
+        session_id: this.sessionId,
+        mode: 'buddies',
+        source_type: 'buddies_room',
+        started_at: buddiesData.startTime || new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        basic_answers: buddiesData.answers || {},
+        question_texts: buddiesData.questionTexts || [],
+        fun_answers: buddiesData.funAnswers || {},
+        recommended_restaurants: buddiesData.recommendations || [],
+        final_restaurant: buddiesData.selectedRestaurant || null,
+        recommendation_reason: buddiesData.recommendationReason || null,
+        // Buddies 特有資料
+        room_id: buddiesData.roomId || null,
+        room_members: buddiesData.roomMembers || [],
+        is_host: buddiesData.isHost || false,
+        participant_count: buddiesData.roomMembers?.length || 0
+      };
+
+      const { data, error } = await supabase
+        .from('user_selection_history')
+        .insert(historyRecord)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving Buddies history:', error);
+        throw new Error(`Failed to save Buddies history: ${error.message}`);
+      }
+
+      console.log('✅ Buddies 歷史紀錄已儲存:', data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in saveBuddiesHistory:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // 創建單例實例

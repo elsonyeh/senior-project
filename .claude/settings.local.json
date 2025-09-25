@@ -30,7 +30,16 @@
       "Bash(npx supabase:*)",
       "Bash(del \"C:\\Projects\\SwiftTaste-demo\\src\\test-supabase.js\")",
       "Bash(start http://localhost:5175)",
-      "Bash(git clean:*)"
+      "Bash(git clean:*)",
+      "Bash(find:*)",
+      "Bash(del:*)",
+      "Bash(start http://localhost:5174/buddies)",
+      "Bash(start http://localhost:5175/buddies)",
+      "Bash(start http://localhost:5176/admin)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(start http://localhost:5176/buddies)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

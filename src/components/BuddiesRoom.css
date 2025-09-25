@@ -1,4 +1,253 @@
-/* BuddiesRoom.css */
+/* BuddiesRoom.css - 專屬樣式避免與SwiftTaste衝突 */
+
+/* 主容器 */
+.buddies-room {
+  width: 100%;
+  margin: 0;
+  padding: 0 1rem;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 入口頁面容器 */
+.buddies-entrance-container {
+  background: transparent;
+  border-radius: 0;
+  padding: 2rem 1.5rem;
+  margin: 0 auto;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  position: relative;
+}
+
+/* 主標題 */
+.buddies-main-title {
+  color: #FF6B6B;
+  margin: 0 0 2.5rem 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Toast 通知樣式 */
+.buddies-toast-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 85%;
+  background-color: #fff;
+  color: #333;
+  padding: 14px 20px;
+  border-radius: 50px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 1000;
+  animation: buddiestoastFadeInFromTop 0.3s ease-out, buddiestoastFloatFromTop 0.5s ease-in-out 0.3s;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+}
+
+.buddies-toast-notification.success {
+  background-color: #f0fff4;
+  border-left: 6px solid #4CAF50;
+}
+
+.buddies-toast-notification.error {
+  background-color: #fff5f5;
+  border-left: 6px solid #F44336;
+}
+
+.buddies-toast-icon {
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.buddies-toast-notification.success .buddies-toast-icon {
+  color: #4CAF50;
+}
+
+.buddies-toast-notification.error .buddies-toast-icon {
+  color: #F44336;
+}
+
+.buddies-toast-message {
+  flex: 1;
+  text-align: left;
+  line-height: 1.4;
+}
+
+@keyframes buddiestoastFadeInFromTop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes buddiestoastFloatFromTop {
+  0% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 5px);
+  }
+  100% {
+    transform: translate(-50%, 0);
+  }
+}
+
+/* 輸入框樣式 */
+.buddies-name-input,
+.buddies-room-input {
+  display: block;
+  margin: 0.5rem auto;
+  padding: 16px 20px;
+  width: 100%;
+  max-width: 320px;
+  border: 2px solid #E0E0E0;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.buddies-name-input:focus,
+.buddies-room-input:focus {
+  border-color: #FF6B6B;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15), 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.buddies-name-input:disabled,
+.buddies-room-input:disabled {
+  background-color: #F3F4F6;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+/* 按鈕容器 */
+.buddies-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 2.5rem auto 1rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* 通用按鈕樣式 */
+.buddies-create-button,
+.buddies-join-button,
+.buddies-scan-button {
+  width: 100%;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* 建立房間按鈕 */
+.buddies-create-button {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+  color: white;
+}
+
+.buddies-create-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(255, 107, 107, 0.4);
+}
+
+.buddies-create-button:disabled {
+  background: #CCCCCC;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 加入房間按鈕 */
+.buddies-join-button {
+  background: linear-gradient(135deg, #FF976B 0%, #FFAB87 100%);
+  color: white;
+}
+
+.buddies-join-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(255, 151, 107, 0.4);
+}
+
+.buddies-join-button:disabled {
+  background: #CCCCCC;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 掃描房號按鈕 */
+.buddies-scan-button {
+  background: linear-gradient(135deg, #6874E8 0%, #8B5CF6 100%);
+  color: white;
+}
+
+.buddies-scan-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(104, 116, 232, 0.4);
+}
+
+/* 錯誤訊息 */
+.buddies-error-message {
+  background: #FEF2F2;
+  color: #DC2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 1rem auto 0;
+  max-width: 280px;
+  font-size: 0.9rem;
+  border: 1px solid #FECACA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
 
 /* Buddies 模式卡片標題樣式 */
 .card-title {
@@ -7,35 +256,6 @@
   font-size: 1.4rem;
   font-weight: 600;
   text-align: center;
-}
-
-.buddies-room input {
-  display: block;
-  margin: 1rem auto;
-  padding: 12px 15px;
-  width: 80%;
-  max-width: 300px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.buddies-room input:focus {
-  border-color: #FF9F68;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 159, 104, 0.2);
-  transform: translateY(-1px);
-}
-
-/* 按鈕容器 */
-.buddies-room .button-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  margin: 2rem auto;
-  width: 80%;
-  max-width: 300px;
 }
 
 /* 按鈕樣式 */
@@ -473,30 +693,504 @@
   }
 }
 
+/* 等待頁面樣式 */
+.buddies-waiting-container {
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 120px);
+  justify-content: center;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.buddies-waiting-title {
+  color: #FF6B6B;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.8rem 0;
+  text-align: center;
+}
+
+.buddies-room-info {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.2rem;
+  text-align: center;
+  width: 100%;
+  max-width: 350px;
+  align-self: center;
+}
+
+.buddies-room-number {
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.buddies-qr-container {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+}
+
+.buddies-room-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 0.8rem;
+  width: 100%;
+  max-width: 260px;
+}
+
+.buddies-copy-button,
+.buddies-share-button {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.buddies-copy-button {
+  background: linear-gradient(135deg, #FF976B 0%, #FFAB87 100%);
+  color: white;
+}
+
+.buddies-copy-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 151, 107, 0.4);
+}
+
+.buddies-share-button {
+  background: linear-gradient(135deg, #6874E8 0%, #8B5CF6 100%);
+  color: white;
+}
+
+.buddies-share-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(104, 116, 232, 0.4);
+}
+
+.buddies-copy-button-active,
+.buddies-share-button-active {
+  background: #CCCCCC;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buddies-members-section {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.2rem;
+  width: 100%;
+  max-width: 350px;
+  align-self: center;
+}
+
+.buddies-members-title {
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.buddies-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.buddies-member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #F8F9FA;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.buddies-member-item:hover {
+  background: #F1F3F4;
+  transform: translateY(-1px);
+}
+
+.buddies-member-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.buddies-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.buddies-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.buddies-member-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.buddies-member-name {
+  color: #333;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.buddies-member-you {
+  color: #FF6B6B;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.buddies-host-badge {
+  background: linear-gradient(135deg, #6874E8 0%, #8B5CF6 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.buddies-action-section {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  justify-content: center;
+}
+
+.buddies-start-button {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(255, 107, 107, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.buddies-start-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(255, 107, 107, 0.5);
+}
+
+.buddies-start-button:disabled {
+  background: #CCCCCC;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buddies-waiting-message {
+  text-align: center;
+  padding: 1.5rem;
+  background: #F8F9FA;
+  border-radius: 12px;
+  border: 2px dashed #E0E0E0;
+}
+
+.buddies-waiting-message p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* 等待推薦頁面樣式 */
+.buddies-waiting-recommendations {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.buddies-loading-spinner {
+  margin: 2rem auto;
+}
+
 /* 媒體查詢，適配移動設備 */
 @media (max-width: 480px) {
   .buddies-room {
-    padding: 0 1rem 1rem;
+    width: 100%;
+    padding: 0 0.8rem;
+    margin: 0;
+    overflow-x: hidden;
   }
 
-  .buddies-room input {
-    width: 90%;
+  .buddies-entrance-container {
+    padding: 1.5rem 0;
+    width: 100%;
+    min-height: 85vh;
+  }
+
+  .buddies-main-title {
+    font-size: 1.6rem;
+    margin-bottom: 2rem;
+  }
+
+  .buddies-name-input,
+  .buddies-room-input {
+    max-width: 100%;
+    font-size: 1rem;
+    padding: 14px 18px;
+  }
+
+  .buddies-button-group {
+    max-width: 100%;
+    gap: 14px;
+    margin: 2rem auto 1rem;
+  }
+
+  .buddies-create-button,
+  .buddies-join-button,
+  .buddies-scan-button {
+    font-size: 1rem;
+    padding: 14px 20px;
   }
 
   .action-buttons {
     flex-direction: column;
   }
 
-  .toast-notification {
+  .toast-notification,
+  .buddies-toast-notification {
     top: 10px;
     max-width: 90%;
     font-size: 0.9rem;
     padding: 12px 16px;
   }
 
-  .toast-icon {
+  .toast-icon,
+  .buddies-toast-icon {
     font-size: 1.1rem;
     width: 24px;
     height: 24px;
   }
+
+  .buddies-waiting-container {
+    padding: 1.5rem 1rem;
+    width: 100%;
+    min-height: calc(100vh - 100px);
+    justify-content: center;
+  }
+
+  .buddies-waiting-title {
+    font-size: 1.4rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .buddies-room-info {
+    max-width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .buddies-room-actions {
+    max-width: 100%;
+    gap: 8px;
+    margin-bottom: 0.6rem;
+  }
+
+  .buddies-copy-button,
+  .buddies-share-button {
+    font-size: 0.85rem;
+    padding: 10px 12px;
+  }
+
+  .buddies-members-section {
+    max-width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .buddies-member-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .buddies-avatar-fallback {
+    font-size: 1rem;
+  }
+
+  .buddies-member-name {
+    font-size: 0.9rem;
+  }
+
+  .buddies-start-button {
+    font-size: 1.1rem;
+    padding: 14px 24px;
+    min-width: 140px;
+  }
+
+  .buddies-action-section {
+    max-width: 100%;
+  }
+}
+
+/* 等待推薦頁面樣式 */
+.buddies-waiting-recommendations {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.2rem;
+  width: 100%;
+  max-width: 400px;
+  align-self: center;
+  text-align: center;
+}
+
+.buddies-waiting-subtitle {
+  color: #666;
+  font-size: 1rem;
+  margin: 0 0 2rem 0;
+}
+
+.buddies-analysis-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.analysis-step {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 107, 107, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid #FF6B6B;
+  animation: analysisStep 3s ease-in-out infinite;
+}
+
+.step-icon {
+  font-size: 1.5rem;
+  animation: bounce 2s infinite;
+}
+
+.step-text {
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.buddies-progress-text {
+  margin-top: 1.5rem;
+}
+
+.buddies-progress-text p {
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+/* 分析步驟動畫 */
+@keyframes analysisStep {
+  0%, 100% {
+    background: rgba(255, 107, 107, 0.05);
+    border-left-color: #FF6B6B;
+  }
+  50% {
+    background: rgba(255, 107, 107, 0.15);
+    border-left-color: #FF8E8E;
+  }
+}
+
+/* 圖標彈跳動畫 */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
+}
+
+/* 文字淡入淡出動畫 */
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 載入旋轉器增強樣式 */
+.buddies-loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 107, 107, 0.1);
+  border-left: 4px solid #FF6B6B;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes holdPageOpen {
+  0%, 100% { opacity: 1; }
 }
