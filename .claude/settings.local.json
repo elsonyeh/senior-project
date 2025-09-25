@@ -39,7 +39,8 @@
       "Bash(npm run build:*)",
       "Bash(npm run lint)",
       "Bash(start http://localhost:5176/buddies)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
