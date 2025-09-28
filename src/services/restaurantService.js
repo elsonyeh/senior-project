@@ -219,19 +219,52 @@ export const restaurantService = {
    */
   async createRestaurant(restaurantData) {
     try {
-      // 使用管理客戶端以繞過RLS限制
+      console.log('🍽️ 新增餐廳:', {
+        name: restaurantData.name,
+        hasAdmin: !!supabaseAdmin,
+        keys: Object.keys(restaurantData)
+      });
+
+      // 確保管理客戶端已初始化，使用管理客戶端以繞過RLS限制
       const client = supabaseAdmin || supabase;
-      
+
+      if (!client) {
+        throw new Error('Supabase 客戶端未初始化');
+      }
+
+      // 確保必要欄位存在
+      const cleanData = {
+        name: restaurantData.name || '',
+        address: restaurantData.address || '',
+        phone: restaurantData.phone || null,
+        category: restaurantData.category || '',
+        price_range: restaurantData.price_range || 1,
+        rating: restaurantData.rating || 0,
+        website_url: restaurantData.website_url || null,
+        tags: restaurantData.tags || [],
+        suggested_people: restaurantData.suggested_people || '1~4',
+        is_spicy: restaurantData.is_spicy || 'false',
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+
+      console.log('📝 插入餐廳資料:', cleanData);
+
       const { data, error } = await client
         .from('restaurants')
-        .insert([restaurantData])
+        .insert([cleanData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase 插入錯誤:', error);
+        throw error;
+      }
+
+      console.log('✅ 餐廳新增成功:', data);
       return data;
     } catch (error) {
-      console.error('新增餐廳失敗:', error);
+      console.error('💥 新增餐廳失敗:', error);
       throw error;
     }
   },

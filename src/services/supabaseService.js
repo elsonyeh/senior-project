@@ -66,8 +66,21 @@ export const getSupabaseAdmin = () => {
   return supabaseAdminClient;
 };
 
-// 為了向後兼容，延遲創建管理客戶端
-export const supabaseAdmin = supabaseServiceKey ? getSupabaseAdmin() : null;
+// 為了向後兼容，在需要時才創建管理客戶端（簡化版本）
+export let supabaseAdmin = null;
+
+// 初始化管理客戶端的函數
+export const initSupabaseAdmin = () => {
+  if (!supabaseAdmin && supabaseServiceKey) {
+    supabaseAdmin = getSupabaseAdmin();
+  }
+  return supabaseAdmin;
+};
+
+// 立即嘗試初始化（如果環境變數存在）
+if (supabaseServiceKey) {
+  initSupabaseAdmin();
+}
 
 // 監聽器管理 - 防止重複監聽和內存洩漏
 const activeSubscriptions = new Map();
