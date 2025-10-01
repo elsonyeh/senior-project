@@ -1019,8 +1019,8 @@ export default function BuddiesRoom() {
     questions.map((q, index) => ({
       id: "q" + index,
       text: q.question,
-      leftOption: q.options[0]?.option_text || '',
-      rightOption: q.options[1]?.option_text || '',
+      leftOption: typeof q.options[0] === 'string' ? q.options[0] : (q.options[0]?.option_text || ''),
+      rightOption: typeof q.options[1] === 'string' ? q.options[1] : (q.options[1]?.option_text || ''),
       hasVS: q.question.includes("v.s."),
       dependsOn: q.dependsOn, // 保留依賴關係
     }));
