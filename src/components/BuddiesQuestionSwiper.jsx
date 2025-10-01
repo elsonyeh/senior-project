@@ -109,8 +109,8 @@ export default function BuddiesQuestionSwiper({
         ? localQuestions.map((q, index) => ({
             id: q.id || `q${index}`,
             text: q.text || q.question || "",
-            leftOption: q.leftOption || q.options?.[0] || "選項 A",
-            rightOption: q.rightOption || q.options?.[1] || "選項 B",
+            leftOption: q.leftOption || q.options?.[0]?.option_text || "選項 A",
+            rightOption: q.rightOption || q.options?.[1]?.option_text || "選項 B",
             hasVS: q.hasVS || false,
             source:
               q.source ||
@@ -695,10 +695,8 @@ export default function BuddiesQuestionSwiper({
                         initial={{ width: "0%" }}
                         animate={{ width: `${leftPercentage}%` }}
                         transition={{
-                          duration: 0.8,
-                          type: "spring",
-                          stiffness: 80,
-                          damping: 15,
+                          duration: 0.6,
+                          ease: "easeOut"
                         }}
                         style={{
                           backgroundColor: '#4A90E2',
@@ -713,10 +711,8 @@ export default function BuddiesQuestionSwiper({
                         initial={{ width: "0%" }}
                         animate={{ width: `${rightPercentage}%` }}
                         transition={{
-                          duration: 0.8,
-                          type: "spring",
-                          stiffness: 80,
-                          damping: 15,
+                          duration: 0.6,
+                          ease: "easeOut"
                         }}
                         style={{
                           backgroundColor: '#FF6B6B',
