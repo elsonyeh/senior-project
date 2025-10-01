@@ -44,8 +44,8 @@ export default function QuestionLoader({
         return {
           id: q.id,
           text: q.question,
-          leftOption: q.options[0] || '',
-          rightOption: q.options[1] || '',
+          leftOption: q.options[0]?.option_text || '',
+          rightOption: q.options[1]?.option_text || '',
           hasVS: q.question.includes('v.s.'),
           source: 'supabase',
           dependsOn: dependsOnInfo
@@ -167,8 +167,8 @@ export const useQuestions = (mode = 'swifttaste') => {
           return {
             id: q.id,
             text: q.question,
-            leftOption: q.options[0] || '',
-            rightOption: q.options[1] || '',
+            leftOption: q.options[0]?.option_text || '',
+            rightOption: q.options[1]?.option_text || '',
             hasVS: q.question.includes('v.s.'),
             source: 'supabase',
             dependsOn: dependsOnInfo

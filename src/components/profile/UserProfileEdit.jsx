@@ -13,9 +13,9 @@ import {
 import { authService } from '../../services/authService.js';
 import { userDataService } from '../../services/userDataService.js';
 import ImageCropper from '../common/ImageCropper.jsx';
-import './UserProfilePage.css';
+import './UserProfileEdit.css';
 
-export default function UserProfilePage() {
+export default function UserProfileEdit() {
   // 選項常數
   const GENDER_OPTIONS = [
     { value: 'male', label: '男性', icon: '👨' },

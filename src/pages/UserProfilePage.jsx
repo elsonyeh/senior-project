@@ -9,7 +9,7 @@ import PageWrapper from '../components/profile/PageWrapper';
 import FAQPage from '../components/profile/FAQPage';
 import ContactPage from '../components/profile/ContactPage';
 import AboutPage from '../components/profile/AboutPage';
-import UserProfileEditPage from '../components/profile/UserProfilePage';
+import UserProfileEdit from '../components/profile/UserProfileEdit';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { authService } from '../services/authService';
@@ -393,7 +393,7 @@ export default function UserProfilePage() {
       case 'profileEdit':
         return (
           <PageWrapper title="個人資料" onBack={handleBack}>
-            <UserProfileEditPage />
+            <UserProfileEdit />
           </PageWrapper>
         );
       default:
