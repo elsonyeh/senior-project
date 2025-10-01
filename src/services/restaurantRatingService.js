@@ -156,10 +156,12 @@ class RestaurantRatingService {
    * 過濾需要更新的餐廳
    */
   filterRestaurantsForUpdate(restaurants, forceUpdate, maxAge, limitCount = 0, priorityMode = 'oldest') {
-    console.log(`📊 過濾參數: forceUpdate=${forceUpdate}, maxAge=${maxAge}, limitCount=${limitCount}, priorityMode=${priorityMode}`);
+    console.log(`📊 過濾參數: forceUpdate=${forceUpdate}, maxAge=${maxAge}ms (${maxAge/1000/60/60/24}天), limitCount=${limitCount}, priorityMode=${priorityMode}`);
+    console.log(`📊 總餐廳數: ${restaurants.length}`);
 
     // 先過濾基本條件
     let filteredRestaurants;
+    let skipCount = 0;
 
     if (forceUpdate) {
       console.log('🔄 強制更新模式：只檢查基本資訊');
@@ -167,6 +169,8 @@ class RestaurantRatingService {
     } else {
       console.log('⏰ 一般更新模式：檢查更新時間');
       const now = new Date();
+      console.log(`🕐 當前時間: ${now.toISOString()}`);
+
       filteredRestaurants = restaurants.filter(restaurant => {
         // 必須有基本資訊
         if (!restaurant.name || (!restaurant.latitude || !restaurant.longitude)) {
@@ -174,24 +178,72 @@ class RestaurantRatingService {
         }
 
         // 檢查最後更新時間
-        if (restaurant.rating_updated_at && maxAge > 0) {
+        if (restaurant.rating_updated_at) {
           const lastUpdate = new Date(restaurant.rating_updated_at);
           const timeDiff = now - lastUpdate;
+          const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+          // 調試：顯示前5個餐廳的更新狀態
+          if (skipCount < 5) {
+            console.log(`  📍 ${restaurant.name}: 上次更新 ${daysDiff.toFixed(2)} 天前 (${lastUpdate.toISOString()})`);
+          }
 
           // 如果在指定天數內已更新過，跳過更新
-          if (timeDiff < maxAge) {
+          if (maxAge > 0 && timeDiff < maxAge) {
+            skipCount++;
+            if (skipCount <= 5) {
+              console.log(`  ⏭️  跳過 ${restaurant.name}: ${daysDiff.toFixed(2)} 天 < ${maxAge/1000/60/60/24} 天`);
+            }
             return false;
+          }
+        } else {
+          // 沒有更新時間 = 從未更新
+          if (skipCount < 5) {
+            console.log(`  🆕 ${restaurant.name}: 從未更新過`);
           }
         }
 
         return true;
       });
+
+      console.log(`⏭️  總共跳過: ${skipCount} 間餐廳`);
     }
 
     console.log(`📋 基本過濾後數量: ${filteredRestaurants.length}`);
 
     // 根據優先模式排序
     switch (priorityMode) {
+      case 'no_rating':
+        console.log('⭐ 排序模式：無評分優先');
+        // 沒有評分的優先（rating 為 null、0 或 undefined）
+        filteredRestaurants.sort((a, b) => {
+          const aHasRating = !!a.rating && a.rating > 0;
+          const bHasRating = !!b.rating && b.rating > 0;
+
+          if (!aHasRating && bHasRating) return -1;
+          if (aHasRating && !bHasRating) return 1;
+
+          // 如果都沒評分或都有評分，優先選擇從未更新過的
+          const aHasUpdate = !!a.rating_updated_at;
+          const bHasUpdate = !!b.rating_updated_at;
+
+          if (!aHasUpdate && bHasUpdate) return -1;
+          if (aHasUpdate && !bHasUpdate) return 1;
+
+          // 最後按名稱排序
+          return a.name.localeCompare(b.name);
+        });
+
+        // 統計無評分的餐廳數量
+        const noRatingCount = filteredRestaurants.filter(r => !r.rating || r.rating === 0).length;
+        console.log(`  📊 無評分: ${noRatingCount} 間, 有評分: ${filteredRestaurants.length - noRatingCount} 間`);
+        console.log(`  🔝 前5間: ${filteredRestaurants.slice(0, 5).map(r => {
+          const hasRating = r.rating && r.rating > 0;
+          const hasUpdate = r.rating_updated_at;
+          return `${r.name}(${hasRating ? '★'+r.rating : '無評分'}${hasUpdate ? '' : ',未檢查'})`;
+        }).join(', ')}`);
+        break;
+
       case 'never':
         console.log('🆕 排序模式：從未更新優先');
         // 從未更新過的優先
@@ -205,6 +257,11 @@ class RestaurantRatingService {
           // 如果都沒更新過或都更新過，按名稱排序
           return a.name.localeCompare(b.name);
         });
+
+        // 統計從未更新的餐廳數量
+        const neverUpdatedCount = filteredRestaurants.filter(r => !r.rating_updated_at).length;
+        console.log(`  📊 從未更新: ${neverUpdatedCount} 間, 已更新: ${filteredRestaurants.length - neverUpdatedCount} 間`);
+        console.log(`  🔝 前5間: ${filteredRestaurants.slice(0, 5).map(r => `${r.name}(${r.rating_updated_at ? '已更新' : '未更新'})`).join(', ')}`);
         break;
 
       case 'oldest':
@@ -215,6 +272,12 @@ class RestaurantRatingService {
           const bTime = b.rating_updated_at ? new Date(b.rating_updated_at).getTime() : 0;
           return aTime - bTime;
         });
+
+        console.log(`  🔝 前5間: ${filteredRestaurants.slice(0, 5).map(r => {
+          if (!r.rating_updated_at) return `${r.name}(未更新)`;
+          const daysDiff = (Date.now() - new Date(r.rating_updated_at).getTime()) / (1000 * 60 * 60 * 24);
+          return `${r.name}(${daysDiff.toFixed(1)}天前)`;
+        }).join(', ')}`);
         break;
 
       case 'all':
@@ -287,26 +350,19 @@ class RestaurantRatingService {
         };
       }
 
-      // 檢查是否有新的評分資訊
-      const hasNewRating = placeData.rating !== undefined && placeData.rating !== restaurant.rating;
-      const hasUserRatingsTotal = placeData.user_ratings_total !== undefined;
-
-      if (!hasNewRating && !hasUserRatingsTotal) {
-        return {
-          updated: false,
-          reason: '沒有新的評分資訊'
-        };
-      }
-
-      // 更新資料庫
+      // 準備更新資料
+      // 重要：即使沒有評分資料，也要更新 rating_updated_at 和 google_place_id
+      // 這樣可以記錄「已經檢查過這間餐廳」，避免重複檢查
       const updateData = {
         rating_updated_at: new Date().toISOString()
       };
 
+      // 更新評分（如果有的話）
       if (placeData.rating !== undefined) {
         updateData.rating = placeData.rating;
       }
 
+      // 更新評分數（如果有的話）
       if (placeData.user_ratings_total !== undefined) {
         updateData.user_ratings_total = placeData.user_ratings_total;
       }
@@ -315,6 +371,10 @@ class RestaurantRatingService {
       if (placeId && !restaurant.google_place_id) {
         updateData.google_place_id = placeId;
       }
+
+      // 檢查是否有實質性更新（評分或評分數）
+      const hasNewRating = placeData.rating !== undefined && placeData.rating !== restaurant.rating;
+      const hasUserRatingsTotal = placeData.user_ratings_total !== undefined;
 
       console.log(`🔍 更新餐廳 ID: ${restaurant.id}, 類型: ${typeof restaurant.id}`);
       console.log('📝 更新資料:', updateData);
@@ -353,13 +413,19 @@ class RestaurantRatingService {
 
       console.log(`✅ 餐廳 ${restaurant.name} 更新成功，影響 ${updateResult.length} 筆記錄`);
 
-      console.log(`✅ 成功更新餐廳: ${restaurant.name} -> 評分: ${placeData.rating}`);
+      // 記錄更新詳情
+      if (hasNewRating || hasUserRatingsTotal) {
+        console.log(`✅ 成功更新餐廳: ${restaurant.name} -> 評分: ${placeData.rating || 'N/A'}, 評分數: ${placeData.user_ratings_total || 0}`);
+      } else {
+        console.log(`✅ 成功更新時間戳: ${restaurant.name} (Google Places 無評分資料)`);
+      }
 
       return {
         updated: true,
         newRating: placeData.rating,
         userRatingsTotal: placeData.user_ratings_total,
-        placeId: placeId
+        placeId: placeId,
+        hasRatingData: hasNewRating || hasUserRatingsTotal
       };
 
     } catch (error) {
@@ -702,6 +768,122 @@ class RestaurantRatingService {
       console.log('🧹 已清空 Place ID 快取');
     } catch (error) {
       console.error('清空 Place ID 快取失敗:', error);
+    }
+  }
+
+  /**
+   * 重置指定數量餐廳的更新時間（測試用）
+   * @param {Array} restaurants - 餐廳列表
+   * @param {number} count - 要重置的數量
+   * @returns {Promise<number>} 實際重置的數量
+   */
+  async resetUpdateTimestamps(restaurants, count = 10) {
+    try {
+      const adminClient = getSupabaseAdmin();
+      if (!adminClient) {
+        throw new Error('管理員客戶端不可用');
+      }
+
+      // 隨機選擇餐廳
+      const shuffled = [...restaurants].sort(() => Math.random() - 0.5);
+      const toReset = shuffled.slice(0, count);
+
+      console.log(`🔄 準備重置 ${toReset.length} 間餐廳的更新時間...`);
+
+      let successCount = 0;
+      for (const restaurant of toReset) {
+        const { error } = await adminClient
+          .from('restaurants')
+          .update({ rating_updated_at: null })
+          .eq('id', restaurant.id);
+
+        if (error) {
+          console.error(`❌ 重置失敗: ${restaurant.name}`, error);
+        } else {
+          console.log(`✅ 已重置: ${restaurant.name}`);
+          successCount++;
+        }
+      }
+
+      console.log(`✅ 成功重置 ${successCount} 間餐廳的更新時間`);
+      return successCount;
+    } catch (error) {
+      console.error('重置更新時間失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 批次補充缺少座標的餐廳
+   * @param {Array} restaurants - 缺少座標的餐廳列表
+   * @returns {Promise<{success: number, failed: number}>} 補充結果
+   */
+  async fillMissingCoordinates(restaurants) {
+    try {
+      const adminClient = getSupabaseAdmin();
+      if (!adminClient) {
+        throw new Error('管理員客戶端不可用');
+      }
+
+      // 確保 Google Maps API 已載入
+      const googleMapsLoader = (await import('../utils/googleMapsLoader')).default;
+      await googleMapsLoader.load();
+
+      // 動態載入 restaurantService
+      const { restaurantService } = await import('./restaurantService');
+
+      console.log(`🗺️ 準備為 ${restaurants.length} 間餐廳補充座標...`);
+
+      let successCount = 0;
+      let failedCount = 0;
+
+      for (const restaurant of restaurants) {
+        if (!restaurant.address) {
+          console.warn(`⚠️ ${restaurant.name}: 沒有地址，跳過`);
+          failedCount++;
+          continue;
+        }
+
+        try {
+          console.log(`📍 正在處理: ${restaurant.name} (${restaurant.address})`);
+
+          // 使用 restaurantService 的 geocodeAddress 方法
+          const coords = await restaurantService.geocodeAddress(restaurant.address);
+
+          if (coords) {
+            const { error } = await adminClient
+              .from('restaurants')
+              .update({
+                latitude: coords.lat,
+                longitude: coords.lng
+              })
+              .eq('id', restaurant.id);
+
+            if (error) {
+              console.error(`❌ 更新座標失敗: ${restaurant.name}`, error);
+              failedCount++;
+            } else {
+              console.log(`✅ 已補充座標: ${restaurant.name} (${coords.lat}, ${coords.lng})`);
+              successCount++;
+            }
+          } else {
+            console.warn(`⚠️ 無法獲取座標: ${restaurant.name}`);
+            failedCount++;
+          }
+
+          // 延遲以避免 API 限制
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error(`❌ 處理失敗: ${restaurant.name}`, error);
+          failedCount++;
+        }
+      }
+
+      console.log(`✅ 座標補充完成：成功 ${successCount} 間，失敗 ${failedCount} 間`);
+      return { success: successCount, failed: failedCount };
+    } catch (error) {
+      console.error('批次補充座標失敗:', error);
+      throw error;
     }
   }
 

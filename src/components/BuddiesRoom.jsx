@@ -20,6 +20,7 @@ import selectionHistoryService from "../services/selectionHistoryService";
 import { authService } from "../services/authService";
 import { restaurantService } from "../services/restaurantService";
 import { recommendRestaurants } from "../logic/enhancedRecommendLogicFrontend";
+import logger from "../utils/logger";
 
 export default function BuddiesRoom() {
   const [roomId, setRoomId] = useState("");
@@ -39,7 +40,7 @@ export default function BuddiesRoom() {
     if (currentUser && (member.id === currentUser.id || member.user_id === currentUser.id)) {
       const avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.avatar_url;
       if (avatarUrl) {
-        console.log(`✅ 找到用戶頭貼 (ID匹配): ${member.name} -> ${avatarUrl.substring(0, 50)}...`);
+        logger.debug(`✅ 找到用戶頭貼 (ID匹配): ${member.name} -> ${avatarUrl.substring(0, 50)}...`);
         return avatarUrl;
       }
     }
@@ -48,7 +49,7 @@ export default function BuddiesRoom() {
     if (currentUser && member.name && currentUser.user_metadata?.name === member.name) {
       const avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.avatar_url;
       if (avatarUrl) {
-        console.log(`✅ 找到用戶頭貼 (姓名匹配): ${member.name} -> ${avatarUrl.substring(0, 50)}...`);
+        logger.debug(`✅ 找到用戶頭貼 (姓名匹配): ${member.name} -> ${avatarUrl.substring(0, 50)}...`);
         return avatarUrl;
       }
     }
@@ -84,7 +85,7 @@ export default function BuddiesRoom() {
   // 包裝 setPhase 來追蹤所有變更
   const setPhase = (newPhase) => {
     const stack = new Error().stack.split('\n');
-    console.log("🔄 setPhase 被調用:", {
+    logger.debug("🔄 setPhase 被調用:", {
       from: phase,
       to: newPhase,
       calledFrom: stack[2], // 調用者
@@ -99,7 +100,7 @@ export default function BuddiesRoom() {
 
   // 監控關鍵狀態變化
   React.useEffect(() => {
-    console.log('🔍 關鍵狀態更新:', {
+    logger.debug("🔍 關鍵狀態更新:", {
       phase: phase,
       isHost: isHost,
       joined: joined,
@@ -151,14 +152,14 @@ export default function BuddiesRoom() {
         const result = await authService.getCurrentUser();
         if (result.success && result.user) {
           setCurrentUser(result.user);
-          console.log("當前登入用戶:", result.user);
+          logger.info("當前登入用戶:", result.user);
 
           // 如果用戶已登入，自動填入姓名
           if (result.user.user_metadata?.name) {
             setUserName(result.user.user_metadata.name);
           }
 
-          console.log('=== CURRENT USER LOADED ===', {
+          logger.info('=== CURRENT USER LOADED ===', {
             userId: result.user.id,
             name: result.user.user_metadata?.name,
             avatarUrl: result.user.user_metadata?.avatar_url || result.user.avatar_url
@@ -178,7 +179,7 @@ export default function BuddiesRoom() {
     const finalUserId = currentUser?.id || roomService.getOrCreateUserId();
     setUserId(finalUserId);
 
-    console.log('=== USER ID INITIALIZED ===', {
+    logger.info('=== USER ID INITIALIZED ===', {
       currentUserId: currentUser?.id,
       temporaryId: roomService.getOrCreateUserId(),
       finalUserId: finalUserId,
@@ -202,7 +203,7 @@ export default function BuddiesRoom() {
           }
         }
       } catch (error) {
-        console.log('無法獲取登入用戶資訊:', error);
+        logger.info('無法獲取登入用戶資訊:', error);
       }
 
       // 如果沒有登入用戶，使用本地儲存的名稱
@@ -239,7 +240,7 @@ export default function BuddiesRoom() {
   useEffect(() => {
     if (joined && roomId) {
       const cleanup = memberService.listenRoomMembers(roomId, (membersObj) => {
-        console.log("收到成員更新:", membersObj);
+        logger.info("收到成員更新:", membersObj);
 
         // 轉換成陣列格式
         const membersList = Object.values(membersObj).map(member => {
@@ -270,28 +271,28 @@ export default function BuddiesRoom() {
 
   // 監聽房間狀態變化（只在加入房間時建立一次）
   useEffect(() => {
-    console.log("🔍 監聽房間狀態 useEffect 觸發:", { joined, roomId });
+    logger.debug("🔍 監聽房間狀態 useEffect 觸發:", { joined, roomId });
 
     if (joined && roomId) {
-      console.log("✅ 條件滿足，開始設置房間狀態監聽器");
+      logger.debug("✅ 條件滿足，開始設置房間狀態監聽器");
       const cleanup = roomService.listenRoomStatus(roomId, (status) => {
-        console.log("🔔 房間狀態變化監聽器觸發:", {
+        logger.debug("🔔 房間狀態變化監聽器觸發:", {
           newStatus: status,
           roomId: roomId,
           timestamp: new Date().toLocaleTimeString()
         });
 
         if (status === 'waiting') {
-          console.log("🔄 設置 phase 為 'waiting'");
+          logger.debug("🔄 設置 phase 為 'waiting'");
           setPhase('waiting');
         } else if (status === 'questions') {
-          console.log("🔄 設置 phase 為 'questions'");
+          logger.debug("🔄 設置 phase 為 'questions'");
           setPhase('questions');
         } else if (status === 'recommend') {
-          console.log("🔄 設置 phase 為 'recommend'");
+          logger.debug("🔄 設置 phase 為 'recommend'");
           setPhase('recommend');
         } else if (status === 'completed') {
-          console.log("🔄 設置 phase 為 'completed'");
+          logger.debug("🔄 設置 phase 為 'completed'");
           setPhase('completed');
         }
       });
@@ -306,7 +307,7 @@ export default function BuddiesRoom() {
   useEffect(() => {
     if (joined && roomId) {
       const cleanup = questionService.listenQuestions(roomId, (questions) => {
-        console.log("收到問題集更新:", questions);
+        logger.info("收到問題集更新:", questions);
         setQuestions(questions);
         // 移除自動進入答題的邏輯，讓房間狀態監聽器來處理
         // 這樣可以確保只有通過正式的房間狀態變化才會進入答題環節
@@ -322,7 +323,7 @@ export default function BuddiesRoom() {
   useEffect(() => {
     if (joined && roomId) {
       const cleanup = recommendationService.listenRecommendations(roomId, async (recommendations) => {
-        console.log("收到推薦更新:", recommendations);
+        logger.info("收到推薦更新:", recommendations);
         if (recommendations && recommendations.length > 0) {
           setRecommendations(recommendations);
           setPhase('recommend');
@@ -340,7 +341,7 @@ export default function BuddiesRoom() {
                 answers: {}, // 這裡可以從其他地方獲取答案資料
                 questionTexts: questions.map(q => q.question) || []
               });
-              console.log('✅ Buddies 歷史已儲存');
+              logger.debug("✅ Buddies 歷史已儲存");
             } catch (error) {
               console.error('❌ 儲存 Buddies 歷史失敗:', error);
             }
@@ -357,7 +358,7 @@ export default function BuddiesRoom() {
   // 選擇紀錄相關函數
   const startBuddiesSession = async (buddiesRoomId) => {
     try {
-      console.log('Starting Buddies selection session for room:', buddiesRoomId);
+      logger.info('Starting Buddies selection session for room:', buddiesRoomId);
       setSessionStartTime(new Date());
 
       const result = await selectionHistoryService.startSession('buddies', {
@@ -368,7 +369,7 @@ export default function BuddiesRoom() {
         setCurrentSessionId(result.sessionId);
         // 設置 Buddies 房間 ID
         await selectionHistoryService.setBuddiesRoomId(result.sessionId, buddiesRoomId);
-        console.log('Buddies session started:', result.sessionId);
+        logger.info('Buddies session started:', result.sessionId);
       } else {
         console.error('Failed to start Buddies session:', result.error);
       }
@@ -389,7 +390,7 @@ export default function BuddiesRoom() {
             });
           },
           (error) => {
-            console.warn('Location access denied:', error);
+            logger.warn('Location access denied:', error);
             resolve(null);
           },
           { timeout: 10000 }
@@ -408,7 +409,7 @@ export default function BuddiesRoom() {
       };
 
       await selectionHistoryService.completeSession(currentSessionId, completionData);
-      console.log('Buddies session completed');
+      logger.info('Buddies session completed');
     }
   };
 
@@ -454,13 +455,13 @@ export default function BuddiesRoom() {
             };
           });
           setMembers(membersList);
-          console.log("載入成員列表:", membersList);
+          logger.info("載入成員列表:", membersList);
         }
 
         // 確認房間狀態為 waiting
         const roomStatusResult = await roomService.getRoomStatus(response.roomId);
         if (roomStatusResult.success) {
-          console.log("🔍 創建房間後檢查狀態:", {
+          logger.debug("🔍 創建房間後檢查狀態:", {
             expectedStatus: 'waiting',
             actualStatus: roomStatusResult.status,
             needsCorrection: roomStatusResult.status !== 'waiting'
@@ -468,8 +469,8 @@ export default function BuddiesRoom() {
 
           // 即使我們已經設置了 waiting，也確認一下房間狀態
           if (roomStatusResult.status !== 'waiting') {
-            console.warn("⚠️ 房間狀態不是 waiting，錯誤地設置 phase 為:", roomStatusResult.status);
-            console.warn("🚨 這可能導致自動進入答題階段！");
+            logger.warn("⚠️ 房間狀態不是 waiting，錯誤地設置 phase 為:", roomStatusResult.status);
+            logger.warn("🚨 這可能導致自動進入答題階段！");
             // 暫時註解掉這行，強制保持 waiting 狀態
             // setPhase(roomStatusResult.status);
           }
@@ -478,7 +479,7 @@ export default function BuddiesRoom() {
         // 不需要跳轉，直接更新 URL 狀態
         window.history.replaceState({}, '', `/buddies?roomId=${response.roomId}`);
 
-        console.log("房間建立成功，房號:", response.roomId, "當前狀態: waiting");
+        logger.info("房間建立成功，房號:", response.roomId, "當前狀態: waiting");
       } else {
         setError(response.error || "房間建立失敗");
       }
@@ -558,7 +559,7 @@ export default function BuddiesRoom() {
         const roomStatusResult = await roomService.getRoomStatus(roomIdInput.toUpperCase());
         if (roomStatusResult.success) {
           const currentStatus = roomStatusResult.status;
-          console.log("🔍 加入房間時檢查狀態:", {
+          logger.debug("🔍 加入房間時檢查狀態:", {
             roomId: roomIdInput.toUpperCase(),
             currentStatus,
             willSetPhase: currentStatus
@@ -566,16 +567,16 @@ export default function BuddiesRoom() {
 
           // 根據房間狀態設置對應的 phase
           if (currentStatus === 'questions') {
-            console.warn("⚠️ 房間狀態是 'questions'，將自動進入答題階段");
+            logger.warn("⚠️ 房間狀態是 'questions'，將自動進入答題階段");
             setPhase('questions');
           } else if (currentStatus === 'recommend') {
-            console.warn("⚠️ 房間狀態是 'recommend'，將自動進入推薦階段");
+            logger.warn("⚠️ 房間狀態是 'recommend'，將自動進入推薦階段");
             setPhase('recommend');
           } else if (currentStatus === 'completed') {
-            console.warn("⚠️ 房間狀態是 'completed'，將自動進入完成階段");
+            logger.warn("⚠️ 房間狀態是 'completed'，將自動進入完成階段");
             setPhase('completed');
           } else {
-            console.log("✅ 房間狀態正常，設置為 waiting");
+            logger.debug("✅ 房間狀態正常，設置為 waiting");
             setPhase('waiting'); // 默認狀態
           }
         }
@@ -583,7 +584,7 @@ export default function BuddiesRoom() {
         // 不需要跳轉，直接更新 URL 狀態
         window.history.replaceState({}, '', `/buddies?roomId=${roomIdInput.toUpperCase()}`);
 
-        console.log("成功加入房間，房號:", roomIdInput.toUpperCase(), "當前狀態:", roomStatusResult.status);
+        logger.info("成功加入房間，房號:", roomIdInput.toUpperCase(), "當前狀態:", roomStatusResult.status);
       } else {
         if (response.error && 
             (response.error.includes("已關閉") ||
@@ -705,9 +706,9 @@ export default function BuddiesRoom() {
   // 生成 Buddies 推薦餐廳
   const generateBuddiesRecommendations = async (roomId, allAnswersData, questions) => {
     try {
-      console.log("🤖 開始生成 Buddies 推薦餐廳...");
-      console.log("📊 答案數據:", allAnswersData);
-      console.log("❓ 問題列表:", questions);
+      logger.debug("🤖 開始生成 Buddies 推薦餐廳...");
+      logger.debug("📊 答案數據:", allAnswersData);
+      logger.info("❓ 問題列表:", questions);
 
       // 獲取餐廳數據
       const restaurantsData = await restaurantService.getRestaurants();
@@ -731,11 +732,29 @@ export default function BuddiesRoom() {
           }
         });
 
-        // 對每個問題取多數決或加權平均
+        // 對每個問題取多數決
         Object.keys(groupAnswers).forEach(questionIndex => {
           const answers = groupAnswers[questionIndex];
-          // 對於 Buddies 模式，我們使用第一個用戶的答案作為代表（可以改進為多數決）
-          groupAnswers[questionIndex] = answers[0];
+
+          // 統計每個答案的出現次數
+          const answerCounts = {};
+          answers.forEach(answer => {
+            answerCounts[answer] = (answerCounts[answer] || 0) + 1;
+          });
+
+          // 找出出現次數最多的答案
+          let maxCount = 0;
+          let mostCommonAnswer = answers[0]; // 預設值
+
+          Object.entries(answerCounts).forEach(([answer, count]) => {
+            if (count > maxCount) {
+              maxCount = count;
+              mostCommonAnswer = answer;
+            }
+          });
+
+          groupAnswers[questionIndex] = mostCommonAnswer;
+          logger.debug(`📊 問題 ${questionIndex} 多數決結果: ${mostCommonAnswer} (${maxCount}/${answers.length} 票)`);
         });
       }
 
@@ -746,7 +765,7 @@ export default function BuddiesRoom() {
         groupAnswersArray[i] = groupAnswers[i] || '';
       }
 
-      console.log("🔄 轉換後的群組答案陣列:", groupAnswersArray);
+      logger.debug("🔄 轉換後的群組答案陣列:", groupAnswersArray);
 
       // 調用推薦算法
       const recommendations = recommendRestaurants(
@@ -758,14 +777,14 @@ export default function BuddiesRoom() {
         }
       );
 
-      console.log("✅ 推薦餐廳生成完成:", recommendations.length, "間餐廳");
+      logger.debug("✅ 推薦餐廳生成完成:", recommendations.length, "間餐廳");
 
       if (recommendations.length > 0) {
         // 保存推薦結果到 Supabase
         const saveResult = await recommendationService.saveRecommendations(roomId, recommendations);
 
         if (saveResult.success) {
-          console.log("✅ 推薦結果已保存到數據庫");
+          logger.debug("✅ 推薦結果已保存到數據庫");
           setRecommendations(recommendations);
 
           // 關閉載入動畫，切換到推薦階段
@@ -777,7 +796,7 @@ export default function BuddiesRoom() {
           setError("生成推薦失敗");
         }
       } else {
-        console.warn("⚠️ 沒有找到合適的餐廳推薦");
+        logger.warn("⚠️ 沒有找到合適的餐廳推薦");
         setLoadingRecommendations(false);
         setError("沒有找到合適的餐廳，請重新嘗試");
       }
@@ -849,32 +868,42 @@ export default function BuddiesRoom() {
       }
 
       if (result.success) {
-        console.log("🎉 所有問題答案提交成功！開始處理完成邏輯...");
+        logger.debug("🎉 所有問題答案提交成功！開始處理完成邏輯...");
 
         // 只有當這是最終答案提交時才進行後續處理
-        console.log("📊 檢查所有成員是否都已完成全部問題...");
+        logger.debug("📊 檢查所有成員是否都已完成全部問題...");
 
         // 檢查是否所有成員都已提交完整答案
         const allAnswers = await questionService.getAllAnswers(roomId);
         const memberCount = members.length;
 
-        // 計算完成答題的成員數（需要檢查每個成員的答案數量是否等於問題總數）
-        const questionCount = questions.length;
+        // 計算可見問題數量（排除依賴問題）
+        // 注意：用戶的答案數組長度等於他們實際回答的可見問題數量
+        // 所以我們應該檢查是否所有用戶都完成了答題，而不是比較固定的問題數量
+
         let completedMembers = 0;
+        let maxAnswerLength = 0;
 
         if (allAnswers.success && allAnswers.data) {
           allAnswers.data.forEach(memberAnswer => {
-            if (memberAnswer.answers && memberAnswer.answers.length >= questionCount) {
+            if (memberAnswer.answers && memberAnswer.answers.length > 0) {
+              maxAnswerLength = Math.max(maxAnswerLength, memberAnswer.answers.length);
+            }
+          });
+
+          // 檢查每個成員是否都達到了最大答案長度（即完成了所有可見問題）
+          allAnswers.data.forEach(memberAnswer => {
+            if (memberAnswer.answers && memberAnswer.answers.length >= maxAnswerLength && maxAnswerLength > 0) {
               completedMembers++;
             }
           });
         }
 
-        console.log(`完成全部問題的成員數: ${completedMembers}, 總成員數: ${memberCount}, 問題總數: ${questionCount}`);
+        logger.info(`完成全部問題的成員數: ${completedMembers}, 總成員數: ${memberCount}, 最大答案長度: ${maxAnswerLength}, 原始問題總數: ${questions.length}`);
 
         if (completedMembers >= memberCount) {
           // 所有人都已完成全部問題
-          console.log("✅ 所有成員都已完成全部問題，開始生成推薦");
+          logger.debug("✅ 所有成員都已完成全部問題，開始生成推薦");
 
           // 啟用載入動畫
           setLoadingRecommendations(true);
@@ -882,7 +911,7 @@ export default function BuddiesRoom() {
           // 生成推薦餐廳
           await generateBuddiesRecommendations(roomId, allAnswers.data, questions);
         } else {
-          console.log("⏳ 還有成員未完成全部問題，保持在問題階段");
+          logger.debug("⏳ 還有成員未完成全部問題，保持在問題階段");
           // 保持在問題階段，讓 BuddiesQuestionSwiper 繼續處理
         }
       } else {
@@ -896,19 +925,19 @@ export default function BuddiesRoom() {
 
   // 開始問答
   const handleStartQuestions = async () => {
-    console.log("🎯 handleStartQuestions 被調用");
-    console.log("當前狀態 - roomId:", roomId, "isHost:", isHost, "phase:", phase);
+    logger.debug("🎯 handleStartQuestions 被調用");
+    logger.info("當前狀態 - roomId:", roomId, "isHost:", isHost, "phase:", phase);
 
     try {
       // 從資料庫載入基本問題
-      console.log("📊 從資料庫載入 Buddies 基本問題...");
+      logger.debug("📊 從資料庫載入 Buddies 基本問題...");
       const buddiesBasicQuestions = await getBasicQuestionsForBuddies();
-      console.log("📊 載入的基本問題:", buddiesBasicQuestions);
+      logger.debug("📊 載入的基本問題:", buddiesBasicQuestions);
 
       // 從資料庫載入趣味問題
-      console.log("🎉 從資料庫載入 Buddies 趣味問題...");
+      logger.debug("🎉 從資料庫載入 Buddies 趣味問題...");
       const allFunQuestions = await getFunQuestions();
-      console.log("🎉 載入的趣味問題數量:", allFunQuestions.length);
+      logger.debug("🎉 載入的趣味問題數量:", allFunQuestions.length);
 
       // 隨機選擇3個趣味問題
       const randomFun = allFunQuestions
@@ -916,38 +945,58 @@ export default function BuddiesRoom() {
         .slice(0, 3);
 
       // 格式化基本問題
-      const basicWithSource = buddiesBasicQuestions.map((q) => ({
-        question: q.question_text || q.question,
-        options: [q.leftOption, q.rightOption],
-        source: "basic",
-      }));
+      const basicWithSource = buddiesBasicQuestions.map((q) => {
+        let dependsOnConverted = null;
+
+        // 如果有依賴，需要將 questionId 轉換為問題文本
+        if (q.dependsOn && q.dependsOn.questionId) {
+          const dependentQ = buddiesBasicQuestions.find(
+            dq => dq.id === q.dependsOn.questionId
+          );
+
+          if (dependentQ) {
+            dependsOnConverted = {
+              question: dependentQ.question_text || dependentQ.question,
+              answer: q.dependsOn.answer
+            };
+          }
+        }
+
+        return {
+          question: q.question_text || q.question,
+          options: [q.leftOption, q.rightOption],
+          source: "basic",
+          dependsOn: dependsOnConverted
+        };
+      });
 
       // 格式化趣味問題
       const funWithSource = randomFun.map((q) => ({
         question: q.question_text || q.question || q.text,
         options: [q.leftOption, q.rightOption],
         source: "fun",
+        dependsOn: null // 趣味問題通常沒有依賴
       }));
 
       const combinedQuestions = [...basicWithSource, ...funWithSource];
-      console.log("❓ 組合後的問題數量:", combinedQuestions.length);
+      logger.info("❓ 組合後的問題數量:", combinedQuestions.length);
 
       // 保存問題集到 Supabase
-      console.log("💾 開始保存問題集...");
+      logger.debug("💾 開始保存問題集...");
       const result = await questionService.saveQuestions(roomId, combinedQuestions);
-      console.log("💾 保存問題集結果:", result);
+      logger.debug("💾 保存問題集結果:", result);
 
       if (result.success) {
         setQuestions(combinedQuestions);
-        console.log("✅ 設置本地問題集完成");
+        logger.debug("✅ 設置本地問題集完成");
 
         // 更新房間狀態
-        console.log("🔄 開始更新房間狀態為 'questions'...");
+        logger.debug("🔄 開始更新房間狀態為 'questions'...");
         const statusResult = await roomService.updateRoomStatus(roomId, 'questions');
-        console.log("🔄 更新房間狀態結果:", statusResult);
+        logger.debug("🔄 更新房間狀態結果:", statusResult);
 
         if (statusResult.success) {
-          console.log("✅ 房間狀態更新成功，手動設置 phase 為 'questions'");
+          logger.debug("✅ 房間狀態更新成功，手動設置 phase 為 'questions'");
           setPhase('questions');
         }
       } else {
@@ -970,9 +1019,10 @@ export default function BuddiesRoom() {
     questions.map((q, index) => ({
       id: "q" + index,
       text: q.question,
-      leftOption: q.options[0],
-      rightOption: q.options[1],
+      leftOption: q.options[0]?.option_text || q.options[0],
+      rightOption: q.options[1]?.option_text || q.options[1],
       hasVS: q.question.includes("v.s."),
+      dependsOn: q.dependsOn, // 保留依賴關係
     }));
 
   // 渲染不同階段的內容
@@ -1122,7 +1172,7 @@ export default function BuddiesRoom() {
   };
 
   useEffect(() => {
-    console.log("推薦狀態更新:", {
+    logger.info("推薦狀態更新:", {
       phase,
       recommendationsCount: recommendations.length,
       hasError: !!error,

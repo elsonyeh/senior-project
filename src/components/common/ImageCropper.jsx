@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { IoCloseOutline, IoCheckmarkOutline, IoCropOutline } from 'react-icons/io5';
 import './ImageCropper.css';
 
@@ -6,82 +6,75 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const containerRef = useRef(null);
-  const [imageTransform, setImageTransform] = useState({ x: 0, y: 0, scale: 1 });
+
+  // 圖片狀態
+  const [offset, setOffset] = useState({ x: 0, y: 0 }); // 圖片偏移(容器像素)
+  const [zoom, setZoom] = useState(1); // 縮放倍數(相對於適配尺寸)
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [cropSize, setCropSize] = useState(250); // 固定裁切區域大小
 
+  // 裁切配置
+  const [cropSize, setCropSize] = useState(250);
+  const [fitSize, setFitSize] = useState({ width: 0, height: 0 }); // 適配後的尺寸
+  const [minZoom, setMinZoom] = useState(1); // 最小縮放(確保覆蓋裁切框)
 
+  // 圖片載入
   const handleImageLoad = useCallback(() => {
     const img = imageRef.current;
     const container = containerRef.current;
+    if (!img || !container) return;
 
-    if (!img || !container) {
-      console.error('Missing image or container reference');
-      return;
+    // 計算容器和裁切框尺寸
+    const containerRect = container.getBoundingClientRect();
+    const containerSize = Math.min(containerRect.width, containerRect.height) - 40;
+    const actualCropSize = Math.min(containerSize * 0.7, 300);
+    setCropSize(actualCropSize);
+
+    // 計算圖片適配尺寸 - 確保完全覆蓋裁切框(正方形)
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+    let fitWidth, fitHeight;
+
+    if (imgAspect > 1) {
+      // 橫圖：寬度貼齊裁切框，高度等比例
+      fitWidth = actualCropSize;
+      fitHeight = fitWidth / imgAspect;
+    } else {
+      // 直圖：高度貼齊裁切框，寬度等比例
+      fitHeight = actualCropSize;
+      fitWidth = fitHeight * imgAspect;
     }
 
+    // 確保兩邊都不小於裁切框
+    const requiredScale = Math.max(actualCropSize / fitWidth, actualCropSize / fitHeight);
+    if (requiredScale > 1) {
+      fitWidth *= requiredScale;
+      fitHeight *= requiredScale;
+    }
 
-    // 延遲執行以確保容器完全渲染
-    setTimeout(() => {
-      try {
-        // 計算容器大小
-        const containerRect = container.getBoundingClientRect();
-        const containerSize = Math.min(containerRect.width, containerRect.height) - 40;
-
-        // 設置裁切區域大小（正方形）
-        const newCropSize = Math.min(containerSize * 0.7, 250);
-        setCropSize(newCropSize);
-
-        // 計算圖片初始尺寸和位置
-        const imgAspect = img.naturalWidth / img.naturalHeight;
-        const containerWidth = containerRect.width;
-        const containerHeight = containerRect.height;
-
-        // 計算初始縮放比例，讓圖片能夠覆蓋裁切區域
-        const scaleToFitCrop = Math.max(newCropSize / img.naturalWidth, newCropSize / img.naturalHeight);
-        const initialScale = Math.max(scaleToFitCrop * 1.1, 0.8);
-
-        setImageTransform({
-          x: 0,
-          y: 0,
-          scale: initialScale
-        });
-
-        setImageLoaded(true);
-      } catch (error) {
-        console.error('Error initializing image cropper:', error);
-        setImageLoaded(true); // 即使出錯也要設為已載入
-      }
-    }, 50);
+    // 設置最小縮放 = 1.0 (fitSize已經確保覆蓋裁切框)
+    setMinZoom(1.0);
+    setFitSize({ width: fitWidth, height: fitHeight });
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setImageLoaded(true);
   }, []);
 
-  // 處理圖片拖拽（滑鼠和觸控）
-  const handleImageMouseDown = useCallback((e) => {
-    if (!imageLoaded) return; // 確保圖片已載入
-
-    if (!e.touches) {
-      e.preventDefault();
-    }
-    e.stopPropagation();
+  // 拖拽
+  const handleDragStart = useCallback((e) => {
+    if (!imageLoaded) return;
+    e.preventDefault();
 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
     setIsDragging(true);
-    setDragStart({
-      x: clientX - imageTransform.x,
-      y: clientY - imageTransform.y
-    });
-  }, [imageTransform, imageLoaded]);
+    setDragStart({ x: clientX - offset.x, y: clientY - offset.y });
+  }, [imageLoaded, offset]);
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging || !imageRef.current || !containerRef.current) return;
-
-    if (!e.touches) {
-      e.preventDefault();
-    }
+  const handleDragMove = useCallback((e) => {
+    if (!isDragging) return;
+    e.preventDefault();
 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -89,88 +82,115 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
     const newX = clientX - dragStart.x;
     const newY = clientY - dragStart.y;
 
-    // 可以自由拖拽，不限制邊界，讓用戶完全控制
-    setImageTransform(prev => ({
-      ...prev,
-      x: newX,
-      y: newY
-    }));
-  }, [isDragging, dragStart]);
+    // 嚴格限制：圖片邊緣不能超過裁切框邊緣
+    const displayWidth = fitSize.width * zoom;
+    const displayHeight = fitSize.height * zoom;
 
-  const handleMouseUp = useCallback(() => {
+    // 圖片必須完全覆蓋裁切框
+    const maxOffsetX = Math.max(0, (displayWidth - cropSize) / 2);
+    const maxOffsetY = Math.max(0, (displayHeight - cropSize) / 2);
+
+    setOffset({
+      x: Math.max(-maxOffsetX, Math.min(maxOffsetX, newX)),
+      y: Math.max(-maxOffsetY, Math.min(maxOffsetY, newY))
+    });
+  }, [isDragging, dragStart, fitSize, zoom, cropSize]);
+
+  const handleDragEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  // 滾輪縮放
-  const handleWheel = useCallback((e) => {
-    if (!imageLoaded) return; // 確保圖片已載入
+  // 觸控縮放
+  const [touchDistance, setTouchDistance] = useState(0);
 
-    // 不在這裡呼叫 preventDefault，改用 CSS 的 touch-action 和事件選項
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setImageTransform(prev => {
-      const newScale = Math.max(0.5, Math.min(3, prev.scale + delta));
-      return { ...prev, scale: newScale };
-    });
-  }, [imageLoaded]);
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      setTouchDistance(dist);
+    } else if (e.touches.length === 1) {
+      handleDragStart(e);
+    }
+  }, [handleDragStart]);
 
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2 && touchDistance > 0) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const delta = (dist - touchDistance) / 100;
+      setTouchDistance(dist);
+
+      setZoom(prev => Math.max(minZoom, Math.min(5, prev + delta)));
+    } else {
+      handleDragMove(e);
+    }
+  }, [touchDistance, handleDragMove]);
+
+  // 裁切
   const handleCrop = useCallback(async () => {
-    if (!imageLoaded) return; // 確保圖片已載入
+    if (!imageLoaded) return;
 
     const canvas = canvasRef.current;
     const img = imageRef.current;
     const container = containerRef.current;
-    if (!canvas || !img || !container) {
-      console.error('Missing required elements for cropping');
-      return;
-    }
+    if (!canvas || !img || !container) return;
 
     try {
       const ctx = canvas.getContext('2d');
-      const outputSize = 300; // 輸出正方形尺寸
+      // 輸出尺寸 = 裁切框尺寸，保持1:1比例
+      const outputSize = Math.round(cropSize);
 
       canvas.width = outputSize;
       canvas.height = outputSize;
 
-      // 獲取容器的中心位置
+      // 容器中心
       const containerRect = container.getBoundingClientRect();
       const centerX = containerRect.width / 2;
       const centerY = containerRect.height / 2;
 
-      // 計算裁切區域在圖片中的位置
+      // 圖片顯示尺寸和位置
+      const displayWidth = fitSize.width * zoom;
+      const displayHeight = fitSize.height * zoom;
+      const displayLeft = centerX - displayWidth / 2 + offset.x;
+      const displayTop = centerY - displayHeight / 2 + offset.y;
+
+      // 裁切框位置
       const cropLeft = centerX - cropSize / 2;
       const cropTop = centerY - cropSize / 2;
 
-      // 計算圖片在容器中的實際位置和尺寸
-      const imgDisplayWidth = img.naturalWidth * imageTransform.scale;
-      const imgDisplayHeight = img.naturalHeight * imageTransform.scale;
+      // 轉換到圖片原始座標
+      const scaleToNatural = img.naturalWidth / displayWidth;
+      const sourceX = (cropLeft - displayLeft) * scaleToNatural;
+      const sourceY = (cropTop - displayTop) * scaleToNatural;
+      const sourceSize = cropSize * scaleToNatural;
 
-      // 計算裁切區域相對於圖片的位置
-      const sourceX = (cropLeft - imageTransform.x) / imageTransform.scale;
-      const sourceY = (cropTop - imageTransform.y) / imageTransform.scale;
-      const sourceSize = cropSize / imageTransform.scale;
+      // 確保在圖片範圍內
+      const clampedSourceX = Math.max(0, Math.min(img.naturalWidth - sourceSize, sourceX));
+      const clampedSourceY = Math.max(0, Math.min(img.naturalHeight - sourceSize, sourceY));
+      const clampedSourceSize = Math.min(sourceSize, img.naturalWidth, img.naturalHeight);
 
-      // 確保裁切參數有效
-      const finalSourceX = Math.max(0, sourceX);
-      const finalSourceY = Math.max(0, sourceY);
-      const finalSourceWidth = Math.min(sourceSize, img.naturalWidth - finalSourceX);
-      const finalSourceHeight = Math.min(sourceSize, img.naturalHeight - finalSourceY);
+      // 白色背景
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, outputSize, outputSize);
 
-      if (finalSourceWidth <= 0 || finalSourceHeight <= 0) {
-        console.error('Invalid crop dimensions');
-        return;
-      }
-
-      // 繪製裁切後的圖片
+      // 直接繪製正方形區域(保證輸出與裁切框一致)
       ctx.drawImage(
         img,
-        finalSourceX,
-        finalSourceY,
-        finalSourceWidth,
-        finalSourceHeight,
-        0, 0, outputSize, outputSize
+        clampedSourceX,
+        clampedSourceY,
+        clampedSourceSize,
+        clampedSourceSize,
+        0, 0,
+        outputSize,
+        outputSize
       );
 
-      // 轉換為 Blob
+      // 轉換為文件
       canvas.toBlob((blob) => {
         if (blob) {
           const croppedFile = new File([blob], 'avatar.jpg', {
@@ -178,14 +198,59 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
             lastModified: Date.now()
           });
           onCrop(croppedFile);
-        } else {
-          console.error('Failed to create blob from canvas');
         }
-      }, 'image/jpeg', 0.9);
+      }, 'image/jpeg', 0.92);
     } catch (error) {
-      console.error('Error during crop operation:', error);
+      console.error('裁切失敗:', error);
     }
-  }, [imageTransform, cropSize, onCrop, imageLoaded]);
+  }, [imageLoaded, fitSize, zoom, offset, cropSize, onCrop]);
+
+  // 滾輪縮放(原生事件)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !imageLoaded) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom(prev => Math.max(minZoom, Math.min(5, prev + delta)));
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [imageLoaded]);
+
+  // 全域拖拽監聽
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleGlobalMove = (e) => handleDragMove(e);
+    const handleGlobalUp = () => handleDragEnd();
+
+    window.addEventListener('mousemove', handleGlobalMove);
+    window.addEventListener('mouseup', handleGlobalUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMove);
+      window.removeEventListener('mouseup', handleGlobalUp);
+    };
+  }, [isDragging, handleDragMove, handleDragEnd]);
+
+  // 計算圖片樣式
+  const imageStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: fitSize.width * zoom,
+    height: fitSize.height * zoom,
+    transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`,
+    cursor: isDragging ? 'grabbing' : 'grab',
+    transition: isDragging ? 'none' : 'all 0.1s ease',
+    opacity: imageLoaded ? 1 : 0.3,
+    userSelect: 'none'
+  };
 
   return (
     <div className="image-cropper-overlay">
@@ -193,7 +258,7 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
         <div className="cropper-header">
           <h3>
             <IoCropOutline />
-            裁切頭像
+            調整照片
           </h3>
           <button onClick={onCancel} className="close-button">
             <IoCloseOutline />
@@ -204,41 +269,19 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
           <div
             ref={containerRef}
             className="image-container"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchMove={handleMouseMove}
-            onTouchEnd={handleMouseUp}
-            onWheel={handleWheel}
-            style={{ userSelect: 'none', touchAction: 'none' }}
+            style={{ touchAction: 'none' }}
           >
             <img
               ref={imageRef}
               src={image}
-              alt="待裁切圖片"
+              alt="待裁切"
               onLoad={handleImageLoad}
-              onMouseDown={handleImageMouseDown}
-              onTouchStart={handleImageMouseDown}
-              onError={(e) => {
-                console.error('Image load error:', e);
-                setImageLoaded(false);
-              }}
+              onMouseDown={handleDragStart}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleDragEnd}
               draggable={false}
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: `translate(-50%, -50%) translate(${imageTransform.x}px, ${imageTransform.y}px) scale(${imageTransform.scale})`,
-                transformOrigin: 'center center',
-                cursor: isDragging ? 'grabbing' : 'grab',
-                transition: isDragging ? 'none' : 'transform 0.1s ease',
-                maxWidth: 'none',
-                maxHeight: 'none',
-                width: 'auto',
-                height: 'auto',
-                opacity: imageLoaded ? 1 : 0.5,
-                zIndex: 1
-              }}
+              style={imageStyle}
             />
 
             {imageLoaded && (
@@ -249,18 +292,15 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
                   height: cropSize,
                   left: '50%',
                   top: '50%',
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'none'
                 }}
               />
             )}
           </div>
 
           <div className="cropper-hint">
-            {imageLoaded ? (
-              <p>拖拽圖片調整位置，滾輪縮放調整大小</p>
-            ) : (
-              <p>正在載入圖片...</p>
-            )}
+            <p>{imageLoaded ? '拖拽調整位置，滾輪或雙指縮放' : '載入中...'}</p>
           </div>
         </div>
 
@@ -272,13 +312,9 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
             onClick={handleCrop}
             className="crop-button"
             disabled={!imageLoaded}
-            style={{
-              opacity: imageLoaded ? 1 : 0.6,
-              cursor: imageLoaded ? 'pointer' : 'not-allowed'
-            }}
           >
             <IoCheckmarkOutline />
-            {imageLoaded ? '確認上傳' : '載入中...'}
+            確認
           </button>
         </div>
 

@@ -51,8 +51,9 @@ export default function ProfileMenu({ user, onNavigate, onLogout }) {
       <div className="user-profile-section">
         <div className="user-avatar">
           {user.user_metadata?.avatar_url || user.avatar_url ? (
-            <img 
-              src={user.user_metadata?.avatar_url || user.avatar_url} 
+            <img
+              key={user.user_metadata?.avatar_url || user.avatar_url}
+              src={user.user_metadata?.avatar_url || user.avatar_url}
               alt="用戶頭像"
               className="avatar-image"
             />

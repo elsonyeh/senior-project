@@ -1,6 +1,7 @@
 // QuestionLoader.jsx - Loads questions from Supabase and transforms them for existing components
 import React, { useState, useEffect } from 'react';
 import { getQuestionsByMode, filterQuestionsByDependencies } from '../services/questionService';
+import logger from "../utils/logger";
 
 export default function QuestionLoader({ 
   mode = 'swifttaste', 
@@ -23,20 +24,35 @@ export default function QuestionLoader({
       const fetchedQuestions = await getQuestionsByMode(mode);
       
       // Transform questions to match the expected format for existing components
-      const transformedQuestions = fetchedQuestions.map((q, index) => ({
-        id: q.id,
-        text: q.question,
-        leftOption: q.options[0] || '',
-        rightOption: q.options[1] || '',
-        hasVS: q.question.includes('v.s.'),
-        source: 'supabase',
-        dependsOn: q.dependsOn ? {
-          question: q.dependsOn.questionText,
-          answer: q.dependsOn.answer
-        } : null
-      }));
+      const transformedQuestions = fetchedQuestions.map((q, index) => {
+        let dependsOnInfo = null;
 
-      console.log(`Loaded ${transformedQuestions.length} questions for ${mode} mode`);
+        // If this question depends on another, find the dependent question text
+        if (q.dependsOn && q.dependsOn.questionId) {
+          const dependentQuestion = fetchedQuestions.find(
+            dq => dq.id === q.dependsOn.questionId
+          );
+
+          if (dependentQuestion) {
+            dependsOnInfo = {
+              question: dependentQuestion.question,
+              answer: q.dependsOn.answer
+            };
+          }
+        }
+
+        return {
+          id: q.id,
+          text: q.question,
+          leftOption: q.options[0] || '',
+          rightOption: q.options[1] || '',
+          hasVS: q.question.includes('v.s.'),
+          source: 'supabase',
+          dependsOn: dependsOnInfo
+        };
+      });
+
+      logger.info(`Loaded ${transformedQuestions.length} questions for ${mode} mode`);
       setQuestions(transformedQuestions);
       
       if (onQuestionsLoaded) {
@@ -131,18 +147,33 @@ export const useQuestions = (mode = 'swifttaste') => {
         
         const fetchedQuestions = await getQuestionsByMode(mode);
         
-        const transformedQuestions = fetchedQuestions.map((q) => ({
-          id: q.id,
-          text: q.question,
-          leftOption: q.options[0] || '',
-          rightOption: q.options[1] || '',
-          hasVS: q.question.includes('v.s.'),
-          source: 'supabase',
-          dependsOn: q.dependsOn ? {
-            question: q.dependsOn.questionText,
-            answer: q.dependsOn.answer
-          } : null
-        }));
+        const transformedQuestions = fetchedQuestions.map((q) => {
+          let dependsOnInfo = null;
+
+          // If this question depends on another, find the dependent question text
+          if (q.dependsOn && q.dependsOn.questionId) {
+            const dependentQuestion = fetchedQuestions.find(
+              dq => dq.id === q.dependsOn.questionId
+            );
+
+            if (dependentQuestion) {
+              dependsOnInfo = {
+                question: dependentQuestion.question,
+                answer: q.dependsOn.answer
+              };
+            }
+          }
+
+          return {
+            id: q.id,
+            text: q.question,
+            leftOption: q.options[0] || '',
+            rightOption: q.options[1] || '',
+            hasVS: q.question.includes('v.s.'),
+            source: 'supabase',
+            dependsOn: dependsOnInfo
+          };
+        });
 
         setQuestions(transformedQuestions);
       } catch (err) {

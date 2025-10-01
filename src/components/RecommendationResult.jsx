@@ -11,6 +11,9 @@ export default function RecommendationResult({
   roomMode = false,
   onInteraction, // 新增互動回調
 }) {
+  console.log("🎯 RecommendationResult 接收到的 votes:", votes);
+  console.log("🎯 RecommendationResult 接收到的 saved:", saved.map(r => ({ id: r.id, name: r.name })));
+
   const [selected, setSelected] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [displayedAlternatives, setDisplayedAlternatives] = useState([]); // 備選餐廳列表
@@ -200,13 +203,37 @@ export default function RecommendationResult({
         transition={{ delay: 0.2, duration: 0.5 }}
         style={{
           backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${
-            selected.primaryImage?.image_url || 
+            selected.primaryImage?.image_url ||
             (selected.allImages && selected.allImages[0]?.image_url) ||
             selected.photoURL || // 支援舊格式
             "https://source.unsplash.com/400x300/?restaurant"
           })`,
         }}
       >
+        {/* 右上角顯示投票數量 */}
+        {(() => {
+          console.log("🔍 票數顯示檢查:", {
+            hasVotes: !!votes,
+            votesKeys: Object.keys(votes || {}),
+            selectedId: selected?.id,
+            selectedName: selected?.name,
+            voteCount: votes?.[selected?.id],
+            shouldShow: votes && selected?.id && votes[selected.id]
+          });
+
+          // 只有當 votes 對象不為空時才顯示票數
+          const hasVotesData = votes && Object.keys(votes).length > 0;
+          if (hasVotesData && selected?.id) {
+            const voteCount = votes[selected.id] || 0;
+            return (
+              <div className="votes-badge-top-right">
+                <span className="vote-icon">🗳️</span> {voteCount} 票
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         <div className="featured-content">
           <h3>{selected.name || "未命名餐廳"}</h3>
           <p className="restaurant-address">{selected.address || "地址未知"}</p>
@@ -220,13 +247,6 @@ export default function RecommendationResult({
 
             {(selected.category || selected.type) && (
               <div className="type-badge">{selected.category || selected.type}</div>
-            )}
-
-            {/* 顯示投票數量 */}
-            {votes && votes[selected.id] && (
-              <div className="votes-badge">
-                <span className="vote-icon">🗳️</span> {votes[selected.id]} 票
-              </div>
             )}
           </div>
 
@@ -282,6 +302,20 @@ export default function RecommendationResult({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
+                  {/* 右上角顯示投票數量 - 只有當有投票數據時才顯示 */}
+                  {(() => {
+                    const hasVotesData = votes && Object.keys(votes).length > 0;
+                    if (hasVotesData && r.id) {
+                      const voteCount = votes[r.id] || 0;
+                      return (
+                        <div className="alternative-votes-badge-top-right">
+                          <span className="vote-icon">🗳️</span> {voteCount}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   <div className="alternative-content">
                     <div className="alternative-info">
                       <h4>{r.name || "未命名"}</h4>
@@ -294,11 +328,6 @@ export default function RecommendationResult({
                         )}
                         {(r.category || r.type) && (
                           <span className="mini-badge type">{r.category || r.type}</span>
-                        )}
-                        {votes && votes[r.id] && (
-                          <span className="mini-badge votes">
-                            🗳️ {votes[r.id]} 票
-                          </span>
                         )}
                       </div>
                     </div>

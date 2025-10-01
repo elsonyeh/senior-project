@@ -26,7 +26,7 @@ export default function RestaurantRatingUpdater() {
     forceUpdate: false,
     maxAge: 0, // 天，預設為 0 不跳過任何餐廳
     limitCount: 5, // 限制更新數量，預設為 5 便於測試
-    priorityMode: 'oldest' // 'oldest' | 'never' | 'all'
+    priorityMode: 'no_rating' // 'oldest' | 'never' | 'no_rating' | 'all'
   });
   const [showManualMatch, setShowManualMatch] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
@@ -246,6 +246,70 @@ export default function RestaurantRatingUpdater() {
     }
   };
 
+  // 重置更新時間（測試用）
+  const resetUpdateTimestamps = async () => {
+    if (restaurants.length === 0) {
+      alert('請先載入餐廳清單');
+      return;
+    }
+
+    const count = prompt('要重置多少間餐廳的更新時間？', '10');
+    if (!count) return;
+
+    const numCount = parseInt(count);
+    if (isNaN(numCount) || numCount <= 0) {
+      alert('請輸入有效的數量');
+      return;
+    }
+
+    if (!confirm(`確定要重置 ${numCount} 間餐廳的更新時間嗎？\n這是測試功能，會將 rating_updated_at 設為 null。`)) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const resetCount = await restaurantRatingService.resetUpdateTimestamps(restaurants, numCount);
+      alert(`✅ 成功重置 ${resetCount} 間餐廳的更新時間`);
+      await loadRestaurants();
+    } catch (error) {
+      console.error('重置更新時間失敗:', error);
+      alert(`重置失敗: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 批次補充缺少的座標
+  const fillMissingCoordinates = async () => {
+    if (restaurants.length === 0) {
+      alert('請先載入餐廳清單');
+      return;
+    }
+
+    const missingCoords = restaurants.filter(r => !r.latitude || !r.longitude);
+
+    if (missingCoords.length === 0) {
+      alert('✅ 所有餐廳都有座標資訊');
+      return;
+    }
+
+    if (!confirm(`找到 ${missingCoords.length} 間缺少座標的餐廳\n\n是否要自動從地址獲取座標？\n（需要 Google Maps API）`)) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await restaurantRatingService.fillMissingCoordinates(missingCoords);
+      alert(`✅ 完成座標補充\n成功: ${result.success} 間\n失敗: ${result.failed} 間`);
+      await loadRestaurants();
+    } catch (error) {
+      console.error('補充座標失敗:', error);
+      alert(`補充座標失敗: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 獲取快取統計
   const getCacheStats = () => {
     const cache = restaurantRatingService.loadPlaceIdCache();
@@ -261,12 +325,15 @@ export default function RestaurantRatingUpdater() {
     const total = restaurants.length;
     const withRating = restaurants.filter(r => r.rating).length;
     const withUserRatings = restaurants.filter(r => r.user_ratings_total > 0).length;
+    const neverUpdated = restaurants.filter(r => !r.rating_updated_at).length;
     const recentlyUpdated = restaurants.filter(r => {
       if (!r.rating_updated_at) return false;
       const updatedAt = new Date(r.rating_updated_at);
       const daysDiff = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24);
       return daysDiff <= 7;
     }).length;
+    const updatedButNoRating = restaurants.filter(r => r.rating_updated_at && !r.rating).length;
+    const missingCoords = restaurants.filter(r => !r.latitude || !r.longitude).length;
 
     const cacheStats = getCacheStats();
 
@@ -274,7 +341,10 @@ export default function RestaurantRatingUpdater() {
       total,
       withRating,
       withUserRatings,
+      neverUpdated,
       recentlyUpdated,
+      updatedButNoRating,
+      missingCoords,
       cachedPlaces: cacheStats.cachedPlaces,
       unmatchedStored: cacheStats.unmatchedStored
     };
@@ -311,6 +381,18 @@ export default function RestaurantRatingUpdater() {
         <div className="stat-card">
           <div className="stat-value">{stats.withUserRatings}</div>
           <div className="stat-label">有評分數</div>
+        </div>
+        <div className="stat-card" style={{ backgroundColor: '#fff3cd', borderColor: '#ffc107' }}>
+          <div className="stat-value">{stats.neverUpdated}</div>
+          <div className="stat-label">從未更新</div>
+        </div>
+        <div className="stat-card" style={{ backgroundColor: '#f8d7da', borderColor: '#dc3545' }}>
+          <div className="stat-value">{stats.updatedButNoRating}</div>
+          <div className="stat-label">已檢查但無評分</div>
+        </div>
+        <div className="stat-card" style={{ backgroundColor: '#e2e3e5', borderColor: '#6c757d' }}>
+          <div className="stat-value">{stats.missingCoords}</div>
+          <div className="stat-label" title="缺少經緯度座標，無法使用 Google Places API 更新">缺少座標</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{stats.recentlyUpdated}</div>
@@ -416,10 +498,12 @@ export default function RestaurantRatingUpdater() {
               }))}
               disabled={isUpdating}
             >
-              <option value="oldest">最久未更新優先</option>
+              <option value="no_rating">無評分優先 (推薦)</option>
               <option value="never">從未更新優先</option>
+              <option value="oldest">最久未更新優先</option>
               <option value="all">全部 (不排序)</option>
             </select>
+            <small>建議使用「無評分優先」來更新缺少評分的餐廳</small>
           </div>
 
           <div className="option-group">
@@ -488,6 +572,30 @@ export default function RestaurantRatingUpdater() {
           <IoAlertCircleOutline className="btn-icon" />
           清空快取
         </button>
+
+        <button
+          className="btn btn-outline"
+          onClick={resetUpdateTimestamps}
+          disabled={isUpdating || isLoading || restaurants.length === 0}
+          style={{ backgroundColor: '#e83e8c', borderColor: '#e83e8c', color: 'white' }}
+          title="測試功能：重置指定數量餐廳的更新時間"
+        >
+          <IoTimeOutline className="btn-icon" />
+          重置時間戳
+        </button>
+
+        {stats.missingCoords > 0 && (
+          <button
+            className="btn btn-outline"
+            onClick={fillMissingCoordinates}
+            disabled={isUpdating || isLoading || restaurants.length === 0}
+            style={{ backgroundColor: '#17a2b8', borderColor: '#17a2b8', color: 'white' }}
+            title={`補充 ${stats.missingCoords} 間餐廳的座標`}
+          >
+            <IoRefreshOutline className="btn-icon" />
+            補充座標 ({stats.missingCoords})
+          </button>
+        )}
       </div>
 
       {/* 進度顯示 */}

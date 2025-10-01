@@ -655,22 +655,44 @@ export const recommendationService = {
     try {
       if (!roomId || !recommendations) return { success: false, error: '參數不完整' };
 
-      const { data, error } = await supabase
+      // 先檢查是否已存在
+      const { data: existing } = await supabase
         .from('buddies_recommendations')
-        .upsert({
-          room_id: roomId,
-          restaurants: recommendations,
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('room_id', roomId)
+        .maybeSingle();
 
-      if (error) throw error;
+      let result;
+      if (existing) {
+        // 更新現有記錄
+        result = await supabase
+          .from('buddies_recommendations')
+          .update({
+            restaurants: recommendations,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('room_id', roomId)
+          .select()
+          .single();
+      } else {
+        // 插入新記錄
+        result = await supabase
+          .from('buddies_recommendations')
+          .insert({
+            room_id: roomId,
+            restaurants: recommendations,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+      }
+
+      if (result.error) throw result.error;
 
       // 更新房間狀態
       await roomService.updateRoomStatus(roomId, 'recommend');
 
-      return { success: true, data };
+      return { success: true, data: result.data };
     } catch (error) {
       console.error('保存推薦結果失敗:', error);
       return { success: false, error: error.message };
@@ -741,10 +763,26 @@ export const voteService = {
         return { success: false, error: '參數不完整' };
       }
 
+      // 檢查用戶是否已經為這個餐廳投過票
+      const { data: existingUserVote, error: checkError } = await supabase
+        .from('buddies_votes')
+        .select('id')
+        .eq('room_id', roomId)
+        .eq('user_id', userId)
+        .eq('restaurant_id', restaurantId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      // 如果已經投過票，直接返回成功（冪等操作）
+      if (existingUserVote) {
+        return { success: true, message: '已投過票' };
+      }
+
       // 記錄用戶投票
       const { error: voteError } = await supabase
         .from('buddies_votes')
-        .upsert({
+        .insert({
           room_id: roomId,
           user_id: userId,
           restaurant_id: restaurantId,
@@ -759,9 +797,9 @@ export const voteService = {
         .select('vote_count')
         .eq('room_id', roomId)
         .eq('restaurant_id', restaurantId)
-        .single();
+        .maybeSingle();
 
-      if (getError && getError.code !== 'PGRST116') throw getError;
+      if (getError) throw getError;
 
       const currentVotes = existingVote?.vote_count || 0;
 
@@ -775,9 +813,6 @@ export const voteService = {
         });
 
       if (updateError) throw updateError;
-
-      // 標記本地投票狀態
-      localStorage.setItem(`voted_${roomId}_${userId}`, 'true');
 
       return { success: true };
     } catch (error) {
@@ -813,6 +848,53 @@ export const voteService = {
       },
       subscriptionId
     );
+  },
+
+  /**
+   * 獲取用戶已投票的餐廳列表
+   * @param {String} roomId - 房間ID
+   * @param {String} userId - 用戶ID
+   * @return {Promise<Object>} 已投票的餐廳ID列表
+   */
+  async getUserVotedRestaurants(roomId, userId) {
+    try {
+      const { data, error } = await supabase
+        .from('buddies_votes')
+        .select('restaurant_id')
+        .eq('room_id', roomId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const restaurantIds = data.map(v => v.restaurant_id);
+      return { success: true, restaurantIds };
+    } catch (error) {
+      console.error('獲取用戶已投票餐廳失敗:', error);
+      return { success: false, error: error.message, restaurantIds: [] };
+    }
+  },
+
+  /**
+   * 獲取已投票的用戶數量
+   * @param {String} roomId - 房間ID
+   * @return {Promise<Object>} 已投票用戶數量
+   */
+  async getVotedUsersCount(roomId) {
+    try {
+      const { data, error } = await supabase
+        .from('buddies_votes')
+        .select('user_id')
+        .eq('room_id', roomId);
+
+      if (error) throw error;
+
+      // 計算唯一用戶數
+      const uniqueUserIds = [...new Set(data.map(v => v.user_id))];
+      return { success: true, count: uniqueUserIds.length, userIds: uniqueUserIds };
+    } catch (error) {
+      console.error('獲取已投票用戶數量失敗:', error);
+      return { success: false, error: error.message, count: 0 };
+    }
   },
 
   /**

@@ -50,6 +50,25 @@ h2.result-title {
   align-items: flex-end;
 }
 
+/* 右上角投票徽章 - 主選餐廳 */
+.votes-badge-top-right {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(253, 150, 61, 0.95);
+  color: white;
+  padding: 0.5rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
 .featured-content {
   width: 100%;
   padding: 1.5rem;
@@ -100,8 +119,8 @@ h2.result-title {
 }
 
 .votes-badge {
-  background-color: rgba(102, 204, 153, 0.25);
-  color: #6ea;
+  background-color: rgba(253, 150, 61, 0.25);
+  color: #FD963D;
 }
 
 .vote-icon {
@@ -192,6 +211,25 @@ h2.result-title {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+/* 右上角投票徽章 - 備選餐廳 */
+.alternative-votes-badge-top-right {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(253, 150, 61, 0.9);
+  color: white;
+  padding: 0.35rem 0.65rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  z-index: 5;
 }
 
 .alternative-item:hover {
@@ -259,9 +297,9 @@ h2.result-title {
 }
 
 .mini-badge.votes {
-  background-color: rgba(102, 204, 153, 0.2);
-  color: #28a745;
-  border: 1px solid rgba(102, 204, 153, 0.3);
+  background-color: rgba(253, 150, 61, 0.2);
+  color: #FD963D;
+  border: 1px solid rgba(253, 150, 61, 0.3);
 }
 
 .btn-mini-navigate {

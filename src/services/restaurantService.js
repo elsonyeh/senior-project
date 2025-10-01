@@ -217,6 +217,41 @@ export const restaurantService = {
    * @param {Object} restaurantData - 餐廳資料
    * @returns {Promise<Object>} 新增的餐廳資料
    */
+  /**
+   * 使用 Google Maps Geocoding API 將地址轉換為經緯度
+   * @param {string} address - 地址
+   * @returns {Promise<{lat: number, lng: number} | null>} 座標
+   */
+  async geocodeAddress(address) {
+    try {
+      // 確保 Google Maps API 已載入
+      if (!window.google?.maps) {
+        console.warn('Google Maps API 尚未載入');
+        return null;
+      }
+
+      const geocoder = new window.google.maps.Geocoder();
+
+      return new Promise((resolve) => {
+        geocoder.geocode({ address: address + ', 台灣' }, (results, status) => {
+          if (status === 'OK' && results && results.length > 0) {
+            const location = results[0].geometry.location;
+            resolve({
+              lat: location.lat(),
+              lng: location.lng()
+            });
+          } else {
+            console.warn('地理編碼失敗:', status);
+            resolve(null);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('地理編碼錯誤:', error);
+      return null;
+    }
+  },
+
   async createRestaurant(restaurantData) {
     try {
       console.log('🍽️ 新增餐廳:', {
@@ -232,6 +267,22 @@ export const restaurantService = {
         throw new Error('Supabase 客戶端未初始化');
       }
 
+      // 如果有地址但沒有座標，嘗試自動獲取座標
+      let latitude = restaurantData.latitude;
+      let longitude = restaurantData.longitude;
+
+      if (restaurantData.address && (!latitude || !longitude)) {
+        console.log('🗺️ 嘗試從地址獲取座標...');
+        const coords = await this.geocodeAddress(restaurantData.address);
+        if (coords) {
+          latitude = coords.lat;
+          longitude = coords.lng;
+          console.log(`✅ 成功獲取座標: ${latitude}, ${longitude}`);
+        } else {
+          console.warn('⚠️ 無法從地址獲取座標，餐廳將無法使用 Google Places 評分更新功能');
+        }
+      }
+
       // 確保必要欄位存在
       const cleanData = {
         name: restaurantData.name || '',
@@ -244,6 +295,8 @@ export const restaurantService = {
         tags: restaurantData.tags || [],
         suggested_people: restaurantData.suggested_people || '1~4',
         is_spicy: restaurantData.is_spicy || 'false',
+        latitude: latitude || null,
+        longitude: longitude || null,
         is_active: true,
         created_at: new Date().toISOString()
       };

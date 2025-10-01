@@ -317,16 +317,33 @@ export const authService = {
         .from('avatars')
         .getPublicUrl(fileName);
 
-      // 更新用戶頭像URL
+      // 加上時間戳記避免瀏覽器快取
+      const avatarUrlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+
+      // 更新用戶頭像URL (user_metadata)
       const updateResult = await this.updateUser({
-        avatar_url: data.publicUrl
+        avatar_url: avatarUrlWithTimestamp
       });
 
       if (!updateResult.success) throw new Error(updateResult.error);
 
+      // 同步更新 user_profiles 表
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          avatar_url: avatarUrlWithTimestamp,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (profileError) {
+        console.warn('更新 user_profiles 頭像失敗:', profileError);
+        // 不拋出錯誤,因為 user_metadata 已成功更新
+      }
+
       return {
         success: true,
-        avatarUrl: data.publicUrl,
+        avatarUrl: avatarUrlWithTimestamp,
         message: '頭像已更新'
       };
     } catch (error) {

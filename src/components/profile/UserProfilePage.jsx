@@ -74,6 +74,8 @@ export default function UserProfilePage() {
   const [message, setMessage] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [initialAvatarLoaded, setInitialAvatarLoaded] = useState(false);
   const fileInputRef = useRef(null);
   const [userProfile, setUserProfile] = useState({
     name: '',
@@ -95,7 +97,24 @@ export default function UserProfilePage() {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [originalProfile, setOriginalProfile] = useState({});
 
+  // 立即載入當前用戶頭像(在完整資料載入前)
   useEffect(() => {
+    const loadInitialAvatar = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        if (currentUser.success && currentUser.user) {
+          const avatarUrl = currentUser.user.user_metadata?.avatar_url || '';
+          if (avatarUrl) {
+            setUserProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
+            setInitialAvatarLoaded(true);
+          }
+        }
+      } catch (error) {
+        console.error('載入初始頭像失敗:', error);
+      }
+    };
+
+    loadInitialAvatar();
     loadUserProfile();
   }, []);
 
@@ -131,7 +150,7 @@ export default function UserProfilePage() {
         name: profileResult.profile?.name || currentUser.user.user_metadata?.full_name || currentUser.user.email?.split('@')[0] || '',
         email: currentUser.user.email || '',
         bio: profileResult.profile?.bio || '',
-        avatar_url: profileResult.profile?.avatar_url || '',
+        avatar_url: profileResult.profile?.avatar_url || currentUser.user.user_metadata?.avatar_url || '',
         gender: profileResult.profile?.gender || '',
         birth_date: profileResult.profile?.birth_date || '',
         occupation: profileResult.profile?.occupation || '',
@@ -257,7 +276,7 @@ export default function UserProfilePage() {
       return;
     }
 
-    // 創建圖片預覽URL
+    // 創建圖片URL供裁切器使用,但不顯示預覽
     const imageUrl = URL.createObjectURL(file);
     setSelectedImage(imageUrl);
     setShowCropper(true);
@@ -267,13 +286,18 @@ export default function UserProfilePage() {
   // 處理圖片裁切完成
   const handleCropComplete = async (croppedFile) => {
     setShowCropper(false);
-    setUploading(true);
 
-    // 清理預覽URL
+    // 清理選擇URL
     if (selectedImage) {
       URL.revokeObjectURL(selectedImage);
       setSelectedImage(null);
     }
+
+    // 立即生成裁切後的預覽
+    const previewBlob = URL.createObjectURL(croppedFile);
+    setPreviewUrl(previewBlob);
+
+    setUploading(true);
 
     try {
       const currentUser = await authService.getCurrentUser();
@@ -286,6 +310,21 @@ export default function UserProfilePage() {
       const result = await authService.uploadAvatar(croppedFile, currentUser.user.id);
 
       if (result.success) {
+        // 預載入新頭像確保完全載入後再清理預覽
+        const newImg = new Image();
+        newImg.onload = () => {
+          // 新圖片載入完成,清理預覽
+          if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+          }
+        };
+        newImg.onerror = () => {
+          // 載入失敗,仍保留預覽
+          console.error('新頭像載入失敗');
+        };
+        newImg.src = result.avatarUrl;
+
         // 更新用戶頭像URL
         setUserProfile(prev => ({
           ...prev,
@@ -320,10 +359,16 @@ export default function UserProfilePage() {
       URL.revokeObjectURL(selectedImage);
       setSelectedImage(null);
     }
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
   };
 
   // 生成頭像URL或預設頭像
   const getAvatarUrl = () => {
+    // 優先顯示預覽
+    if (previewUrl) return previewUrl;
     if (userProfile.avatar_url) return userProfile.avatar_url;
 
     // 生成基於用戶名稱的預設頭像
@@ -468,6 +513,7 @@ export default function UserProfilePage() {
             <div className="avatar-preview">
               <div className="avatar-circle">
                 <img
+                  key={previewUrl || userProfile.avatar_url || 'default'}
                   src={getAvatarUrl()}
                   alt="用戶頭像"
                   className="preview-image"

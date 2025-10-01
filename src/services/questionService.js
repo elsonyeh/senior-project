@@ -2,6 +2,7 @@
 // Handles fetching and managing questions for both SwiftTaste and Buddies modes
 
 import { supabase } from './supabaseService.js';
+import logger from "../utils/logger";
 
 /**
  * Get basic questions for SwiftTaste mode (all basic questions)
@@ -9,7 +10,7 @@ import { supabase } from './supabaseService.js';
  */
 export const getBasicQuestionsForSwiftTaste = async () => {
   try {
-    console.log('Loading basic questions for SwiftTaste mode');
+    logger.info('Loading basic questions for SwiftTaste mode');
     const { data, error } = await supabase
       .from('questions_with_options')
       .select('*')
@@ -42,11 +43,15 @@ export const getBasicQuestionsForSwiftTaste = async () => {
       leftOption: q.options && q.options.length > 0 ? (q.options[0].text || q.options[0]) : '',
       rightOption: q.options && q.options.length > 1 ? (q.options[1].text || q.options[1]) : '',
       source: 'supabase',
-      display_order: q.display_order || index
+      display_order: q.display_order || index,
+      dependsOn: q.depends_on_question_id ? {
+        questionId: q.depends_on_question_id,
+        answer: q.depends_on_answer
+      } : null
     }));
-    
-    console.log(`Loaded ${basicQuestions.length} basic questions for SwiftTaste`);
-    console.log('Basic questions:', basicQuestions.map(q => q.text));
+
+    logger.info(`Loaded ${basicQuestions.length} basic questions for SwiftTaste`);
+    logger.info('Basic questions:', basicQuestions.map(q => q.text));
     return basicQuestions;
   } catch (error) {
     console.error('Error loading basic questions for SwiftTaste:', error);
@@ -60,7 +65,7 @@ export const getBasicQuestionsForSwiftTaste = async () => {
  */
 export const getBasicQuestionsForBuddies = async () => {
   try {
-    console.log('Loading basic questions for Buddies mode');
+    logger.info('Loading basic questions for Buddies mode');
     const { data, error } = await supabase
       .from('questions_with_options')
       .select('*')
@@ -96,10 +101,14 @@ export const getBasicQuestionsForBuddies = async () => {
       leftOption: q.options && q.options.length > 0 ? (q.options[0].text || q.options[0]) : '',
       rightOption: q.options && q.options.length > 1 ? (q.options[1].text || q.options[1]) : '',
       source: 'supabase',
-      display_order: q.display_order || index
+      display_order: q.display_order || index,
+      dependsOn: q.depends_on_question_id ? {
+        questionId: q.depends_on_question_id,
+        answer: q.depends_on_answer
+      } : null
     }));
-    
-    console.log(`Loaded ${basicQuestions.length} basic questions for Buddies (excluding single/multiple person question)`);
+
+    logger.info(`Loaded ${basicQuestions.length} basic questions for Buddies (excluding single/multiple person question)`);
     return basicQuestions;
   } catch (error) {
     console.error('Error loading basic questions for Buddies:', error);
@@ -113,7 +122,7 @@ export const getBasicQuestionsForBuddies = async () => {
  */
 export const getFunQuestions = async () => {
   try {
-    console.log('Loading fun questions');
+    logger.info('Loading fun questions');
     const { data, error } = await supabase
       .from('questions_with_options')
       .select('*')
@@ -153,8 +162,8 @@ export const getFunQuestions = async () => {
       display_order: q.display_order || index
     }));
     
-    console.log(`Loaded ${funQuestions.length} fun questions`);
-    console.log('Fun questions:', funQuestions.map(q => q.text));
+    logger.info(`Loaded ${funQuestions.length} fun questions`);
+    logger.info('Fun questions:', funQuestions.map(q => q.text));
     return funQuestions;
   } catch (error) {
     console.error('Error loading fun questions:', error);
@@ -169,7 +178,7 @@ export const getFunQuestions = async () => {
  */
 export const getQuestionsByMode = async (mode = 'both') => {
   try {
-    console.log(`Loading questions for mode: ${mode}`);
+    logger.info(`Loading questions for mode: ${mode}`);
     // First try the view, fallback to manual join if view doesn't exist
     let data, error;
     
@@ -183,7 +192,7 @@ export const getQuestionsByMode = async (mode = 'both') => {
       data = viewResult.data;
       error = viewResult.error;
     } catch (viewError) {
-      console.warn('View not available, using manual query:', viewError);
+      logger.warn('View not available, using manual query:', viewError);
       
       // Manual query with joins
       const manualResult = await supabase
@@ -212,19 +221,19 @@ export const getQuestionsByMode = async (mode = 'both') => {
     }
 
     // Transform the data to match the expected format
-    return data.map(question => ({
+    const transformed = data.map(question => ({
       id: question.question_id || question.id,
       question: question.question_text,
       text: question.question_text, // For backward compatibility
-      options: question.options ? 
-        (Array.isArray(question.options) ? 
+      options: question.options ?
+        (Array.isArray(question.options) ?
           question.options.map(option => typeof option === 'object' ? (option.text || option.option_text) : option)
           : question.options.map(option => option.text || option)
         ) :
-        (question.question_options ? 
+        (question.question_options ?
           question.question_options
             .sort((a, b) => a.display_order - b.display_order)
-            .map(opt => opt.option_text) 
+            .map(opt => opt.option_text)
           : []
         ),
       mode: question.mode,
@@ -235,6 +244,8 @@ export const getQuestionsByMode = async (mode = 'both') => {
       } : null,
       questionType: question.question_type || (question.question_types?.name)
     }));
+
+    return transformed;
   } catch (error) {
     console.error('Failed to fetch questions:', error);
     

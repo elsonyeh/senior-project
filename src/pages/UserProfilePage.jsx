@@ -163,7 +163,7 @@ export default function UserProfilePage() {
     try {
       setLoading(true);
       const result = await authService.getCurrentUser();
-      
+
       if (result.success && result.user) {
         setUser(result.user);
       } else {
@@ -239,7 +239,11 @@ export default function UserProfilePage() {
   };
 
   // 處理返回主選單
-  const handleBack = () => {
+  const handleBack = async () => {
+    // 如果從個人資料編輯頁面返回,重新載入用戶數據以確保頭像更新
+    if (currentView === 'profileEdit') {
+      await checkAuthStatus();
+    }
     setCurrentView('menu');
   };
 

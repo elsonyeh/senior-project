@@ -72,7 +72,7 @@
 /* 投票泡泡容器 */
 .vote-bubbles-container {
   position: fixed;
-  top: 20px;
+  top: 80px;
   right: 20px;
   z-index: 1000;
   pointer-events: none;
@@ -926,8 +926,36 @@
   background: #FFF3E0;
 }
 
+/* 用戶頭像樣式 */
+.vote-member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.5rem;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.vote-member-avatar-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .vote-member-icon {
   font-size: 1.1rem;
+  margin-right: 0.5rem;
 }
 
 .vote-member-name {
