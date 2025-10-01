@@ -40,8 +40,8 @@ export const getBasicQuestionsForSwiftTaste = async () => {
       id: q.question_id || q.id,
       text: q.question_text,
       question: q.question_text,
-      leftOption: q.options && q.options.length > 0 ? (q.options[0].text || q.options[0]) : '',
-      rightOption: q.options && q.options.length > 1 ? (q.options[1].text || q.options[1]) : '',
+      leftOption: q.options && q.options.length > 0 ? (q.options[0].option_text || '') : '',
+      rightOption: q.options && q.options.length > 1 ? (q.options[1].option_text || '') : '',
       source: 'supabase',
       display_order: q.display_order || index,
       dependsOn: q.depends_on_question_id ? {
@@ -98,8 +98,8 @@ export const getBasicQuestionsForBuddies = async () => {
       id: q.question_id || q.id,
       text: q.question_text,
       question: q.question_text,
-      leftOption: q.options && q.options.length > 0 ? (q.options[0].text || q.options[0]) : '',
-      rightOption: q.options && q.options.length > 1 ? (q.options[1].text || q.options[1]) : '',
+      leftOption: q.options && q.options.length > 0 ? (q.options[0].option_text || '') : '',
+      rightOption: q.options && q.options.length > 1 ? (q.options[1].option_text || '') : '',
       source: 'supabase',
       display_order: q.display_order || index,
       dependsOn: q.depends_on_question_id ? {
@@ -156,8 +156,8 @@ export const getFunQuestions = async () => {
       id: q.question_id || q.id,
       text: q.question_text,
       question: q.question_text,
-      leftOption: q.options && q.options.length > 0 ? (q.options[0].text || q.options[0]) : '',
-      rightOption: q.options && q.options.length > 1 ? (q.options[1].text || q.options[1]) : '',
+      leftOption: q.options && q.options.length > 0 ? (q.options[0].option_text || '') : '',
+      rightOption: q.options && q.options.length > 1 ? (q.options[1].option_text || '') : '',
       source: 'supabase',
       display_order: q.display_order || index
     }));
