@@ -1,7 +1,7 @@
 # SwiftTaste 推薦系統邏輯文檔
 
-**版本**: 1.0
-**最後更新**: 2025-01-20
+**版本**: 1.1
+**最後更新**: 2025-02-01
 **狀態**: 生產版本
 
 ---
@@ -116,7 +116,39 @@ if (basicAnswers.length > 0 && basicMatchCount < basicAnswers.length) {
 
 ## 👥 Buddies 模式（多人推薦）
 
-### 投票處理機制
+### 流程概覽
+
+Buddies 模式分為三個主要階段：
+
+1. **問答階段**：所有成員回答相同的問題
+2. **滑卡階段**：成員獨立滑動選擇餐廳
+3. **結果階段**：展示投票結果和最終推薦
+
+### 問答階段 (Questions Phase)
+
+**同步機制**：
+- 所有成員看到相同的問題順序
+- 每位成員獨立作答
+- 當所有成員完成當前題目時，**自動同步進入下一題**
+- 使用動畫偵測系統，確保所有人看完動畫後一起跳題
+
+**自動跳題邏輯** (BuddiesQuestionSwiper.jsx:204-266)：
+```javascript
+// 檢查所有活躍成員是否都已回答
+const totalActiveMembers = members.filter(m => m.status !== 'left').length;
+const answeredCount = answeredUserIds.size;
+
+const shouldProceed =
+  (totalActiveMembers === 1 && answeredCount >= 1) ||  // 單人模式
+  (totalActiveMembers > 1 && answeredCount >= totalActiveMembers);  // 多人全部完成
+
+if (shouldProceed) {
+  // 等待動畫完成後才進入下一題
+  setupAnimationDetection(nextIndex, visibleQuestions);
+}
+```
+
+**投票處理機制**：
 
 1. **收集答案**：收集所有用戶對每個基本問題的答案
 2. **計算權重票數**：
@@ -129,21 +161,138 @@ if (basicAnswers.length > 0 && basicMatchCount < basicAnswers.length) {
 
 ### 投票算法
 
+#### 版本 1.0（舊版）- 已棄用
 ```javascript
-// 計算每個選項的票數
-const voteCount = {};
-answers.forEach((answer, userIndex) => {
-  if (answer) {
-    const weight = (isHost && userIndex === 0) ? 2 : 1;
-    voteCount[answer] = (voteCount[answer] || 0) + weight;
+// 舊版：使用第一個用戶的答案作為代表
+groupAnswers[questionIndex] = answers[0];
+```
+
+#### 版本 1.1（當前）- 多數決機制
+```javascript
+// 新版：統計所有用戶答案，採用多數決
+const answerCounts = {};
+answers.forEach(answer => {
+  answerCounts[answer] = (answerCounts[answer] || 0) + 1;
+});
+
+// 找出出現次數最多的答案
+let maxCount = 0;
+let mostCommonAnswer = answers[0]; // 預設值
+
+Object.entries(answerCounts).forEach(([answer, count]) => {
+  if (count > maxCount) {
+    maxCount = count;
+    mostCommonAnswer = answer;
   }
 });
 
-// 找出最高票數選項
-const maxVotes = Math.max(...Object.values(voteCount));
-const maxVotedOptions = Object.entries(voteCount)
-  .filter(([_, count]) => count === maxVotes)
-  .map(([option]) => option);
+groupAnswers[questionIndex] = mostCommonAnswer;
+```
+
+### 滑卡階段 (Recommendation Phase)
+
+**餐廳推薦一致性**：
+
+#### 版本 1.0（舊版）- 已棄用
+- 按 matchScore 排序選出前10名
+- **不打亂順序**，所有成員看到完全相同的排序
+
+#### 版本 1.1（當前）- 隨機打亂邏輯
+- 使用**多數決**計算群組共識答案 (BuddiesRoom.jsx:735-758)
+- 基於群組共識答案計算 matchScore
+- 按分數排序選出前10名
+- 使用房間ID作為種子打亂前10名順序 (BuddiesRecommendation.jsx:164-166)
+- **確保同房間所有成員看到相同順序，但不同房間順序不同**
+- 限制推薦數量為前10家最匹配餐廳
+
+```javascript
+// 版本 1.1 排序邏輯
+const sortedByScore = [...restaurants].sort(
+  (a, b) => (b.matchScore || 0) - (a.matchScore || 0)
+);
+const topTen = sortedByScore.slice(0, 10);
+
+// 使用房間ID作為種子打亂前10名
+const shuffledTopTen = seededShuffle(topTen, roomSeed);
+```
+
+**滑卡邏輯**：
+- 每位成員**獨立滑動**，不需等待他人
+- 右滑收藏餐廳時自動投票
+- 實時顯示投票進度：`{votedUsersCount}/{totalMembers}`
+
+**完成檢測** (BuddiesRecommendation.jsx:197-223)：
+```javascript
+// 監聽投票更新並檢查所有人是否完成
+const votedResult = await voteService.getVotedUsersCount(roomId);
+const actualVotedCount = votedResult.count;
+
+// 所有成員都已投票時自動進入結果階段
+if (actualVotedCount >= totalMembers && totalMembers > 0) {
+  handleFinishSwiping();
+}
+```
+
+### 結果階段 (Result Phase)
+
+**投票統計**：
+- 從 `buddies_votes` 表查詢每位用戶的投票
+- 從 `buddies_restaurant_votes` 表查詢餐廳總票數
+- 在結果頁面顯示每間餐廳的得票數
+
+**資料庫約束** (版本 1.1 更新)：
+```sql
+-- 版本 1.0（舊版）- 已棄用
+UNIQUE (room_id, user_id)  -- 每人每房間只能投一次票
+
+-- 版本 1.1（當前）
+UNIQUE (room_id, user_id, restaurant_id)  -- 允許同一用戶為不同餐廳投票
+```
+
+**最終結果計算**：
+
+#### 版本 1.0（舊版）- 已棄用
+1. 計算最高票餐廳
+2. **手動點擊「確認選擇」按鈕**
+3. 由點擊的用戶寫入資料庫（缺少 userId 參數會失敗）
+
+#### 版本 1.1（當前）- 全自動邏輯
+1. 所有成員投票完畢後**自動觸發**
+2. 找出得票最高的餐廳
+3. 若有平票，使用確定性隨機選擇（基於房間ID種子）
+4. **自動寫入 `buddies_final_results` 表**
+5. 通過 Realtime 訂閱**廣播給所有成員**
+6. 所有人同時看到結果 + 紙屑動畫 🎉
+
+```javascript
+// 版本 1.1 自動確認邏輯 (BuddiesRecommendation.jsx:107-128)
+if (selectedRestaurant) {
+  const result = await finalResultService.finalizeRestaurant(
+    roomId,
+    selectedRestaurant,
+    userId  // 修復：添加缺少的 userId 參數
+  );
+
+  if (result.success) {
+    setFinalResult(selectedRestaurant);
+    setShowConfetti(true);
+    setPhase("result");
+  }
+}
+```
+
+**票數顯示** (RecommendationResult.css - 版本 1.1 更新)：
+```css
+/* 版本 1.0（舊版）- 綠色 */
+.votes-badge-top-right {
+  background-color: rgba(40, 167, 69, 0.95);
+}
+
+/* 版本 1.1（當前）- 橘色主題 */
+.votes-badge-top-right {
+  background-color: rgba(253, 150, 61, 0.95);
+  color: white;
+}
 ```
 
 ### 推薦生成流程
@@ -152,6 +301,7 @@ const maxVotedOptions = Object.entries(voteCount)
 2. **餐廳篩選**：使用群組決策結果篩選餐廳
 3. **評分排序**：使用相同的 `calculateMatchScore` 函數
 4. **結果輸出**：返回按分數排序的推薦列表
+5. **票數統計**：展示每間餐廳的投票結果
 
 ---
 
@@ -213,6 +363,22 @@ const funQuestionTagsMap = {
 
 ## ⚠️ 重要更新記錄
 
+### 2025-02-01 - 版本 1.1 核心功能修復
+- **多數決機制**：改用統計所有成員答案的多數決，取代舊版「使用第一個用戶答案」的邏輯
+- **隨機打亂邏輯**：基於房間ID打亂前10名餐廳順序，增加推薦多樣性
+- **資料庫約束修復**：修改 `buddies_votes` 表約束為 `(room_id, user_id, restaurant_id)` 允許同一用戶為不同餐廳投票
+- **全自動最終結果**：所有成員投票完畢後自動計算並廣播最終餐廳，移除手動「確認選擇」按鈕
+- **UI 主題統一**：投票票數徽章改為橘色 (#FD963D)，與導航按鈕顏色一致
+- **物件渲染修復**：修復 `BuddiesRoom.jsx` 中 option 物件直接渲染導致的錯誤
+
+### 2025-01-30 - Buddies 模式重大改進
+- **自動跳題機制**：所有成員答題完成後自動進入下一題，無需重刷頁面
+- **動畫同步**：使用動畫偵測系統確保所有成員看完動畫後一起跳題 (1.2-2.3秒)
+- **餐廳推薦一致性**：使用房間ID種子確保所有成員看到相同的餐廳順序
+- **獨立滑卡**：成員可獨立滑動選擇餐廳，不需等待他人
+- **投票完成檢測**：正確追蹤已投票用戶數，所有人投票後自動進入結果
+- **票數顯示**：結果頁面顯示每間餐廳的得票數
+
 ### 2025-01-20 更新
 - **標籤統一**：將所有 "飽足" 標籤統一更新為 "吃飽"
 - **資料庫欄位修正**：確認使用正確的資料庫欄位映射
@@ -222,6 +388,23 @@ const funQuestionTagsMap = {
 - **辣度欄位擴展**：新增 `'both'` 選項，支援同時提供辣和不辣選擇的餐廳
 
 ### 受影響的文件
+
+**2025-02-01 更新（版本 1.1）**:
+- `src/components/BuddiesRoom.jsx` - 多數決邏輯、修復 option 物件渲染
+- `src/components/BuddiesRecommendation.jsx` - 隨機打亂邏輯、全自動最終結果、移除手動確認按鈕
+- `src/components/RecommendationResult.css` - 票數顏色改為橘色主題
+- `src/services/supabaseService.js` - 修復 `finalizeRestaurant` 缺少 userId 參數
+- `fix-buddies-votes-constraint.sql` - 資料庫約束修復腳本
+- `RECOMMENDATION-LOGIC-DOCUMENTATION.md` - 本文件
+
+**2025-01-30 更新（版本 1.0）**:
+- `src/components/BuddiesQuestionSwiper.jsx` - 自動跳題邏輯
+- `src/components/BuddiesRecommendation.jsx` - 投票完成檢測、滑卡階段
+- `src/components/RecommendationResult.jsx` - 票數顯示
+- `src/services/supabaseService.js` - 新增 `getVotedUsersCount()` 方法
+- `RECOMMENDATION-LOGIC-DOCUMENTATION.md` - 本文件
+
+**2025-01-20 更新**:
 - `src/components/SwiftTaste.jsx`
 - `src/data/funQuestionTags.js`
 - `server/data/funQuestionTags.js`
