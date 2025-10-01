@@ -137,13 +137,17 @@ CREATE POLICY "Allow all access to buddies_final_results" ON public.buddies_fina
 -- ==========================================
 
 SELECT
-  table_name,
-  row_security_enabled,
-  (SELECT COUNT(*) FROM pg_policies WHERE schemaname = 'public' AND tablename = t.table_name) as policy_count
+  t.tablename,
+  t.rowsecurity as rls_enabled,
+  COUNT(p.policyname) as policy_count
 FROM
-  information_schema.tables t
+  pg_tables t
+LEFT JOIN
+  pg_policies p ON p.schemaname = t.schemaname AND p.tablename = t.tablename
 WHERE
-  table_schema = 'public'
-  AND table_name LIKE 'buddies_%'
+  t.schemaname = 'public'
+  AND t.tablename LIKE 'buddies_%'
+GROUP BY
+  t.tablename, t.rowsecurity
 ORDER BY
-  table_name;
+  t.tablename;
