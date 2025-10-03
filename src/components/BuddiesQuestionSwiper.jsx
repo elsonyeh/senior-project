@@ -169,10 +169,9 @@ export default function BuddiesQuestionSwiper({
         (dq) => (dq.text === q.dependsOn.question || dq.question === q.dependsOn.question)
       );
 
-      // 如果找不到依賴的問題，預設顯示
+      // 如果找不到依賴的問題，預設不顯示（安全起見）
       if (dependentQuestionIndex === -1) {
-        questionIndexMap.set(originalIndex, visibleQuestions.length);
-        visibleQuestions.push({ ...q, originalIndex });
+        logger.warn('⚠️ 找不到依賴問題，跳過該題:', q.text, '依賴:', q.dependsOn);
         return;
       }
 
@@ -187,7 +186,8 @@ export default function BuddiesQuestionSwiper({
         shouldShow: dependentAnswer === q.dependsOn.answer
       });
 
-      if (dependentAnswer === q.dependsOn.answer) {
+      // 只有當集體答案已確定且符合條件時，才顯示該問題
+      if (dependentAnswer && dependentAnswer === q.dependsOn.answer) {
         questionIndexMap.set(originalIndex, visibleQuestions.length);
         visibleQuestions.push({ ...q, originalIndex });
       }
@@ -341,13 +341,52 @@ export default function BuddiesQuestionSwiper({
             // 找出得票最多的答案
             let majorityAnswer = null;
             let maxVotes = 0;
+            const candidateAnswers = []; // 記錄得票最多的所有答案（處理平票）
 
             Object.entries(stats).forEach(([answer, count]) => {
-              if (typeof count === 'number' && count > maxVotes) {
-                maxVotes = count;
-                majorityAnswer = answer;
+              if (typeof count === 'number') {
+                if (count > maxVotes) {
+                  maxVotes = count;
+                  majorityAnswer = answer;
+                  candidateAnswers.length = 0; // 清空之前的候選
+                  candidateAnswers.push(answer);
+                } else if (count === maxVotes) {
+                  // 平票情況
+                  candidateAnswers.push(answer);
+                }
               }
             });
+
+            // 處理平票情況
+            if (candidateAnswers.length > 1) {
+              logger.debug("⚖️ 偵測到平票情況:", {
+                questionIndex,
+                candidateAnswers,
+                votes: maxVotes,
+                totalVotes: answeredCount
+              });
+
+              // 策略1: 找出房主的答案作為平票決勝
+              const hostMember = members.find(m => m.isHost);
+              if (hostMember) {
+                const hostAnswer = voteStats.userData?.find(u => u.id === hostMember.id);
+                if (hostAnswer && candidateAnswers.includes(hostAnswer.option)) {
+                  majorityAnswer = hostAnswer.option;
+                  logger.debug("👑 平票由房主決定:", {
+                    hostName: hostMember.name,
+                    hostAnswer: majorityAnswer
+                  });
+                } else {
+                  // 房主答案不在平票選項中，使用第一個候選答案
+                  majorityAnswer = candidateAnswers[0];
+                  logger.debug("⚖️ 房主答案不在候選中，使用第一個選項:", majorityAnswer);
+                }
+              } else {
+                // 沒有房主資訊，使用第一個候選答案
+                majorityAnswer = candidateAnswers[0];
+                logger.debug("⚖️ 沒有房主資訊，使用第一個選項:", majorityAnswer);
+              }
+            }
 
             if (majorityAnswer) {
               logger.debug("🗳️ 多數決結果:", {
@@ -355,40 +394,64 @@ export default function BuddiesQuestionSwiper({
                 majorityAnswer,
                 votes: maxVotes,
                 totalVotes: answeredCount,
-                allStats: stats
+                allStats: stats,
+                wasTie: candidateAnswers.length > 1
               });
 
               // 更新集體答案到資料庫
               const originalIndex = currentQ?.originalIndex ?? questionIndex;
+
+              // 重要：先更新集體答案，等資料庫確認後才設置動畫
               roomService.updateCollectiveAnswer(roomId, originalIndex, majorityAnswer)
                 .then(result => {
                   if (result.success) {
-                    logger.debug("✅ 集體答案已更新到資料庫");
+                    logger.debug("✅ 集體答案已更新到資料庫，現在可以決定下一題");
+
+                    // 等待集體答案狀態更新（給 React 一點時間同步狀態）
+                    setTimeout(() => {
+                      // 使用穩定的引用避免競態條件
+                      const currentQuestionIndex = questionIndex;
+                      const visibleQuestions = getVisibleQuestions(safeQuestionsRef.current);
+                      const nextIndex = currentQuestionIndex + 1;
+
+                      logger.debug("🔍 下一題檢查詳情（集體答案已確定）:", {
+                        currentQuestionIndex,
+                        nextIndex,
+                        visibleQuestionsLength: visibleQuestions.length,
+                        collectiveAnswer: majorityAnswer,
+                        isMountedRef: isMountedRef.current
+                      });
+
+                      // 等待動畫完成後才進入下一題
+                      logger.debug("🎬 設置動畫偵測，等待所有成員看完動畫");
+                      setupAnimationDetection(nextIndex, visibleQuestions);
+                    }, 100); // 給狀態更新一點時間
                   } else {
                     logger.error("❌ 更新集體答案失敗:", result.error);
+                    // 即使失敗也要繼續（避免卡住）
+                    const currentQuestionIndex = questionIndex;
+                    const visibleQuestions = getVisibleQuestions(safeQuestionsRef.current);
+                    const nextIndex = currentQuestionIndex + 1;
+                    setupAnimationDetection(nextIndex, visibleQuestions);
                   }
                 })
                 .catch(error => {
                   logger.error("❌ 更新集體答案異常:", error);
+                  // 即使異常也要繼續（避免卡住）
+                  const currentQuestionIndex = questionIndex;
+                  const visibleQuestions = getVisibleQuestions(safeQuestionsRef.current);
+                  const nextIndex = currentQuestionIndex + 1;
+                  setupAnimationDetection(nextIndex, visibleQuestions);
                 });
             }
+          } else {
+            // 沒有投票數據，直接進入下一題（不應該發生，但作為安全機制）
+            logger.warn("⚠️ 沒有投票數據，直接進入下一題");
+            const currentQuestionIndex = questionIndex;
+            const visibleQuestions = getVisibleQuestions(safeQuestionsRef.current);
+            const nextIndex = currentQuestionIndex + 1;
+            setupAnimationDetection(nextIndex, visibleQuestions);
           }
-
-          // 使用穩定的引用避免競態條件
-          const currentQuestionIndex = questionIndex;
-          const visibleQuestions = safeQuestionsRef.current;
-          const nextIndex = currentQuestionIndex + 1;
-
-          logger.debug("🔍 下一題檢查詳情:", {
-            currentQuestionIndex,
-            nextIndex,
-            visibleQuestionsLength: visibleQuestions.length,
-            isMountedRef: isMountedRef.current
-          });
-
-          // 等待動畫完成後才進入下一題
-          logger.debug("🎬 設置動畫偵測，等待所有成員看完動畫");
-          setupAnimationDetection(nextIndex, visibleQuestions);
         } else {
           // 顯示等待進度
           const waitingTime = Date.now() - (userData[0]?.timestamp || Date.now());

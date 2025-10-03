@@ -1,7 +1,7 @@
 # SwiftTaste 推薦系統邏輯文檔
 
-**版本**: 1.2
-**最後更新**: 2025-02-03
+**版本**: 1.3
+**最後更新**: 2025-02-04
 **狀態**: 生產版本
 
 ---
@@ -342,7 +342,7 @@ UNIQUE (room_id, user_id, restaurant_id)  -- 允許同一用戶為不同餐廳�
 2. **手動點擊「確認選擇」按鈕**
 3. 由點擊的用戶寫入資料庫（缺少 userId 參數會失敗）
 
-#### 版本 1.1（當前）- 全自動邏輯
+#### 版本 1.1（舊版）- 已更新
 1. 所有成員投票完畢後**自動觸發**
 2. 找出得票最高的餐廳
 3. 若有平票，使用確定性隨機選擇（基於房間ID種子）
@@ -350,20 +350,58 @@ UNIQUE (room_id, user_id, restaurant_id)  -- 允許同一用戶為不同餐廳�
 5. 通過 Realtime 訂閱**廣播給所有成員**
 6. 所有人同時看到結果 + 紙屑動畫 🎉
 
-```javascript
-// 版本 1.1 自動確認邏輯 (BuddiesRecommendation.jsx:107-128)
-if (selectedRestaurant) {
-  const result = await finalResultService.finalizeRestaurant(
-    roomId,
-    selectedRestaurant,
-    userId  // 修復：添加缺少的 userId 參數
-  );
+#### 版本 1.3（當前）- 平票決勝與無結果處理
+1. 所有成員投票完畢後**自動觸發**
+2. **只計算票數 > 0 的餐廳**（過濾所有人都左滑的餐廳）
+3. 找出得票最高的餐廳
+4. **平票處理**（新增）：
+   - 從資料庫查詢房主的投票記錄
+   - 若房主投票給平局餐廳之一，**優先採用房主的選擇**
+   - 若房主未投票或未投平局餐廳，使用確定性隨機（基於房間ID種子）
+5. **無結果處理**（新增）：
+   - 若沒有任何餐廳獲得投票（所有人都左滑），進入 `no-result` 階段
+   - 顯示可惜畫面，提供「再試一次」、「回到房間」、「回到首頁」三個選項
+6. **自動寫入 `buddies_final_results` 表**
+7. 通過 Realtime 訂閱**廣播給所有成員**
+8. 所有人同時看到結果 + 紙屑動畫 🎉
 
-  if (result.success) {
-    setFinalResult(selectedRestaurant);
-    setShowConfetti(true);
-    setPhase("result");
+```javascript
+// 版本 1.3 平票處理邏輯 (BuddiesRecommendation.jsx:96-137)
+if (tiedRestaurants.length > 1) {
+  // 如果有平局，優先使用房主的投票
+  const hostMember = members.find(m => m.isHost);
+
+  if (hostMember) {
+    // 從資料庫查詢房主投票的餐廳
+    const hostVotesResult = await voteService.getUserVotedRestaurants(roomId, hostMember.id);
+
+    if (hostVotesResult.success && hostVotesResult.restaurantIds.length > 0) {
+      const tiedRestaurantIds = new Set(tiedRestaurants.map(([id]) => id));
+
+      // 查找房主投票的餐廳中，是否有平局中的餐廳
+      const hostChoice = hostVotesResult.restaurantIds.find(rid => tiedRestaurantIds.has(rid));
+
+      if (hostChoice) {
+        logger.debug("👑 平票由房主決定");
+        selectedRestaurant = [...limitedRestaurants, ...alternativeRestaurants]
+          .find((r) => r.id === hostChoice);
+      }
+    }
   }
+
+  // 如果找不到房主投票，使用確定性隨機
+  if (!selectedRestaurant) {
+    const seed = generateSeedFromRoomId(roomId);
+    const shuffledTied = seededShuffle(tiedRestaurants, seed);
+    selectedRestaurant = ...find(shuffledTied[0][0]);
+  }
+}
+
+// 版本 1.3 無結果處理邏輯 (BuddiesRecommendation.jsx:176-180)
+if (!selectedRestaurant) {
+  // 沒有任何餐廳被選擇，顯示可惜畫面
+  logger.warn("😔 沒有任何餐廳被選擇");
+  setPhase("no-result");
 }
 ```
 
@@ -449,6 +487,14 @@ const funQuestionTagsMap = {
 
 ## ⚠️ 重要更新記錄
 
+### 2025-02-04 - 版本 1.3 平票與無結果處理
+- **平票房主決定權**：平票時從資料庫查詢房主投票記錄，優先採用房主的選擇
+- **無結果處理**：所有人都左滑時顯示可惜畫面，提供再試一次選項
+- **票數過濾**：只計算票數 > 0 的餐廳，避免顯示零票餐廳
+- **成員資訊同步**：監聽房間成員列表，包含 isHost 資訊用於平票判斷
+- **UI 改進**：新增 `no-result` 階段的專用 UI，提供多個操作選項
+- **文檔更新**：更新推薦邏輯文檔，說明新的平票和無結果處理機制
+
 ### 2025-02-03 - 版本 1.2 集體決策系統
 - **集體答案機制**：新增 `collective_answers` JSONB 欄位儲存多數決結果
 - **多數決算法**：當所有成員完成答題後自動計算最高票答案
@@ -483,6 +529,10 @@ const funQuestionTagsMap = {
 - **辣度欄位擴展**：新增 `'both'` 選項，支援同時提供辣和不辣選擇的餐廳
 
 ### 受影響的文件
+
+**2025-02-04 更新（版本 1.3）**:
+- `src/components/BuddiesRecommendation.jsx` - 平票房主決定權、無結果處理、成員資訊監聽
+- `RECOMMENDATION-LOGIC-DOCUMENTATION.md` - 本文件
 
 **2025-02-03 更新（版本 1.2）**:
 - `src/components/BuddiesQuestionSwiper.jsx` - 集體答案同步、多數決計算、條件題邏輯修改

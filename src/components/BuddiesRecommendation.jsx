@@ -28,6 +28,7 @@ export default function BuddiesRecommendation({
   const [totalMembers, setTotalMembers] = useState(0);
   const [votedUsersCount, setVotedUsersCount] = useState(0);
   const [showNoResultsModal, setShowNoResultsModal] = useState(false);
+  const [members, setMembers] = useState([]); // 新增：儲存房間成員列表
   const navigate = useNavigate();
 
   // 獲取當前用戶ID
@@ -56,26 +57,76 @@ export default function BuddiesRecommendation({
 
   // 處理滑動結束並計算投票結果的函數
   const handleFinishSwiping = useCallback(async () => {
+    logger.debug("🏁 handleFinishSwiping 被調用", {
+      votesCount: Object.keys(votes).length,
+      savedCount: saved.length,
+      votes: votes
+    });
+
     setPhase("vote-result");
 
     let selectedRestaurant = null;
 
-    // 計算投票結果
-    if (Object.keys(votes).length > 0) {
+    // 計算投票結果 - 只計算票數 > 0 的餐廳
+    const votedRestaurants = Object.entries(votes).filter(([, count]) => count > 0);
+
+    logger.debug("📊 投票統計:", {
+      totalVoteEntries: Object.keys(votes).length,
+      votedRestaurants: votedRestaurants.length,
+      votedDetails: votedRestaurants
+    });
+
+    if (votedRestaurants.length > 0) {
       // 找出票數最高的餐廳
-      const sortedRestaurants = Object.entries(votes).sort(
+      const sortedRestaurants = votedRestaurants.sort(
         ([, voteA], [, voteB]) => voteB - voteA
       );
 
-      // 檢查是否有多個最高票餐廳（平局情況）
-      if (sortedRestaurants.length > 1) {
-        const topVotes = sortedRestaurants[0][1];
-        const tiedRestaurants = sortedRestaurants.filter(
-          ([, voteCount]) => voteCount === topVotes
-        );
+      const topVotes = sortedRestaurants[0][1];
+      const tiedRestaurants = sortedRestaurants.filter(
+        ([, voteCount]) => voteCount === topVotes
+      );
 
-        if (tiedRestaurants.length > 1) {
-          // 如果有平局，使用確定性隨機選擇（基於房間ID作為種子）
+      logger.debug("🏆 最高票數:", {
+        topVotes,
+        tiedCount: tiedRestaurants.length,
+        tiedRestaurants: tiedRestaurants.map(([id, count]) => ({ id, count }))
+      });
+
+      if (tiedRestaurants.length > 1) {
+        // 如果有平局，優先使用房主的投票
+        logger.debug("⚖️ 偵測到平局，查找房主的投票");
+
+        const hostMember = members.find(m => m.isHost);
+
+        if (hostMember) {
+          // 從資料庫查詢房主投票的餐廳
+          const hostVotesResult = await voteService.getUserVotedRestaurants(roomId, hostMember.id);
+
+          if (hostVotesResult.success && hostVotesResult.restaurantIds.length > 0) {
+            const tiedRestaurantIds = new Set(tiedRestaurants.map(([id]) => id));
+
+            // 查找房主投票的餐廳中，是否有平局中的餐廳
+            const hostChoice = hostVotesResult.restaurantIds.find(rid => tiedRestaurantIds.has(rid));
+
+            if (hostChoice) {
+              logger.debug("👑 平票由房主決定:", {
+                hostName: hostMember.name,
+                hostId: hostMember.id,
+                hostChoice: hostChoice,
+                hostVotedRestaurants: hostVotesResult.restaurantIds
+              });
+              selectedRestaurant = [
+                ...limitedRestaurants,
+                ...alternativeRestaurants,
+              ].find((r) => r.id === hostChoice);
+            }
+          }
+        }
+
+        // 如果找不到房主投票或房主沒有投票給平局中的餐廳，使用確定性隨機
+        if (!selectedRestaurant) {
+          logger.debug("⚖️ 房主未投票或未投平局餐廳，使用房間種子決定");
           const seed = generateSeedFromRoomId(roomId);
           const shuffledTied = seededShuffle(tiedRestaurants, seed);
           const topVotedId = shuffledTied[0][0];
@@ -83,16 +134,9 @@ export default function BuddiesRecommendation({
             ...limitedRestaurants,
             ...alternativeRestaurants,
           ].find((r) => r.id === topVotedId);
-        } else {
-          // 沒有平局，選擇最高票餐廳
-          const topVotedId = sortedRestaurants[0][0];
-          selectedRestaurant = [
-            ...limitedRestaurants,
-            ...alternativeRestaurants,
-          ].find((r) => r.id === topVotedId);
         }
-      } else if (sortedRestaurants.length === 1) {
-        // 只有一個餐廳有投票
+      } else {
+        // 沒有平局，選擇最高票餐廳
         const topVotedId = sortedRestaurants[0][0];
         selectedRestaurant = [
           ...limitedRestaurants,
@@ -100,8 +144,11 @@ export default function BuddiesRecommendation({
         ].find((r) => r.id === topVotedId);
       }
     } else if (saved.length > 0) {
-      // 如果沒有投票，使用首個收藏的餐廳
+      // 如果沒有任何投票，使用首個收藏的餐廳
+      logger.debug("📌 沒有投票，使用收藏列表第一個");
       selectedRestaurant = saved[0];
+    } else {
+      logger.warn("⚠️ 沒有投票也沒有收藏，無法選擇最終餐廳");
     }
 
     // 如果找到了最終餐廳，寫入資料庫並廣播
@@ -126,8 +173,12 @@ export default function BuddiesRecommendation({
       } catch (error) {
         console.error("❌ 確認最終餐廳時發生錯誤:", error);
       }
+    } else {
+      // 沒有任何餐廳被選擇，顯示可惜畫面
+      logger.warn("😔 沒有任何餐廳被選擇");
+      setPhase("no-result");
     }
-  }, [votes, limitedRestaurants, alternativeRestaurants, saved, roomId, userId]);
+  }, [votes, limitedRestaurants, alternativeRestaurants, saved, roomId, userId, members]);
 
   // 限制推薦餐廳數量為10家 - 修改以使用確定性排序
   useEffect(() => {
@@ -228,10 +279,16 @@ export default function BuddiesRecommendation({
     };
     initializeVotedRestaurants();
 
-    // 監聽房間成員人數
+    // 監聽房間成員人數和成員資訊
     const unsubscribeMembers = memberService.listenRoomMembers(roomId, (membersObj) => {
-      const membersList = Object.values(membersObj);
+      const membersList = Object.values(membersObj).map(m => ({
+        id: m.id,
+        name: m.name,
+        isHost: m.isHost
+      }));
+      setMembers(membersList);
       setTotalMembers(membersList.length);
+      logger.debug("📋 房間成員更新:", membersList);
     });
 
     // 監聽投票更新
@@ -274,10 +331,27 @@ export default function BuddiesRecommendation({
 
     // 監聽最終結果
     const unsubscribeFinal = finalResultService.listenFinalRestaurant(roomId, (finalData) => {
-      if (finalData && finalData.id) {
-        // 找到最終選擇的餐廳
-        const finalRestaurant = restaurants.find((r) => r.id === finalData.id);
+      logger.debug("🎯 收到最終結果更新:", finalData);
+
+      if (finalData && finalData.restaurant_id) {
+        // 找到最終選擇的餐廳（從推薦列表中）
+        const finalRestaurant = [
+          ...limitedRestaurants,
+          ...alternativeRestaurants,
+          ...restaurants
+        ].find((r) => r.id === finalData.restaurant_id);
+
+        logger.debug("🔍 尋找最終餐廳:", {
+          searchingFor: finalData.restaurant_id,
+          foundInList: !!finalRestaurant,
+          finalRestaurantName: finalRestaurant?.name,
+          limitedCount: limitedRestaurants.length,
+          alternativeCount: alternativeRestaurants.length,
+          allRestaurantsCount: restaurants.length
+        });
+
         if (finalRestaurant) {
+          logger.debug("✅ 設置最終結果:", finalRestaurant.name);
           setFinalResult(finalRestaurant);
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 3000);
@@ -286,6 +360,26 @@ export default function BuddiesRecommendation({
           // 通知父組件最終結果已確定（用於記錄選擇歷史）
           if (onFinalResult && typeof onFinalResult === 'function') {
             onFinalResult(finalRestaurant);
+          }
+        } else {
+          // 如果在列表中找不到，從資料庫資料重建餐廳物件
+          logger.warn("⚠️ 無法從推薦列表找到餐廳，使用資料庫資料重建");
+          const reconstructedRestaurant = {
+            id: finalData.restaurant_id,
+            name: finalData.restaurant_name,
+            address: finalData.restaurant_address,
+            photoURL: finalData.restaurant_photo_url,
+            rating: finalData.restaurant_rating,
+            type: finalData.restaurant_type,
+          };
+
+          setFinalResult(reconstructedRestaurant);
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 3000);
+          setPhase("result");
+
+          if (onFinalResult && typeof onFinalResult === 'function') {
+            onFinalResult(reconstructedRestaurant);
           }
         }
       }
@@ -297,7 +391,7 @@ export default function BuddiesRecommendation({
       unsubscribeVotes();
       unsubscribeFinal();
     };
-  }, [roomId, restaurants, totalMembers, phase, handleFinishSwiping]);
+  }, [roomId, restaurants, limitedRestaurants, alternativeRestaurants, totalMembers, phase, handleFinishSwiping, onFinalResult]);
 
   // 處理無結果情況
   const handleNoResults = () => {
@@ -428,6 +522,60 @@ export default function BuddiesRecommendation({
     );
   };
 
+  // 如果沒有結果（所有人都左滑或沒有投票）
+  if (phase === "no-result") {
+    return (
+      <div className="recommend-screen">
+        <div className="empty-result">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2>😔 有點可惜呢</h2>
+            <p>看起來大家都沒有特別喜歡的餐廳</p>
+            <p>要不要重新選擇，或是放寬一下條件？</p>
+            <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <motion.button
+                className="btn-restart"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  // 重置狀態，重新滑動
+                  setSaved([]);
+                  setVotes({});
+                  setVotedRestaurants(new Set());
+                  setFinalResult(null);
+                  setPhase("recommend");
+                }}
+              >
+                🔄 再試一次
+              </motion.button>
+              <motion.button
+                className="btn-restart"
+                style={{ background: "#6874E8" }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleBackToRoom}
+              >
+                👥 回到房間
+              </motion.button>
+              <motion.button
+                className="btn-restart"
+                style={{ background: "#666" }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleRestart}
+              >
+                🏠 回到首頁
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   // 如果處於結果階段
   if (phase === "result" || phase === "vote-result") {
     logger.debug("📊 結果階段 - 票數數據:", {
@@ -443,23 +591,50 @@ export default function BuddiesRecommendation({
     // 如果沒有收藏餐廳，則使用有票數的餐廳（票數 > 0）
     let finalSaved = [];
     if (saved.length > 0) {
-      finalSaved = [...saved];
+      // 有收藏，按票數排序收藏列表
+      finalSaved = [...saved].sort((a, b) => {
+        const votesA = votes[a.id] || 0;
+        const votesB = votes[b.id] || 0;
+        return votesB - votesA;
+      });
     } else {
-      // 過濾出有票數的餐廳
-      const votedRestaurants = limitedRestaurants.filter(r =>
-        votes[r.id] && votes[r.id] > 0
-      );
+      // 沒有收藏，過濾出有票數的餐廳並按票數排序
+      const votedRestaurants = limitedRestaurants
+        .filter(r => votes[r.id] && votes[r.id] > 0)
+        .sort((a, b) => {
+          const votesA = votes[a.id] || 0;
+          const votesB = votes[b.id] || 0;
+          return votesB - votesA;
+        });
+
       finalSaved = votedRestaurants.length > 0 ? votedRestaurants : [...limitedRestaurants];
+
+      logger.debug("📋 最終餐廳列表（按票數排序）:", {
+        count: finalSaved.length,
+        restaurants: finalSaved.map(r => ({
+          name: r.name,
+          id: r.id,
+          votes: votes[r.id] || 0
+        }))
+      });
     }
 
     // 確保最終選擇的餐廳在列表頂部
-    if (finalResult && !finalSaved.some((r) => r.id === finalResult.id)) {
-      finalSaved = [finalResult, ...finalSaved];
-    } else if (finalResult) {
-      finalSaved = [
-        finalResult,
-        ...finalSaved.filter((r) => r.id !== finalResult.id),
-      ];
+    if (finalResult) {
+      if (!finalSaved.some((r) => r.id === finalResult.id)) {
+        // 最終結果不在列表中，添加到頂部
+        finalSaved = [finalResult, ...finalSaved];
+        logger.debug("✅ 最終結果已添加到列表頂部:", finalResult.name);
+      } else {
+        // 最終結果在列表中，移到頂部
+        finalSaved = [
+          finalResult,
+          ...finalSaved.filter((r) => r.id !== finalResult.id),
+        ];
+        logger.debug("✅ 最終結果已移至列表頂部:", finalResult.name);
+      }
+    } else {
+      logger.warn("⚠️ 沒有最終結果，使用票數最高的餐廳");
     }
 
     return (
