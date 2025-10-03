@@ -13,7 +13,6 @@ import BottomNav from "./components/BottomNav";
 import UserProfilePage from "./pages/UserProfilePage";
 import AdminPage from './pages/AdminPage';
 import AdminLogin from './pages/AdminLogin'; // 引入管理員登入頁面
-import EventPopup from './events/milktea-festival-2025/EventPopup';
 import "./App.css";
 
 // 創建導航欄狀態上下文
@@ -126,9 +125,6 @@ function App() {
 
           {/* 使用控制組件來決定是否顯示底部導航欄 */}
           <BottomNavController />
-
-          {/* 活動彈窗 */}
-          <EventPopup />
         </div>
       </NavProvider>
     </Router>
