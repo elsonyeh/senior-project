@@ -261,15 +261,27 @@ export default function BuddiesRecommendation({
   useEffect(() => {
     if (!roomId) return;
 
-    // 獲取用戶已投票的餐廳列表
-    const initializeVotedRestaurants = async () => {
-      const result = await voteService.getUserVotedRestaurants(roomId, userId);
-      if (result.success && result.restaurantIds.length > 0) {
-        setVotedRestaurants(new Set(result.restaurantIds));
-        logger.debug("📋 已投票的餐廳:", result.restaurantIds);
+    // 初始化：載入用戶已投票的餐廳和當前票數
+    const initializeVotingData = async () => {
+      // 1. 載入用戶已投票的餐廳列表
+      const votedResult = await voteService.getUserVotedRestaurants(roomId, userId);
+      if (votedResult.success && votedResult.restaurantIds.length > 0) {
+        setVotedRestaurants(new Set(votedResult.restaurantIds));
+        logger.debug("📋 已投票的餐廳:", votedResult.restaurantIds);
+      }
+
+      // 2. 主動載入當前所有餐廳的票數
+      const votesResult = await voteService.getVotes(roomId);
+      if (votesResult.success && votesResult.data) {
+        const votesObj = {};
+        votesResult.data.forEach(vote => {
+          votesObj[vote.restaurant_id] = vote.vote_count;
+        });
+        setVotes(votesObj);
+        logger.debug("📊 初始票數載入:", votesObj);
       }
     };
-    initializeVotedRestaurants();
+    initializeVotingData();
 
     // 監聽房間成員人數和成員資訊
     const unsubscribeMembers = memberService.listenRoomMembers(roomId, (membersObj) => {
