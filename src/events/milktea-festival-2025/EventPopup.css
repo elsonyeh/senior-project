@@ -98,43 +98,6 @@
   object-fit: contain;
 }
 
-.event-popup-line-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 16px 32px;
-  background: linear-gradient(135deg, #06C755 0%, #00B900 100%);
-  color: white;
-  border: 3px solid rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow:
-    0 4px 12px rgba(6, 199, 85, 0.4),
-    0 0 0 4px rgba(6, 199, 85, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  white-space: nowrap;
-}
-
-.event-popup-line-btn:hover {
-  transform: translateX(-50%) translateY(-3px) scale(1.05);
-  box-shadow:
-    0 8px 24px rgba(6, 199, 85, 0.5),
-    0 0 0 5px rgba(6, 199, 85, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.event-popup-line-btn:active {
-  transform: translateX(-50%) translateY(0) scale(0.98);
-  box-shadow:
-    0 2px 8px rgba(6, 199, 85, 0.4),
-    0 0 0 3px rgba(6, 199, 85, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
 /* 手機版優化 */
 @media (max-width: 600px) {
   .event-popup-overlay {
@@ -151,11 +114,5 @@
     width: 32px;
     height: 32px;
     font-size: 18px;
-  }
-
-  .event-popup-line-btn {
-    bottom: 16px;
-    padding: 14px 24px;
-    font-size: 16px;
   }
 }

@@ -39,10 +39,6 @@ const EventPopup = () => {
     setIsVisible(false);
   };
 
-  const handleLineClick = () => {
-    window.open('https://line.me/R/ti/p/@531ghvlt', '_blank');
-  };
-
   if (!isVisible) return null;
 
   return (
@@ -56,9 +52,6 @@ const EventPopup = () => {
           alt="鹽埕奶茶節活動海報"
           className="event-popup-poster"
         />
-        <button className="event-popup-line-btn" onClick={handleLineClick}>
-          前往 LINE 粉絲專頁
-        </button>
       </div>
     </div>
   );
