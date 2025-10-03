@@ -54,27 +54,27 @@ CREATE TABLE IF NOT EXISTS public.buddies_recommendations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 6. 建立 buddies_votes 表（問題投票，版本 1.2 後已不再使用）
--- 注意：此表在版本 1.2 已被 collective_answers 機制取代
--- 保留僅供舊資料查詢和相容性考量
+-- 6. 建立 buddies_votes 表（用戶餐廳投票追蹤）
+-- 用於追蹤每位用戶投票給哪些餐廳
 CREATE TABLE IF NOT EXISTS public.buddies_votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id TEXT NOT NULL REFERENCES public.buddies_rooms(id) ON DELETE CASCADE,
-  question_id TEXT NOT NULL,
-  option TEXT NOT NULL,
   user_id TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(room_id, question_id, user_id)
+  restaurant_id TEXT NOT NULL,
+  voted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(room_id, user_id, restaurant_id)
 );
 
--- 7. 建立 buddies_restaurant_votes 表（餐廳投票）
+-- 7. 建立 buddies_restaurant_votes 表（餐廳票數統計）
+-- 用於統計每間餐廳的總票數
 CREATE TABLE IF NOT EXISTS public.buddies_restaurant_votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id TEXT NOT NULL REFERENCES public.buddies_rooms(id) ON DELETE CASCADE,
   restaurant_id TEXT NOT NULL,
-  user_id TEXT NOT NULL,
+  vote_count INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(room_id, restaurant_id, user_id)
+  UNIQUE(room_id, restaurant_id)
 );
 
 -- 8. 建立 buddies_final_results 表（最終結果）

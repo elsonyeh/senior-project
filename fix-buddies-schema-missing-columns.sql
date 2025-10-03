@@ -52,26 +52,66 @@ BEGIN
   END IF;
 END $$;
 
--- 4. 為 buddies_votes 新增約束（避免重複投票）
--- 注意：此表格在版本 1.2 已不再使用，但保留以支援舊資料
+-- 4. 為 buddies_votes 新增欄位和約束
+-- 注意：buddies_votes 用於追蹤用戶對餐廳的投票（不是問題投票）
 DO $$
 BEGIN
+  -- 檢查並新增 restaurant_id 欄位
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'buddies_votes' AND column_name = 'restaurant_id'
+  ) THEN
+    ALTER TABLE buddies_votes
+    ADD COLUMN restaurant_id TEXT;
+  END IF;
+
+  -- 檢查並新增 voted_at 欄位
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'buddies_votes' AND column_name = 'voted_at'
+  ) THEN
+    ALTER TABLE buddies_votes
+    ADD COLUMN voted_at TIMESTAMPTZ DEFAULT NOW();
+  END IF;
+
   -- 檢查約束是否已存在
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conname = 'buddies_votes_room_question_user_unique'
+    WHERE conname = 'buddies_votes_room_user_restaurant_unique'
   ) THEN
     -- 先刪除可能的重複資料
     DELETE FROM buddies_votes a USING buddies_votes b
     WHERE a.id > b.id
     AND a.room_id = b.room_id
-    AND a.question_id = b.question_id
-    AND a.user_id = b.user_id;
+    AND a.user_id = b.user_id
+    AND COALESCE(a.restaurant_id, '') = COALESCE(b.restaurant_id, '');
 
     -- 新增 UNIQUE 約束
     ALTER TABLE buddies_votes
-    ADD CONSTRAINT buddies_votes_room_question_user_unique
-    UNIQUE (room_id, question_id, user_id);
+    ADD CONSTRAINT buddies_votes_room_user_restaurant_unique
+    UNIQUE (room_id, user_id, restaurant_id);
+  END IF;
+END $$;
+
+-- 5. 為 buddies_restaurant_votes 新增欄位
+DO $$
+BEGIN
+  -- 檢查並新增 vote_count 欄位
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'buddies_restaurant_votes' AND column_name = 'vote_count'
+  ) THEN
+    ALTER TABLE buddies_restaurant_votes
+    ADD COLUMN vote_count INTEGER NOT NULL DEFAULT 0;
+  END IF;
+
+  -- 檢查並新增 updated_at 欄位
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'buddies_restaurant_votes' AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE buddies_restaurant_votes
+    ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
   END IF;
 END $$;
 
@@ -104,15 +144,33 @@ WHERE
 ORDER BY
   column_name;
 
--- 檢查 buddies_votes 的約束
+-- 檢查 buddies_votes 的欄位
 SELECT
-  conname as constraint_name,
-  contype as constraint_type
+  'buddies_votes' as table_name,
+  column_name,
+  data_type,
+  column_default
 FROM
-  pg_constraint
+  information_schema.columns
 WHERE
-  conrelid = 'buddies_votes'::regclass
-  AND contype = 'u';
+  table_name = 'buddies_votes'
+  AND column_name IN ('restaurant_id', 'voted_at')
+ORDER BY
+  column_name;
+
+-- 檢查 buddies_restaurant_votes 的欄位
+SELECT
+  'buddies_restaurant_votes' as table_name,
+  column_name,
+  data_type,
+  column_default
+FROM
+  information_schema.columns
+WHERE
+  table_name = 'buddies_restaurant_votes'
+  AND column_name IN ('vote_count', 'updated_at')
+ORDER BY
+  column_name;
 
 -- ==========================================
 -- 說明
@@ -121,4 +179,5 @@ WHERE
 -- 1. buddies_members.status 欄位已新增，用於追蹤成員是否離開房間
 -- 2. buddies_rooms.last_updated 欄位已新增，用於追蹤房間最後更新時間
 -- 3. buddies_rooms.collective_answers 和 current_question_index 已確保存在
--- 4. buddies_votes 表已新增 UNIQUE 約束避免重複投票（雖然此表已不再使用）
+-- 4. buddies_votes 表已新增 restaurant_id 和 voted_at 欄位，以及 UNIQUE 約束
+-- 5. buddies_restaurant_votes 表已新增 vote_count 和 updated_at 欄位
