@@ -1,107 +1,528 @@
-// 管理員資料分析頁面
 import React, { useState, useEffect } from 'react';
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ComposedChart
 } from 'recharts';
-import dataAnalyticsService from '../../services/dataAnalyticsService.js';
+import { dataAnalyticsService } from '../../services/dataAnalyticsService';
+import { supabase } from '../../services/supabaseService.js';
 import './DataAnalyticsPage.css';
 
-const COLORS = ['#667eea', '#764ba2', '#48bb78', '#ed8936', '#f56565', '#38b2ac'];
-
-const DataAnalyticsPage = () => {
-  const [stats, setStats] = useState(null);
+export default function DataAnalyticsPage() {
+  const [timeRange, setTimeRange] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTimeRange, setSelectedTimeRange] = useState(30);
-  const [timeTrendData, setTimeTrendData] = useState([]);
-  const [locationData, setLocationData] = useState([]);
+  const [stats, setStats] = useState({
+    users: { totalUsers: 0, registeredUsers: 0, activeUsers: 0, anonymousSessions: 0, newUsers: 0 },
+    modes: { swiftTasteSessions: 0, buddiesSessions: 0, totalBuddiesRooms: 0, completedSessions: 0, totalSessions: 0, avgDuration: 0 },
+    interactions: { totalSwipes: 0, totalLikedRestaurants: 0, finalChoices: 0, avgSatisfaction: 0 },
+    restaurants: { totalRecommendations: 0, totalFinalChoices: 0, totalLikes: 0, finalChoices: {}, likedRestaurants: {} },
+    demographics: { genderDistribution: {}, ageGroups: {} },
+    questions: { basicQuestions: {}, funQuestions: {}, buddiesQuestions: {} }
+  });
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, []);
+  const [swiftTasteMetrics, setSwiftTasteMetrics] = useState({
+    totalSessions: 0,
+    completedSessions: 0,
+    incompleteSessions: 0,
+    completionRate: 0,
+    totalSwipes: 0,
+    avgSwipes: 0,
+    avgLikes: 0,
+    avgDuration: 0,
+    conversionRate: 0,
+    avgDecisionSpeed: 0
+  });
 
-  useEffect(() => {
-    if (selectedTimeRange) {
-      loadTimeTrendData();
-    }
-  }, [selectedTimeRange]);
+  const [buddiesMetrics, setBuddiesMetrics] = useState({
+    totalRooms: 0,
+    completedRooms: 0,
+    incompleteRooms: 0,
+    avgMembersPerRoom: 0,
+    avgSessionDuration: 0,
+    completionRate: 0,
+    totalVotes: 0,
+    avgVotesPerRoom: 0
+  });
 
-  const loadAnalyticsData = async (forceRefresh = false) => {
+  const [restaurantSuccessData, setRestaurantSuccessData] = useState([]);
+  const [funQuestionStats, setFunQuestionStats] = useState([]);
+  const [demographicAnalysis, setDemographicAnalysis] = useState({
+    byAge: [],
+    byGender: [],
+    crossAnalysis: []
+  });
+  const [anonymousData, setAnonymousData] = useState({
+    totalAnonymous: 0,
+    anonymousSwiftTaste: 0,
+    anonymousBuddies: 0
+  });
+
+  // 載入所有數據
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      if (forceRefresh) {
-        console.log('Force refreshing analytics data...');
-        await dataAnalyticsService.clearCache();
-      }
-
-      const [overviewStats, locationStats] = await Promise.all([
+      const [
+        overviewStats,
+        swiftTasteData,
+        buddiesData,
+        restaurantSuccess,
+        funQuestions,
+        demographics,
+        anonymousStats
+      ] = await Promise.all([
         dataAnalyticsService.getOverviewStats(),
-        dataAnalyticsService.getLocationStats()
+        loadSwiftTasteMetrics(),
+        loadBuddiesMetrics(),
+        loadRestaurantSuccessMetrics(),
+        loadFunQuestionStats(),
+        loadDemographicAnalysis(),
+        loadAnonymousData()
       ]);
 
-      console.log('Loaded analytics data:', overviewStats);
       setStats(overviewStats);
-
-      // 轉換地理位置資料為圖表格式
-      const locationChartData = Object.entries(locationStats || {})
-        .map(([city, count]) => ({ city, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10); // 只顯示前10名
-
-      setLocationData(locationChartData);
+      setSwiftTasteMetrics(swiftTasteData);
+      setBuddiesMetrics(buddiesData);
+      setRestaurantSuccessData(restaurantSuccess);
+      setFunQuestionStats(funQuestions);
+      setDemographicAnalysis(demographics);
+      setAnonymousData(anonymousStats);
 
     } catch (err) {
-      console.error('Failed to load analytics data:', err);
-      setError('載入分析資料失敗');
+      console.error('載入統計數據失敗:', err);
+      setError('載入數據時發生錯誤，請稍後再試');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadTimeTrendData = async () => {
+  // 載入 SwiftTaste 指標
+  const loadSwiftTasteMetrics = async () => {
     try {
-      const trendData = await dataAnalyticsService.getTimeTrendStats(selectedTimeRange);
-      setTimeTrendData(trendData || []);
-    } catch (err) {
-      console.error('Failed to load trend data:', err);
+      const { data: sessions } = await supabase
+        .from('user_selection_history')
+        .select('*')
+        .eq('mode', 'swifttaste');
+
+      if (!sessions || sessions.length === 0) {
+        return {
+          totalSessions: 0,
+          completedSessions: 0,
+          incompleteSessions: 0,
+          completionRate: 0,
+          totalSwipes: 0,
+          avgSwipes: 0,
+          avgLikes: 0,
+          avgDuration: 0,
+          conversionRate: 0,
+          avgDecisionSpeed: 0
+        };
+      }
+
+      const completed = sessions.filter(s => s.completed_at).length;
+      const incomplete = sessions.length - completed;
+      const totalSwipes = sessions.reduce((sum, s) => sum + (s.swipe_count || 0), 0);
+      const totalLikes = sessions.reduce((sum, s) => sum + (s.liked_restaurants?.length || 0), 0);
+      const totalDuration = sessions.reduce((sum, s) => sum + (s.session_duration || 0), 0);
+      const withFinalChoice = sessions.filter(s => s.final_restaurant).length;
+
+      // 計算平均決策速度（秒/滑動）
+      const avgDecisionSpeed = totalSwipes > 0 ? totalDuration / totalSwipes : 0;
+
+      return {
+        totalSessions: sessions.length,
+        completedSessions: completed,
+        incompleteSessions: incomplete,
+        completionRate: parseFloat((completed / sessions.length * 100).toFixed(1)),
+        totalSwipes,
+        avgSwipes: parseFloat((totalSwipes / sessions.length).toFixed(1)),
+        avgLikes: parseFloat((totalLikes / sessions.length).toFixed(1)),
+        avgDuration: Math.round(totalDuration / sessions.length),
+        conversionRate: parseFloat((withFinalChoice / sessions.length * 100).toFixed(1)),
+        avgDecisionSpeed: parseFloat(avgDecisionSpeed.toFixed(2))
+      };
+    } catch (error) {
+      console.error('載入 SwiftTaste 指標失敗:', error);
+      return {
+        totalSessions: 0,
+        completedSessions: 0,
+        incompleteSessions: 0,
+        completionRate: 0,
+        totalSwipes: 0,
+        avgSwipes: 0,
+        avgLikes: 0,
+        avgDuration: 0,
+        conversionRate: 0,
+        avgDecisionSpeed: 0
+      };
     }
+  };
+
+  // 載入 Buddies 指標
+  const loadBuddiesMetrics = async () => {
+    try {
+      const { data: rooms } = await supabase
+        .from('buddies_rooms')
+        .select('*');
+
+      const { data: sessions } = await supabase
+        .from('user_selection_history')
+        .select('*')
+        .eq('mode', 'buddies');
+
+      const { data: members } = await supabase
+        .from('buddies_members')
+        .select('room_id');
+
+      const { data: votes } = await supabase
+        .from('buddies_votes')
+        .select('room_id');
+
+      const totalRooms = rooms?.length || 0;
+      const completed = sessions?.filter(s => s.completed_at).length || 0;
+      const incomplete = (sessions?.length || 0) - completed;
+
+      const roomMemberCounts = {};
+      members?.forEach(m => {
+        roomMemberCounts[m.room_id] = (roomMemberCounts[m.room_id] || 0) + 1;
+      });
+
+      const avgMembers = Object.keys(roomMemberCounts).length > 0
+        ? Object.values(roomMemberCounts).reduce((sum, c) => sum + c, 0) / Object.keys(roomMemberCounts).length
+        : 0;
+
+      const totalVotes = votes?.length || 0;
+      const avgVotes = totalRooms > 0 ? totalVotes / totalRooms : 0;
+
+      const totalDuration = sessions?.reduce((sum, s) => sum + (s.session_duration || 0), 0) || 0;
+      const avgDuration = sessions && sessions.length > 0 ? totalDuration / sessions.length : 0;
+
+      const completionRate = sessions && sessions.length > 0
+        ? (completed / sessions.length * 100)
+        : 0;
+
+      return {
+        totalRooms,
+        completedRooms: completed,
+        incompleteRooms: incomplete,
+        avgMembersPerRoom: parseFloat(avgMembers.toFixed(1)),
+        avgSessionDuration: Math.round(avgDuration),
+        completionRate: parseFloat(completionRate.toFixed(1)),
+        totalVotes,
+        avgVotesPerRoom: parseFloat(avgVotes.toFixed(1))
+      };
+    } catch (error) {
+      console.error('載入 Buddies 指標失敗:', error);
+      return {
+        totalRooms: 0,
+        completedRooms: 0,
+        incompleteRooms: 0,
+        avgMembersPerRoom: 0,
+        avgSessionDuration: 0,
+        completionRate: 0,
+        totalVotes: 0,
+        avgVotesPerRoom: 0
+      };
+    }
+  };
+
+  // 載入餐廳成功率指標
+  const loadRestaurantSuccessMetrics = async () => {
+    try {
+      const { data: sessions } = await supabase
+        .from('user_selection_history')
+        .select('final_restaurant, recommended_restaurants, session_duration');
+
+      const restaurantStats = {};
+
+      sessions?.forEach(session => {
+        if (session.final_restaurant) {
+          const name = session.final_restaurant.name || session.final_restaurant.id;
+          if (!restaurantStats[name]) {
+            restaurantStats[name] = {
+              name,
+              selectedCount: 0,
+              recommendedCount: 0,
+              totalDecisionTime: 0
+            };
+          }
+          restaurantStats[name].selectedCount++;
+          restaurantStats[name].totalDecisionTime += session.session_duration || 0;
+        }
+
+        if (session.recommended_restaurants && Array.isArray(session.recommended_restaurants)) {
+          session.recommended_restaurants.forEach(restaurant => {
+            const name = restaurant.name || restaurant.id;
+            if (!restaurantStats[name]) {
+              restaurantStats[name] = {
+                name,
+                selectedCount: 0,
+                recommendedCount: 0,
+                totalDecisionTime: 0
+              };
+            }
+            restaurantStats[name].recommendedCount++;
+          });
+        }
+      });
+
+      return Object.values(restaurantStats)
+        .map(stat => ({
+          name: stat.name,
+          selectedCount: stat.selectedCount,
+          recommendedCount: stat.recommendedCount,
+          successRate: stat.recommendedCount > 0
+            ? parseFloat((stat.selectedCount / stat.recommendedCount * 100).toFixed(1))
+            : 0,
+          avgDecisionTime: stat.selectedCount > 0
+            ? Math.round(stat.totalDecisionTime / stat.selectedCount)
+            : 0
+        }))
+        .sort((a, b) => b.selectedCount - a.selectedCount)
+        .slice(0, 20);
+    } catch (error) {
+      console.error('載入餐廳成功率失敗:', error);
+      return [];
+    }
+  };
+
+  // 載入趣味問題統計
+  const loadFunQuestionStats = async () => {
+    try {
+      const { data: sessions } = await supabase
+        .from('user_selection_history')
+        .select('fun_answers');
+
+      const funStats = {};
+
+      sessions?.forEach(session => {
+        const answers = session.fun_answers;
+        if (answers && Array.isArray(answers)) {
+          answers.forEach((answer, index) => {
+            const questionKey = `趣味問題 ${index + 1}`;
+            if (!funStats[questionKey]) {
+              funStats[questionKey] = {};
+            }
+            const answerValue = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
+            funStats[questionKey][answerValue] = (funStats[questionKey][answerValue] || 0) + 1;
+          });
+        }
+      });
+
+      return Object.entries(funStats).map(([question, answers]) => ({
+        question,
+        data: Object.entries(answers)
+          .map(([answer, count]) => ({ answer, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10)
+      }));
+    } catch (error) {
+      console.error('載入趣味問題統計失敗:', error);
+      return [];
+    }
+  };
+
+  // 載入人口統計交叉分析
+  const loadDemographicAnalysis = async () => {
+    try {
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('id, gender, birth_date');
+
+      const { data: sessions } = await supabase
+        .from('user_selection_history')
+        .select('user_id, mode, final_restaurant, session_duration');
+
+      const profileMap = {};
+      profiles?.forEach(p => {
+        profileMap[p.id] = p;
+      });
+
+      const byAge = {};
+      const byGender = {};
+      const crossData = {};
+
+      sessions?.forEach(session => {
+        const profile = profileMap[session.user_id];
+        if (!profile) return;
+
+        const age = profile.birth_date ? new Date().getFullYear() - new Date(profile.birth_date).getFullYear() : null;
+        const ageGroup = age ? getAgeGroup(age) : '未知';
+        const gender = getGenderLabel(profile.gender);
+
+        // 年齡層分析
+        if (!byAge[ageGroup]) {
+          byAge[ageGroup] = { swifttaste: 0, buddies: 0, total: 0 };
+        }
+        byAge[ageGroup][session.mode]++;
+        byAge[ageGroup].total++;
+
+        // 性別分析
+        if (!byGender[gender]) {
+          byGender[gender] = { swifttaste: 0, buddies: 0, total: 0 };
+        }
+        byGender[gender][session.mode]++;
+        byGender[gender].total++;
+
+        // 交叉分析
+        const key = `${gender}-${ageGroup}`;
+        if (!crossData[key]) {
+          crossData[key] = {
+            gender,
+            ageGroup,
+            swifttaste: 0,
+            buddies: 0,
+            total: 0,
+            avgDuration: 0,
+            durationCount: 0
+          };
+        }
+        crossData[key][session.mode]++;
+        crossData[key].total++;
+        if (session.session_duration) {
+          crossData[key].avgDuration += session.session_duration;
+          crossData[key].durationCount++;
+        }
+      });
+
+      // 計算平均時長
+      Object.values(crossData).forEach(item => {
+        if (item.durationCount > 0) {
+          item.avgDuration = Math.round(item.avgDuration / item.durationCount);
+        }
+      });
+
+      return {
+        byAge: Object.entries(byAge).map(([age, data]) => ({ ageGroup: age, ...data })),
+        byGender: Object.entries(byGender).map(([gender, data]) => ({ gender, ...data })),
+        crossAnalysis: Object.values(crossData).filter(item => item.total > 0)
+      };
+    } catch (error) {
+      console.error('載入人口統計分析失敗:', error);
+      return { byAge: [], byGender: [], crossAnalysis: [] };
+    }
+  };
+
+  // 載入匿名用戶數據
+  const loadAnonymousData = async () => {
+    try {
+      const { data: sessions } = await supabase
+        .from('user_selection_history')
+        .select('mode')
+        .is('user_id', null);
+
+      const totalAnonymous = sessions?.length || 0;
+      const anonymousSwiftTaste = sessions?.filter(s => s.mode === 'swifttaste').length || 0;
+      const anonymousBuddies = sessions?.filter(s => s.mode === 'buddies').length || 0;
+
+      return {
+        totalAnonymous,
+        anonymousSwiftTaste,
+        anonymousBuddies
+      };
+    } catch (error) {
+      console.error('載入匿名數據失敗:', error);
+      return {
+        totalAnonymous: 0,
+        anonymousSwiftTaste: 0,
+        anonymousBuddies: 0
+      };
+    }
+  };
+
+  const getAgeGroup = (age) => {
+    if (age < 18) return '18歲以下';
+    if (age <= 25) return '18-25歲';
+    if (age <= 35) return '26-35歲';
+    if (age <= 45) return '36-45歲';
+    if (age <= 55) return '46-55歲';
+    if (age <= 65) return '56-65歲';
+    return '65歲以上';
+  };
+
+  const getGenderLabel = (gender) => {
+    const labels = {
+      'male': '男性',
+      'female': '女性',
+      'other': '其他',
+      'prefer_not_to_say': '不願透露'
+    };
+    return labels[gender] || '未設定';
   };
 
   const handleRefresh = async () => {
-    console.log('Manual refresh triggered');
-    await dataAnalyticsService.clearCache();
-    await loadAnalyticsData(true); // 強制重新整理
-    await loadTimeTrendData();
+    dataAnalyticsService.clearCache();
+    await loadData();
   };
 
-  const handleExport = async (type) => {
+  const handleExport = async () => {
     try {
-      const csv = await dataAnalyticsService.exportStatsToCsv(type);
-      if (csv) {
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `swifttaste-analytics-${type}-${new Date().toISOString().substring(0, 10)}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      // 組合所有數據
+      const exportData = {
+        '基本統計': stats,
+        'SwiftTaste指標': swiftTasteMetrics,
+        'Buddies指標': buddiesMetrics,
+        '餐廳成功率': restaurantSuccessData,
+        '趣味問題': funQuestionStats,
+        '人口統計': demographicAnalysis,
+        '匿名用戶': anonymousData
+      };
+
+      const csv = convertToCSV(exportData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `SwiftTaste_完整分析_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
-      console.error('Export failed:', err);
+      console.error('匯出失敗:', err);
     }
   };
+
+  const convertToCSV = (data) => {
+    const timestamp = new Date().toISOString();
+    let csv = `SwiftTaste 完整數據分析\n匯出時間: ${timestamp}\n\n`;
+
+    const flattenObject = (obj, prefix = '') => {
+      let result = [];
+      for (const key in obj) {
+        const value = obj[key];
+        const newKey = prefix ? `${prefix}.${key}` : key;
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          result = result.concat(flattenObject(value, newKey));
+        } else {
+          result.push([newKey, value]);
+        }
+      }
+      return result;
+    };
+
+    Object.entries(data).forEach(([section, sectionData]) => {
+      csv += `\n=== ${section} ===\n`;
+      const flatData = flattenObject(sectionData);
+      flatData.forEach(([key, value]) => {
+        csv += `"${key}","${value}"\n`;
+      });
+    });
+
+    return csv;
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [timeRange]);
 
   if (loading) {
     return (
       <div className="analytics-page">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p className="loading-text">載入分析資料中...</p>
+          <p className="loading-text">載入數據分析中...</p>
         </div>
       </div>
     );
@@ -112,881 +533,370 @@ const DataAnalyticsPage = () => {
       <div className="analytics-page">
         <div className="error-container">
           <div className="error-icon">⚠️</div>
-          <div className="error-title">{error}</div>
-          <button onClick={loadAnalyticsData} className="retry-button">
-            重新載入
-          </button>
+          <h2 className="error-title">載入失敗</h2>
+          <p>{error}</p>
+          <button className="retry-button" onClick={loadData}>重試</button>
         </div>
       </div>
     );
   }
 
-  const userChartData = stats?.users ? [
-    { name: '註冊用戶', value: stats.users.registeredUsers },
-    { name: '活躍用戶', value: stats.users.activeUsers },
-    { name: '匿名會話', value: stats.users.anonymousSessions }
-  ] : [];
-
-  const modeChartData = stats?.modes ? [
-    { name: 'SwiftTaste模式', value: stats.modes.swiftTasteSessions },
-    { name: 'Buddies模式', value: stats.modes.buddiesSessions }
-  ] : [];
-
-  const topRestaurants = stats?.restaurants?.finalChoices ?
-    Object.entries(stats.restaurants.finalChoices)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([name, count]) => ({ name: name.length > 20 ? name.substring(0, 20) + '...' : name, count }))
-    : [];
-
-  const topQuestions = stats?.questions?.basicQuestions ?
-    Object.entries(stats.questions.basicQuestions)
-      .map(([question, answers]) => ({
-        question: `問題 ${question.replace('question_', '')}`,
-        totalAnswers: Object.values(answers).reduce((sum, count) => sum + count, 0)
-      }))
-      .sort((a, b) => b.totalAnswers - a.totalAnswers)
-      .slice(0, 5)
-    : [];
+  const COLORS = ['#007bff', '#28a745', '#17a2b8', '#6f42c1', '#dc3545', '#20c997', '#6610f2', '#fd7e14'];
 
   return (
-    <div className="analytics-page fade-in">
-      {/* 標題區 */}
+    <div className="analytics-page">
+      {/* 頁面標題 */}
       <div className="analytics-header">
-        <div className="container">
-          <div className="header-content">
-            <div className="header-left">
-              <h1>📊 SwiftTaste 資料分析</h1>
-              <p>
-                最後更新：{stats?.lastUpdated ? new Date(stats.lastUpdated).toLocaleString('zh-TW') : '載入中...'}
-              </p>
-            </div>
-            <div className="header-controls">
-              <button
-                onClick={handleRefresh}
-                className="refresh-button"
-                disabled={loading}
-              >
-                🔄 {loading ? '更新中...' : '重新整理'}
-              </button>
-              <select
-                value={selectedTimeRange}
-                onChange={(e) => setSelectedTimeRange(parseInt(e.target.value))}
-                className="time-range-select"
-              >
-                <option value={7}>過去 7 天</option>
-                <option value={30}>過去 30 天</option>
-                <option value={90}>過去 90 天</option>
-              </select>
-            </div>
-          </div>
+        <div className="analytics-title-section">
+          <h1>數據分析儀表板</h1>
+          <p className="analytics-subtitle">即時監控系統使用狀況與用戶行為數據</p>
+        </div>
+        <div className="analytics-controls">
+          <button className="refresh-button" onClick={handleRefresh}>
+            🔄 重新整理
+          </button>
+          <button className="export-button" onClick={handleExport}>
+            📊 匯出完整 CSV
+          </button>
         </div>
       </div>
 
-      <div className="analytics-content">
-        {/* 總覽卡片 */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon blue">
-                <span>👥</span>
-              </div>
-              <div className="stat-info">
-                <h3>總用戶數</h3>
-                <div className="stat-value">{stats?.users?.totalUsers || 0}</div>
-                <p className="stat-subtitle">
-                  本月新增 {stats?.users?.newUsers || 0} 人
-                </p>
-              </div>
-            </div>
+      {/* 總覽統計卡片 */}
+      <div className="stats-grid">
+        <div className="stat-card primary">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">👥</div>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon green">
-                <span>🎯</span>
-              </div>
-              <div className="stat-info">
-                <h3>總選擇次數</h3>
-                <div className="stat-value">{stats?.modes?.totalSessions || 0}</div>
-                <p className="stat-subtitle">
-                  完成率 {stats?.modes?.totalSessions > 0 ?
-                    Math.round((stats?.modes?.completedSessions || 0) / stats.modes.totalSessions * 100) : 0}%
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon yellow">
-                <span>👆</span>
-              </div>
-              <div className="stat-info">
-                <h3>總滑動次數</h3>
-                <div className="stat-value">{stats?.interactions?.totalSwipes || 0}</div>
-                <p className="stat-subtitle">
-                  平均每次 {stats?.modes?.totalSessions > 0 ?
-                    Math.round((stats?.interactions?.totalSwipes || 0) / stats.modes.totalSessions) : 0} 次
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon red">
-                <span>⭐</span>
-              </div>
-              <div className="stat-info">
-                <h3>平均滿意度</h3>
-                <div className="stat-value">
-                  {stats?.interactions?.avgSatisfaction || 0}/5
-                </div>
-                <p className="stat-subtitle">
-                  {stats?.interactions?.satisfactionCount || 0} 份評價
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="stat-label">總用戶數</p>
+          <h2 className="stat-value">{stats.users.totalUsers.toLocaleString()}</h2>
+          <p className="stat-description">
+            註冊 {stats.users.registeredUsers} · 匿名 {anonymousData.totalAnonymous}
+          </p>
         </div>
 
-        {/* 圖表區域 */}
-        <div className="charts-grid">
-          {/* 用戶統計圓餅圖 */}
-          <div className="chart-card">
-            <div className="chart-header">
-              <h3 className="chart-title">👥 用戶分布</h3>
-              <button
-                onClick={() => handleExport('users')}
-                className="export-button"
-              >
-                📊 導出
-              </button>
-            </div>
-            {userChartData.length > 0 ? (
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={userChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {userChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value, name) => [value, name]}
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="empty-chart">
-                📊 暫無用戶資料
-              </div>
-            )}
+        <div className="stat-card success">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">✅</div>
           </div>
-
-          {/* 模式使用統計 */}
-          <div className="chart-card">
-            <div className="chart-header">
-              <h3 className="chart-title">🎯 選擇模式統計</h3>
-              <button
-                onClick={() => handleExport('modes')}
-                className="export-button"
-              >
-                📊 導出
-              </button>
-            </div>
-            {modeChartData.length > 0 ? (
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={modeChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                      }}
-                    />
-                    <Bar dataKey="value" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="empty-chart">
-                📊 暫無模式資料
-              </div>
-            )}
-          </div>
+          <p className="stat-label">活躍用戶</p>
+          <h2 className="stat-value">{stats.users.activeUsers.toLocaleString()}</h2>
+          <p className="stat-description">過去30天有使用記錄</p>
         </div>
 
-        {/* 時間趨勢圖 */}
-        <div className="chart-card full-width-chart">
+        <div className="stat-card info">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">🎯</div>
+          </div>
+          <p className="stat-label">總選擇流程</p>
+          <h2 className="stat-value">{stats.modes.totalSessions.toLocaleString()}</h2>
+          <p className="stat-description">
+            完成 {stats.modes.completedSessions} · 未完成 {stats.modes.totalSessions - stats.modes.completedSessions}
+          </p>
+        </div>
+
+        <div className="stat-card purple">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">👆</div>
+          </div>
+          <p className="stat-label">總滑動次數</p>
+          <h2 className="stat-value">{swiftTasteMetrics.totalSwipes.toLocaleString()}</h2>
+          <p className="stat-description">平均每次 {swiftTasteMetrics.avgSwipes} 次滑動</p>
+        </div>
+
+        <div className="stat-card teal">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">🍽️</div>
+          </div>
+          <p className="stat-label">餐廳選擇次數</p>
+          <h2 className="stat-value">{stats.interactions.finalChoices.toLocaleString()}</h2>
+          <p className="stat-description">成功解決吃什麼問題</p>
+        </div>
+
+        <div className="stat-card danger">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">⭐</div>
+          </div>
+          <p className="stat-label">平均滿意度</p>
+          <h2 className="stat-value">{stats.interactions.avgSatisfaction.toFixed(1)}</h2>
+          <p className="stat-description">滿分 5.0</p>
+        </div>
+
+        <div className="stat-card indigo">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">👤</div>
+          </div>
+          <p className="stat-label">匿名用戶</p>
+          <h2 className="stat-value">{anonymousData.totalAnonymous}</h2>
+          <p className="stat-description">
+            ST {anonymousData.anonymousSwiftTaste} · BD {anonymousData.anonymousBuddies}
+          </p>
+        </div>
+
+        <div className="stat-card success">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper">🆕</div>
+          </div>
+          <p className="stat-label">新用戶（30天）</p>
+          <h2 className="stat-value">{stats.users.newUsers.toLocaleString()}</h2>
+          <p className="stat-description">最近註冊的用戶</p>
+        </div>
+      </div>
+
+      {/* SwiftTaste 模式 */}
+      <div className="section-divider">
+        <div className="section-divider-line"></div>
+        <div className="section-divider-text">🎯 SwiftTaste 模式數據</div>
+        <div className="section-divider-line"></div>
+      </div>
+
+      <div className="buddies-stats-container">
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.totalSessions}</div>
+          <div className="buddies-metric-label">總選擇流程</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.completedSessions}</div>
+          <div className="buddies-metric-label">完成次數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.incompleteSessions}</div>
+          <div className="buddies-metric-label">未完成次數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.totalSwipes}</div>
+          <div className="buddies-metric-label">總滑動次數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.avgSwipes}</div>
+          <div className="buddies-metric-label">平均滑動次數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.avgDuration}秒</div>
+          <div className="buddies-metric-label">平均決策時長</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.avgDecisionSpeed}秒</div>
+          <div className="buddies-metric-label">平均每次滑動時長</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{swiftTasteMetrics.conversionRate}%</div>
+          <div className="buddies-metric-label">選擇成功率</div>
+        </div>
+      </div>
+
+      {/* Buddies 模式 */}
+      <div className="section-divider">
+        <div className="section-divider-line"></div>
+        <div className="section-divider-text">👥 Buddies 模式數據</div>
+        <div className="section-divider-line"></div>
+      </div>
+
+      <div className="buddies-stats-container">
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.totalRooms}</div>
+          <div className="buddies-metric-label">總房間數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.completedRooms}</div>
+          <div className="buddies-metric-label">完成次數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.incompleteRooms}</div>
+          <div className="buddies-metric-label">未完成次數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.avgMembersPerRoom}</div>
+          <div className="buddies-metric-label">平均房間人數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.avgSessionDuration}秒</div>
+          <div className="buddies-metric-label">平均決策時長</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.totalVotes}</div>
+          <div className="buddies-metric-label">總投票數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.avgVotesPerRoom}</div>
+          <div className="buddies-metric-label">平均每房投票數</div>
+        </div>
+        <div className="buddies-metric">
+          <div className="buddies-metric-value">{buddiesMetrics.completionRate}%</div>
+          <div className="buddies-metric-label">完成率</div>
+        </div>
+      </div>
+
+      {/* 圖表區域 */}
+      <div className="charts-grid">
+        {/* 熱門餐廳 Top 20 */}
+        <div className="chart-card full-width">
           <div className="chart-header">
-            <h3 className="chart-title">
-              📈 使用趨勢 (過去 {selectedTimeRange} 天)
-            </h3>
-            <div className="flex items-center gap-4">
-              {timeTrendData.length > 0 && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>總會話數: {timeTrendData.reduce((sum, day) => sum + day.total, 0)}</span>
-                  <span>•</span>
-                  <span>完成率: {Math.round(
-                    (timeTrendData.reduce((sum, day) => sum + day.completed, 0) /
-                     Math.max(timeTrendData.reduce((sum, day) => sum + day.total, 0), 1)) * 100
-                  )}%</span>
-                </div>
-              )}
-              <button
-                onClick={() => handleExport('trends')}
-                className="export-button"
-              >
-                📊 導出
-              </button>
+            <div>
+              <h3 className="chart-title">熱門餐廳 Top 20</h3>
+              <p className="chart-subtitle">選擇次數與推薦成功率</p>
             </div>
           </div>
-          {timeTrendData.length > 0 ? (
-            <div className="chart-container" style={{ height: '400px' }}>
+          <div className="chart-container">
+            {restaurantSuccessData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timeTrendData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    labelFormatter={(value) => new Date(value).toLocaleDateString('zh-TW')}
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                    }}
-                  />
+                <ComposedChart data={restaurantSuccessData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={150} />
+                  <Tooltip />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="swifttaste"
-                    stroke={COLORS[0]}
-                    strokeWidth={3}
-                    name="SwiftTaste"
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="buddies"
-                    stroke={COLORS[2]}
-                    strokeWidth={3}
-                    name="Buddies"
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="completed"
-                    stroke={COLORS[3]}
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    name="已完成"
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                </LineChart>
+                  <Bar dataKey="selectedCount" fill="#007bff" name="選擇次數" />
+                  <Bar dataKey="recommendedCount" fill="#28a745" name="被推薦次數" />
+                  <Line dataKey="successRate" stroke="#dc3545" strokeWidth={2} name="成功率(%)" />
+                </ComposedChart>
               </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="empty-chart" style={{ height: '400px' }}>
-              📈 暫無趨勢資料
-            </div>
-          )}
-        </div>
-
-        {/* 餐廳和問題統計 */}
-        <div className="charts-grid">
-          {/* 熱門餐廳 */}
-          <div className="chart-card">
-            <div className="chart-header">
-              <h3 className="chart-title">🍽️ 熱門餐廳排行</h3>
-              <div className="flex items-center gap-4">
-                {topRestaurants.length > 0 && (
-                  <span className="text-sm text-gray-600">
-                    共 {topRestaurants.reduce((sum, r) => sum + r.count, 0)} 次選擇
-                  </span>
-                )}
-                <button
-                  onClick={() => handleExport('restaurants')}
-                  className="export-button"
-                >
-                  📊 導出
-                </button>
-              </div>
-            </div>
-            {topRestaurants.length > 0 ? (
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topRestaurants} layout="horizontal" margin={{ top: 20, right: 30, left: 100, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis type="number" tick={{ fontSize: 12 }} />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      width={100}
-                      tick={{ fontSize: 11 }}
-                      tickFormatter={(value) => value.length > 12 ? value.substring(0, 12) + '...' : value}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                      }}
-                    />
-                    <Bar dataKey="count" fill={COLORS[4]} radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
             ) : (
-              <div className="empty-chart">
-                🍽️ 暫無餐廳選擇資料
-              </div>
-            )}
-          </div>
-
-          {/* 問題回答統計 */}
-          <div className="chart-card">
-            <div className="chart-header">
-              <h3 className="chart-title">❓ 問題回答統計</h3>
-              <div className="flex items-center gap-4">
-                {topQuestions.length > 0 && (
-                  <span className="text-sm text-gray-600">
-                    共 {topQuestions.reduce((sum, q) => sum + q.totalAnswers, 0)} 次回答
-                  </span>
-                )}
-                <button
-                  onClick={() => handleExport('questions')}
-                  className="export-button"
-                >
-                  📊 導出
-                </button>
-              </div>
-            </div>
-            {topQuestions.length > 0 ? (
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topQuestions} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="question" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                      }}
-                    />
-                    <Bar dataKey="totalAnswers" fill={COLORS[2]} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="empty-chart">
-                ❓ 暫無問題回答資料
-              </div>
+              <div className="empty-chart">暫無數據</div>
             )}
           </div>
         </div>
 
-        {/* 用戶人口統計分析 */}
-        {stats?.demographics && (
-          <>
-            <div className="demographics-section">
-              <h3 className="section-title">👥 用戶組成分析</h3>
-              <div className="charts-grid">
-                {/* 性別分布 */}
-                {Object.keys(stats.demographics.genderDistribution).length > 0 && (
-                  <div className="chart-card">
-                    <div className="chart-header">
-                      <h3 className="chart-title">⚧️ 性別分布</h3>
-                      <button
-                        onClick={() => handleExport('demographics-gender')}
-                        className="export-button"
-                      >
-                        📊 導出
-                      </button>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={Object.entries(stats.demographics.genderDistribution).map(([key, value]) => ({
-                              name: key,
-                              value
-                            }))}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {Object.entries(stats.demographics.genderDistribution).map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value, name) => [value, name]}
-                            contentStyle={{
-                              backgroundColor: '#fff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-
-                {/* 年齡組分布 */}
-                {Object.keys(stats.demographics.ageGroups).length > 0 && (
-                  <div className="chart-card">
-                    <div className="chart-header">
-                      <h3 className="chart-title">🎂 年齡組分布</h3>
-                      <button
-                        onClick={() => handleExport('demographics-age')}
-                        className="export-button"
-                      >
-                        📊 導出
-                      </button>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={Object.entries(stats.demographics.ageGroups).map(([key, value]) => ({
-                            ageGroup: key,
-                            count: value
-                          }))}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis dataKey="ageGroup" tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: '#fff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                            }}
-                          />
-                          <Bar dataKey="count" fill={COLORS[2]} radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 職業和地區分布 */}
-              <div className="charts-grid">
-                {/* 職業分佈 */}
-                {Object.keys(stats.demographics.occupationCategories).length > 0 && (
-                  <div className="chart-card">
-                    <div className="chart-header">
-                      <h3 className="chart-title">💼 職業分佈</h3>
-                      <button
-                        onClick={() => handleExport('demographics-occupation')}
-                        className="export-button"
-                      >
-                        📊 導出
-                      </button>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={Object.entries(stats.demographics.occupationCategories)
-                            .sort(([, a], [, b]) => b - a)
-                            .slice(0, 10)
-                            .map(([key, value]) => ({
-                              occupation: key.length > 15 ? key.substring(0, 15) + '...' : key,
-                              count: value,
-                              fullName: key
-                            }))}
-                          layout="horizontal"
-                          margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis type="number" tick={{ fontSize: 12 }} />
-                          <YAxis
-                            dataKey="occupation"
-                            type="category"
-                            width={80}
-                            tick={{ fontSize: 11 }}
-                          />
-                          <Tooltip
-                            formatter={(value, name, props) => [value, props.payload.fullName]}
-                            contentStyle={{
-                              backgroundColor: '#fff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                            }}
-                          />
-                          <Bar dataKey="count" fill={COLORS[3]} radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-
-                {/* 地區分布 */}
-                {Object.keys(stats.demographics.locationDistribution).length > 0 && (
-                  <div className="chart-card">
-                    <div className="chart-header">
-                      <h3 className="chart-title">📍 地區分布</h3>
-                      <button
-                        onClick={() => handleExport('demographics-location')}
-                        className="export-button"
-                      >
-                        📊 導出
-                      </button>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={Object.entries(stats.demographics.locationDistribution)
-                            .sort(([, a], [, b]) => b - a)
-                            .slice(0, 10)
-                            .map(([key, value]) => ({
-                              location: key.length > 12 ? key.substring(0, 12) + '...' : key,
-                              count: value,
-                              fullName: key
-                            }))}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 45 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis
-                            dataKey="location"
-                            tick={{ fontSize: 10, angle: -45, textAnchor: 'end' }}
-                            height={60}
-                          />
-                          <YAxis tick={{ fontSize: 12 }} />
-                          <Tooltip
-                            formatter={(value, name, props) => [value, props.payload.fullName]}
-                            contentStyle={{
-                              backgroundColor: '#fff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                            }}
-                          />
-                          <Bar dataKey="count" fill={COLORS[4]} radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-              </div>
+        {/* 餐廳決策速度 Top 10 */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">最快決策餐廳 Top 10</h3>
+              <p className="chart-subtitle">平均決策時長（秒）</p>
             </div>
-          </>
-        )}
+          </div>
+          <div className="chart-container">
+            {restaurantSuccessData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={restaurantSuccessData.slice(0, 10).sort((a, b) => a.avgDecisionTime - b.avgDecisionTime)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="avgDecisionTime" fill="#17a2b8" name="平均決策時長(秒)" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">暫無數據</div>
+            )}
+          </div>
+        </div>
 
-        {/* 地理位置統計 */}
-        {locationData.length > 0 && (
-          <div className="chart-card full-width-chart">
+        {/* 推薦成功率 Top 10 */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">推薦成功率 Top 10</h3>
+              <p className="chart-subtitle">被選擇 / 被推薦比例</p>
+            </div>
+          </div>
+          <div className="chart-container">
+            {restaurantSuccessData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={restaurantSuccessData.filter(r => r.recommendedCount >= 5).sort((a, b) => b.successRate - a.successRate).slice(0, 10)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="successRate" fill="#6f42c1" name="成功率(%)" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">暫無數據</div>
+            )}
+          </div>
+        </div>
+
+        {/* 年齡層使用分析 */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">年齡層使用分析</h3>
+              <p className="chart-subtitle">不同年齡層的模式偏好</p>
+            </div>
+          </div>
+          <div className="chart-container">
+            {demographicAnalysis.byAge.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={demographicAnalysis.byAge}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="ageGroup" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="swifttaste" fill="#007bff" name="SwiftTaste" stackId="a" />
+                  <Bar dataKey="buddies" fill="#6f42c1" name="Buddies" stackId="a" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">暫無數據</div>
+            )}
+          </div>
+        </div>
+
+        {/* 性別使用分析 */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">性別使用分析</h3>
+              <p className="chart-subtitle">不同性別的模式偏好</p>
+            </div>
+          </div>
+          <div className="chart-container">
+            {demographicAnalysis.byGender.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={demographicAnalysis.byGender}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="gender" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="swifttaste" fill="#007bff" name="SwiftTaste" />
+                  <Bar dataKey="buddies" fill="#6f42c1" name="Buddies" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">暫無數據</div>
+            )}
+          </div>
+        </div>
+
+        {/* 趣味問題統計 - 顯示前3個問題 */}
+        {funQuestionStats.slice(0, 3).map((questionData, idx) => (
+          <div className="chart-card" key={idx}>
             <div className="chart-header">
-              <h3 className="chart-title">📍 地理位置分布</h3>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  覆蓋 {locationData.length} 個地區
-                </span>
-                <button
-                  onClick={() => handleExport('locations')}
-                  className="export-button"
-                >
-                  📊 導出
-                </button>
+              <div>
+                <h3 className="chart-title">{questionData.question}</h3>
+                <p className="chart-subtitle">用戶選擇分佈 Top 10</p>
               </div>
             </div>
             <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={locationData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="city" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                    }}
-                  />
-                  <Bar dataKey="count" fill={COLORS[5]} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {questionData.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={questionData.data}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ answer, count }) => `${answer}: ${count}`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {questionData.data.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="empty-chart">暫無數據</div>
+              )}
             </div>
           </div>
-        )}
-
-        {/* 詳細統計表格 */}
-        <div className="details-section">
-          <h3 className="details-title">📊 詳細統計數據</h3>
-          <div className="details-grid">
-            {/* 用戶統計 */}
-            <div className="detail-section">
-              <h4>👥 用戶統計</h4>
-              <ul className="detail-list">
-                <li className="detail-item">
-                  <span className="detail-label">註冊用戶</span>
-                  <span className="detail-value">{stats?.users?.registeredUsers || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">活躍用戶</span>
-                  <span className="detail-value">{stats?.users?.activeUsers || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">匿名會話</span>
-                  <span className="detail-value">{stats?.users?.anonymousSessions || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">本月新增</span>
-                  <span className="detail-value">
-                    {stats?.users?.newUsers || 0} 人
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* 互動統計 */}
-            <div className="detail-section">
-              <h4>🎯 互動統計</h4>
-              <ul className="detail-list">
-                <li className="detail-item">
-                  <span className="detail-label">總滑動次數</span>
-                  <span className="detail-value">{stats?.interactions?.totalSwipes?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">總點讚數</span>
-                  <span className="detail-value">{stats?.interactions?.totalLikedRestaurants?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">最終選擇</span>
-                  <span className="detail-value">{stats?.interactions?.finalChoices?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">平均滿意度</span>
-                  <span className="detail-value">
-                    {stats?.interactions?.avgSatisfaction || 0}/5 ⭐
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* 會話統計 */}
-            <div className="detail-section">
-              <h4>⏱️ 會話統計</h4>
-              <ul className="detail-list">
-                <li className="detail-item">
-                  <span className="detail-label">總會話數</span>
-                  <span className="detail-value">{stats?.modes?.totalSessions?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">完成會話</span>
-                  <span className="detail-value">{stats?.modes?.completedSessions?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">平均時長</span>
-                  <span className="detail-value">{Math.round((stats?.modes?.avgDuration || 0) / 60)} 分鐘</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">完成率</span>
-                  <span className="detail-value">
-                    {stats?.modes?.totalSessions > 0 ?
-                      Math.round((stats?.modes?.completedSessions || 0) / stats.modes.totalSessions * 100) : 0}%
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* 模式分析 */}
-            <div className="detail-section">
-              <h4>🔄 模式分析</h4>
-              <ul className="detail-list">
-                <li className="detail-item">
-                  <span className="detail-label">SwiftTaste 模式</span>
-                  <span className="detail-value">{stats?.modes?.swiftTasteSessions?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">Buddies 模式</span>
-                  <span className="detail-value">{stats?.modes?.buddiesSessions?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">Buddies 房間</span>
-                  <span className="detail-value">{stats?.modes?.totalBuddiesRooms?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">最受歡迎模式</span>
-                  <span className="detail-value">
-                    {(stats?.modes?.swiftTasteSessions || 0) > (stats?.modes?.buddiesSessions || 0)
-                      ? 'SwiftTaste' : 'Buddies'}
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* 問題統計 */}
-            <div className="detail-section">
-              <h4>❓ 問題統計</h4>
-              <ul className="detail-list">
-                <li className="detail-item">
-                  <span className="detail-label">基本問題回答</span>
-                  <span className="detail-value">{stats?.questions?.totalBasicAnswers?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">趣味問題回答</span>
-                  <span className="detail-value">{stats?.questions?.totalFunAnswers?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">Buddies 問題</span>
-                  <span className="detail-value">{stats?.questions?.totalBuddiesAnswers?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">總回答數</span>
-                  <span className="detail-value">
-                    {(
-                      (stats?.questions?.totalBasicAnswers || 0) +
-                      (stats?.questions?.totalFunAnswers || 0) +
-                      (stats?.questions?.totalBuddiesAnswers || 0)
-                    ).toLocaleString()}
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* 餐廳統計 */}
-            <div className="detail-section">
-              <h4>🍽️ 餐廳統計</h4>
-              <ul className="detail-list">
-                <li className="detail-item">
-                  <span className="detail-label">推薦總數</span>
-                  <span className="detail-value">{stats?.restaurants?.totalRecommendations?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">最終選擇</span>
-                  <span className="detail-value">{stats?.restaurants?.totalFinalChoices?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">總點讚數</span>
-                  <span className="detail-value">{stats?.restaurants?.totalLikes?.toLocaleString() || 0}</span>
-                </li>
-                <li className="detail-item">
-                  <span className="detail-label">選擇轉換率</span>
-                  <span className="detail-value">
-                    {stats?.restaurants?.totalRecommendations > 0 ?
-                      Math.round((stats?.restaurants?.totalFinalChoices || 0) / stats.restaurants.totalRecommendations * 100) : 0}%
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* 用戶組成統計 */}
-            {stats?.demographics && (
-              <div className="detail-section">
-                <h4>👥 用戶組成</h4>
-                <ul className="detail-list">
-                  <li className="detail-item">
-                    <span className="detail-label">有詳細資料用戶</span>
-                    <span className="detail-value">{stats.demographics.totalProfilesWithData?.toLocaleString() || 0}</span>
-                  </li>
-                  <li className="detail-item">
-                    <span className="detail-label">性別資料數</span>
-                    <span className="detail-value">
-                      {Object.values(stats.demographics.genderDistribution).reduce((sum, count) => sum + count, 0)}
-                    </span>
-                  </li>
-                  <li className="detail-item">
-                    <span className="detail-label">年齡資料數</span>
-                    <span className="detail-value">
-                      {Object.values(stats.demographics.ageGroups).reduce((sum, count) => sum + count, 0)}
-                    </span>
-                  </li>
-                  <li className="detail-item">
-                    <span className="detail-label">職業類別數</span>
-                    <span className="detail-value">
-                      {Object.keys(stats.demographics.occupationCategories).length}
-                    </span>
-                  </li>
-                  <li className="detail-item">
-                    <span className="detail-label">地區類別數</span>
-                    <span className="detail-value">
-                      {Object.keys(stats.demographics.locationDistribution).length}
-                    </span>
-                  </li>
-                  <li className="detail-item">
-                    <span className="detail-label">最常見性別</span>
-                    <span className="detail-value">
-                      {Object.keys(stats.demographics.genderDistribution).length > 0 ?
-                        Object.entries(stats.demographics.genderDistribution)
-                          .sort(([, a], [, b]) => b - a)[0]?.[0] || '無資料'
-                        : '無資料'
-                      }
-                    </span>
-                  </li>
-                  <li className="detail-item">
-                    <span className="detail-label">最常見年齡組</span>
-                    <span className="detail-value">
-                      {Object.keys(stats.demographics.ageGroups).length > 0 ?
-                        Object.entries(stats.demographics.ageGroups)
-                          .sort(([, a], [, b]) => b - a)[0]?.[0] || '無資料'
-                        : '無資料'
-                      }
-                    </span>
-                  </li>
-                  <li className="detail-item">
-                    <span className="detail-label">最常見職業</span>
-                    <span className="detail-value">
-                      {Object.keys(stats.demographics.occupationCategories).length > 0 ?
-                        Object.entries(stats.demographics.occupationCategories)
-                          .sort(([, a], [, b]) => b - a)[0]?.[0] || '無資料'
-                        : '無資料'
-                      }
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
-};
-
-export default DataAnalyticsPage;
+}

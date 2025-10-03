@@ -22,6 +22,8 @@ export default function AdminDashboard() {
   const [notification, setNotification] = useState({ type: 'success', title: '', message: '' });
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [buddiesStats, setBuddiesStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
   const navigate = useNavigate();
 
   // 獲取管理員列表和當前管理員資訊
@@ -78,6 +80,7 @@ export default function AdminDashboard() {
     loadAdminData();
     if (activeTab === "buddies") {
       loadRoomData();
+      loadBuddiesStats();
     }
   }, [activeTab]);
 
@@ -97,6 +100,25 @@ export default function AdminDashboard() {
       setRoomList([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 載入 Buddies 統計資料
+  const loadBuddiesStats = async () => {
+    try {
+      setLoadingStats(true);
+      const result = await adminService.getBuddiesStats();
+      if (result.success) {
+        setBuddiesStats(result.stats);
+      } else {
+        console.error('載入統計資料失敗:', result.error);
+        setBuddiesStats(null);
+      }
+    } catch (error) {
+      console.error('載入統計資料異常:', error);
+      setBuddiesStats(null);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -442,12 +464,116 @@ export default function AdminDashboard() {
         
         {activeTab === "buddies" && (
           <div className="buddies-section">
+            {/* 統計資料區塊 */}
+            {buddiesStats && (
+              <div className="stats-dashboard" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '15px',
+                marginBottom: '25px',
+                padding: '20px',
+                background: '#f8f9fa',
+                borderRadius: '8px'
+              }}>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>總房間數</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2c3e50' }}>{buddiesStats.totalRooms}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>活躍房間</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#27ae60' }}>{buddiesStats.activeRooms}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>已完成房間</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#3498db' }}>{buddiesStats.completedRooms}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>總參與人次</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#9b59b6' }}>{buddiesStats.totalMembers}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>獨立用戶數</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#e67e22' }}>{buddiesStats.uniqueUsers}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>總投票數</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#e74c3c' }}>{buddiesStats.totalVotes}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>最終選定次數</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#16a085' }}>{buddiesStats.finalSelections}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>平均成員數</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#34495e' }}>{buddiesStats.avgMembersPerRoom}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>近 7 天新增</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f39c12' }}>{buddiesStats.recentRooms}</div>
+                </div>
+                <div className="stat-card" style={{
+                  background: 'white',
+                  padding: '15px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>今日新增</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#c0392b' }}>{buddiesStats.todayRooms}</div>
+                </div>
+              </div>
+            )}
+
             <div className="section-header">
               <div className="section-title">
                 <span className="section-icon">🏠</span>
                 <h2>房間管理</h2>
               </div>
-              <button className="refresh-btn" onClick={loadRoomData} disabled={loading}>
+              <button className="refresh-btn" onClick={() => { loadRoomData(); loadBuddiesStats(); }} disabled={loading}>
                 🔄 {loading ? '載入中...' : '刷新列表'}
               </button>
             </div>
