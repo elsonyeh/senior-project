@@ -135,9 +135,15 @@ DROP INDEX IF EXISTS idx_buddies_restaurant_votes_user_id;
 -- 步驟 6: VACUUM 回收空間
 -- ==========================================
 
--- 清理並回收空間
-VACUUM FULL buddies_votes;
-VACUUM FULL buddies_restaurant_votes;
+-- ⚠️ 注意：VACUUM FULL 必須在交易區塊外單獨執行
+-- 請在執行完上述所有步驟後，分別執行以下命令：
+--
+-- VACUUM FULL buddies_votes;
+-- VACUUM FULL buddies_restaurant_votes;
+--
+-- 或者執行一般的 VACUUM（不會鎖定表格）：
+VACUUM ANALYZE buddies_votes;
+VACUUM ANALYZE buddies_restaurant_votes;
 
 -- ==========================================
 -- 驗證清理結果
@@ -197,9 +203,15 @@ ORDER BY
 -- 2. buddies_restaurant_votes 只保留：id, room_id, restaurant_id, vote_count, updated_at, created_at
 -- 3. 已刪除所有舊的問題投票相關欄位 (question_id, option)
 -- 4. 已刪除錯誤的 user_id 欄位（從 buddies_restaurant_votes）
--- 5. 已執行 VACUUM FULL 回收磁碟空間
+-- 5. 已執行 VACUUM ANALYZE 更新統計資訊
 --
 -- ⚠️ 注意：
 -- - 此操作不可逆，執行前請確認已備份
--- - VACUUM FULL 會鎖定表格，建議在低流量時段執行
 -- - 如果沒有舊欄位，腳本會自動跳過相關操作
+-- - VACUUM ANALYZE 不會鎖定表格，可以安全執行
+--
+-- 📊 進一步優化（可選）：
+-- 如需完全回收空間，請在低流量時段單獨執行：
+--   VACUUM FULL buddies_votes;
+--   VACUUM FULL buddies_restaurant_votes;
+-- 注意：VACUUM FULL 會完全鎖定表格，可能需要數分鐘
