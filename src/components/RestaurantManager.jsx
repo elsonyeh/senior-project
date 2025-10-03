@@ -29,6 +29,7 @@ const RestaurantManager = () => {
     tags: [],
     suggested_people: '1~4',
     is_spicy: 'false',
+    is_event_partner: false,
     images: []
   });
   
@@ -202,7 +203,8 @@ const RestaurantManager = () => {
       price_range: restaurant.price_range || 1,
       rating: restaurant.rating || 0,
       suggested_people: restaurant.suggested_people || '1~4',
-      is_spicy: restaurant.is_spicy || 'false'
+      is_spicy: restaurant.is_spicy || 'false',
+      is_event_partner: restaurant.is_event_partner || false
     });
   };
 
@@ -273,6 +275,7 @@ const RestaurantManager = () => {
         tags: [],
         suggested_people: '1~4',
         is_spicy: 'false',
+        is_event_partner: false,
         images: []
       });
       setShowAddForm(false);
@@ -577,6 +580,19 @@ const RestaurantManager = () => {
               </div>
             </div>
 
+            <div className="form-row">
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={newRestaurant.is_event_partner}
+                    onChange={(e) => setNewRestaurant({...newRestaurant, is_event_partner: e.target.checked})}
+                  />
+                  {' '}活動合作店家
+                </label>
+              </div>
+            </div>
+
             <button type="submit" className="btn-submit" disabled={loading}>
               {loading ? '新增中...' : '新增餐廳'}
             </button>
@@ -748,6 +764,7 @@ const RestaurantManager = () => {
                   <th>星等</th>
                   <th>人數</th>
                   <th>辣味</th>
+                  <th>活動合作</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -887,6 +904,17 @@ const RestaurantManager = () => {
                     ) : (
                       restaurant.is_spicy === 'true' ? '辣' :
                       restaurant.is_spicy === 'both' ? '兩種都有' : '不辣'
+                    )}
+                  </td>
+                  <td>
+                    {editingRestaurant === restaurant.id ? (
+                      <input
+                        type="checkbox"
+                        checked={editData.is_event_partner}
+                        onChange={(e) => setEditData({...editData, is_event_partner: e.target.checked})}
+                      />
+                    ) : (
+                      restaurant.is_event_partner ? '✓' : ''
                     )}
                   </td>
                   <td>
