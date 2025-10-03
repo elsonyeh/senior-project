@@ -14,6 +14,7 @@ export default function BuddiesRecommendation({
   roomId,
   restaurants = [],
   onBack,
+  onFinalResult, // 新增：當最終結果確定時的回調
 }) {
   const [phase, setPhase] = useState("recommend");
   const [saved, setSaved] = useState([]);
@@ -281,6 +282,11 @@ export default function BuddiesRecommendation({
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 3000);
           setPhase("result");
+
+          // 通知父組件最終結果已確定（用於記錄選擇歷史）
+          if (onFinalResult && typeof onFinalResult === 'function') {
+            onFinalResult(finalRestaurant);
+          }
         }
       }
     });

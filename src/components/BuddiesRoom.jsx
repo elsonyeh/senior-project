@@ -402,14 +402,28 @@ export default function BuddiesRoom() {
   };
 
   const completeBuddiesSession = async (finalRestaurant = null) => {
-    if (currentSessionId) {
-      const completionData = {
-        started_at: sessionStartTime?.toISOString(),
-        final_restaurant: finalRestaurant
-      };
+    if (!currentSessionId) {
+      logger.warn('⚠️ 無法完成 Buddies session：缺少 currentSessionId');
+      return;
+    }
 
-      await selectionHistoryService.completeSession(currentSessionId, completionData);
-      logger.info('Buddies session completed');
+    logger.info('📝 完成 Buddies session:', {
+      sessionId: currentSessionId,
+      finalRestaurant: finalRestaurant ? { id: finalRestaurant.id, name: finalRestaurant.name } : null,
+      sessionStartTime: sessionStartTime?.toISOString()
+    });
+
+    const completionData = {
+      started_at: sessionStartTime?.toISOString(),
+      final_restaurant: finalRestaurant
+    };
+
+    const result = await selectionHistoryService.completeSession(currentSessionId, completionData);
+
+    if (result.success) {
+      logger.info('✅ Buddies session 記錄成功');
+    } else {
+      logger.error('❌ Buddies session 記錄失敗:', result.error);
     }
   };
 
@@ -1142,8 +1156,9 @@ export default function BuddiesRoom() {
             roomId={roomId}
             restaurants={recommendations}
             onBack={() => setPhase("waiting")}
-            onComplete={(finalRestaurant) => {
-              // 記錄最終選擇的餐廳
+            onFinalResult={(finalRestaurant) => {
+              // 記錄最終選擇的餐廳到選擇歷史
+              logger.info('最終結果確定，記錄到選擇歷史:', finalRestaurant);
               completeBuddiesSession(finalRestaurant);
             }}
           />
