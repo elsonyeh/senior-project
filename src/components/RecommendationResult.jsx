@@ -32,7 +32,7 @@ export default function RecommendationResult({
         // 否則保持原有順序
         return 0;
       });
-      
+
       // 選擇分數最高的餐廳作為主選餐廳
       const selectedRestaurant = sortedSaved[0];
 
@@ -41,10 +41,14 @@ export default function RecommendationResult({
         // 使用第一個作為主選餐廳（分數最高的）
         setSelected(selectedRestaurant);
 
-        // 合併其他餐廳（除了主選餐廳外）
+        // 獲取左滑（不喜歡）的餐廳列表
+        const disliked = JSON.parse(localStorage.getItem("dislikedRestaurants") || "[]");
+        const dislikedIds = new Set(disliked.map(r => r.id));
+
+        // 合併其他餐廳（除了主選餐廳外），排除左滑的餐廳
         const allAlternativeRestaurants = [
-          ...sortedSaved.filter(r => r && r.id && r.id !== selectedRestaurant.id),
-          ...alternatives.filter(r => r && r.id && r.id !== selectedRestaurant.id)
+          ...sortedSaved.filter(r => r && r.id && r.id !== selectedRestaurant.id && !dislikedIds.has(r.id)),
+          ...alternatives.filter(r => r && r.id && r.id !== selectedRestaurant.id && !dislikedIds.has(r.id))
         ];
 
         // 根據 matchScore 或投票數排序所有備選餐廳

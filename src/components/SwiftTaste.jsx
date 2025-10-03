@@ -775,6 +775,23 @@ export default function SwiftTaste() {
     }
   };
 
+  const handleDislike = (restaurant) => {
+    console.log('Disliking restaurant:', restaurant);
+
+    // 單人模式：保存左滑餐廳到本地
+    if (selectedMode === "single") {
+      const disliked = JSON.parse(localStorage.getItem("dislikedRestaurants") || "[]");
+
+      // 避免重複保存
+      const alreadyDisliked = disliked.some(r => r.id === restaurant.id);
+      if (!alreadyDisliked) {
+        const newDisliked = [...disliked, restaurant];
+        localStorage.setItem("dislikedRestaurants", JSON.stringify(newDisliked));
+        console.log(`✓ Disliked ${restaurant.name}. Total disliked: ${newDisliked.length}`);
+      }
+    }
+  };
+
   const handleNoResults = () => {
     console.log("沒有餐廳被選擇，顯示可惜畫面");
     setShowNoResultsModal(true);
@@ -812,6 +829,9 @@ export default function SwiftTaste() {
     setSelectedFunQuestions([]);
     setLoadingModeSelection(false);
     basicAnswersRef.current = [];
+
+    // 清除左滑餐廳記錄
+    localStorage.removeItem("dislikedRestaurants");
 
     // 如果是多人模式，回到房間而不是回到起點
     if (selectedMode === "buddies" && roomId) {
@@ -902,6 +922,10 @@ export default function SwiftTaste() {
           onSave={(...args) => {
             resetIdleTimer();
             handleSave(...args);
+          }}
+          onDislike={(...args) => {
+            resetIdleTimer();
+            handleDislike(...args);
           }}
           onFinish={(...args) => {
             resetIdleTimer();

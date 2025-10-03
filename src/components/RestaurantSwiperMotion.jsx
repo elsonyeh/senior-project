@@ -10,9 +10,11 @@ export default function RestaurantSwiperMotion({
   onSingleSwipe,
   swipeDirection = "both",
   onNoResults, // 新增：當沒有結果時的回調
+  onDislike, // 新增：左滑時的回調
 }) {
   const [seen, setSeen] = useState([]);
   const [saved, setSaved] = useState([]);
+  const [disliked, setDisliked] = useState([]);
 
   const handleSwipe = (dir, r) => {
     // 如果是教學模式，只處理單次滑動事件
@@ -27,6 +29,9 @@ export default function RestaurantSwiperMotion({
     if (dir === "right") {
       onSave?.(r);
       setSaved(prev => [...prev, r]);
+    } else if (dir === "left") {
+      onDislike?.(r);
+      setDisliked(prev => [...prev, r]);
     }
 
     // 檢查是否所有餐廳都被看完
