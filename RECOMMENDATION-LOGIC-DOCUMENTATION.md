@@ -1,7 +1,7 @@
 # SwiftTaste 推薦系統邏輯文檔
 
-**版本**: 1.1
-**最後更新**: 2025-02-01
+**版本**: 1.2
+**最後更新**: 2025-02-03
 **狀態**: 生產版本
 
 ---
@@ -148,7 +148,93 @@ if (shouldProceed) {
 }
 ```
 
-**投票處理機制**：
+**集體決策機制（版本 1.2 新增）**：
+
+為確保所有成員基於相同的條件題邏輯看到統一的問題序列，Buddies 模式實作了完整的多數決與集體答案系統：
+
+1. **資料庫 Schema**：
+   ```sql
+   -- buddies_rooms 表新增欄位
+   ALTER TABLE buddies_rooms
+   ADD COLUMN collective_answers JSONB DEFAULT '{}'::jsonb;
+   ADD COLUMN current_question_index INTEGER DEFAULT 0;
+   ```
+
+2. **集體答案儲存格式**：
+   ```json
+   {
+     "0": "吃",
+     "1": "平價美食",
+     "2": "附近吃",
+     "3": "不辣"
+   }
+   ```
+   - 鍵為原始題目索引（originalIndex）
+   - 值為該題的多數決答案
+
+3. **多數決計算邏輯** (BuddiesQuestionSwiper.jsx:339-375)：
+   ```javascript
+   // 當所有人完成答題後計算多數決
+   if (shouldProceed && answeredCount > 0) {
+     if (Object.keys(stats).length > 0) {
+       let majorityAnswer = null;
+       let maxVotes = 0;
+
+       Object.entries(stats).forEach(([answer, count]) => {
+         if (typeof count === 'number' && count > maxVotes) {
+           maxVotes = count;
+           majorityAnswer = answer;
+         }
+       });
+
+       if (majorityAnswer) {
+         const originalIndex = currentQ?.originalIndex ?? questionIndex;
+         roomService.updateCollectiveAnswer(roomId, originalIndex, majorityAnswer);
+       }
+     }
+   }
+   ```
+
+4. **條件題判斷邏輯修改** (BuddiesQuestionSwiper.jsx:149-167)：
+   ```javascript
+   // 版本 1.1（舊版）- 使用個人答案
+   const dependentAnswer = answersRef.current[dependentQuestionIndex];
+
+   // 版本 1.2（當前）- 使用集體答案
+   const dependentAnswer = collectiveAnswers[dependentQuestionIndex.toString()];
+
+   if (dependentAnswer === q.dependsOn.answer) {
+     visibleQuestions.push({ ...q, originalIndex });
+   }
+   ```
+
+5. **即時同步機制** (BuddiesQuestionSwiper.jsx:113-129)：
+   ```javascript
+   useEffect(() => {
+     if (!roomId) return;
+
+     // 監聽房間狀態更新
+     const cleanup = roomService.listenRoomStatus(roomId, async (status, roomData) => {
+       const roomInfo = await roomService.getRoomInfo(roomId);
+       if (roomInfo.success && roomInfo.data) {
+         const newCollectiveAnswers = roomInfo.data.collective_answers || {};
+         setCollectiveAnswers(newCollectiveAnswers);
+       }
+     });
+
+     return cleanup;
+   }, [roomId]);
+   ```
+
+**重要改進**：
+- ✅ **統一問題序列**：所有成員基於集體決策看到相同的條件題
+- ✅ **民主決策**：多數決機制確保群體意見被採納
+- ✅ **即時同步**：透過 Supabase Realtime 確保所有成員即時更新
+- ✅ **無需重刷**：所有邏輯自動進行，不需手動刷新頁面
+
+**投票處理機制（已棄用）**：
+
+> **注意**：以下機制在版本 1.2 已被集體決策系統取代，保留僅供參考
 
 1. **收集答案**：收集所有用戶對每個基本問題的答案
 2. **計算權重票數**：
@@ -363,6 +449,15 @@ const funQuestionTagsMap = {
 
 ## ⚠️ 重要更新記錄
 
+### 2025-02-03 - 版本 1.2 集體決策系統
+- **集體答案機制**：新增 `collective_answers` JSONB 欄位儲存多數決結果
+- **多數決算法**：當所有成員完成答題後自動計算最高票答案
+- **條件題統一**：所有成員基於集體答案看到相同的 dependsOn 條件題序列
+- **即時同步**：透過 Supabase Realtime 即時廣播集體決策給所有成員
+- **問題索引追蹤**：新增 `current_question_index` 欄位追蹤房間統一進度
+- **資料庫遷移**：新增 `add-collective-answers-to-buddies-rooms.sql` 腳本
+- **服務層方法**：新增 `updateCollectiveAnswer()` 方法至 roomService
+
 ### 2025-02-01 - 版本 1.1 核心功能修復
 - **多數決機制**：改用統計所有成員答案的多數決，取代舊版「使用第一個用戶答案」的邏輯
 - **隨機打亂邏輯**：基於房間ID打亂前10名餐廳順序，增加推薦多樣性
@@ -388,6 +483,12 @@ const funQuestionTagsMap = {
 - **辣度欄位擴展**：新增 `'both'` 選項，支援同時提供辣和不辣選擇的餐廳
 
 ### 受影響的文件
+
+**2025-02-03 更新（版本 1.2）**:
+- `src/components/BuddiesQuestionSwiper.jsx` - 集體答案同步、多數決計算、條件題邏輯修改
+- `src/services/supabaseService.js` - 新增 `updateCollectiveAnswer()` 方法
+- `add-collective-answers-to-buddies-rooms.sql` - 資料庫 Schema 遷移腳本
+- `RECOMMENDATION-LOGIC-DOCUMENTATION.md` - 本文件
 
 **2025-02-01 更新（版本 1.1）**:
 - `src/components/BuddiesRoom.jsx` - 多數決邏輯、修復 option 物件渲染
