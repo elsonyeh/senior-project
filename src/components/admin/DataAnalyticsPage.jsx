@@ -45,6 +45,7 @@ export default function DataAnalyticsPage() {
   });
 
   const [restaurantSuccessData, setRestaurantSuccessData] = useState([]);
+  const [allRestaurantRankings, setAllRestaurantRankings] = useState([]);
   const [funQuestionStats, setFunQuestionStats] = useState([]);
   const [demographicAnalysis, setDemographicAnalysis] = useState({
     byAge: [],
@@ -67,7 +68,7 @@ export default function DataAnalyticsPage() {
         overviewStats,
         swiftTasteData,
         buddiesData,
-        restaurantSuccess,
+        { top20, allRankings },
         funQuestions,
         demographics,
         anonymousStats
@@ -84,7 +85,8 @@ export default function DataAnalyticsPage() {
       setStats(overviewStats);
       setSwiftTasteMetrics(swiftTasteData);
       setBuddiesMetrics(buddiesData);
-      setRestaurantSuccessData(restaurantSuccess);
+      setRestaurantSuccessData(top20);
+      setAllRestaurantRankings(allRankings);
       setFunQuestionStats(funQuestions);
       setDemographicAnalysis(demographics);
       setAnonymousData(anonymousStats);
@@ -227,7 +229,7 @@ export default function DataAnalyticsPage() {
     }
   };
 
-  // 載入餐廳成功率指標
+  // 載入餐廳成功率指標（返回 Top20 和完整排名）
   const loadRestaurantSuccessMetrics = async () => {
     try {
       const { data: sessions } = await supabase
@@ -267,7 +269,7 @@ export default function DataAnalyticsPage() {
         }
       });
 
-      return Object.values(restaurantStats)
+      const allRankings = Object.values(restaurantStats)
         .map(stat => ({
           name: stat.name,
           selectedCount: stat.selectedCount,
@@ -279,15 +281,19 @@ export default function DataAnalyticsPage() {
             ? Math.round(stat.totalDecisionTime / stat.selectedCount)
             : 0
         }))
-        .sort((a, b) => b.selectedCount - a.selectedCount)
-        .slice(0, 20);
+        .sort((a, b) => b.selectedCount - a.selectedCount);
+
+      return {
+        top20: allRankings.slice(0, 20),
+        allRankings
+      };
     } catch (error) {
       console.error('載入餐廳成功率失敗:', error);
-      return [];
+      return { top20: [], allRankings: [] };
     }
   };
 
-  // 載入趣味問題統計
+  // 載入趣味問題統計（合併所有答案）
   const loadFunQuestionStats = async () => {
     try {
       const { data: sessions } = await supabase
@@ -310,13 +316,20 @@ export default function DataAnalyticsPage() {
         }
       });
 
-      return Object.entries(funStats).map(([question, answers]) => ({
-        question,
-        data: Object.entries(answers)
-          .map(([answer, count]) => ({ answer, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10)
-      }));
+      // 合併所有問題的答案統計
+      const allAnswers = {};
+      Object.entries(funStats).forEach(([question, answers]) => {
+        Object.entries(answers).forEach(([answer, count]) => {
+          const key = `${question}: ${answer}`;
+          allAnswers[key] = count;
+        });
+      });
+
+      // 轉換為陣列並排序
+      return Object.entries(allAnswers)
+        .map(([key, count]) => ({ answer: key, count }))
+        .sort((a, b) => b.count - a.count);
+
     } catch (error) {
       console.error('載入趣味問題統計失敗:', error);
       return [];
@@ -456,15 +469,47 @@ export default function DataAnalyticsPage() {
     await loadData();
   };
 
+  // 匯出單一圖表的 CSV
+  const exportChartCSV = (data, filename, columns) => {
+    try {
+      let csv = `${filename}\n匯出時間: ${new Date().toISOString()}\n\n`;
+
+      // 表頭
+      csv += columns.join(',') + '\n';
+
+      // 數據行
+      data.forEach(row => {
+        const values = columns.map(col => {
+          const value = row[col] !== undefined ? row[col] : '';
+          return `"${value}"`;
+        });
+        csv += values.join(',') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('匯出失敗:', err);
+      alert('匯出失敗，請稍後再試');
+    }
+  };
+
+  // 匯出完整數據
   const handleExport = async () => {
     try {
-      // 組合所有數據
       const exportData = {
         '基本統計': stats,
         'SwiftTaste指標': swiftTasteMetrics,
         'Buddies指標': buddiesMetrics,
-        '餐廳成功率': restaurantSuccessData,
-        '趣味問題': funQuestionStats,
+        '餐廳完整排名': allRestaurantRankings,
+        '趣味問題完整統計': funQuestionStats,
         '人口統計': demographicAnalysis,
         '匿名用戶': anonymousData
       };
@@ -504,10 +549,22 @@ export default function DataAnalyticsPage() {
 
     Object.entries(data).forEach(([section, sectionData]) => {
       csv += `\n=== ${section} ===\n`;
-      const flatData = flattenObject(sectionData);
-      flatData.forEach(([key, value]) => {
-        csv += `"${key}","${value}"\n`;
-      });
+      if (Array.isArray(sectionData)) {
+        // 處理陣列數據
+        if (sectionData.length > 0) {
+          const headers = Object.keys(sectionData[0]);
+          csv += headers.join(',') + '\n';
+          sectionData.forEach(item => {
+            const values = headers.map(h => `"${item[h] !== undefined ? item[h] : ''}"`);
+            csv += values.join(',') + '\n';
+          });
+        }
+      } else {
+        const flatData = flattenObject(sectionData);
+        flatData.forEach(([key, value]) => {
+          csv += `"${key}","${value}"\n`;
+        });
+      }
     });
 
     return csv;
@@ -735,6 +792,16 @@ export default function DataAnalyticsPage() {
               <h3 className="chart-title">熱門餐廳 Top 20</h3>
               <p className="chart-subtitle">選擇次數與推薦成功率</p>
             </div>
+            <button
+              className="export-button"
+              onClick={() => exportChartCSV(
+                allRestaurantRankings,
+                '餐廳完整排名',
+                ['name', 'selectedCount', 'recommendedCount', 'successRate', 'avgDecisionTime']
+              )}
+            >
+              📥 匯出完整排名
+            </button>
           </div>
           <div className="chart-container">
             {restaurantSuccessData.length > 0 ? (
@@ -763,6 +830,16 @@ export default function DataAnalyticsPage() {
               <h3 className="chart-title">最快決策餐廳 Top 10</h3>
               <p className="chart-subtitle">平均決策時長（秒）</p>
             </div>
+            <button
+              className="export-button"
+              onClick={() => exportChartCSV(
+                allRestaurantRankings.sort((a, b) => a.avgDecisionTime - b.avgDecisionTime),
+                '餐廳決策速度完整排名',
+                ['name', 'avgDecisionTime', 'selectedCount']
+              )}
+            >
+              📥 匯出
+            </button>
           </div>
           <div className="chart-container">
             {restaurantSuccessData.length > 0 ? (
@@ -788,6 +865,16 @@ export default function DataAnalyticsPage() {
               <h3 className="chart-title">推薦成功率 Top 10</h3>
               <p className="chart-subtitle">被選擇 / 被推薦比例</p>
             </div>
+            <button
+              className="export-button"
+              onClick={() => exportChartCSV(
+                allRestaurantRankings.filter(r => r.recommendedCount >= 5).sort((a, b) => b.successRate - a.successRate),
+                '餐廳推薦成功率完整排名',
+                ['name', 'successRate', 'selectedCount', 'recommendedCount']
+              )}
+            >
+              📥 匯出
+            </button>
           </div>
           <div className="chart-container">
             {restaurantSuccessData.length > 0 ? (
@@ -813,6 +900,16 @@ export default function DataAnalyticsPage() {
               <h3 className="chart-title">年齡層使用分析</h3>
               <p className="chart-subtitle">不同年齡層的模式偏好</p>
             </div>
+            <button
+              className="export-button"
+              onClick={() => exportChartCSV(
+                demographicAnalysis.byAge,
+                '年齡層使用分析',
+                ['ageGroup', 'swifttaste', 'buddies', 'total']
+              )}
+            >
+              📥 匯出
+            </button>
           </div>
           <div className="chart-container">
             {demographicAnalysis.byAge.length > 0 ? (
@@ -840,6 +937,16 @@ export default function DataAnalyticsPage() {
               <h3 className="chart-title">性別使用分析</h3>
               <p className="chart-subtitle">不同性別的模式偏好</p>
             </div>
+            <button
+              className="export-button"
+              onClick={() => exportChartCSV(
+                demographicAnalysis.byGender,
+                '性別使用分析',
+                ['gender', 'swifttaste', 'buddies', 'total']
+              )}
+            >
+              📥 匯出
+            </button>
           </div>
           <div className="chart-container">
             {demographicAnalysis.byGender.length > 0 ? (
@@ -860,42 +967,40 @@ export default function DataAnalyticsPage() {
           </div>
         </div>
 
-        {/* 趣味問題統計 - 顯示前3個問題 */}
-        {funQuestionStats.slice(0, 3).map((questionData, idx) => (
-          <div className="chart-card" key={idx}>
-            <div className="chart-header">
-              <div>
-                <h3 className="chart-title">{questionData.question}</h3>
-                <p className="chart-subtitle">用戶選擇分佈 Top 10</p>
-              </div>
+        {/* 趣味問題統計 - 合併成一個長條圖 */}
+        <div className="chart-card full-width">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">趣味問題選擇統計 Top 20</h3>
+              <p className="chart-subtitle">所有問題答案的選擇次數</p>
             </div>
-            <div className="chart-container">
-              {questionData.data.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={questionData.data}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ answer, count }) => `${answer}: ${count}`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {questionData.data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="empty-chart">暫無數據</div>
+            <button
+              className="export-button"
+              onClick={() => exportChartCSV(
+                funQuestionStats,
+                '趣味問題完整統計',
+                ['answer', 'count']
               )}
-            </div>
+            >
+              📥 匯出完整統計
+            </button>
           </div>
-        ))}
+          <div className="chart-container">
+            {funQuestionStats.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={funQuestionStats.slice(0, 20)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="answer" width={200} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#6f42c1" name="選擇次數" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">暫無數據</div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
