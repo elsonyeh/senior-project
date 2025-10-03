@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS public.buddies_rooms (
   id TEXT PRIMARY KEY,
   host_id TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'waiting',
+  collective_answers JSONB DEFAULT '{}'::jsonb,
+  current_question_index INTEGER DEFAULT 0,
+  last_updated TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -20,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.buddies_members (
   user_id TEXT,
   name TEXT NOT NULL,
   is_host BOOLEAN NOT NULL DEFAULT FALSE,
+  status TEXT NOT NULL DEFAULT 'active',
   joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(room_id, user_id)
 );
@@ -50,14 +54,17 @@ CREATE TABLE IF NOT EXISTS public.buddies_recommendations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 6. 建立 buddies_votes 表（問題投票，已廢棄但保留相容性）
+-- 6. 建立 buddies_votes 表（問題投票，版本 1.2 後已不再使用）
+-- 注意：此表在版本 1.2 已被 collective_answers 機制取代
+-- 保留僅供舊資料查詢和相容性考量
 CREATE TABLE IF NOT EXISTS public.buddies_votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id TEXT NOT NULL REFERENCES public.buddies_rooms(id) ON DELETE CASCADE,
   question_id TEXT NOT NULL,
   option TEXT NOT NULL,
   user_id TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(room_id, question_id, user_id)
 );
 
 -- 7. 建立 buddies_restaurant_votes 表（餐廳投票）
@@ -83,7 +90,9 @@ CREATE TABLE IF NOT EXISTS public.buddies_final_results (
 -- ==========================================
 
 CREATE INDEX IF NOT EXISTS idx_buddies_rooms_status ON public.buddies_rooms(status);
+CREATE INDEX IF NOT EXISTS idx_buddies_rooms_question_index ON public.buddies_rooms(current_question_index) WHERE current_question_index > 0;
 CREATE INDEX IF NOT EXISTS idx_buddies_members_room_id ON public.buddies_members(room_id);
+CREATE INDEX IF NOT EXISTS idx_buddies_members_status ON public.buddies_members(status) WHERE status = 'active';
 CREATE INDEX IF NOT EXISTS idx_buddies_questions_room_id ON public.buddies_questions(room_id);
 CREATE INDEX IF NOT EXISTS idx_buddies_answers_room_id ON public.buddies_answers(room_id);
 CREATE INDEX IF NOT EXISTS idx_buddies_recommendations_room_id ON public.buddies_recommendations(room_id);
