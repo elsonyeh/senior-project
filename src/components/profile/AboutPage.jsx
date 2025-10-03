@@ -35,34 +35,11 @@ export default function AboutPage() {
     }
   ];
 
-  const stats = [
-    {
-      icon: IoRestaurantOutline,
-      number: '200+',
-      label: '合作餐廳'
-    },
-    {
-      icon: IoPeopleOutline,
-      number: '500+',
-      label: '活躍用戶'
-    },
-    {
-      icon: IoStarOutline,
-      number: '4.8',
-      label: '用戶評分'
-    },
-    {
-      icon: IoTrophyOutline,
-      number: '95%',
-      label: '推薦準確率'
-    }
-  ];
-
   const teamMembers = [
     {
-      name: '李執行長',
-      position: '創辦人 & CEO',
-      description: '跨域溝通社會觀察家，深入了解使用者需求'
+      name: '李小姐',
+      position: '行銷合作窗口',
+      description: '跨域溝通社會觀察家，負責商業合作與行銷推廣'
     },
     {
       name: '葉技術長',
@@ -115,22 +92,6 @@ export default function AboutPage() {
               </div>
               <h4 className="feature-title">{feature.title}</h4>
               <p className="feature-description">{feature.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 統計數據 */}
-      <div className="stats-section">
-        <h3 className="section-title">數據亮點</h3>
-        <div className="stats-grid">
-          {stats.map((stat, index) => (
-            <div key={index} className="stat-card">
-              <div className="stat-icon">
-                <stat.icon />
-              </div>
-              <div className="stat-number">{stat.number}</div>
-              <div className="stat-label">{stat.label}</div>
             </div>
           ))}
         </div>
