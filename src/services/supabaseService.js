@@ -302,6 +302,50 @@ export const roomService = {
   },
 
   /**
+   * 更新房間集體答案（多數決結果）
+   * @param {String} roomId - 房間ID
+   * @param {Number} questionIndex - 題目索引
+   * @param {String} collectiveAnswer - 集體答案
+   * @return {Promise<Object>}
+   */
+  async updateCollectiveAnswer(roomId, questionIndex, collectiveAnswer) {
+    try {
+      // 先獲取當前的 collective_answers
+      const { data: roomData, error: fetchError } = await supabase
+        .from('buddies_rooms')
+        .select('collective_answers')
+        .eq('id', roomId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentAnswers = roomData?.collective_answers || {};
+      currentAnswers[questionIndex.toString()] = collectiveAnswer;
+
+      // 更新房間
+      const { data, error } = await supabase
+        .from('buddies_rooms')
+        .update({
+          collective_answers: currentAnswers,
+          current_question_index: questionIndex + 1,
+          last_updated: new Date().toISOString(),
+        })
+        .eq('id', roomId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('✅ 更新集體答案:', { roomId, questionIndex, collectiveAnswer, currentAnswers });
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('更新集體答案失敗:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
    * 獲取或創建用戶ID
    * @return {String} 用戶ID
    */
@@ -1717,6 +1761,131 @@ export const adminService = {
     } catch (error) {
       console.error('AdminService: 刪除管理員失敗:', error);
       return { success: false, error: '刪除管理員過程發生錯誤' };
+    }
+  },
+
+  /**
+   * 獲取 Buddies 模式的統計資料
+   * @return {Promise<Object>} 統計資料
+   */
+  async getBuddiesStats() {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase 客戶端未初始化');
+      }
+
+      // 1. 總房間數
+      const { count: totalRooms, error: roomsError } = await supabase
+        .from('buddies_rooms')
+        .select('*', { count: 'exact', head: true });
+
+      if (roomsError) throw roomsError;
+
+      // 2. 活躍房間數（非 completed 狀態）
+      const { count: activeRooms, error: activeError } = await supabase
+        .from('buddies_rooms')
+        .select('*', { count: 'exact', head: true })
+        .neq('status', 'completed');
+
+      if (activeError) throw activeError;
+
+      // 3. 已完成房間數
+      const { count: completedRooms, error: completedError } = await supabase
+        .from('buddies_rooms')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed');
+
+      if (completedError) throw completedError;
+
+      // 4. 總成員參與數（包含匿名）
+      const { count: totalMembers, error: membersError } = await supabase
+        .from('buddies_members')
+        .select('*', { count: 'exact', head: true });
+
+      if (membersError) throw membersError;
+
+      // 5. 獨立用戶數（有 user_id 的）
+      const { data: uniqueUsers, error: uniqueUsersError } = await supabase
+        .from('buddies_members')
+        .select('user_id')
+        .not('user_id', 'is', null);
+
+      if (uniqueUsersError) throw uniqueUsersError;
+
+      const uniqueUserCount = new Set(uniqueUsers.map(m => m.user_id)).size;
+
+      // 6. 總投票數（餐廳投票）
+      const { count: totalVotes, error: votesError } = await supabase
+        .from('buddies_restaurant_votes')
+        .select('*', { count: 'exact', head: true });
+
+      if (votesError) throw votesError;
+
+      // 7. 最終選定餐廳次數
+      const { count: finalSelections, error: finalError } = await supabase
+        .from('buddies_final_results')
+        .select('*', { count: 'exact', head: true });
+
+      if (finalError) throw finalError;
+
+      // 8. 平均每房間成員數
+      const avgMembersPerRoom = totalRooms > 0 ? (totalMembers / totalRooms).toFixed(1) : 0;
+
+      // 9. 最近 7 天創建的房間數
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { count: recentRooms, error: recentError } = await supabase
+        .from('buddies_rooms')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      if (recentError) throw recentError;
+
+      // 10. 今日創建的房間數
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { count: todayRooms, error: todayError } = await supabase
+        .from('buddies_rooms')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', today.toISOString());
+
+      if (todayError) throw todayError;
+
+      return {
+        success: true,
+        stats: {
+          totalRooms: totalRooms || 0,
+          activeRooms: activeRooms || 0,
+          completedRooms: completedRooms || 0,
+          totalMembers: totalMembers || 0,
+          uniqueUsers: uniqueUserCount || 0,
+          totalVotes: totalVotes || 0,
+          finalSelections: finalSelections || 0,
+          avgMembersPerRoom: parseFloat(avgMembersPerRoom),
+          recentRooms: recentRooms || 0,
+          todayRooms: todayRooms || 0,
+        }
+      };
+    } catch (error) {
+      console.error('獲取 Buddies 統計資料失敗:', error);
+      return {
+        success: false,
+        error: error.message,
+        stats: {
+          totalRooms: 0,
+          activeRooms: 0,
+          completedRooms: 0,
+          totalMembers: 0,
+          uniqueUsers: 0,
+          totalVotes: 0,
+          finalSelections: 0,
+          avgMembersPerRoom: 0,
+          recentRooms: 0,
+          todayRooms: 0,
+        }
+      };
     }
   },
 };

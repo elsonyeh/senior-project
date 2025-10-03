@@ -34,6 +34,7 @@ export default function BuddiesQuestionSwiper({
   const [voteBubbles, setVoteBubbles] = useState([]);
   const [localQuestions, setLocalQuestions] = useState(propQuestions || supabaseQuestions);
   const [allAnswers, setAllAnswers] = useState([]);
+  const [collectiveAnswers, setCollectiveAnswers] = useState({}); // 新增：集體答案
 
   // 使用 ref 来存储稳定的引用 - 需要在 useEffect 之前声明
   const safeQuestionsRef = useRef([]);
@@ -87,6 +88,30 @@ export default function BuddiesQuestionSwiper({
     }
   }, [propQuestions, supabaseQuestions]);
 
+  // 監聽房間集體答案變化
+  useEffect(() => {
+    if (!roomId) return;
+
+    const cleanup = roomService.listenRoomStatus(roomId, async (status, roomData) => {
+      // 獲取最新房間資料
+      const roomInfo = await roomService.getRoomInfo(roomId);
+      if (roomInfo.success && roomInfo.data) {
+        const newCollectiveAnswers = roomInfo.data.collective_answers || {};
+        logger.debug('📊 收到集體答案更新:', newCollectiveAnswers);
+        setCollectiveAnswers(newCollectiveAnswers);
+      }
+    });
+
+    // 初次載入時獲取集體答案
+    roomService.getRoomInfo(roomId).then(roomInfo => {
+      if (roomInfo.success && roomInfo.data) {
+        setCollectiveAnswers(roomInfo.data.collective_answers || {});
+      }
+    });
+
+    return cleanup;
+  }, [roomId]);
+
   const userId = propUserId || roomService.getOrCreateUserId();
 
   // 創建基本問題文本列表
@@ -126,7 +151,7 @@ export default function BuddiesQuestionSwiper({
     safeQuestionsRef.current = safeQuestions;
   }, [safeQuestions]);
 
-  // 獲取可見問題（處理 dependsOn 邏輯）
+  // 獲取可見問題（處理 dependsOn 邏輯，使用集體答案）
   const getVisibleQuestions = useCallback((allQuestions) => {
     const visibleQuestions = [];
     const questionIndexMap = new Map(); // 記錄原始索引到可見索引的映射
@@ -151,9 +176,16 @@ export default function BuddiesQuestionSwiper({
         return;
       }
 
-      // 檢查依賴問題的答案是否符合條件
-      // 使用原始索引查找答案
-      const dependentAnswer = answersRef.current[dependentQuestionIndex];
+      // 使用集體答案（多數決結果）而非個人答案
+      const dependentAnswer = collectiveAnswers[dependentQuestionIndex.toString()];
+
+      logger.debug('🔍 檢查依賴條件:', {
+        currentQuestion: q.text,
+        dependsOn: q.dependsOn,
+        dependentQuestionIndex,
+        collectiveAnswer: dependentAnswer,
+        shouldShow: dependentAnswer === q.dependsOn.answer
+      });
 
       if (dependentAnswer === q.dependsOn.answer) {
         questionIndexMap.set(originalIndex, visibleQuestions.length);
@@ -162,7 +194,7 @@ export default function BuddiesQuestionSwiper({
     });
 
     return visibleQuestions;
-  }, []);
+  }, [collectiveAnswers]);
 
   // 獲取當前問題
   const currentQuestion = useMemo(() => {
@@ -303,6 +335,44 @@ export default function BuddiesQuestionSwiper({
             triggerReason = "多用戶全部完成";
           }
           logger.debug("🎯 觸發條件:", triggerReason);
+
+          // 計算多數決答案並更新集體答案
+          if (Object.keys(stats).length > 0) {
+            // 找出得票最多的答案
+            let majorityAnswer = null;
+            let maxVotes = 0;
+
+            Object.entries(stats).forEach(([answer, count]) => {
+              if (typeof count === 'number' && count > maxVotes) {
+                maxVotes = count;
+                majorityAnswer = answer;
+              }
+            });
+
+            if (majorityAnswer) {
+              logger.debug("🗳️ 多數決結果:", {
+                questionIndex,
+                majorityAnswer,
+                votes: maxVotes,
+                totalVotes: answeredCount,
+                allStats: stats
+              });
+
+              // 更新集體答案到資料庫
+              const originalIndex = currentQ?.originalIndex ?? questionIndex;
+              roomService.updateCollectiveAnswer(roomId, originalIndex, majorityAnswer)
+                .then(result => {
+                  if (result.success) {
+                    logger.debug("✅ 集體答案已更新到資料庫");
+                  } else {
+                    logger.error("❌ 更新集體答案失敗:", result.error);
+                  }
+                })
+                .catch(error => {
+                  logger.error("❌ 更新集體答案異常:", error);
+                });
+            }
+          }
 
           // 使用穩定的引用避免競態條件
           const currentQuestionIndex = questionIndex;
