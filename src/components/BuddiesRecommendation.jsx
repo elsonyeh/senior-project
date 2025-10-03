@@ -226,13 +226,9 @@ export default function BuddiesRecommendation({
         setAlternativeRestaurants(alternatives);
       }
 
-      // 為所有推薦餐廳初始化投票數為 0
-      const initialVotes = {};
-      topTen.forEach(r => {
-        initialVotes[r.id] = 0;
-      });
-      setVotes(initialVotes);
-      logger.debug("🗳️ 初始化投票數據:", initialVotes);
+      // 不要覆蓋現有票數，只為新餐廳初始化
+      // 讓 listenVotes 從資料庫載入真實票數
+      logger.debug("✅ 餐廳列表已設置，等待從資料庫載入票數");
     } else {
       // 處理沒有匹配分數的情況，使用確定性排序
       console.warn("警告：餐廳未包含匹配分數，使用確定性選擇");
@@ -255,13 +251,9 @@ export default function BuddiesRecommendation({
         setAlternativeRestaurants(alternatives);
       }
 
-      // 為所有推薦餐廳初始化投票數為 0
-      const initialVotes = {};
-      limitedList.forEach(r => {
-        initialVotes[r.id] = 0;
-      });
-      setVotes(initialVotes);
-      logger.debug("🗳️ 初始化投票數據:", initialVotes);
+      // 不要覆蓋現有票數，只為新餐廳初始化
+      // 讓 listenVotes 從資料庫載入真實票數
+      logger.debug("✅ 餐廳列表已設置，等待從資料庫載入票數");
     }
   }, [restaurants, roomId]);
 
@@ -294,17 +286,9 @@ export default function BuddiesRecommendation({
     // 監聽投票更新
     const unsubscribeVotes = voteService.listenVotes(roomId, async (votesData) => {
       if (votesData) {
-        // 合併從 Supabase 獲取的投票數據和本地初始化的數據
-        setVotes(prevVotes => {
-          const mergedVotes = { ...prevVotes };
-          // 只更新有投票的餐廳
-          Object.keys(votesData).forEach(restaurantId => {
-            if (votesData[restaurantId] > 0) {
-              mergedVotes[restaurantId] = votesData[restaurantId];
-            }
-          });
-          return mergedVotes;
-        });
+        // 直接使用資料庫的票數，確保所有成員看到相同的數據
+        logger.debug("📊 收到投票更新:", votesData);
+        setVotes(votesData);
 
         // 檢查實際已投票的用戶數
         const votedResult = await voteService.getVotedUsersCount(roomId);
@@ -334,12 +318,14 @@ export default function BuddiesRecommendation({
       logger.debug("🎯 收到最終結果更新:", finalData);
 
       if (finalData && finalData.restaurant_id) {
-        // 找到最終選擇的餐廳（從推薦列表中）
-        const finalRestaurant = [
+        // 嘗試從所有可用列表中尋找餐廳
+        const allRestaurantLists = [
           ...limitedRestaurants,
           ...alternativeRestaurants,
           ...restaurants
-        ].find((r) => r.id === finalData.restaurant_id);
+        ];
+
+        const finalRestaurant = allRestaurantLists.find((r) => r && r.id === finalData.restaurant_id);
 
         logger.debug("🔍 尋找最終餐廳:", {
           searchingFor: finalData.restaurant_id,
@@ -347,40 +333,37 @@ export default function BuddiesRecommendation({
           finalRestaurantName: finalRestaurant?.name,
           limitedCount: limitedRestaurants.length,
           alternativeCount: alternativeRestaurants.length,
-          allRestaurantsCount: restaurants.length
+          allRestaurantsCount: restaurants.length,
+          totalSearchable: allRestaurantLists.length
         });
 
-        if (finalRestaurant) {
-          logger.debug("✅ 設置最終結果:", finalRestaurant.name);
-          setFinalResult(finalRestaurant);
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 3000);
-          setPhase("result");
+        // 優先使用找到的餐廳物件，否則從資料庫資料重建
+        const restaurantToSet = finalRestaurant || {
+          id: finalData.restaurant_id,
+          name: finalData.restaurant_name,
+          address: finalData.restaurant_address,
+          photoURL: finalData.restaurant_photo_url,
+          rating: finalData.restaurant_rating,
+          type: finalData.restaurant_type,
+        };
 
-          // 通知父組件最終結果已確定（用於記錄選擇歷史）
-          if (onFinalResult && typeof onFinalResult === 'function') {
-            onFinalResult(finalRestaurant);
-          }
-        } else {
-          // 如果在列表中找不到，從資料庫資料重建餐廳物件
+        if (!finalRestaurant) {
           logger.warn("⚠️ 無法從推薦列表找到餐廳，使用資料庫資料重建");
-          const reconstructedRestaurant = {
-            id: finalData.restaurant_id,
-            name: finalData.restaurant_name,
-            address: finalData.restaurant_address,
-            photoURL: finalData.restaurant_photo_url,
-            rating: finalData.restaurant_rating,
-            type: finalData.restaurant_type,
-          };
+        } else {
+          logger.debug("✅ 從推薦列表找到餐廳:", finalRestaurant.name);
+        }
 
-          setFinalResult(reconstructedRestaurant);
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 3000);
-          setPhase("result");
+        // 設置最終結果並切換到結果階段
+        setFinalResult(restaurantToSet);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setPhase("result");
 
-          if (onFinalResult && typeof onFinalResult === 'function') {
-            onFinalResult(reconstructedRestaurant);
-          }
+        logger.debug("🎉 最終結果已設置，phase 已切換至 result");
+
+        // 通知父組件最終結果已確定（用於記錄選擇歷史）
+        if (onFinalResult && typeof onFinalResult === 'function') {
+          onFinalResult(restaurantToSet);
         }
       }
     });
