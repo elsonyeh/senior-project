@@ -98,6 +98,15 @@ export default function SwiftTaste() {
     loadFunQuestionTagsMap(false).catch(err => {
       console.warn('Pre-loading fun question tags failed:', err);
     });
+
+    // 檢查是否需要顯示引導動畫
+    const hasSeenOnboardingBefore = localStorage.getItem("hasSeenSwipeOnboarding");
+    if (!hasSeenOnboardingBefore) {
+      // 延遲顯示，確保頁面已載入
+      setTimeout(() => {
+        setShowOnboarding(true);
+      }, 500);
+    }
   }, []);
 
   const loadQuestions = async () => {
@@ -188,16 +197,10 @@ export default function SwiftTaste() {
         console.log("Cleared previous saved restaurants");
 
         // 檢查是否已經看過引導動畫
-        const hasSeenOnboardingBefore = localStorage.getItem("hasSeenSwipeOnboarding");
-
         // 短暫延遲確保動畫可見
         setTimeout(() => {
           setLoadingModeSelection(false);
-          if (!hasSeenOnboardingBefore) {
-            setShowOnboarding(true);
-          } else {
-            setPhase("questions");
-          }
+          setPhase("questions");
         }, 500);
       }
     } catch (error) {
