@@ -37,8 +37,8 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: '李小姐',
-      position: '行銷合作窗口',
+      name: '李行銷總監',
+      position: '行銷總監',
       description: '跨域溝通社會觀察家，負責商業合作與行銷推廣'
     },
     {
