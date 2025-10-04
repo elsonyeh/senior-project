@@ -31,10 +31,10 @@ export default function SponsoredAdModal({ ad, onClose }) {
           </button>
 
           {/* 贊助標籤 */}
-          <div className="sponsored-badge">
+          {/* <div className="sponsored-badge">
             <IoInformationCircleOutline />
             <span>贊助商廣告</span>
-          </div>
+          </div> */}
 
           {/* 廣告圖片 */}
           <div className="sponsored-ad-image-container">

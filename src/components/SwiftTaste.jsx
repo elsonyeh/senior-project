@@ -678,29 +678,43 @@ export default function SwiftTaste() {
       }
       
       // 處理趣味問題匹配（使用Supabase標籤映射）
+      let funScore = 0;
       if (funAnswers.length > 0) {
         // 使用批量計算匹配分數
         const funMatchScore = await funQuestionTagService.calculateBatchMatchScore(
-          funAnswers, 
+          funAnswers,
           restaurantTags
             .filter(tag => tag !== null && tag !== undefined && tag !== '')
             .map(tag => String(tag || ''))
             .filter(tag => tag.length > 0)
         );
-        
-        score += funMatchScore * WEIGHT.FUN_MATCH;
+
+        funScore = funMatchScore * WEIGHT.FUN_MATCH;
+        score += funScore;
       }
-      
+
       // 加入評分權重
+      let ratingScore = 0;
       if (typeof rating === 'number' && rating > 0) {
-        score += Math.min(rating / 5, 1) * WEIGHT.RATING;
+        ratingScore = Math.min(rating / 5, 1) * WEIGHT.RATING;
+        score += ratingScore;
       }
-      
+
       // 如果完全匹配所有基本問題，給予額外獎勵
+      let bonusScore = 0;
       if (basicMatchCount === basicAnswers.length && basicAnswers.length > 0) {
-        score += WEIGHT.BASIC_MATCH * 0.5;
+        bonusScore = WEIGHT.BASIC_MATCH * 0.5;
+        score += bonusScore;
       }
-      
+
+      // 詳細分數 log
+      console.log(`📊 ${restaurant.name}:
+        基本匹配: ${basicMatchCount}/${basicAnswers.length} = ${basicMatchCount * WEIGHT.BASIC_MATCH}分
+        趣味匹配: ${funScore.toFixed(2)}分
+        評分加成: ${ratingScore.toFixed(2)}分
+        完全匹配獎勵: ${bonusScore}分
+        ➡️ 總分: ${score.toFixed(2)}分`);
+
       return { ...restaurant, calculatedScore: score };
     }));
     
@@ -710,16 +724,35 @@ export default function SwiftTaste() {
     );
     
     // 按分數排序，選出前10名
-    const sortedRestaurants = qualifiedRestaurants.length > 0 ? 
+    const sortedRestaurants = qualifiedRestaurants.length > 0 ?
       qualifiedRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore) :
       scoredRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore).slice(0, 10);
-    
-    const selected = sortedRestaurants.slice(0, 10);
-    
-    console.log(`Filtered ${selected.length} restaurants from ${restaurants.length} total`);
-    console.log('Selected restaurants:', selected.map(r => ({ 
-      name: r.name, 
-      score: r.calculatedScore.toFixed(2), 
+
+    const topTen = sortedRestaurants.slice(0, 10);
+
+    // 使用 Fisher-Yates 洗牌算法打亂前10名的順序
+    const shuffled = [...topTen];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const selected = shuffled;
+
+    console.log(`Filtered ${selected.length} restaurants from ${restaurants.length} total (shuffled)`);
+    console.log('==================== 餐廳分數詳細資訊 ====================');
+    console.log('排序前的分數排名 (Top 10):');
+    topTen.forEach((r, index) => {
+      console.log(`${index + 1}. ${r.name} - 分數: ${r.calculatedScore.toFixed(2)}`);
+    });
+    console.log('打亂後的順序:');
+    selected.forEach((r, index) => {
+      console.log(`${index + 1}. ${r.name} - 分數: ${r.calculatedScore.toFixed(2)}`);
+    });
+    console.log('========================================================');
+    console.log('Selected restaurants:', selected.map(r => ({
+      name: r.name,
+      score: r.calculatedScore.toFixed(2),
       tags: r.tags,
       price: r.price_range 
       })));
