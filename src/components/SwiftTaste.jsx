@@ -708,12 +708,13 @@ export default function SwiftTaste() {
     const qualifiedRestaurants = scoredRestaurants.filter(r =>
       r.calculatedScore > 0 && r.calculatedScore >= WEIGHT.MIN_SCORE
     );
-    
-    // 按分數排序，選出前10名
+
+    // 按分數排序
     const sortedRestaurants = qualifiedRestaurants.length > 0 ?
       qualifiedRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore) :
-      scoredRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore).slice(0, 10);
+      scoredRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore);
 
+    // 選出分數最高的前10名
     const topTen = sortedRestaurants.slice(0, 10);
 
     // 使用 Fisher-Yates 洗牌算法打亂前10名的順序

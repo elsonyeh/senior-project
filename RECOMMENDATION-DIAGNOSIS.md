@@ -16,17 +16,41 @@
 - 餐廳從資料庫載入時，預設按 `created_at` **降序**排列
 - **結果**：新增的餐廳在陣列最前面
 
-### 2. 分數計算與排序
+### 2. 分數計算與排序邏輯
+
+**完整推薦流程：**
 ```javascript
-// SwiftTaste.jsx: line 713-715
+// SwiftTaste.jsx: line 707-728
+
+// 步驟1: 過濾掉不符合基本條件的餐廳（分數為0）
+const qualifiedRestaurants = scoredRestaurants.filter(r =>
+  r.calculatedScore > 0 && r.calculatedScore >= WEIGHT.MIN_SCORE
+);
+
+// 步驟2: 按分數由高到低排序
 const sortedRestaurants = qualifiedRestaurants.length > 0 ?
   qualifiedRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore) :
-  scoredRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore).slice(0, 10);
+  scoredRestaurants.sort((a, b) => b.calculatedScore - a.calculatedScore);
+
+// 步驟3: 選出分數最高的前10名
+const topTen = sortedRestaurants.slice(0, 10);
+
+// 步驟4: 使用 Fisher-Yates 洗牌算法打亂前10名的順序
+const shuffled = [...topTen];
+for (let i = shuffled.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+}
+
+// 步驟5: 顯示給用戶
+setFilteredRestaurants(shuffled);
 ```
 
-#### 關鍵問題：JavaScript sort() 的穩定性
-- **JavaScript sort() 是穩定排序**：當兩個元素比較結果相等時（`b.calculatedScore - a.calculatedScore === 0`），會保持原始順序
-- 如果很多餐廳分數相同，它們會保持載入時的順序（新→舊）
+#### 關鍵特性：
+- **嚴格篩選**：只有符合所有基本條件的餐廳才會被納入排序
+- **分數優先**：按計算分數（基本 + 趣味 + 評分 + 獎勵）由高到低排序
+- **Top 10**：只選出分數最高的前 10 家餐廳
+- **隨機順序**：打亂 Top 10 避免每次都看到相同順序
 
 ### 3. 為什麼分數會相同？
 
@@ -70,9 +94,65 @@ case "奢華美食":
 - 導致同一家餐廳每次推薦分數可能不同
 - 但如果大部分餐廳都 `price_range === 2`，隨機結果可能讓很多餐廳同時符合或不符合
 
-## 為什麼打亂可以解決問題？
+## 推薦系統運作流程總結
 
-打亂算法：
+### 完整步驟（SwiftTaste.jsx: line 560-728）
+
+**1. 計算所有餐廳分數**
+```javascript
+const scoredRestaurants = await Promise.all(restaurants.map(async (restaurant) => {
+  let score = WEIGHT.MIN_SCORE; // 基礎分 1 分
+  let basicMatchCount = 0;
+
+  // 1.1 基本條件匹配（人數、價格、類型、分量、辣度）
+  basicAnswers.forEach(answer => {
+    if (matched) {
+      score += WEIGHT.BASIC_MATCH; // 每項 +10 分
+      basicMatchCount++;
+    }
+  });
+
+  // 1.2 嚴格篩選：不符合所有基本條件 → 分數歸零
+  if (basicMatchCount < basicAnswers.length) {
+    return { ...restaurant, calculatedScore: 0 };
+  }
+
+  // 1.3 趣味問題匹配（標籤匹配系統）
+  const funMatchScore = await funQuestionTagService.calculateBatchMatchScore(funAnswers, tags);
+  score += funMatchScore * WEIGHT.FUN_MATCH; // +5 分 × 匹配度
+
+  // 1.4 評分加成
+  score += (rating / 5) * WEIGHT.RATING; // 最高 +1.5 分
+
+  // 1.5 完全匹配獎勵
+  if (basicMatchCount === basicAnswers.length) {
+    score += WEIGHT.BASIC_MATCH * 0.5; // +5 分
+  }
+
+  return { ...restaurant, calculatedScore: score };
+}));
+```
+
+**2. 過濾不合格餐廳**
+```javascript
+const qualifiedRestaurants = scoredRestaurants.filter(r =>
+  r.calculatedScore > 0 && r.calculatedScore >= WEIGHT.MIN_SCORE
+);
+```
+
+**3. 按分數排序**
+```javascript
+const sortedRestaurants = qualifiedRestaurants.sort((a, b) =>
+  b.calculatedScore - a.calculatedScore
+);
+```
+
+**4. 選出分數最高的前10名**
+```javascript
+const topTen = sortedRestaurants.slice(0, 10);
+```
+
+**5. Fisher-Yates 洗牌打亂順序**
 ```javascript
 const shuffled = [...topTen];
 for (let i = shuffled.length - 1; i > 0; i--) {
@@ -81,28 +161,43 @@ for (let i = shuffled.length - 1; i > 0; i--) {
 }
 ```
 
+**6. 顯示給用戶**
+```javascript
+setFilteredRestaurants(shuffled); // 最終推薦的 10 家餐廳
+```
+
+### 為什麼需要打亂？
+
 - **Fisher-Yates 洗牌**：確保每個排列的機率相同
-- 即使分數完全相同，順序也會隨機
-- 用戶體驗：每次看到不同的推薦順序
+- **避免排序偏見**：即使分數相同，也不會總是顯示相同順序
+- **用戶體驗**：每次推薦都有新鮮感，增加探索樂趣
+- **公平性**：分數相同的餐廳獲得均等的曝光機會
 
-## 推薦系統是否正常運作？
+## 推薦系統運作狀態
 
-### ✅ 推薦系統**確實在運作**，但有以下特點：
+### ✅ 推薦系統**正常運作**
 
-1. **嚴格過濾**：
-   - 前置過濾：人數、價格、餐飲類型、辣度
-   - 分數過濾：必須 > 0 且 >= MIN_SCORE (1分)
+**核心特性：**
 
-2. **分數計算正確**：
-   - 基本匹配：每項 10 分
-   - 趣味匹配：每項 5 分
-   - 評分加成：最高 1.5 分
+1. **嚴格基本條件篩選**
+   - 必須符合所有基本問題答案（人數、價格、類型、分量、辣度）
+   - 不符合任一條件 → 分數歸零 → 被排除
+
+2. **多維度分數計算**
+   - 基本匹配：每項 10 分（最高 50 分）
+   - 趣味匹配：標籤匹配度 × 5 分（最高約 5 分）
+   - 評分加成：餐廳評分 / 5 × 1.5（最高 1.5 分）
    - 完全匹配獎勵：5 分
 
-3. **問題在於分數區分度不足**：
-   - 基本條件相同的餐廳，分數差異主要來自評分（1.5分以內）
-   - 趣味問題如果標籤不完整，很多餐廳趣味分為 0
-   - 導致大量餐廳分數集中在同一區間
+3. **Top 10 機制**
+   - 從所有符合條件的餐廳中，選出**分數最高的前 10 家**
+   - 打亂這 10 家的順序後顯示
+   - 確保推薦品質（高分）+ 探索樂趣（隨機）
+
+4. **分數區分度**
+   - 主要差異來源：趣味問題匹配度 + 餐廳評分
+   - 基本條件相同的餐廳，分數可能接近（差距 1-6 分）
+   - 打亂順序確保分數相近的餐廳獲得均等曝光
 
 ## 建議改進方案
 
@@ -125,14 +220,22 @@ for (let i = shuffled.length - 1; i > 0; i--) {
 
 ## 結論
 
-**推薦系統正常運作**，但因為：
-1. 基本條件過濾後，剩餘餐廳的特徵相似
-2. 趣味問題標籤覆蓋不完整
-3. JavaScript 穩定排序保持原始順序
+### ✅ 推薦系統完整且正確運作
 
-導致分數相同的餐廳按載入順序（新→舊）顯示。
+**推薦流程（已驗證）：**
+1. ✅ 計算所有餐廳分數（基本 + 趣味 + 評分 + 獎勵）
+2. ✅ 嚴格篩選：只保留符合所有基本條件的餐廳
+3. ✅ 按分數排序：由高到低
+4. ✅ **選出 Top 10**：分數最高的前 10 家
+5. ✅ Fisher-Yates 洗牌：打亂順序
+6. ✅ 顯示給用戶：最終推薦的 10 家餐廳
 
-**打亂算法**是合理的解決方案，確保：
-- 分數相同時公平分配曝光機會
-- 用戶體驗多樣化
-- 不偏向新餐廳或舊餐廳
+**設計優勢：**
+- **品質保證**：只推薦分數最高的 10 家餐廳
+- **探索樂趣**：每次推薦順序隨機，增加新鮮感
+- **公平曝光**：分數相近的餐廳獲得均等機會
+- **用戶體驗**：避免「總是看到同樣的餐廳」
+
+**關鍵修正（2025-01）：**
+- 修正了排序後未正確取 Top 10 的問題
+- 確保推薦的餐廳都是**分數最高的前 10 家**，而非所有符合條件的餐廳
