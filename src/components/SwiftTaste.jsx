@@ -605,8 +605,6 @@ export default function SwiftTaste() {
             );
             if (matched) {
               console.log(`✓ ${restaurant.name} matches ${answer} via tag matching`);
-              score += WEIGHT.BASIC_MATCH;
-              basicMatchCount++;
             }
             break;
             
@@ -654,12 +652,13 @@ export default function SwiftTaste() {
             break;
         }
 
-        // 只對其他基本條件加分（吃、喝、吃一點、吃飽已經在上面處理過）
-        if (matched && !['吃', '喝', '吃一點', '吃飽'].includes(answer)) {
+        // 統一處理基本條件加分
+        if (matched && !['吃一點', '吃飽'].includes(answer)) {
+          // 所有基本條件（除了吃一點、吃飽）都加分
           score += WEIGHT.BASIC_MATCH;
           basicMatchCount++;
         } else if (matched && ['吃一點', '吃飽'].includes(answer)) {
-          // 對吃一點和吃飽計入匹配數量（但不加分，因為已經透過「吃」匹配）
+          // 吃一點和吃飽只計入匹配數量，不額外加分
           basicMatchCount++;
         }
       });

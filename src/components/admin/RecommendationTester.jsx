@@ -112,15 +112,6 @@ export default function RecommendationTester() {
             matched = safeAnswer.length > 0 && normalizedTags.some(tag =>
               tag && typeof tag === 'string' && tag.includes(safeAnswer)
             );
-            if (matched) {
-              if (answer === "吃") {
-                score += WEIGHT.BASIC_MATCH;
-                basicMatchCount++;
-              } else if (answer === "喝") {
-                score += WEIGHT.BASIC_MATCH;
-                basicMatchCount++;
-              }
-            }
             break;
           case "辣":
             matched = restaurant.is_spicy === true || restaurant.is_spicy === 'true' || restaurant.is_spicy === 'both';
@@ -142,7 +133,7 @@ export default function RecommendationTester() {
             break;
         }
 
-        if (matched && !['吃', '喝'].includes(answer)) {
+        if (matched && !['吃一點', '吃飽'].includes(answer)) {
           score += WEIGHT.BASIC_MATCH;
           basicMatchCount++;
         } else if (matched && ['吃一點', '吃飽'].includes(answer)) {
@@ -152,7 +143,7 @@ export default function RecommendationTester() {
         scoreBreakdown.details.push({
           condition: answer,
           matched,
-          score: matched && !['吃', '喝', '吃一點', '吃飽'].includes(answer) ? WEIGHT.BASIC_MATCH : 0
+          score: matched && !['吃一點', '吃飽'].includes(answer) ? WEIGHT.BASIC_MATCH : 0
         });
       }
 
