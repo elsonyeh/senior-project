@@ -644,9 +644,9 @@ export default function SwiftTaste() {
             
           default:
             // 其他答案用標籤匹配
-            const safeAnswer = String(answer || '').toLowerCase();
-            matched = safeAnswer.length > 0 && normalizedTags.some(tag => 
-              tag && typeof tag === 'string' && tag.includes(safeAnswer)
+            const safeAns = String(answer || '').toLowerCase();
+            matched = safeAns.length > 0 && normalizedTags.some(tag =>
+              tag && typeof tag === 'string' && tag.includes(safeAns)
             );
             if (matched) console.log(`✓ ${restaurant.name} matches ${answer} via tag matching`);
             break;
