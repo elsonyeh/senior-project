@@ -166,17 +166,27 @@ export default function RecommendationTester() {
 
       // 趣味問題匹配
       if (funAnswers.length > 0) {
+        const cleanTags = restaurantTags
+          .filter(tag => tag !== null && tag !== undefined && tag !== '')
+          .map(tag => String(tag || ''))
+          .filter(tag => tag.length > 0);
+
         const funMatchScore = await funQuestionTagService.calculateBatchMatchScore(
           funAnswers,
-          restaurantTags
-            .filter(tag => tag !== null && tag !== undefined && tag !== '')
-            .map(tag => String(tag || ''))
-            .filter(tag => tag.length > 0)
+          cleanTags
         );
 
         const funScore = funMatchScore * WEIGHT.FUN_MATCH;
         score += funScore;
         scoreBreakdown.fun = funScore;
+
+        // Debug: 顯示趣味匹配詳情
+        if (funMatchScore > 0) {
+          console.log(`🎯 ${restaurant.name} 趣味匹配: ${funMatchScore.toFixed(3)} × ${WEIGHT.FUN_MATCH} = ${funScore.toFixed(2)}分`, {
+            funAnswers,
+            restaurantTags: cleanTags
+          });
+        }
       }
 
       // 評分權重

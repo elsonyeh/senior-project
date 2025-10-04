@@ -560,15 +560,12 @@ export default function SwiftTaste() {
       console.log(`After 不辣 filter: ${filteredRestaurants.length} restaurants`);
     }
 
-    // 檢查是否有餐廳符合條件
-    if (filteredRestaurants.length === 0) {
-      console.warn("沒有找到符合所有基本條件的餐廳");
-      setFilteredRestaurants([]);
-      return;
-    }
-    
+    // 不使用前置過濾結果，直接對所有餐廳計算分數
+    // 讓分數計算邏輯來決定哪些餐廳符合條件
+    console.log('⚠️ 跳過前置過濾，對所有餐廳計算分數');
+
     // 計算每個餐廳的匹配分數
-    const scoredRestaurants = await Promise.all(filteredRestaurants.map(async restaurant => {
+    const scoredRestaurants = await Promise.all(restaurants.map(async restaurant => {
       let score = WEIGHT.MIN_SCORE;
       const { price_range, tags, rating, is_spicy } = restaurant;
       
