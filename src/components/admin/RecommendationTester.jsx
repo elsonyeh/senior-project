@@ -70,6 +70,7 @@ export default function RecommendationTester() {
 
   const calculateScores = async () => {
     setLoading(true);
+    setScoredRestaurants([]); // 清空上一次的測試結果
 
     // 如果選擇「喝」，不包含分量在基本條件中
     const basicAnswers = mealType === '喝'
