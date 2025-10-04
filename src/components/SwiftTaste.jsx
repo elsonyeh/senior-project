@@ -585,32 +585,28 @@ export default function SwiftTaste() {
         
         switch(answer) {
           case "奢華美食":
-            // 使用正確的price_range欄位：3為奢侈，2則是70%機率匹配奢侈
-            matched = price_range === 3 || (price_range === 2 && Math.random() < 0.7);
+            // 使用正確的price_range欄位：3為奢侈，2也算奢侈
+            matched = price_range === 3 || price_range === 2;
             if (matched) console.log(`✓ ${restaurant.name} matches 奢華美食 (price_range: ${price_range})`);
             break;
 
           case "平價美食":
-            // 使用正確的price_range欄位：1為平價，2則是30%機率匹配平價
-            matched = price_range === 1 || (price_range === 2 && Math.random() < 0.3);
+            // 使用正確的price_range欄位：1為平價，2也算平價
+            matched = price_range === 1 || price_range === 2;
             if (matched) console.log(`✓ ${restaurant.name} matches 平價美食 (price_range: ${price_range})`);
             break;
             
           case "吃":
-            // 檢查是否有"吃一點"或"吃飽"標籤
-            matched = normalizedTags.includes("吃一點") || normalizedTags.includes("吃飽");
-            if (matched) {
-              console.log(`✓ ${restaurant.name} matches 吃 (has 吃一點 or 吃飽 tag)`);
-              score += WEIGHT.BASIC_MATCH; // 避免重複加分
-            }
-            break;
-            
           case "喝":
-            // 必須有"喝"標籤
-            matched = normalizedTags.includes("喝");
+            // 使用標籤匹配檢查
+            const safeAnswer = String(answer || '').toLowerCase();
+            matched = safeAnswer.length > 0 && normalizedTags.some(tag =>
+              tag && typeof tag === 'string' && tag.includes(safeAnswer)
+            );
             if (matched) {
-              console.log(`✓ ${restaurant.name} matches 喝`);
-              score += WEIGHT.BASIC_MATCH * 1.5; // 提高喝的匹配權重
+              console.log(`✓ ${restaurant.name} matches ${answer} via tag matching`);
+              score += WEIGHT.BASIC_MATCH;
+              basicMatchCount++;
             }
             break;
             
@@ -657,13 +653,13 @@ export default function SwiftTaste() {
             if (matched) console.log(`✓ ${restaurant.name} matches ${answer} via tag matching`);
             break;
         }
-        
-        // 只對非特殊情況加基本分數（吃和喝已經在上面處理過加分）
-        if (matched && !['吃', '喝'].includes(answer)) {
+
+        // 只對其他基本條件加分（吃、喝、吃一點、吃飽已經在上面處理過）
+        if (matched && !['吃', '喝', '吃一點', '吃飽'].includes(answer)) {
           score += WEIGHT.BASIC_MATCH;
           basicMatchCount++;
         } else if (matched && ['吃一點', '吃飽'].includes(answer)) {
-          // 對吃一點和吃飽也計入匹配數量
+          // 對吃一點和吃飽計入匹配數量（但不加分，因為已經透過「吃」匹配）
           basicMatchCount++;
         }
       });

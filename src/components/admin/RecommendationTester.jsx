@@ -101,10 +101,10 @@ export default function RecommendationTester() {
 
         switch (answer) {
           case "平價美食":
-            matched = restaurant.price_range === 1 || (restaurant.price_range === 2 && Math.random() < 0.7);
+            matched = restaurant.price_range === 1 || restaurant.price_range === 2;
             break;
           case "奢華美食":
-            matched = restaurant.price_range === 3 || (restaurant.price_range === 2 && Math.random() < 0.7);
+            matched = restaurant.price_range === 3 || restaurant.price_range === 2;
             break;
           case "吃":
           case "喝":
