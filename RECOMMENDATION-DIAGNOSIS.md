@@ -81,18 +81,52 @@ const WEIGHT = {
 - 導致大量餐廳只有基本分數 + 評分
 - 評分差異很小（1-5星 × 1.5 = 最多1.5分差距）
 
-### 4. 隨機性的影響
+### 4. 價格範圍匹配邏輯（已修正）
 
-#### Price Range 隨機匹配：
+#### Price Range 匹配：
 ```javascript
+case "平價美食":
+  matched = price_range === 1 || price_range === 2;
+
 case "奢華美食":
-  matched = price_range === 3 || (price_range === 2 && Math.random() < 0.7);
+  matched = price_range === 3 || price_range === 2;
 ```
 
-**問題**：
-- 每次計算分數時，`price_range === 2` 的餐廳有 70% 機率匹配
-- 導致同一家餐廳每次推薦分數可能不同
-- 但如果大部分餐廳都 `price_range === 2`，隨機結果可能讓很多餐廳同時符合或不符合
+**設計理念**：
+- `price_range === 1`：純平價，只匹配「平價美食」
+- `price_range === 2`：中價位，**同時匹配**「平價美食」和「奢華美食」
+- `price_range === 3`：奢華，只匹配「奢華美食」
+- 確保推薦結果穩定，不受隨機因素影響
+
+**歷史問題（已修正）**：
+- 舊版使用 `Math.random()` 導致每次計算分數時結果不穩定
+- 2025-01 修正：移除隨機性，改為確定性匹配邏輯
+
+### 5. 「吃」和「喝」類型匹配邏輯
+
+#### 統一標籤匹配：
+```javascript
+case "吃":
+case "喝":
+  const safeAnswer = String(answer || '').toLowerCase();
+  matched = safeAnswer.length > 0 && normalizedTags.some(tag =>
+    tag && typeof tag === 'string' && tag.includes(safeAnswer)
+  );
+  if (matched) {
+    score += WEIGHT.BASIC_MATCH;
+    basicMatchCount++;
+  }
+  break;
+```
+
+**設計理念**：
+- 使用標籤匹配系統：檢查餐廳標籤中是否包含「吃」或「喝」
+- 避免重複加分：在 switch 內直接處理加分邏輯
+- 分量匹配：「吃一點」和「吃飽」計入匹配數量但不額外加分（已透過「吃」匹配）
+
+**「喝」類型特殊處理**：
+- 選擇「喝」時，不包含分量選項（吃一點/吃飽）
+- basicAnswers 只包含：人數、價格、類型（喝）、辣度
 
 ## 推薦系統運作流程總結
 
@@ -236,6 +270,14 @@ setFilteredRestaurants(shuffled); // 最終推薦的 10 家餐廳
 - **公平曝光**：分數相近的餐廳獲得均等機會
 - **用戶體驗**：避免「總是看到同樣的餐廳」
 
-**關鍵修正（2025-01）：**
+**關鍵修正記錄：**
+
+**2025-01-04：移除隨機性與統一匹配邏輯**
+- 移除 `Math.random()` 隨機價格匹配，改為確定性邏輯
+- 統一「吃」和「喝」的標籤匹配邏輯
+- 修正加分機制避免重複計分
+- 確保 SwiftTaste 和 RecommendationTester 邏輯完全一致
+
+**2025-01-03：修正 Top 10 選取問題**
 - 修正了排序後未正確取 Top 10 的問題
 - 確保推薦的餐廳都是**分數最高的前 10 家**，而非所有符合條件的餐廳
