@@ -112,6 +112,48 @@
   font-size: 0.875rem;
 }
 
+/* 錯誤顯示樣式 */
+.qr-scanner-error {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.qr-scanner-error .error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.qr-scanner-error .error-message {
+  color: #dc2626;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.qr-scanner-error .retry-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 1rem;
+}
+
+.qr-scanner-error .retry-button:hover {
+  background: #2563eb;
+}
+
+.qr-scanner-error .error-hint {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  line-height: 1.5;
+}
+
 /* 響應式設計 */
 @media (max-width: 640px) {
   .qr-scanner-modal {

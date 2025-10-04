@@ -19,6 +19,7 @@ export default function RecommendationResult({
   const [displayedAlternatives, setDisplayedAlternatives] = useState([]); // 備選餐廳列表
   const [alternativesPool, setAlternativesPool] = useState([]); // 儲存所有尚未顯示的備選餐廳
   const [noMoreAlternatives, setNoMoreAlternatives] = useState(false); // 是否還有更多備選餐廳
+  const [surveyOpened, setSurveyOpened] = useState(false); // 問卷是否已開啟
 
   // 初始化時選擇第一個餐廳並設置動畫效果
   useEffect(() => {
@@ -98,8 +99,26 @@ export default function RecommendationResult({
     }
   }, [showConfetti]); // 只依賴showConfetti
 
+  // 8秒後自動開啟問卷
+  useEffect(() => {
+    if (selected && !surveyOpened) {
+      const timer = setTimeout(() => {
+        window.open('https://docs.google.com/forms/d/e/1FAIpQLSdDTU6lep67AM5MlApYgG0mR6HhXhfCK3IFHbubuZ3NEIQCrw/viewform', '_blank');
+        setSurveyOpened(true);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [selected, surveyOpened]);
+
   const goToGoogleMaps = (place) => {
     onInteraction?.(); // 觸發互動回調
+
+    // 點擊前往時也開啟問卷（如果還沒開啟）
+    if (!surveyOpened) {
+      window.open('https://docs.google.com/forms/d/e/1FAIpQLSdDTU6lep67AM5MlApYgG0mR6HhXhfCK3IFHbubuZ3NEIQCrw/viewform', '_blank');
+      setSurveyOpened(true);
+    }
+
     const query = encodeURIComponent(place);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${query}`,
