@@ -64,44 +64,74 @@
 }
 
 #qr-reader {
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100%;
+  min-height: 300px;
 }
 
-/* 覆蓋 html5-qrcode 的預設樣式 */
-#qr-reader__dashboard_section {
+/* 確保相機畫面可見 */
+#qr-reader > div {
+  width: 100% !important;
+}
+
+/* 隱藏不必要的控制按鈕，但保留相機選擇 */
+#qr-reader__dashboard_section_csr {
   display: none !important;
 }
 
+#qr-reader__dashboard_section_fsr {
+  display: none !important;
+}
+
+/* 保留相機選擇下拉選單 */
 #qr-reader__camera_selection {
   margin-bottom: 1rem;
+  width: 100%;
 }
 
-#qr-reader video {
-  border-radius: 12px;
+#qr-reader__camera_selection select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+/* 掃描區域樣式 */
+#qr-reader__scan_region {
+  width: 100% !important;
+  border: none !important;
+}
+
+/* 相機畫面 */
+#qr-reader__scan_region video {
   width: 100% !important;
   max-width: 100% !important;
-}
-
-/* 確保掃描框置中 */
-#qr-reader__scan_region {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin: 0 auto !important;
-}
-
-#qr-reader__scan_region video {
-  object-fit: cover !important;
-}
-
-/* 掃描框邊框樣式優化 */
-#qr-reader__scan_region img {
-  margin: 0 auto !important;
+  height: auto !important;
+  border-radius: 12px;
   display: block !important;
+}
+
+/* 掃描框樣式 */
+#qr-reader__scan_region canvas {
+  display: block !important;
+}
+
+#qr-reader__scan_region img {
+  display: none !important;
+}
+
+/* 隱藏檔案上傳區域 */
+#qr-reader__dashboard_section_swaplink {
+  display: none !important;
+}
+
+/* 隱藏狀態文字 */
+#qr-reader__status_span {
+  display: none !important;
+}
+
+#qr-reader__header_message {
+  display: none !important;
 }
 
 .qr-scanner-hint {
