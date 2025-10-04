@@ -20,6 +20,7 @@ export default function RecommendationResult({
   const [alternativesPool, setAlternativesPool] = useState([]); // 儲存所有尚未顯示的備選餐廳
   const [noMoreAlternatives, setNoMoreAlternatives] = useState(false); // 是否還有更多備選餐廳
   const [surveyOpened, setSurveyOpened] = useState(false); // 問卷是否已開啟
+  const [showSurveyModal, setShowSurveyModal] = useState(false); // 問卷 Modal 是否顯示
 
   // 初始化時選擇第一個餐廳並設置動畫效果
   useEffect(() => {
@@ -99,13 +100,12 @@ export default function RecommendationResult({
     }
   }, [showConfetti]); // 只依賴showConfetti
 
-  // 8秒後自動開啟問卷
+  // 6秒後顯示問卷 Modal
   useEffect(() => {
     if (selected && !surveyOpened) {
       const timer = setTimeout(() => {
-        window.open('https://docs.google.com/forms/d/e/1FAIpQLSdDTU6lep67AM5MlApYgG0mR6HhXhfCK3IFHbubuZ3NEIQCrw/viewform', '_blank');
-        setSurveyOpened(true);
-      }, 8000);
+        setShowSurveyModal(true);
+      }, 6000);
       return () => clearTimeout(timer);
     }
   }, [selected, surveyOpened]);
@@ -113,10 +113,9 @@ export default function RecommendationResult({
   const goToGoogleMaps = (place) => {
     onInteraction?.(); // 觸發互動回調
 
-    // 點擊前往時也開啟問卷（如果還沒開啟）
+    // 點擊前往時也顯示問卷 Modal（如果還沒開啟）
     if (!surveyOpened) {
-      window.open('https://docs.google.com/forms/d/e/1FAIpQLSdDTU6lep67AM5MlApYgG0mR6HhXhfCK3IFHbubuZ3NEIQCrw/viewform', '_blank');
-      setSurveyOpened(true);
+      setShowSurveyModal(true);
     }
 
     const query = encodeURIComponent(place);
@@ -124,6 +123,11 @@ export default function RecommendationResult({
       `https://www.google.com/maps/search/?api=1&query=${query}`,
       "_blank"
     );
+  };
+
+  const closeSurveyModal = () => {
+    setShowSurveyModal(false);
+    setSurveyOpened(true); // 標記為已顯示過，不再彈出
   };
 
   // 選擇另一家餐廳
@@ -397,6 +401,47 @@ export default function RecommendationResult({
           <div style={{ marginTop: "0.5rem" }}>{extraButton}</div>
         )}
       </motion.div>
+
+      {/* 問卷 Modal */}
+      <AnimatePresence>
+        {showSurveyModal && (
+          <motion.div
+            className="survey-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeSurveyModal}
+          >
+            <motion.div
+              className="survey-modal-container"
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="survey-modal-header">
+                <h3>📋 使用體驗問卷</h3>
+                <button className="survey-modal-close" onClick={closeSurveyModal}>
+                  ✕
+                </button>
+              </div>
+              <div className="survey-modal-content">
+                <iframe
+                  src="https://docs.google.com/forms/d/e/1FAIpQLSdDTU6lep67AM5MlApYgG0mR6HhXhfCK3IFHbubuZ3NEIQCrw/viewform?embedded=true"
+                  width="100%"
+                  height="600"
+                  frameBorder="0"
+                  marginHeight="0"
+                  marginWidth="0"
+                  title="使用體驗問卷"
+                >
+                  載入中…
+                </iframe>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

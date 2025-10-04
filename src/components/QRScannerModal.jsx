@@ -11,19 +11,10 @@ export default function QRScannerModal({ onScan, onClose }) {
 
   useEffect(() => {
     let scanner = null;
+    let mounted = true;
 
     const initScanner = async () => {
       try {
-        // 先請求相機權限
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } }
-        });
-
-        // 權限獲取成功，立即關閉測試流
-        stream.getTracks().forEach(track => track.stop());
-        setPermissionGranted(true);
-        setError("");
-
         // 初始化掃描器
         scanner = new Html5QrcodeScanner(
           "qr-reader",
@@ -40,26 +31,47 @@ export default function QRScannerModal({ onScan, onClose }) {
           false
         );
 
+        // 延遲一點再 render，確保 DOM 已準備好
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        if (!mounted) return;
+
         scanner.render(
           (decodedText) => {
-            scanner.clear().then(() => {
-              onScan(decodedText);
-              onClose();
-            }).catch(console.error);
+            console.log("✅ QR Code 掃描成功:", decodedText);
+            if (mounted) {
+              setPermissionGranted(true);
+              scanner.clear().then(() => {
+                onScan(decodedText);
+                onClose();
+              }).catch(console.error);
+            }
           },
           (scanError) => {
             // 掃描過程中的錯誤可略過（如找不到 QR Code）
-            console.debug("Scan error:", scanError);
+            // 只記錄重要錯誤
+            if (scanError && !scanError.includes("NotFoundException")) {
+              console.debug("Scan error:", scanError);
+            }
           }
         );
+
+        // 掃描器成功啟動
+        setPermissionGranted(true);
+        setError("");
+
       } catch (err) {
         console.error("相機初始化失敗:", err);
+        if (!mounted) return;
+
         if (err.name === 'NotAllowedError') {
           setError("請允許使用相機權限以掃描 QR Code");
         } else if (err.name === 'NotFoundError') {
           setError("找不到相機設備");
         } else if (err.name === 'NotReadableError') {
           setError("相機正被其他應用程式使用");
+        } else if (err.name === 'NotSupportedError') {
+          setError("您的瀏覽器不支援相機功能，請使用 HTTPS 或 localhost");
         } else {
           setError(`相機錯誤: ${err.message || '未知錯誤'}`);
         }
@@ -69,6 +81,7 @@ export default function QRScannerModal({ onScan, onClose }) {
     initScanner();
 
     return () => {
+      mounted = false;
       if (scanner) {
         scanner.clear().catch(console.error);
       }
