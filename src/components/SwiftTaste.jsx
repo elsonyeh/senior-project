@@ -678,7 +678,6 @@ export default function SwiftTaste() {
       }
       
       // 處理趣味問題匹配（使用Supabase標籤映射）
-      let funScore = 0;
       if (funAnswers.length > 0) {
         // 使用批量計算匹配分數
         const funMatchScore = await funQuestionTagService.calculateBatchMatchScore(
@@ -689,31 +688,18 @@ export default function SwiftTaste() {
             .filter(tag => tag.length > 0)
         );
 
-        funScore = funMatchScore * WEIGHT.FUN_MATCH;
-        score += funScore;
+        score += funMatchScore * WEIGHT.FUN_MATCH;
       }
 
       // 加入評分權重
-      let ratingScore = 0;
       if (typeof rating === 'number' && rating > 0) {
-        ratingScore = Math.min(rating / 5, 1) * WEIGHT.RATING;
-        score += ratingScore;
+        score += Math.min(rating / 5, 1) * WEIGHT.RATING;
       }
 
       // 如果完全匹配所有基本問題，給予額外獎勵
-      let bonusScore = 0;
       if (basicMatchCount === basicAnswers.length && basicAnswers.length > 0) {
-        bonusScore = WEIGHT.BASIC_MATCH * 0.5;
-        score += bonusScore;
+        score += WEIGHT.BASIC_MATCH * 0.5;
       }
-
-      // 詳細分數 log
-      console.log(`📊 ${restaurant.name}:
-        基本匹配: ${basicMatchCount}/${basicAnswers.length} = ${basicMatchCount * WEIGHT.BASIC_MATCH}分
-        趣味匹配: ${funScore.toFixed(2)}分
-        評分加成: ${ratingScore.toFixed(2)}分
-        完全匹配獎勵: ${bonusScore}分
-        ➡️ 總分: ${score.toFixed(2)}分`);
 
       return { ...restaurant, calculatedScore: score };
     }));
@@ -739,25 +725,7 @@ export default function SwiftTaste() {
 
     const selected = shuffled;
 
-    console.log(`Filtered ${selected.length} restaurants from ${restaurants.length} total (shuffled)`);
-    console.log('==================== 餐廳分數詳細資訊 ====================');
-    console.log('排序前的分數排名 (Top 10):');
-    topTen.forEach((r, index) => {
-      console.log(`${index + 1}. ${r.name} - 分數: ${r.calculatedScore.toFixed(2)}`);
-    });
-    console.log('打亂後的順序:');
-    selected.forEach((r, index) => {
-      console.log(`${index + 1}. ${r.name} - 分數: ${r.calculatedScore.toFixed(2)}`);
-    });
-    console.log('========================================================');
-    console.log('Selected restaurants:', selected.map(r => ({
-      name: r.name,
-      score: r.calculatedScore.toFixed(2),
-      tags: r.tags,
-      price: r.price_range 
-      })));
-      
-      setFilteredRestaurants(selected);
+    setFilteredRestaurants(selected);
 
       // 記錄推薦結果
       if (currentSessionId) {

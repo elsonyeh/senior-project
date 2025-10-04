@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { restaurantService } from '../../services/supabaseService';
+import { restaurantService } from '../../services/restaurantService';
 import { funQuestionTagService } from '../../services/funQuestionTagService';
+import { getFunQuestions } from '../../services/questionService';
 import './RecommendationTester.css';
 
 export default function RecommendationTester() {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [scoredRestaurants, setScoredRestaurants] = useState([]);
+  const [funQuestions, setFunQuestions] = useState([]);
 
   // 測試條件
   const [peopleCount, setPeopleCount] = useState('單人');
@@ -16,13 +18,6 @@ export default function RecommendationTester() {
   const [spiciness, setSpiciness] = useState('不辣');
   const [funAnswers, setFunAnswers] = useState([]);
 
-  // 趣味問題選項
-  const funQuestions = [
-    { question: '你的包包類型？', options: ['側背包', '後背包', '托特包', '手拿包'] },
-    { question: '你是？', options: ['Ｉ人', 'Ｅ人'] },
-    { question: '你是？', options: ['貓派', '狗派'] }
-  ];
-
   const WEIGHT = {
     BASIC_MATCH: 10,
     FUN_MATCH: 5,
@@ -31,24 +26,46 @@ export default function RecommendationTester() {
   };
 
   useEffect(() => {
-    loadRestaurants();
+    loadData();
   }, []);
 
-  const loadRestaurants = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const result = await restaurantService.getAllRestaurants();
-    if (result.success) {
-      setRestaurants(result.data);
+    try {
+      // 載入餐廳
+      const restaurantData = await restaurantService.getRestaurants();
+      setRestaurants(restaurantData || []);
+
+      // 載入趣味問題
+      const funQuestionsData = await getFunQuestions();
+      // 轉換為相容的格式
+      const formattedQuestions = funQuestionsData.map(q => ({
+        question: q.question || q.text,
+        options: [q.leftOption, q.rightOption].filter(Boolean)
+      }));
+      setFunQuestions(formattedQuestions);
+    } catch (error) {
+      console.error('載入資料失敗:', error);
+      setRestaurants([]);
+      setFunQuestions([]);
     }
     setLoading(false);
   };
 
   const handleFunAnswerToggle = (answer) => {
-    setFunAnswers(prev =>
-      prev.includes(answer)
-        ? prev.filter(a => a !== answer)
-        : [...prev, answer]
-    );
+    setFunAnswers(prev => {
+      if (prev.includes(answer)) {
+        // 取消選擇
+        return prev.filter(a => a !== answer);
+      } else {
+        // 新增選擇（但限制最多3個）
+        if (prev.length >= 3) {
+          alert('最多只能選擇 3 個趣味問題');
+          return prev;
+        }
+        return [...prev, answer];
+      }
+    });
   };
 
   const calculateScores = async () => {
@@ -232,23 +249,36 @@ export default function RecommendationTester() {
       </div>
 
       <div className="fun-questions-section">
-        <h3>趣味問題</h3>
-        {funQuestions.map((q, idx) => (
-          <div key={idx} className="fun-question-group">
-            <label>{q.question}</label>
-            <div className="fun-options">
-              {q.options.map(option => (
-                <button
-                  key={option}
-                  className={`fun-option ${funAnswers.includes(option) ? 'selected' : ''}`}
-                  onClick={() => handleFunAnswerToggle(option)}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
+        <h3>趣味問題（最多選擇 3 個答案，已選 {funAnswers.length}/3）</h3>
+        {loading && funQuestions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            載入趣味問題中...
           </div>
-        ))}
+        ) : funQuestions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            無趣味問題資料
+          </div>
+        ) : (
+          <div className="fun-questions-grid">
+            {funQuestions.map((q, idx) => (
+              <div key={idx} className="fun-question-group">
+                <label>{q.question}</label>
+                <div className="fun-options">
+                  {q.options.map(option => (
+                    <button
+                      key={option}
+                      className={`fun-option ${funAnswers.includes(option) ? 'selected' : ''}`}
+                      onClick={() => handleFunAnswerToggle(option)}
+                      disabled={!funAnswers.includes(option) && funAnswers.length >= 3}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <button

@@ -1,0 +1,261 @@
+.recommendation-tester {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.recommendation-tester h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.test-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-group label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #555;
+}
+
+.control-group select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.fun-questions-section {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.fun-questions-section h3 {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.fun-questions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.fun-question-group {
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.fun-question-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.fun-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fun-option {
+  padding: 8px 16px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.fun-option:hover {
+  border-color: #ff6b6b;
+  background: #fff5f5;
+}
+
+.fun-option.selected {
+  border-color: #ff6b6b;
+  background: #ff6b6b;
+  color: white;
+}
+
+.fun-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fun-option:disabled:hover {
+  border-color: #ddd;
+  background: white;
+}
+
+.calculate-btn {
+  width: 100%;
+  padding: 15px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-bottom: 30px;
+}
+
+.calculate-btn:hover:not(:disabled) {
+  background: #ff5252;
+}
+
+.calculate-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.results-section {
+  margin-top: 30px;
+}
+
+.results-section h3 {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.results-table {
+  overflow-x: auto;
+  margin-bottom: 30px;
+}
+
+.results-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.results-table th {
+  background: #2c3e50;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.results-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.results-table tr:hover {
+  background: #f8f9fa;
+}
+
+.detailed-breakdown {
+  margin-top: 30px;
+}
+
+.detailed-breakdown h4 {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.restaurant-detail {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.restaurant-detail h5 {
+  font-size: 16px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  border-bottom: 2px solid #ff6b6b;
+  padding-bottom: 8px;
+}
+
+.score-components {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.component {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.component .label {
+  font-weight: 600;
+  color: #555;
+}
+
+.component .value {
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
+.match-details {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.match-details strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.detail-item {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 3px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.detail-item.matched {
+  background: #d4edda;
+  color: #155724;
+}
+
+.detail-item.not-matched {
+  background: #f8d7da;
+  color: #721c24;
+}

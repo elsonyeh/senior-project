@@ -4,6 +4,7 @@ import { adminService } from "../services/supabaseService";
 import RestaurantManager from "./RestaurantManager";
 import DataAnalyticsPage from "./admin/DataAnalyticsPage";
 import RestaurantRatingUpdater from "./admin/RestaurantRatingUpdater";
+import RecommendationTester from "./admin/RecommendationTester";
 import { InputModal, ConfirmModal, NotificationModal, AdminFormModal } from "./CustomModal";
 import "./AdminDashboard.css";
 
@@ -284,20 +285,20 @@ export default function AdminDashboard() {
       alert('您沒有超級管理員權限');
       return;
     }
-    
+
     if (email === currentAdmin.email) {
       alert('不能刪除自己的帳號');
       return;
     }
-    
+
     console.log('開始刪除管理員，目標帳號:', email);
-    
+
     if (confirm(`確定要刪除管理員 ${email} 嗎？\n\n注意：此操作不可逆轉！`)) {
       try {
         console.log('呼叫 deleteAdmin 方法...');
         const result = await adminService.deleteAdmin(email);
         console.log('deleteAdmin 結果:', result);
-        
+
         if (result.success) {
           alert(`管理員 ${email} 已成功刪除`);
           // 重新載入管理員列表
@@ -326,6 +327,41 @@ export default function AdminDashboard() {
         console.error('刪除管理員錯誤:', error);
         alert('刪除過程發生錯誤：' + error.message);
       }
+    }
+  };
+
+  // 一鍵清空所有房間
+  const handleDeleteAllRooms = async () => {
+    if (!currentAdmin?.isSuperAdmin) {
+      showNotificationMessage('error', '權限不足', '您沒有超級管理員權限');
+      return;
+    }
+
+    const confirmText = `⚠️ 危險操作確認\n\n您即將刪除所有 ${roomList.length} 個房間及其相關資料，包括：\n- 房間基本資訊\n- 成員資料\n- 投票記錄\n- 問題答案\n- 推薦餐廳記錄\n\n此操作無法復原！請輸入 "DELETE ALL" 確認：`;
+
+    const confirmation = prompt(confirmText);
+
+    if (confirmation !== 'DELETE ALL') {
+      showNotificationMessage('info', '已取消', '刪除操作已取消');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await adminService.deleteAllRooms();
+
+      if (result.success) {
+        showNotificationMessage('success', '刪除成功', `已成功刪除所有房間資料`);
+        setRoomList([]);
+        await loadBuddiesStats();
+      } else {
+        throw new Error(result.error || '刪除失敗');
+      }
+    } catch (error) {
+      console.error('刪除所有房間失敗:', error);
+      showNotificationMessage('error', '刪除失敗', error.message || '無法刪除房間資料');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -452,6 +488,12 @@ export default function AdminDashboard() {
         >
           資料分析
         </button>
+        <button
+          className={`tab-button ${activeTab === "testing" ? "active" : ""}`}
+          onClick={() => setActiveTab("testing")}
+        >
+          推薦測試
+        </button>
       </div>
 
       {/* 內容區域 */}
@@ -461,6 +503,8 @@ export default function AdminDashboard() {
         {activeTab === "ratings" && <RestaurantRatingUpdater />}
 
         {activeTab === "analytics" && <DataAnalyticsPage />}
+
+        {activeTab === "testing" && <RecommendationTester />}
         
         {activeTab === "buddies" && (
           <div className="buddies-section">
@@ -573,9 +617,28 @@ export default function AdminDashboard() {
                 <span className="section-icon">🏠</span>
                 <h2>房間管理</h2>
               </div>
-              <button className="refresh-btn" onClick={() => { loadRoomData(); loadBuddiesStats(); }} disabled={loading}>
-                🔄 {loading ? '載入中...' : '刷新列表'}
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  className="delete-all-btn"
+                  onClick={handleDeleteAllRooms}
+                  disabled={loading || roomList.length === 0}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#e74c3c',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: roomList.length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: roomList.length === 0 ? 0.5 : 1,
+                    fontWeight: '600'
+                  }}
+                >
+                  🗑️ 一鍵清空所有房間
+                </button>
+                <button className="refresh-btn" onClick={() => { loadRoomData(); loadBuddiesStats(); }} disabled={loading}>
+                  🔄 {loading ? '載入中...' : '刷新列表'}
+                </button>
+              </div>
             </div>
             
             <div className="data-table">

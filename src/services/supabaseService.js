@@ -1334,6 +1334,50 @@ export const adminService = {
   },
 
   /**
+   * 一鍵刪除所有房間及相關資料
+   * @return {Promise<Object>} 刪除結果
+   */
+  async deleteAllRooms() {
+    try {
+      // 刪除所有相關表格的資料（順序很重要，先刪除子表再刪除主表）
+      const tables = [
+        'buddies_votes',
+        'buddies_recommended_restaurants',
+        'buddies_answers',
+        'buddies_members',
+        'buddies_rooms'
+      ];
+
+      let deletedCounts = {};
+
+      for (const table of tables) {
+        const { data, error } = await supabase
+          .from(table)
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // 刪除所有記錄
+
+        if (error) {
+          console.error(`刪除 ${table} 失敗:`, error);
+          throw error;
+        }
+
+        deletedCounts[table] = data?.length || 0;
+      }
+
+      console.log('刪除統計:', deletedCounts);
+
+      return {
+        success: true,
+        message: '所有房間資料已清空',
+        deletedCounts
+      };
+    } catch (error) {
+      console.error('刪除所有房間失敗:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
    * 檢查是否為超級管理員
    * @param {String} email - 管理員郵箱
    * @return {Promise<Boolean>} 是否為超級管理員
