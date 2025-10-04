@@ -14,7 +14,7 @@ export default function RecommendationTester() {
   const [peopleCount, setPeopleCount] = useState('單人');
   const [priceRange, setPriceRange] = useState('平價美食');
   const [mealType, setMealType] = useState('吃');
-  const [fullness, setFullness] = useState('吃飽');
+  const [fullness, setFullness] = useState('吃飽'); // 預設為「吃飽」，當選擇「喝」時會自動清空
   const [spiciness, setSpiciness] = useState('不辣');
   const [funAnswers, setFunAnswers] = useState([]);
 
@@ -71,7 +71,10 @@ export default function RecommendationTester() {
   const calculateScores = async () => {
     setLoading(true);
 
-    const basicAnswers = [peopleCount, priceRange, mealType, fullness, spiciness].filter(Boolean);
+    // 如果選擇「喝」，不包含分量在基本條件中
+    const basicAnswers = mealType === '喝'
+      ? [peopleCount, priceRange, mealType, spiciness].filter(Boolean)
+      : [peopleCount, priceRange, mealType, fullness, spiciness].filter(Boolean);
 
     const scored = await Promise.all(restaurants.map(async (restaurant) => {
       let score = WEIGHT.MIN_SCORE;
@@ -225,7 +228,16 @@ export default function RecommendationTester() {
 
         <div className="control-group">
           <label>類型</label>
-          <select value={mealType} onChange={(e) => setMealType(e.target.value)}>
+          <select value={mealType} onChange={(e) => {
+            setMealType(e.target.value);
+            // 如果選擇「喝」，自動清空分量選擇
+            if (e.target.value === '喝') {
+              setFullness('');
+            } else if (e.target.value === '吃' && !fullness) {
+              // 如果選擇「吃」但沒有分量，預設選擇「吃飽」
+              setFullness('吃飽');
+            }
+          }}>
             <option value="吃">吃</option>
             <option value="喝">喝</option>
           </select>
@@ -233,7 +245,13 @@ export default function RecommendationTester() {
 
         <div className="control-group">
           <label>分量</label>
-          <select value={fullness} onChange={(e) => setFullness(e.target.value)}>
+          <select
+            value={fullness}
+            onChange={(e) => setFullness(e.target.value)}
+            disabled={mealType === '喝'}
+            style={{ opacity: mealType === '喝' ? 0.5 : 1 }}
+          >
+            <option value="">無（喝不需要分量）</option>
             <option value="吃一點">吃一點</option>
             <option value="吃飽">吃飽</option>
           </select>
