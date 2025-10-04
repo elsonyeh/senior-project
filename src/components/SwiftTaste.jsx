@@ -22,6 +22,8 @@ import BuddiesResultPage from "../pages/BuddiesResultPage";
 import LoadingOverlay from "./LoadingOverlay";
 import SwipeOnboarding from "./SwipeOnboarding";
 import IdleHint from "./IdleHint";
+import SponsoredAdModal from "./SponsoredAdModal";
+import { getRandomAd } from "../data/sponsoredAds";
 import "./SwiftTasteCard.css";
 
 export default function SwiftTaste() {
@@ -48,6 +50,8 @@ export default function SwiftTaste() {
   const [funQuestions, setFunQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [sponsoredAd, setSponsoredAd] = useState(null);
+  const [showSponsoredAd, setShowSponsoredAd] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showIdleHint, setShowIdleHint] = useState(false);
   const [idleTimer, setIdleTimer] = useState(null);
@@ -817,6 +821,12 @@ export default function SwiftTaste() {
     await completeSession(finalRestaurant);
 
     if (selectedMode === "single") {
+      // 隨機顯示贊助廣告（50% 機率）
+      if (Math.random() > 0.5) {
+        const ad = getRandomAd();
+        setSponsoredAd(ad);
+        setShowSponsoredAd(true);
+      }
       setPhase("result");
     } else if (selectedMode === "buddies") {
       setPhase("buddiesRecommendation");
@@ -1045,6 +1055,17 @@ export default function SwiftTaste() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 贊助廣告彈窗 */}
+      {showSponsoredAd && sponsoredAd && (
+        <SponsoredAdModal
+          ad={sponsoredAd}
+          onClose={() => {
+            setShowSponsoredAd(false);
+            resetIdleTimer();
+          }}
+        />
       )}
     </div>
   );

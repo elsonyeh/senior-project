@@ -1,0 +1,132 @@
+/* QR 掃描彈出視窗樣式 */
+.qr-scanner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.qr-scanner-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  margin: 0 auto;
+  position: relative;
+}
+
+.qr-scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qr-scanner-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.qr-scanner-close {
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.qr-scanner-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.qr-scanner-content {
+  padding: 1.5rem;
+}
+
+#qr-reader {
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 覆蓋 html5-qrcode 的預設樣式 */
+#qr-reader__dashboard_section {
+  display: none !important;
+}
+
+#qr-reader__camera_selection {
+  margin-bottom: 1rem;
+}
+
+#qr-reader video {
+  border-radius: 12px;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 確保掃描框置中 */
+#qr-reader__scan_region {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+}
+
+#qr-reader__scan_region video {
+  object-fit: cover !important;
+}
+
+/* 掃描框邊框樣式優化 */
+#qr-reader__scan_region img {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+.qr-scanner-hint {
+  text-align: center;
+  margin-top: 1rem;
+  margin-bottom: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 640px) {
+  .qr-scanner-modal {
+    max-width: 95%;
+  }
+
+  .qr-scanner-header {
+    padding: 1rem;
+  }
+
+  .qr-scanner-header h3 {
+    font-size: 1.125rem;
+  }
+
+  .qr-scanner-content {
+    padding: 1rem;
+  }
+}

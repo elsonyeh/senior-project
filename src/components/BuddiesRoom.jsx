@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { QRCode } from "react-qrcode-logo";
+import { AnimatePresence } from "framer-motion";
 import "./BuddiesRoom.css";
 import { useQuestions } from "./QuestionLoader";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
@@ -1244,24 +1245,26 @@ export default function BuddiesRoom() {
               </button>
             )}
           </div>
-          {showScanner && (
-            <QRScannerModal
-              onScan={(code) => {
-                if (code.includes("room=")) {
-                  const match = code.match(/[?&]room=([A-Z0-9]+)/i);
-                  if (match && match[1]) {
-                    setRoomId(match[1].toUpperCase());
+          <AnimatePresence>
+            {showScanner && (
+              <QRScannerModal
+                onScan={(code) => {
+                  if (code.includes("room=")) {
+                    const match = code.match(/[?&]room=([A-Z0-9]+)/i);
+                    if (match && match[1]) {
+                      setRoomId(match[1].toUpperCase());
+                    } else {
+                      setRoomId(code.toUpperCase());
+                    }
                   } else {
                     setRoomId(code.toUpperCase());
                   }
-                } else {
-                  setRoomId(code.toUpperCase());
-                }
-                setShowScanner(false);
-              }}
-              onClose={() => setShowScanner(false)}
-            />
-          )}
+                  setShowScanner(false);
+                }}
+                onClose={() => setShowScanner(false)}
+              />
+            )}
+          </AnimatePresence>
           {error && (
             <div className="buddies-error-message">⚠️ {error}</div>
           )}

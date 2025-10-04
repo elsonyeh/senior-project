@@ -63,12 +63,28 @@ export default function BuddiesRecommendation({
       votes: votes
     });
 
+    // 確保在計算結果前，votes 數據已從資料庫載入
+    let currentVotes = votes;
+    if (Object.keys(currentVotes).length === 0) {
+      logger.warn("⚠️ handleFinishSwiping 時 votes 為空，主動載入");
+      const votesResult = await voteService.getVotes(roomId);
+      if (votesResult.success && votesResult.data) {
+        const votesObj = {};
+        votesResult.data.forEach(vote => {
+          votesObj[vote.restaurant_id] = vote.vote_count;
+        });
+        currentVotes = votesObj;
+        setVotes(votesObj);
+        logger.debug("✅ votes 已重新載入:", votesObj);
+      }
+    }
+
     setPhase("vote-result");
 
     let selectedRestaurant = null;
 
     // 計算投票結果 - 只計算票數 > 0 的餐廳
-    const votedRestaurants = Object.entries(votes).filter(([, count]) => count > 0);
+    const votedRestaurants = Object.entries(currentVotes).filter(([, count]) => count > 0);
 
     logger.debug("📊 投票統計:", {
       totalVoteEntries: Object.keys(votes).length,
@@ -178,7 +194,7 @@ export default function BuddiesRecommendation({
       logger.warn("😔 沒有任何餐廳被選擇");
       setPhase("no-result");
     }
-  }, [votes, limitedRestaurants, alternativeRestaurants, saved, roomId, userId, members]);
+  }, [votes, limitedRestaurants, alternativeRestaurants, saved, roomId, userId, members, voteService]);
 
   // 限制推薦餐廳數量為10家 - 修改以使用確定性排序
   useEffect(() => {
@@ -326,10 +342,23 @@ export default function BuddiesRecommendation({
     });
 
     // 監聽最終結果
-    const unsubscribeFinal = finalResultService.listenFinalRestaurant(roomId, (finalData) => {
+    const unsubscribeFinal = finalResultService.listenFinalRestaurant(roomId, async (finalData) => {
       logger.debug("🎯 收到最終結果更新:", finalData);
 
       if (finalData && finalData.restaurant_id) {
+        // 確保切換到結果頁面前，votes 已載入
+        if (Object.keys(votes).length === 0) {
+          logger.warn("⚠️ 最終結果監聽器檢測到 votes 為空，載入票數");
+          const votesResult = await voteService.getVotes(roomId);
+          if (votesResult.success && votesResult.data) {
+            const votesObj = {};
+            votesResult.data.forEach(vote => {
+              votesObj[vote.restaurant_id] = vote.vote_count;
+            });
+            setVotes(votesObj);
+            logger.debug("✅ 最終結果頁面票數已載入:", votesObj);
+          }
+        }
         // 嘗試從所有可用列表中尋找餐廳
         const allRestaurantLists = [
           ...limitedRestaurants,
@@ -579,7 +608,11 @@ export default function BuddiesRecommendation({
       votesValues: Object.values(votes),
       votesEntries: Object.entries(votes),
       saved: saved.map(r => ({ id: r.id, name: r.name })),
-      finalResult: finalResult ? { id: finalResult.id, name: finalResult.name } : null
+      finalResult: finalResult ? {
+        id: finalResult.id,
+        name: finalResult.name,
+        voteCount: votes[finalResult.id]
+      } : null
     });
 
     // 如果有收藏餐廳（用戶滑動選擇），使用收藏列表

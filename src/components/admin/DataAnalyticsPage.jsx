@@ -58,6 +58,8 @@ export default function DataAnalyticsPage() {
     anonymousBuddies: 0
   });
 
+  const [timeTrendData, setTimeTrendData] = useState([]);
+
   // 載入所有數據
   const loadData = async () => {
     try {
@@ -71,7 +73,8 @@ export default function DataAnalyticsPage() {
         { top20, allRankings },
         funQuestions,
         demographics,
-        anonymousStats
+        anonymousStats,
+        timeTrend
       ] = await Promise.all([
         dataAnalyticsService.getOverviewStats(),
         loadSwiftTasteMetrics(),
@@ -79,7 +82,8 @@ export default function DataAnalyticsPage() {
         loadRestaurantSuccessMetrics(),
         loadFunQuestionStats(),
         loadDemographicAnalysis(),
-        loadAnonymousData()
+        loadAnonymousData(),
+        loadTimeTrendData()
       ]);
 
       setStats(overviewStats);
@@ -90,6 +94,7 @@ export default function DataAnalyticsPage() {
       setFunQuestionStats(funQuestions);
       setDemographicAnalysis(demographics);
       setAnonymousData(anonymousStats);
+      setTimeTrendData(timeTrend);
 
     } catch (err) {
       console.error('載入統計數據失敗:', err);
@@ -122,15 +127,25 @@ export default function DataAnalyticsPage() {
         };
       }
 
-      const completed = sessions.filter(s => s.completed_at).length;
+      // 篩選已完成的會話
+      const completedSessions = sessions.filter(s => s.completed_at !== null && s.completed_at !== undefined);
+      const completed = completedSessions.length;
       const incomplete = sessions.length - completed;
+
+      // 計算總滑動和喜歡（所有會話）
       const totalSwipes = sessions.reduce((sum, s) => sum + (s.swipe_count || 0), 0);
       const totalLikes = sessions.reduce((sum, s) => sum + (s.liked_restaurants?.length || 0), 0);
-      const totalDuration = sessions.reduce((sum, s) => sum + (s.session_duration || 0), 0);
+
+      // 計算已完成會話的總時長
+      const completedDuration = completedSessions.reduce((sum, s) => sum + (s.session_duration || 0), 0);
+      const avgDuration = completed > 0 ? Math.round(completedDuration / completed) : 0;
+
+      // 最終選擇次數
       const withFinalChoice = sessions.filter(s => s.final_restaurant).length;
 
-      // 計算平均決策速度（秒/滑動）
-      const avgDecisionSpeed = totalSwipes > 0 ? totalDuration / totalSwipes : 0;
+      // 計算平均決策速度（已完成會話的秒/滑動）
+      const completedSwipes = completedSessions.reduce((sum, s) => sum + (s.swipe_count || 0), 0);
+      const avgDecisionSpeed = completedSwipes > 0 ? completedDuration / completedSwipes : 0;
 
       return {
         totalSessions: sessions.length,
@@ -140,7 +155,7 @@ export default function DataAnalyticsPage() {
         totalSwipes,
         avgSwipes: parseFloat((totalSwipes / sessions.length).toFixed(1)),
         avgLikes: parseFloat((totalLikes / sessions.length).toFixed(1)),
-        avgDuration: Math.round(totalDuration / sessions.length),
+        avgDuration,
         conversionRate: parseFloat((withFinalChoice / sessions.length * 100).toFixed(1)),
         avgDecisionSpeed: parseFloat(avgDecisionSpeed.toFixed(2))
       };
@@ -182,7 +197,10 @@ export default function DataAnalyticsPage() {
         .select('room_id');
 
       const totalRooms = rooms?.length || 0;
-      const completed = sessions?.filter(s => s.completed_at).length || 0;
+
+      // 篩選已完成的會話
+      const completedSessions = sessions?.filter(s => s.completed_at !== null && s.completed_at !== undefined) || [];
+      const completed = completedSessions.length;
       const incomplete = (sessions?.length || 0) - completed;
 
       const roomMemberCounts = {};
@@ -197,8 +215,9 @@ export default function DataAnalyticsPage() {
       const totalVotes = votes?.length || 0;
       const avgVotes = totalRooms > 0 ? totalVotes / totalRooms : 0;
 
-      const totalDuration = sessions?.reduce((sum, s) => sum + (s.session_duration || 0), 0) || 0;
-      const avgDuration = sessions && sessions.length > 0 ? totalDuration / sessions.length : 0;
+      // 計算已完成會話的總時長
+      const completedDuration = completedSessions.reduce((sum, s) => sum + (s.session_duration || 0), 0);
+      const avgDuration = completed > 0 ? Math.round(completedDuration / completed) : 0;
 
       const completionRate = sessions && sessions.length > 0
         ? (completed / sessions.length * 100)
@@ -293,48 +312,97 @@ export default function DataAnalyticsPage() {
     }
   };
 
-  // 載入趣味問題統計（合併所有答案）
+  // 載入趣味問題統計（按問題分組，顯示兩個選項的對比）
   const loadFunQuestionStats = async () => {
     try {
+      // 1. 載入所有趣味問題定義（使用視圖）
+      const { data: questions, error: questionsError } = await supabase
+        .from('questions_with_options')
+        .select('*');
+
+      if (questionsError) {
+        console.error('Error loading questions:', questionsError);
+        return [];
+      }
+
+      // 過濾出趣味問題
+      const funQuestions = questions?.filter(q =>
+        q.type === 'fun' && (q.mode === 'swifttaste' || q.mode === 'both')
+      ) || [];
+
+      console.log('Loaded fun questions from DB:', funQuestions);
+
+      // 2. 建立答案到問題的映射
+      const answerToQuestion = {};
+      const questionStats = {};
+
+      funQuestions.forEach(q => {
+        const option1 = q.option1_text;
+        const option2 = q.option2_text;
+
+        if (option1 && option2) {
+          // 建立雙向映射
+          answerToQuestion[option1] = { questionId: q.id, question: q.question_text, option1, option2 };
+          answerToQuestion[option2] = { questionId: q.id, question: q.question_text, option1, option2 };
+
+          // 初始化統計
+          questionStats[q.id] = {
+            question: q.question_text,
+            option1: { text: option1, count: 0 },
+            option2: { text: option2, count: 0 },
+            totalAnswered: 0
+          };
+        }
+      });
+
+      console.log('Answer to question mapping:', answerToQuestion);
+
+      // 3. 載入所有選擇記錄
       const { data: sessions } = await supabase
         .from('user_selection_history')
         .select('fun_answers');
 
-      const funStats = {};
-
+      // 4. 統計每個答案的選擇次數
       sessions?.forEach(session => {
         const answers = session.fun_answers;
         if (answers && Array.isArray(answers)) {
-          answers.forEach((answer, index) => {
-            const questionKey = `趣味問題 ${index + 1}`;
-            if (!funStats[questionKey]) {
-              funStats[questionKey] = {};
+          answers.forEach(answer => {
+            const answerText = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
+            const questionInfo = answerToQuestion[answerText];
+
+            if (questionInfo) {
+              const qid = questionInfo.questionId;
+              const stats = questionStats[qid];
+
+              if (stats) {
+                // 增加該問題被回答的總次數
+                stats.totalAnswered++;
+
+                // 增加對應選項的計數
+                if (answerText === stats.option1.text) {
+                  stats.option1.count++;
+                } else if (answerText === stats.option2.text) {
+                  stats.option2.count++;
+                }
+              }
             }
-            const answerValue = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
-            funStats[questionKey][answerValue] = (funStats[questionKey][answerValue] || 0) + 1;
           });
         }
       });
 
-      // 合併所有問題的答案統計
-      const allAnswers = {};
-      Object.entries(funStats).forEach(([question, answers]) => {
-        Object.entries(answers).forEach(([answer, count]) => {
-          const key = `${question}: ${answer}`;
-          allAnswers[key] = count;
-        });
-      });
+      console.log('Question stats:', questionStats);
 
-      // 轉換為陣列並排序
-      return Object.entries(allAnswers)
-        .map(([key, count]) => ({ answer: key, count }))
-        .sort((a, b) => b.count - a.count);
+      // 5. 轉換為陣列格式，按被回答次數排序
+      return Object.values(questionStats)
+        .filter(stat => stat.totalAnswered > 0) // 只顯示有被回答過的問題
+        .sort((a, b) => b.totalAnswered - a.totalAnswered);
 
     } catch (error) {
       console.error('載入趣味問題統計失敗:', error);
       return [];
     }
   };
+
 
   // 載入人口統計交叉分析
   const loadDemographicAnalysis = async () => {
@@ -441,6 +509,72 @@ export default function DataAnalyticsPage() {
         anonymousSwiftTaste: 0,
         anonymousBuddies: 0
       };
+    }
+  };
+
+  // 載入時間趨勢數據
+  const loadTimeTrendData = async () => {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - timeRange);
+
+      const { data: sessions } = await supabase
+        .from('user_selection_history')
+        .select('started_at, mode, user_id, completed_at')
+        .gte('started_at', startDate.toISOString())
+        .order('started_at', { ascending: true });
+
+      // 按日期統計
+      const dailyStats = {};
+
+      sessions?.forEach(session => {
+        const date = new Date(session.started_at).toISOString().split('T')[0];
+
+        if (!dailyStats[date]) {
+          dailyStats[date] = {
+            date,
+            swifttaste: 0,
+            buddies: 0,
+            total: 0,
+            completed: 0,
+            registeredUsers: new Set(),
+            anonymousUsers: 0
+          };
+        }
+
+        // 統計各模式使用量
+        dailyStats[date][session.mode]++;
+        dailyStats[date].total++;
+
+        // 統計完成次數
+        if (session.completed_at !== null && session.completed_at !== undefined) {
+          dailyStats[date].completed++;
+        }
+
+        // 統計用戶類型
+        if (session.user_id) {
+          dailyStats[date].registeredUsers.add(session.user_id);
+        } else {
+          dailyStats[date].anonymousUsers++;
+        }
+      });
+
+      // 轉換為陣列並格式化
+      return Object.values(dailyStats).map(stat => ({
+        date: stat.date,
+        formattedDate: new Date(stat.date).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' }),
+        swifttaste: stat.swifttaste,
+        buddies: stat.buddies,
+        total: stat.total,
+        completed: stat.completed,
+        activeUsers: stat.registeredUsers.size + stat.anonymousUsers,
+        registeredUsers: stat.registeredUsers.size,
+        anonymousUsers: stat.anonymousUsers
+      }));
+
+    } catch (error) {
+      console.error('載入時間趨勢數據失敗:', error);
+      return [];
     }
   };
 
@@ -823,6 +957,48 @@ export default function DataAnalyticsPage() {
           </div>
         </div>
 
+        {/* 餐廳被推薦次數 Top 20 */}
+        <div className="chart-card full-width">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">餐廳被推薦次數 Top 20</h3>
+              <p className="chart-subtitle">系統推薦給用戶的次數排行</p>
+            </div>
+            <button
+              className="export-button"
+              onClick={() => exportChartCSV(
+                allRestaurantRankings.sort((a, b) => b.recommendedCount - a.recommendedCount),
+                '餐廳被推薦次數完整排名',
+                ['name', 'recommendedCount', 'selectedCount', 'successRate']
+              )}
+            >
+              📥 匯出完整排名
+            </button>
+          </div>
+          <div className="chart-container">
+            {restaurantSuccessData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[...allRestaurantRankings]
+                    .sort((a, b) => b.recommendedCount - a.recommendedCount)
+                    .slice(0, 20)}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={150} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="recommendedCount" fill="#28a745" name="被推薦次數" />
+                  <Bar dataKey="selectedCount" fill="#007bff" name="被選擇次數" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">暫無數據</div>
+            )}
+          </div>
+        </div>
+
         {/* 餐廳決策速度 Top 10 */}
         <div className="chart-card">
           <div className="chart-header">
@@ -967,34 +1143,139 @@ export default function DataAnalyticsPage() {
           </div>
         </div>
 
-        {/* 趣味問題統計 - 合併成一個長條圖 */}
+        {/* 趣味問題統計 - 每個問題顯示兩個選項的對比 */}
+        {funQuestionStats && funQuestionStats.length > 0 && funQuestionStats.map((questionData, index) => (
+          <div key={index} className="chart-card">
+            <div className="chart-header">
+              <div>
+                <h3 className="chart-title">{questionData.question}</h3>
+                <p className="chart-subtitle">被回答 {questionData.totalAnswered} 次 · 兩個選項的選擇對比</p>
+              </div>
+              <button
+                className="export-button"
+                onClick={() => exportChartCSV(
+                  [
+                    { option: questionData.option1.text, count: questionData.option1.count },
+                    { option: questionData.option2.text, count: questionData.option2.count }
+                  ],
+                  questionData.question,
+                  ['option', 'count']
+                )}
+              >
+                📥 匯出
+              </button>
+            </div>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    { option: questionData.option1.text, count: questionData.option1.count },
+                    { option: questionData.option2.text, count: questionData.option2.count }
+                  ]}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="option" width={150} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" fill="#6f42c1" name="選擇次數" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ))}
+
+        {/* 時間趨勢圖 */}
         <div className="chart-card full-width">
           <div className="chart-header">
             <div>
-              <h3 className="chart-title">趣味問題選擇統計 Top 20</h3>
-              <p className="chart-subtitle">所有問題答案的選擇次數</p>
+              <h3 className="chart-title">用戶使用趨勢（近 {timeRange} 天）</h3>
+              <p className="chart-subtitle">每日使用量與活躍用戶數</p>
+            </div>
+            <div className="time-range-selector">
+              <button
+                className={`time-range-button ${timeRange === 7 ? 'active' : ''}`}
+                onClick={() => setTimeRange(7)}
+              >
+                7天
+              </button>
+              <button
+                className={`time-range-button ${timeRange === 30 ? 'active' : ''}`}
+                onClick={() => setTimeRange(30)}
+              >
+                30天
+              </button>
+              <button
+                className={`time-range-button ${timeRange === 90 ? 'active' : ''}`}
+                onClick={() => setTimeRange(90)}
+              >
+                90天
+              </button>
             </div>
             <button
               className="export-button"
               onClick={() => exportChartCSV(
-                funQuestionStats,
-                '趣味問題完整統計',
-                ['answer', 'count']
+                timeTrendData,
+                '時間趨勢統計',
+                ['date', 'total', 'swifttaste', 'buddies', 'completed', 'activeUsers', 'registeredUsers', 'anonymousUsers']
               )}
             >
-              📥 匯出完整統計
+              📥 匯出
             </button>
           </div>
           <div className="chart-container">
-            {funQuestionStats.length > 0 ? (
+            {timeTrendData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={funQuestionStats.slice(0, 20)} layout="vertical">
+                <ComposedChart data={timeTrendData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="answer" width={200} />
+                  <XAxis dataKey="formattedDate" angle={-45} textAnchor="end" height={80} />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#6f42c1" name="選擇次數" />
-                </BarChart>
+                  <Legend />
+                  <Area
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="total"
+                    fill="#e3f2fd"
+                    stroke="#007bff"
+                    name="總使用量"
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="swifttaste"
+                    stroke="#007bff"
+                    strokeWidth={2}
+                    name="SwiftTaste"
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="buddies"
+                    stroke="#6f42c1"
+                    strokeWidth={2}
+                    name="Buddies"
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="activeUsers"
+                    stroke="#28a745"
+                    strokeWidth={2}
+                    name="活躍用戶"
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="completed"
+                    stroke="#17a2b8"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="完成次數"
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             ) : (
               <div className="empty-chart">暫無數據</div>

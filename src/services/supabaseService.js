@@ -835,28 +835,37 @@ export const voteService = {
 
       if (voteError) throw voteError;
 
-      // 更新餐廳票數
-      const { data: existingVote, error: getError } = await supabase
-        .from('buddies_restaurant_votes')
-        .select('vote_count')
-        .eq('room_id', roomId)
-        .eq('restaurant_id', restaurantId)
-        .maybeSingle();
+      // 更新餐廳票數 - 使用 RPC 函數確保原子性
+      const { error: updateError } = await supabase.rpc('increment_restaurant_votes', {
+        p_room_id: roomId,
+        p_restaurant_id: restaurantId
+      });
 
-      if (getError) throw getError;
+      if (updateError) {
+        console.error('RPC increment_restaurant_votes 失敗:', updateError);
+        // 如果 RPC 函數不存在，回退到手動方式
+        const { data: existingVote } = await supabase
+          .from('buddies_restaurant_votes')
+          .select('vote_count')
+          .eq('room_id', roomId)
+          .eq('restaurant_id', restaurantId)
+          .maybeSingle();
 
-      const currentVotes = existingVote?.vote_count || 0;
+        const currentVotes = existingVote?.vote_count || 0;
 
-      const { error: updateError } = await supabase
-        .from('buddies_restaurant_votes')
-        .upsert({
-          room_id: roomId,
-          restaurant_id: restaurantId,
-          vote_count: currentVotes + 1,
-          updated_at: new Date().toISOString(),
-        });
+        const { error: fallbackError } = await supabase
+          .from('buddies_restaurant_votes')
+          .upsert({
+            room_id: roomId,
+            restaurant_id: restaurantId,
+            vote_count: currentVotes + 1,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'room_id,restaurant_id'
+          });
 
-      if (updateError) throw updateError;
+        if (fallbackError) throw fallbackError;
+      }
 
       return { success: true };
     } catch (error) {

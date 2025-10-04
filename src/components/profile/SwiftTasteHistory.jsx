@@ -9,7 +9,8 @@ import {
   IoFlameOutline,
   IoPeopleOutline,
   IoRefreshOutline,
-  IoTrashOutline
+  IoTrashOutline,
+  IoNavigateOutline
 } from 'react-icons/io5';
 import selectionHistoryService from '../../services/selectionHistoryService';
 import './SwiftTasteHistory.css';
@@ -152,6 +153,16 @@ export default function SwiftTasteHistory({ user }) {
     // 這裡可以跳轉到SwiftTaste頁面並預填答案
     console.log('Retry SwiftTaste with answers:', record.answers);
     window.location.href = '/swift';
+  };
+
+  // 前往餐廳
+  const navigateToRestaurant = (restaurant) => {
+    if (!restaurant) return;
+    const query = encodeURIComponent(restaurant.address || restaurant.name);
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${query}`,
+      "_blank"
+    );
   };
 
   // 格式化時間
@@ -375,6 +386,15 @@ export default function SwiftTasteHistory({ user }) {
                             <p className="recommendation-reason">{record.recommended_restaurant.reason}</p>
                           )}
                         </div>
+
+                        <button
+                          className="navigate-to-restaurant-btn"
+                          onClick={() => navigateToRestaurant(record.recommended_restaurant)}
+                          title="前往餐廳"
+                        >
+                          <IoNavigateOutline />
+                          <span>前往</span>
+                        </button>
                       </div>
                     </div>
                   )}
