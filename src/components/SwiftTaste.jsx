@@ -238,8 +238,8 @@ export default function SwiftTaste() {
   const startIdleTimer = () => {
     clearIdleTimer(); // 清除之前的計時器
 
-    // 最終推薦頁面使用10秒計時，其他頁面使用15秒
-    const timeout = phase === 'result' ? 10000 : 15000;
+    // 所有頁面統一使用10秒計時
+    const timeout = 10000;
 
     const timer = setTimeout(() => {
       setShowIdleHint(true);

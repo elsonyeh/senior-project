@@ -11,12 +11,16 @@ export default function RestaurantSwiperMotion({
   swipeDirection = "both",
   onNoResults, // 新增：當沒有結果時的回調
   onDislike, // 新增：左滑時的回調
+  onSwipe, // 新增：滑動時的回調（用於重置計時器）
 }) {
   const [seen, setSeen] = useState([]);
   const [saved, setSaved] = useState([]);
   const [disliked, setDisliked] = useState([]);
 
   const handleSwipe = (dir, r) => {
+    // 觸發 onSwipe 回調（用於重置計時器）
+    onSwipe?.(dir, r);
+
     // 如果是教學模式，只處理單次滑動事件
     if (tutorialMode && onSingleSwipe) {
       onSingleSwipe(dir, r);

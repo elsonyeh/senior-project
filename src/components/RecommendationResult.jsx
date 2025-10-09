@@ -100,15 +100,7 @@ export default function RecommendationResult({
     }
   }, [showConfetti]); // 只依賴showConfetti
 
-  // 6秒後顯示問卷 Modal
-  useEffect(() => {
-    if (selected && !surveyOpened) {
-      const timer = setTimeout(() => {
-        setShowSurveyModal(true);
-      }, 6000);
-      return () => clearTimeout(timer);
-    }
-  }, [selected, surveyOpened]);
+  // 移除自動彈出問卷的邏輯，改為只在特定動作時顯示
 
   const goToGoogleMaps = (place) => {
     onInteraction?.(); // 觸發互動回調
@@ -194,6 +186,10 @@ export default function RecommendationResult({
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 onInteraction?.(); // 觸發互動回調
+                // 點擊再試一次時顯示問卷 Modal（如果還沒開啟）
+                if (!surveyOpened) {
+                  setShowSurveyModal(true);
+                }
                 onRetry();
               }}
             >
@@ -392,6 +388,10 @@ export default function RecommendationResult({
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             onInteraction?.(); // 觸發互動回調
+            // 點擊再試一次時顯示問卷 Modal（如果還沒開啟）
+            if (!surveyOpened) {
+              setShowSurveyModal(true);
+            }
             onRetry();
           }}
         >
