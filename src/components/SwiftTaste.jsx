@@ -54,7 +54,7 @@ export default function SwiftTaste() {
   const [showSponsoredAd, setShowSponsoredAd] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showIdleHint, setShowIdleHint] = useState(false);
-  const [idleTimer, setIdleTimer] = useState(null);
+  const idleTimerRef = useRef(null); // 使用 ref 追蹤計時器
   const [selectedFunQuestions, setSelectedFunQuestions] = useState([]);
   const [loadingModeSelection, setLoadingModeSelection] = useState(false);
   const [showNoResultsModal, setShowNoResultsModal] = useState(false);
@@ -82,9 +82,14 @@ export default function SwiftTaste() {
     const phasesWithIdleTimer = ['selectMode', 'questions', 'funQuestions', 'restaurants', 'result', 'buddiesQuestions', 'buddiesRecommendation', 'buddiesResult'];
     const excludedPhases = ['buddiesRoom']; // 只排除房間階段
 
-    if (phasesWithIdleTimer.includes(phase) && !showOnboarding && !excludedPhases.includes(phase)) {
+    console.log(`⏱️ Idle Timer check - phase: ${phase}, showOnboarding: ${showOnboarding}, showSponsoredAd: ${showSponsoredAd}`);
+
+    // 只有在不顯示 onboarding 和廣告時才啟動計時器
+    if (phasesWithIdleTimer.includes(phase) && !showOnboarding && !showSponsoredAd && !excludedPhases.includes(phase)) {
+      console.log("✅ Starting idle timer for phase:", phase);
       startIdleTimer();
     } else {
+      console.log("❌ Not starting idle timer - conditions not met");
       clearIdleTimer();
     }
 
@@ -92,7 +97,7 @@ export default function SwiftTaste() {
     return () => {
       clearIdleTimer();
     };
-  }, [phase, showOnboarding]);
+  }, [phase, showOnboarding, showSponsoredAd]);
 
   // 載入餐廳資料和問題
   useEffect(() => {
@@ -236,26 +241,37 @@ export default function SwiftTaste() {
 
   // 停留時間管理
   const startIdleTimer = () => {
-    clearIdleTimer(); // 清除之前的計時器
+    // 先清除之前的計時器
+    if (idleTimerRef.current) {
+      console.log("🧹 Clearing existing timer before starting new one");
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
 
     // 所有頁面統一使用10秒計時
     const timeout = 10000;
 
+    console.log(`⏱️ Starting idle timer with ${timeout}ms timeout`);
     const timer = setTimeout(() => {
+      console.log("⏰ Idle timer expired, showing hint");
       setShowIdleHint(true);
     }, timeout);
-    setIdleTimer(timer);
+    idleTimerRef.current = timer;
+    console.log("📝 Timer ID stored:", timer);
   };
 
   const clearIdleTimer = () => {
-    if (idleTimer) {
-      clearTimeout(idleTimer);
-      setIdleTimer(null);
+    console.log("🧹 clearIdleTimer called, current timer:", idleTimerRef.current);
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+      console.log("✅ Timer cleared successfully");
     }
     setShowIdleHint(false);
   };
 
   const resetIdleTimer = () => {
+    console.log("🔄 Resetting idle timer");
     clearIdleTimer();
     startIdleTimer();
   };
@@ -808,11 +824,18 @@ export default function SwiftTaste() {
   };
 
   const handleRestaurantFinish = async () => {
+    console.log("🎯 handleRestaurantFinish called, selectedMode:", selectedMode);
+
     // 完成選擇會話，記錄最終選擇的餐廳（如果有的話）
     const savedRestaurants = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
     const finalRestaurant = savedRestaurants.length > 0 ? savedRestaurants[0] : null;
 
-    await completeSession(finalRestaurant);
+    // 使用 try-catch 確保即使 completeSession 失敗也能繼續
+    try {
+      await completeSession(finalRestaurant);
+    } catch (error) {
+      console.error("Failed to complete session, but continuing:", error);
+    }
 
     if (selectedMode === "single") {
       // 隨機顯示贊助廣告（50% 機率）
@@ -821,9 +844,13 @@ export default function SwiftTaste() {
         setSponsoredAd(ad);
         setShowSponsoredAd(true);
       }
+      console.log("✅ Setting phase to 'result'");
       setPhase("result");
     } else if (selectedMode === "buddies") {
+      console.log("✅ Setting phase to 'buddiesRecommendation'");
       setPhase("buddiesRecommendation");
+    } else {
+      console.warn("⚠️ selectedMode is not set:", selectedMode);
     }
   };
 
@@ -903,7 +930,7 @@ export default function SwiftTaste() {
         <QuestionSwiperMotion
           questions={basicQuestions}
           onComplete={(answers) => {
-            resetIdleTimer();
+            clearIdleTimer(); // 清除計時器，讓 useEffect 為下一階段啟動新的
             handleBasicQuestionsComplete(answers);
           }}
           onBack={handleBackToStart}
@@ -915,7 +942,7 @@ export default function SwiftTaste() {
         <QuestionSwiperMotion
           questions={selectedFunQuestions.length > 0 ? selectedFunQuestions : []}
           onComplete={(answers) => {
-            resetIdleTimer();
+            clearIdleTimer(); // 清除計時器，讓 useEffect 為下一階段啟動新的
             handleFunQuestionsComplete(answers);
           }}
           onBack={() => setPhase("questions")}
@@ -935,7 +962,7 @@ export default function SwiftTaste() {
             handleDislike(...args);
           }}
           onFinish={(...args) => {
-            resetIdleTimer();
+            clearIdleTimer(); // 清除計時器，讓 useEffect 為下一階段啟動新的
             handleRestaurantFinish(...args);
           }}
           onSwipe={(...args) => {

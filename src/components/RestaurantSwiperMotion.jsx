@@ -38,10 +38,14 @@ export default function RestaurantSwiperMotion({
       setDisliked(prev => [...prev, r]);
     }
 
+    console.log(`🍽️ Restaurant swiped: ${newSeen.length}/${restaurants.length} completed`);
+
     // 檢查是否所有餐廳都被看完
     if (newSeen.length === restaurants.length) {
+      console.log("✅ All restaurants viewed, calling onFinish in 300ms");
       setTimeout(() => {
         // 保持原有行為：總是調用 onFinish，讓結果頁面處理無結果的情況
+        console.log("📞 Calling onFinish now");
         onFinish?.();
       }, 300);
     }
