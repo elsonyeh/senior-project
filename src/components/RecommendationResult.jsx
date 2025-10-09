@@ -429,7 +429,7 @@ export default function RecommendationResult({
                 <iframe
                   src="https://docs.google.com/forms/d/e/1FAIpQLSdDTU6lep67AM5MlApYgG0mR6HhXhfCK3IFHbubuZ3NEIQCrw/viewform?embedded=true"
                   width="100%"
-                  height="600"
+                  height="700"
                   frameBorder="0"
                   marginHeight="0"
                   marginWidth="0"

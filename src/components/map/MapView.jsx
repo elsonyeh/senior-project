@@ -52,6 +52,7 @@ export default function MapView({
       fullscreenControl: false,
       streetViewControl: false,
       zoomControl: false,
+      gestureHandling: 'greedy',
       styles: [
         {
           featureType: 'poi',
