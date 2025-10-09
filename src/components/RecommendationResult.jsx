@@ -19,8 +19,13 @@ export default function RecommendationResult({
   const [displayedAlternatives, setDisplayedAlternatives] = useState([]); // 備選餐廳列表
   const [alternativesPool, setAlternativesPool] = useState([]); // 儲存所有尚未顯示的備選餐廳
   const [noMoreAlternatives, setNoMoreAlternatives] = useState(false); // 是否還有更多備選餐廳
-  const [surveyOpened, setSurveyOpened] = useState(false); // 問卷是否已開啟
+  // 初始化時檢查是否已經顯示過問卷
+  const [surveyOpened, setSurveyOpened] = useState(() => {
+    return localStorage.getItem("hasSeenSurveyPrompt") === "true";
+  });
   const [showSurveyModal, setShowSurveyModal] = useState(false); // 問卷 Modal 是否顯示
+  const [showSurveyPrompt, setShowSurveyPrompt] = useState(false); // 顯示問卷詢問提示
+  const [surveyPromptAction, setSurveyPromptAction] = useState(null); // 觸發問卷提示的動作類型
 
   // 初始化時選擇第一個餐廳並設置動畫效果
   useEffect(() => {
@@ -105,21 +110,23 @@ export default function RecommendationResult({
   const goToGoogleMaps = (place) => {
     onInteraction?.(); // 觸發互動回調
 
-    // 點擊前往時也顯示問卷 Modal（如果還沒開啟）
-    if (!surveyOpened) {
-      setShowSurveyModal(true);
-    }
-
     const query = encodeURIComponent(place);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${query}`,
       "_blank"
     );
+
+    // 開啟地圖後顯示問卷詢問提示（如果還沒開啟）
+    if (!surveyOpened) {
+      setSurveyPromptAction('navigate'); // 設定為導航動作
+      setShowSurveyPrompt(true);
+    }
   };
 
   const closeSurveyModal = () => {
     setShowSurveyModal(false);
     setSurveyOpened(true); // 標記為已顯示過，不再彈出
+    localStorage.setItem("hasSeenSurveyPrompt", "true"); // 儲存到 localStorage
   };
 
   // 選擇另一家餐廳
@@ -186,11 +193,14 @@ export default function RecommendationResult({
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 onInteraction?.(); // 觸發互動回調
-                // 點擊再試一次時顯示問卷 Modal（如果還沒開啟）
+                // 點擊再試一次時顯示問卷詢問提示（如果還沒開啟）
                 if (!surveyOpened) {
-                  setShowSurveyModal(true);
+                  setSurveyPromptAction('retry'); // 設定為重試動作
+                  setShowSurveyPrompt(true);
+                } else {
+                  // 如果已經開啟過問卷，直接執行 onRetry
+                  onRetry();
                 }
-                onRetry();
               }}
             >
               🔄 再試一次
@@ -388,11 +398,14 @@ export default function RecommendationResult({
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             onInteraction?.(); // 觸發互動回調
-            // 點擊再試一次時顯示問卷 Modal（如果還沒開啟）
+            // 點擊再試一次時顯示問卷詢問提示（如果還沒開啟）
             if (!surveyOpened) {
-              setShowSurveyModal(true);
+              setSurveyPromptAction('retry'); // 設定為重試動作
+              setShowSurveyPrompt(true);
+            } else {
+              // 如果已經開啟過問卷，直接執行 onRetry
+              onRetry();
             }
-            onRetry();
           }}
         >
           🔁 再試一次
@@ -401,6 +414,80 @@ export default function RecommendationResult({
           <div style={{ marginTop: "0.5rem" }}>{extraButton}</div>
         )}
       </motion.div>
+
+      {/* 問卷詢問提示 */}
+      <AnimatePresence>
+        {showSurveyPrompt && (
+          <motion.div
+            className="survey-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="survey-modal-container"
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '400px', padding: '2rem' }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF6B35" strokeWidth="2" style={{ margin: '0 auto 1rem' }}>
+                  <path d="M9 11H3v2h6v-2zm0-4H3v2h6V7zm0 8H3v2h6v-2zm2-6v6h10V9H11zm2 4h6v-2h-6v2z"/>
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <h3 style={{ marginBottom: '0.5rem', fontSize: '1.25rem', fontWeight: '600' }}>使用體驗問卷</h3>
+                <p style={{ color: '#666', lineHeight: '1.6' }}>
+                  你的每一個回饋都能幫助我們做得更好<br/>
+                  只需要 1 分鐘，讓下一位使用者有更棒的體驗
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <motion.button
+                  className="btn-restart"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowSurveyPrompt(false);
+                    setShowSurveyModal(true);
+                  }}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#FF6B35' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                  願意幫忙
+                </motion.button>
+                <motion.button
+                  className="btn-restart"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowSurveyPrompt(false);
+                    setSurveyOpened(true); // 標記為已詢問過
+                    localStorage.setItem("hasSeenSurveyPrompt", "true"); // 儲存到 localStorage
+                    // 如果是重試動作，執行 onRetry
+                    if (surveyPromptAction === 'retry') {
+                      onRetry();
+                    }
+                    // 如果是導航動作，不需要額外動作（已經開啟地圖了）
+                  }}
+                  style={{ flex: 1, background: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                >
+                  下次再說
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 15s1.5-2 4-2 4 2 4 2"/>
+                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                  </svg>
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 問卷 Modal */}
       <AnimatePresence>

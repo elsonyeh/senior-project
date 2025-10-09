@@ -239,6 +239,12 @@ export default function SwiftTaste() {
     console.log("Forcing onboarding to show");
   };
 
+  // 用於開發測試：重置問卷狀態
+  const resetSurvey = () => {
+    localStorage.removeItem("hasSeenSurveyPrompt");
+    console.log("Survey reset - will show again on next action");
+  };
+
   // 停留時間管理
   const startIdleTimer = () => {
     // 先清除之前的計時器
@@ -890,17 +896,23 @@ export default function SwiftTaste() {
       {/* 開發測試按鈕 */}
       {import.meta.env.DEV && (
         <div className="dev-controls">
-          <button 
+          <button
             onClick={forceShowOnboarding}
             className="dev-btn dev-btn-show"
           >
             🎯 測試引導動畫
           </button>
-          <button 
+          <button
             onClick={resetOnboarding}
             className="dev-btn dev-btn-reset"
           >
             🔄 重置引導狀態
+          </button>
+          <button
+            onClick={resetSurvey}
+            className="dev-btn dev-btn-reset"
+          >
+            📋 重置問卷狀態
           </button>
         </div>
       )}
