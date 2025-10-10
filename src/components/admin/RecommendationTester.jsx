@@ -176,7 +176,11 @@ export default function RecommendationTester() {
         scoreBreakdown.funDetails = funMatchResult.details.map(d => ({
           option: d.option,
           matchScore: d.score,
-          weightedScore: d.score * WEIGHT.FUN_MATCH
+          weightedScore: d.score * WEIGHT.FUN_MATCH,
+          matchedTags: d.matchedTags || [],
+          unmatchedTags: d.unmatchedTags || [],
+          totalWeight: d.totalWeight || 0,
+          matchedWeight: d.matchedWeight || 0
         }));
 
         // Debug: 顯示趣味匹配詳情
@@ -366,11 +370,33 @@ export default function RecommendationTester() {
                   {r.funDetails && r.funDetails.length > 0 && (
                     <div className="fun-details-breakdown">
                       {r.funDetails.map((fd, fdIdx) => (
-                        <div key={fdIdx} className="fun-detail-item">
-                          <span className="fun-option-label">└ {fd.option}:</span>
-                          <span className="fun-option-value">
-                            {(fd.matchScore * 100).toFixed(1)}% × {WEIGHT.FUN_MATCH} = {fd.weightedScore.toFixed(2)}分
-                          </span>
+                        <div key={fdIdx} className="fun-detail-container">
+                          <div className="fun-detail-item">
+                            <span className="fun-option-label">└ {fd.option}:</span>
+                            <span className="fun-option-value">
+                              {(fd.matchScore * 100).toFixed(1)}% × {WEIGHT.FUN_MATCH} = {fd.weightedScore.toFixed(2)}分
+                            </span>
+                          </div>
+                          {fd.matchedTags && fd.matchedTags.length > 0 && (
+                            <div className="matched-tags-list">
+                              <span className="tags-label">✓ 符合:</span>
+                              {fd.matchedTags.map((mt, mtIdx) => (
+                                <span key={mtIdx} className="tag-badge matched">
+                                  {mt.tag} ({mt.weight.toFixed(1)})
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {fd.unmatchedTags && fd.unmatchedTags.length > 0 && (
+                            <div className="unmatched-tags-list">
+                              <span className="tags-label">✗ 未符合:</span>
+                              {fd.unmatchedTags.map((ut, utIdx) => (
+                                <span key={utIdx} className="tag-badge unmatched">
+                                  {ut.tag} ({ut.weight.toFixed(1)})
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

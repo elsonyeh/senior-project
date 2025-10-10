@@ -100,9 +100,10 @@ export const funQuestionTagService = {
    * @param {string} optionText - 選項文字
    * @param {Array} restaurantTags - 餐廳標籤
    * @param {Object} tagsMap - 標籤映射表（可選，用於批量計算）
-   * @returns {Promise<number>} 匹配分數 (0-1)
+   * @param {boolean} detailed - 是否返回詳細資訊
+   * @returns {Promise<number|Object>} 匹配分數 (0-1) 或詳細資訊
    */
-  async calculateMatchScore(optionText, restaurantTags, tagsMap = null) {
+  async calculateMatchScore(optionText, restaurantTags, tagsMap = null, detailed = false) {
     try {
       // 如果沒有提供映射表，則獲取該選項的標籤
       let optionTags;
@@ -115,7 +116,9 @@ export const funQuestionTagService = {
         optionTags = await this.getTagsForOption(optionText);
       }
 
-      if (!optionTags || optionTags.length === 0) return 0;
+      if (!optionTags || optionTags.length === 0) {
+        return detailed ? { score: 0, matchedTags: [], unmatchedTags: [] } : 0;
+      }
 
       // 正規化餐廳標籤
       const normalizedRestaurantTags = restaurantTags
@@ -125,20 +128,33 @@ export const funQuestionTagService = {
       // 計算匹配程度
       let totalWeight = 0;
       let matchedWeight = 0;
+      const matchedTags = [];
+      const unmatchedTags = [];
 
       optionTags.forEach(({ tag, weight }) => {
         const safeTag = String(tag || '').toLowerCase();
         totalWeight += weight;
-        
-        if (normalizedRestaurantTags.some(rTag => rTag.includes(safeTag))) {
+
+        const isMatched = normalizedRestaurantTags.some(rTag => rTag.includes(safeTag));
+
+        if (isMatched) {
           matchedWeight += weight;
+          if (detailed) {
+            matchedTags.push({ tag, weight });
+          }
+        } else if (detailed) {
+          unmatchedTags.push({ tag, weight });
         }
       });
 
-      return totalWeight > 0 ? matchedWeight / totalWeight : 0;
+      const score = totalWeight > 0 ? matchedWeight / totalWeight : 0;
+
+      return detailed
+        ? { score, matchedTags, unmatchedTags, totalWeight, matchedWeight }
+        : score;
     } catch (error) {
       console.error('Failed to calculate match score:', error);
-      return 0;
+      return detailed ? { score: 0, matchedTags: [], unmatchedTags: [] } : 0;
     }
   },
 
@@ -162,14 +178,25 @@ export const funQuestionTagService = {
       const details = [];
 
       for (const optionText of optionTexts) {
-        const score = await this.calculateMatchScore(optionText, restaurantTags, tagsMap);
+        const result = await this.calculateMatchScore(
+          optionText,
+          restaurantTags,
+          tagsMap,
+          detailed // 傳遞 detailed 參數
+        );
+
+        const score = detailed ? result.score : result;
         totalScore += score;
 
         if (detailed) {
           details.push({
             option: optionText,
             score: score,
-            normalizedScore: score // 已經是 0-1 的分數
+            normalizedScore: score, // 已經是 0-1 的分數
+            matchedTags: result.matchedTags || [],
+            unmatchedTags: result.unmatchedTags || [],
+            totalWeight: result.totalWeight || 0,
+            matchedWeight: result.matchedWeight || 0
           });
         }
       }
