@@ -1351,17 +1351,32 @@ export const adminService = {
       let deletedCounts = {};
 
       for (const table of tables) {
-        const { data, error } = await supabase
+        // 先查詢所有記錄以計數
+        const { data: allData, error: selectError } = await supabase
+          .from(table)
+          .select('id');
+
+        if (selectError) {
+          console.error(`查詢 ${table} 失敗:`, selectError);
+          throw selectError;
+        }
+
+        const count = allData?.length || 0;
+
+        // 使用 gt 條件刪除所有記錄（id 通常從 1 開始或使用 UUID）
+        // 對於 UUID: 使用 .not('id', 'is', null)
+        // 對於 integer: 使用 .gte('id', 0)
+        const { error } = await supabase
           .from(table)
           .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // 刪除所有記錄
+          .not('id', 'is', null); // 刪除所有 id 不為 null 的記錄（即所有記錄）
 
         if (error) {
           console.error(`刪除 ${table} 失敗:`, error);
           throw error;
         }
 
-        deletedCounts[table] = data?.length || 0;
+        deletedCounts[table] = count;
       }
 
       console.log('刪除統計:', deletedCounts);
