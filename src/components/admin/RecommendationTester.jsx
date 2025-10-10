@@ -89,6 +89,7 @@ export default function RecommendationTester() {
         name: restaurant.name,
         basic: 0,
         fun: 0,
+        funDetails: [], // 新增：趣味問題詳細分數
         rating: 0,
         bonus: 0,
         total: 0,
@@ -163,20 +164,27 @@ export default function RecommendationTester() {
           .map(tag => String(tag || ''))
           .filter(tag => tag.length > 0);
 
-        const funMatchScore = await funQuestionTagService.calculateBatchMatchScore(
+        const funMatchResult = await funQuestionTagService.calculateBatchMatchScore(
           funAnswers,
-          cleanTags
+          cleanTags,
+          true // 啟用詳細模式
         );
 
-        const funScore = funMatchScore * WEIGHT.FUN_MATCH;
+        const funScore = funMatchResult.total * WEIGHT.FUN_MATCH;
         score += funScore;
         scoreBreakdown.fun = funScore;
+        scoreBreakdown.funDetails = funMatchResult.details.map(d => ({
+          option: d.option,
+          matchScore: d.score,
+          weightedScore: d.score * WEIGHT.FUN_MATCH
+        }));
 
         // Debug: 顯示趣味匹配詳情
-        if (funMatchScore > 0) {
-          console.log(`🎯 ${restaurant.name} 趣味匹配: ${funMatchScore.toFixed(3)} × ${WEIGHT.FUN_MATCH} = ${funScore.toFixed(2)}分`, {
+        if (funMatchResult.total > 0) {
+          console.log(`🎯 ${restaurant.name} 趣味匹配: ${funMatchResult.total.toFixed(3)} × ${WEIGHT.FUN_MATCH} = ${funScore.toFixed(2)}分`, {
             funAnswers,
-            restaurantTags: cleanTags
+            restaurantTags: cleanTags,
+            details: funMatchResult.details
           });
         }
       }
@@ -352,9 +360,21 @@ export default function RecommendationTester() {
                     <span className="value">{r.basic.toFixed(2)}分</span>
                   </div>
                   <div className="component">
-                    <span className="label">趣味匹配:</span>
+                    <span className="label">趣味匹配總分:</span>
                     <span className="value">{r.fun.toFixed(2)}分</span>
                   </div>
+                  {r.funDetails && r.funDetails.length > 0 && (
+                    <div className="fun-details-breakdown">
+                      {r.funDetails.map((fd, fdIdx) => (
+                        <div key={fdIdx} className="fun-detail-item">
+                          <span className="fun-option-label">└ {fd.option}:</span>
+                          <span className="fun-option-value">
+                            {(fd.matchScore * 100).toFixed(1)}% × {WEIGHT.FUN_MATCH} = {fd.weightedScore.toFixed(2)}分
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="component">
                     <span className="label">評分加成:</span>
                     <span className="value">{r.rating.toFixed(2)}分</span>

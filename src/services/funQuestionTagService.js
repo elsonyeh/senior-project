@@ -146,25 +146,42 @@ export const funQuestionTagService = {
    * 批量計算多個選項的匹配分數
    * @param {Array} optionTexts - 選項文字陣列
    * @param {Array} restaurantTags - 餐廳標籤
-   * @returns {Promise<number>} 總匹配分數
+   * @param {boolean} detailed - 是否返回詳細資訊
+   * @returns {Promise<number|Object>} 總匹配分數 或 { total, details }
    */
-  async calculateBatchMatchScore(optionTexts, restaurantTags) {
+  async calculateBatchMatchScore(optionTexts, restaurantTags, detailed = false) {
     try {
-      if (!optionTexts || optionTexts.length === 0) return 0;
+      if (!optionTexts || optionTexts.length === 0) {
+        return detailed ? { total: 0, details: [] } : 0;
+      }
 
       // 獲取所有標籤映射
       const tagsMap = await this.getFunQuestionTagsMap();
-      
+
       let totalScore = 0;
+      const details = [];
+
       for (const optionText of optionTexts) {
         const score = await this.calculateMatchScore(optionText, restaurantTags, tagsMap);
         totalScore += score;
+
+        if (detailed) {
+          details.push({
+            option: optionText,
+            score: score,
+            normalizedScore: score // 已經是 0-1 的分數
+          });
+        }
       }
 
-      return totalScore / optionTexts.length; // 返回平均分數
+      const averageScore = totalScore / optionTexts.length;
+
+      return detailed
+        ? { total: averageScore, details }
+        : averageScore;
     } catch (error) {
       console.error('Failed to calculate batch match score:', error);
-      return 0;
+      return detailed ? { total: 0, details: [] } : 0;
     }
   },
 

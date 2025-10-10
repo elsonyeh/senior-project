@@ -259,3 +259,38 @@
   background: #f8d7da;
   color: #721c24;
 }
+
+/* 趣味問題詳細分數樣式 */
+.fun-details-breakdown {
+  grid-column: 1 / -1; /* 佔滿整列 */
+  background: #fff5f0;
+  border-left: 3px solid #ff6b6b;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.fun-detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  background: white;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.fun-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.fun-option-label {
+  font-weight: 500;
+  color: #666;
+}
+
+.fun-option-value {
+  color: #ff6b6b;
+  font-weight: 600;
+  font-family: monospace;
+}
