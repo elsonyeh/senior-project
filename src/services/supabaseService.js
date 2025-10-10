@@ -1342,8 +1342,11 @@ export const adminService = {
       // 刪除所有相關表格的資料（順序很重要，先刪除子表再刪除主表）
       const tables = [
         'buddies_votes',
-        'buddies_recommended_restaurants',
+        'buddies_restaurant_votes',
+        'buddies_final_results',
+        'buddies_recommendations',
         'buddies_answers',
+        'buddies_questions',
         'buddies_members',
         'buddies_rooms'
       ];
