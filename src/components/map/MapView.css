@@ -288,6 +288,17 @@
   color: #ff6b35;
 }
 
+.restaurant-option.already-added {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4CAF50;
+  font-weight: 500;
+}
+
+.restaurant-option.already-added:hover {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+}
+
 .google-places-info-window .add-to-list-btn {
   width: 100%;
   padding: 8px 12px;

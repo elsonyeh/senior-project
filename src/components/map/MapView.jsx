@@ -422,11 +422,14 @@ export default function MapView({
                     <span class="restaurant-select-arrow">▼</span>
                   </div>
                   <div class="restaurant-options" id="databaseCustomOptions" style="display: none;">
-                    ${favoriteLists.map(list => `
-                      <div class="restaurant-option" data-value="${list.id}" onclick="selectDatabaseOption('${list.id}', '${list.name}')">
-                        ${list.name} (${list.favorite_list_places?.length || 0})
-                      </div>
-                    `).join('')}
+                    ${favoriteLists.map(list => {
+                      const isInList = list.favorite_list_places?.some(p => p.place_id === restaurant.id.toString());
+                      return `
+                        <div class="restaurant-option ${isInList ? 'already-added' : ''}" data-value="${list.id}" onclick="selectDatabaseOption('${list.id}', '${list.name}')">
+                          ${list.name} (${list.favorite_list_places?.length || 0}) ${isInList ? '✓' : ''}
+                        </div>
+                      `;
+                    }).join('')}
                   </div>
                 </div>
                 <button class="add-to-list-btn google-places-add-btn" onclick="addToDatabaseFavoriteList('${restaurant.id}')">
@@ -794,11 +797,14 @@ export default function MapView({
                     <span class="restaurant-select-arrow">▼</span>
                   </div>
                   <div class="restaurant-options" id="googleCustomOptions" style="display: none;">
-                    ${favoriteLists.map(list => `
-                      <div class="restaurant-option" data-value="${list.id}" onclick="selectGoogleOption('${list.id}', '${list.name}')">
-                        ${list.name} (${list.favorite_list_places?.length || 0})
-                      </div>
-                    `).join('')}
+                    ${favoriteLists.map(list => {
+                      const isInList = list.favorite_list_places?.some(p => p.place_id === place.place_id);
+                      return `
+                        <div class="restaurant-option ${isInList ? 'already-added' : ''}" data-value="${list.id}" onclick="selectGoogleOption('${list.id}', '${list.name}')">
+                          ${list.name} (${list.favorite_list_places?.length || 0}) ${isInList ? '✓' : ''}
+                        </div>
+                      `;
+                    }).join('')}
                   </div>
                 </div>
                 <button class="add-to-list-btn google-places-add-btn" onclick="addToFavoriteList('${place.place_id}')">
