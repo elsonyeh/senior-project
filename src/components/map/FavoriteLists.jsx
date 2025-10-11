@@ -27,6 +27,7 @@ export default function FavoriteLists({
   selectedPlace,
   isOpen,
   onToggle,
+  refreshTrigger = 0,
 }) {
   const [favoriteLists, setFavoriteLists] = useState([]);
   const [selectedListId, setSelectedListId] = useState(null);
@@ -49,6 +50,13 @@ export default function FavoriteLists({
       loadFavoriteLists();
     }
   }, [user]);
+
+  // 監聽 refreshTrigger 變化，重新載入清單
+  useEffect(() => {
+    if (refreshTrigger > 0 && user) {
+      loadFavoriteLists(false); // 不顯示 loading，靜默更新
+    }
+  }, [refreshTrigger, user]);
 
   // 點擊外部關閉菜單
   useEffect(() => {

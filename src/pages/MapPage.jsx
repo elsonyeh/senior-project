@@ -20,6 +20,7 @@ export default function MapPage() {
   const [notificationType, setNotificationType] = useState('success'); // success, error
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
   const [user, setUser] = useState(null);
+  const [refreshListsTrigger, setRefreshListsTrigger] = useState(0); // 用於觸發清單重新載入
   const { isNavCollapsed, setIsNavCollapsed } = useNavContext();
   const mapViewRef = useRef(null);
   const interactionTimeoutRef = useRef(null);
@@ -147,7 +148,7 @@ export default function MapPage() {
   }, []);
 
   // 顯示通知消息
-  const showNotificationMessage = (message, type = 'success') => {
+  const showNotificationMessage = useCallback((message, type = 'success') => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
@@ -156,7 +157,7 @@ export default function MapPage() {
     setTimeout(() => {
       setShowNotification(false);
     }, 2000);
-  };
+  }, []);
 
   // 設置全域函數供InfoWindow使用
   useEffect(() => {
@@ -181,6 +182,8 @@ export default function MapPage() {
           const favListsResult = await userDataService.getFavoriteLists(user.id, user.email);
           if (favListsResult.success) {
             setFavoriteLists(favListsResult.lists);
+            // 觸發 FavoriteLists 組件重新載入
+            setRefreshListsTrigger(prev => prev + 1);
           }
         } else {
           showNotificationMessage(result.error || '加入收藏失敗', 'error');
@@ -403,6 +406,7 @@ export default function MapPage() {
           selectedPlace={selectedPlace}
           isOpen={showFavoriteLists}
           onToggle={() => setShowFavoriteLists(!showFavoriteLists)}
+          refreshTrigger={refreshListsTrigger}
         />
       </div>
 
