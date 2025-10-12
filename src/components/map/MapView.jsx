@@ -8,6 +8,12 @@ import './MapView.css';
 const DEFAULT_CENTER = { lat: 25.0330, lng: 121.5654 };
 const DEFAULT_ZOOM = 15;
 
+// 根據清單取得顏色
+const getListColor = (list) => {
+  // 直接使用清單的 color 屬性，若無則使用預設顏色
+  return list?.color || '#4CAF50';
+};
+
 export default function MapView({
   center = DEFAULT_CENTER,
   zoom = DEFAULT_ZOOM,
@@ -16,12 +22,14 @@ export default function MapView({
   onFavoriteToggle,
   favorites = [],
   user = null,
-  favoriteLists = []
+  favoriteLists = [],
+  selectedList = null // 新增：當前選中的清單
 }) {
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
   const markersRef = useRef([]);
   const infoWindowRef = useRef(null);
+  const userLocationMarkerRef = useRef(null); // 用戶定位標記
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [restaurants, setRestaurants] = useState([]);
@@ -67,16 +75,24 @@ export default function MapView({
     };
 
     googleMapRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
-    
+
     // 初始化InfoWindow
     infoWindowRef.current = new window.google.maps.InfoWindow({
       maxWidth: 300,
       disableAutoPan: false
     });
-    
+
+    // 點擊地圖其他地方時關閉 InfoWindow
+    googleMapRef.current.addListener('click', () => {
+      if (infoWindowRef.current) {
+        infoWindowRef.current.close();
+        setSelectedPlace(null);
+      }
+    });
+
     // 只顯示資料庫餐廳，不搜尋 Google Places 附近餐廳
     // searchNearbyRestaurants(center); // 已關閉以節省 API 費用
-    
+
     setMapLoaded(true);
   }, [center, zoom]);
 
@@ -423,10 +439,11 @@ export default function MapView({
                   </div>
                   <div class="restaurant-options" id="databaseCustomOptions" style="display: none;">
                     ${favoriteLists.map(list => {
-                      const isInList = list.favorite_list_places?.some(p => p.place_id === restaurant.id.toString());
+                      const listPlaces = list.places || list.favorite_list_places || [];
+                      const isInList = listPlaces.some(p => p.place_id === restaurant.id.toString() || p.restaurant_id === restaurant.id.toString());
                       return `
                         <div class="restaurant-option ${isInList ? 'already-added' : ''}" data-value="${list.id}" onclick="selectDatabaseOption('${list.id}', '${list.name}')">
-                          ${list.name} (${list.favorite_list_places?.length || 0}) ${isInList ? '✓' : ''}
+                          ${list.name} (${listPlaces.length}) ${isInList ? '✓' : ''}
                         </div>
                       `;
                     }).join('')}
@@ -798,10 +815,11 @@ export default function MapView({
                   </div>
                   <div class="restaurant-options" id="googleCustomOptions" style="display: none;">
                     ${favoriteLists.map(list => {
-                      const isInList = list.favorite_list_places?.some(p => p.place_id === place.place_id);
+                      const listPlaces = list.places || list.favorite_list_places || [];
+                      const isInList = listPlaces.some(p => p.place_id === place.place_id);
                       return `
                         <div class="restaurant-option ${isInList ? 'already-added' : ''}" data-value="${list.id}" onclick="selectGoogleOption('${list.id}', '${list.name}')">
-                          ${list.name} (${list.favorite_list_places?.length || 0}) ${isInList ? '✓' : ''}
+                          ${list.name} (${listPlaces.length}) ${isInList ? '✓' : ''}
                         </div>
                       `;
                     }).join('')}
@@ -908,16 +926,86 @@ export default function MapView({
     // 清除現有的餐廳標記
     restaurantMarkers.forEach(marker => marker.setMap(null));
 
+    // 找到「我的最愛」清單
+    const myFavoriteList = favoriteLists.find(list => list.name === '我的最愛');
+    const myFavoritePlaces = myFavoriteList ? (myFavoriteList.places || myFavoriteList.favorite_list_places || []) : [];
+
+    // 找到當前選中的清單
+    // 如果沒有選中清單，或選中的是「我的最愛」，activeList 為 null
+    const activeList = selectedList && selectedList.name !== '我的最愛' ? selectedList : null;
+    const activeListPlaces = activeList ? (activeList.places || activeList.favorite_list_places || []) : [];
+
+    console.log('🎨 地標渲染狀態:', {
+      myFavoriteList: myFavoriteList?.name,
+      myFavoritePlaces: myFavoritePlaces.length,
+      myFavoritePlacesData: myFavoritePlaces.map(p => ({
+        place_id: p.place_id,
+        restaurant_id: p.restaurant_id,
+        name: p.name,
+        latitude: p.latitude,
+        longitude: p.longitude
+      })),
+      activeList: activeList?.name || 'null',
+      activeListPlaces: activeListPlaces.length,
+      activeListColor: activeList?.color,
+      totalRestaurants: restaurants.length,
+      restaurantsWithCoords: restaurants.filter(r => r.latitude && r.longitude).length
+    });
+
     const newMarkers = restaurants
       .filter(restaurant => restaurant.latitude && restaurant.longitude)
       .map(restaurant => {
-        const isFavorite = favorites.some(fav =>
-          fav.place_id === restaurant.id ||
+        // 檢查是否在「我的最愛」中
+        const isInMyFavorite = myFavoritePlaces.some(fav => {
+          const match =
+            fav.place_id === restaurant.id.toString() ||
+            fav.restaurant_id === restaurant.id.toString() ||
+            fav.place_id === restaurant.id ||
+            fav.restaurant_id === restaurant.id ||
+            (fav.name && restaurant.name && fav.name.toLowerCase() === restaurant.name.toLowerCase());
+
+          if (match) {
+            console.log('✅ 找到匹配:', {
+              restaurant: restaurant.name,
+              restaurantId: restaurant.id,
+              favPlaceId: fav.place_id,
+              favRestaurantId: fav.restaurant_id
+            });
+          }
+          return match;
+        });
+
+        // 檢查是否在當前選中的清單中
+        const isInActiveList = activeListPlaces.some(fav =>
+          fav.place_id === restaurant.id.toString() ||
+          fav.restaurant_id === restaurant.id.toString() ||
           (fav.name && fav.name.toLowerCase() === restaurant.name.toLowerCase())
         );
 
-        const iconColor = isFavorite ? '#ff6b35' : '#4CAF50';
-        const iconSize = isFavorite ? 36 : 28;
+        let iconColor, iconSize, useHeartIcon;
+
+        if (isInMyFavorite) {
+          // 在「我的最愛」→ 愛心（優先級最高）
+          if (isInActiveList) {
+            // 同時在選中清單 → 使用選中清單的顏色愛心
+            iconColor = getListColor(activeList);
+          } else {
+            // 只在「我的最愛」→ 使用「我的最愛」清單的顏色愛心
+            iconColor = getListColor(myFavoriteList);
+          }
+          iconSize = 36;
+          useHeartIcon = true;
+        } else if (isInActiveList) {
+          // 只在選中清單（不在「我的最愛」）→ 使用清單顏色的地標
+          iconColor = getListColor(activeList);
+          iconSize = 32;
+          useHeartIcon = false;
+        } else {
+          // 不在任何清單 → 綠色地標
+          iconColor = '#4CAF50';
+          iconSize = 28;
+          useHeartIcon = false;
+        }
 
         const marker = new window.google.maps.Marker({
           position: {
@@ -927,7 +1015,7 @@ export default function MapView({
           map: googleMapRef.current,
           title: `${restaurant.name} ${restaurant.rating ? `(${restaurant.rating}★)` : ''}`,
           icon: {
-            url: isFavorite ?
+            url: useHeartIcon ?
               `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="${encodeURIComponent(iconColor)}"%3E%3Cpath d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/%3E%3C/svg%3E` :
               `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="${encodeURIComponent(iconColor)}"%3E%3Cpath d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/%3E%3C/svg%3E`,
             scaledSize: new window.google.maps.Size(iconSize, iconSize),
@@ -963,7 +1051,7 @@ export default function MapView({
 
     setRestaurantMarkers(newMarkers);
     console.log(`創建了 ${newMarkers.length} 個餐廳標記`);
-  }, [restaurants, favorites, onPlaceSelect]);
+  }, [restaurants, favoriteLists, selectedList, onPlaceSelect]);
 
   // 載入 Google Maps API
   useEffect(() => {
@@ -1023,14 +1111,59 @@ export default function MapView({
     if (mapLoaded && restaurants.length > 0) {
       createRestaurantMarkers();
     }
-  }, [mapLoaded, restaurants, favorites, createRestaurantMarkers]);
+  }, [mapLoaded, restaurants, favoriteLists, selectedList, createRestaurantMarkers]);
 
-  // 當搜尋位置改變時，移動地圖中心（不搜尋附近餐廳）
+  // 當搜尋位置改變時，移動地圖中心並顯示定位標記
   useEffect(() => {
-    if (searchLocation && googleMapRef.current) {
+    if (searchLocation && googleMapRef.current && window.google) {
       const newCenter = new window.google.maps.LatLng(searchLocation.lat, searchLocation.lng);
+
+      // 移動地圖中心
       googleMapRef.current.setCenter(newCenter);
       googleMapRef.current.setZoom(16);
+
+      // 移除舊的定位標記
+      if (userLocationMarkerRef.current) {
+        userLocationMarkerRef.current.setMap(null);
+      }
+
+      // 創建新的定位標記（藍色圓點）
+      userLocationMarkerRef.current = new window.google.maps.Marker({
+        position: { lat: searchLocation.lat, lng: searchLocation.lng },
+        map: googleMapRef.current,
+        title: '我的位置',
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: '#4285F4',
+          fillOpacity: 1,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 3
+        },
+        zIndex: 1000 // 確保在其他標記之上
+      });
+
+      // 添加精確度圓圈（如果有精確度資訊）
+      if (searchLocation.accuracy) {
+        new window.google.maps.Circle({
+          map: googleMapRef.current,
+          center: { lat: searchLocation.lat, lng: searchLocation.lng },
+          radius: searchLocation.accuracy,
+          fillColor: '#4285F4',
+          fillOpacity: 0.1,
+          strokeColor: '#4285F4',
+          strokeOpacity: 0.3,
+          strokeWeight: 1,
+          clickable: false
+        });
+      }
+
+      console.log('📍 定位標記已顯示在地圖中央:', {
+        lat: searchLocation.lat.toFixed(6),
+        lng: searchLocation.lng.toFixed(6),
+        accuracy: searchLocation.accuracy ? `${searchLocation.accuracy.toFixed(1)}m` : 'N/A'
+      });
+
       // 不再搜尋附近餐廳，只顯示資料庫餐廳
       // searchNearbyRestaurants(searchLocation); // 已關閉以節省 API 費用
     }
@@ -1043,6 +1176,11 @@ export default function MapView({
       // 清理全域函數
       delete window.toggleFavorite;
       delete window.openNavigation;
+
+      // 清理定位標記
+      if (userLocationMarkerRef.current) {
+        userLocationMarkerRef.current.setMap(null);
+      }
     };
   }, []);
 

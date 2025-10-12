@@ -168,11 +168,20 @@ export default function MapPage() {
         const placeData = {
           place_id: place.place_id,
           name: place.name,
-          address: place.formatted_address || '',
+          address: place.formatted_address || place.address || '',
           rating: place.rating || null,
+          latitude: place.latitude || place.geometry?.location?.lat?.() || null,
+          longitude: place.longitude || place.geometry?.location?.lng?.() || null,
+          category: place.category || '',
           photo_url: place.photos?.[0]?.getUrl({ maxWidth: 200 }) || place.primaryImage?.image_url || null,
           notes: ''
         };
+
+        console.log('📌 準備加入收藏:', {
+          name: placeData.name,
+          latitude: placeData.latitude,
+          longitude: placeData.longitude
+        });
 
         const result = await userDataService.addPlaceToList(listId, placeData);
 
@@ -181,7 +190,22 @@ export default function MapPage() {
           // 重新載入清單數據
           const favListsResult = await userDataService.getFavoriteLists(user.id, user.email);
           if (favListsResult.success) {
-            setFavoriteLists(favListsResult.lists);
+            // 保持與初始載入相同的資料格式轉換
+            setFavoriteLists(favListsResult.lists.map(list => ({
+              ...list,
+              places: (list.favorite_list_places || []).map(place => ({
+                ...place,
+                place_id: place.restaurant_id || place.place_id,
+                restaurant_id: place.restaurant_id || place.place_id,
+                // 從關聯的餐廳資料取得詳細資訊
+                name: place.restaurants?.name || place.name,
+                address: place.restaurants?.address || place.address,
+                rating: place.restaurants?.rating || place.rating,
+                latitude: place.restaurants?.latitude || place.latitude,
+                longitude: place.restaurants?.longitude || place.longitude,
+                category: place.restaurants?.category || place.category
+              }))
+            })));
             // 觸發 FavoriteLists 組件重新載入
             setRefreshListsTrigger(prev => prev + 1);
           }
@@ -212,9 +236,70 @@ export default function MapPage() {
         const result = await userDataService.getFavoriteLists(user.id, user.email);
 
         if (result.success) {
+          console.log('📦 MapPage 載入清單資料:', result.lists);
+
+          // 如果餐廳資料沒有經緯度，從資料庫重新載入完整餐廳資料
+          const restaurantIds = [];
+          result.lists.forEach(list => {
+            (list.favorite_list_places || []).forEach(place => {
+              if (place.restaurant_id && (!place.restaurants?.latitude || !place.restaurants?.longitude)) {
+                restaurantIds.push(place.restaurant_id);
+              }
+            });
+          });
+
+          // 載入完整餐廳資料
+          let fullRestaurantsMap = {};
+          if (restaurantIds.length > 0) {
+            console.log('🔄 需要重新載入餐廳資料:', restaurantIds);
+            const { restaurantService } = await import('../services/restaurantService');
+            const allRestaurants = await restaurantService.getRestaurants();
+            fullRestaurantsMap = Object.fromEntries(
+              allRestaurants.map(r => [r.id, r])
+            );
+            console.log('✅ 已載入完整餐廳資料庫');
+
+            // 檢查這些餐廳在資料庫中的狀態
+            restaurantIds.forEach(id => {
+              const restaurant = fullRestaurantsMap[id];
+              console.log(`🏪 餐廳 ${restaurant?.name || id}:`, {
+                hasData: !!restaurant,
+                latitude: restaurant?.latitude,
+                longitude: restaurant?.longitude,
+                address: restaurant?.address
+              });
+            });
+          }
+
           setFavoriteLists(result.lists.map(list => ({
             ...list,
-            places: list.favorite_list_places || []
+            places: (list.favorite_list_places || []).map(place => {
+              // 優先使用完整餐廳資料
+              const fullRestaurant = fullRestaurantsMap[place.restaurant_id];
+              const restaurantData = fullRestaurant || place.restaurants;
+
+              console.log('🔍 MapPage 處理餐廳:', {
+                place_id: place.restaurant_id,
+                name: restaurantData?.name,
+                hasRestaurants: !!restaurantData,
+                usingFullData: !!fullRestaurant,
+                latitude: restaurantData?.latitude,
+                longitude: restaurantData?.longitude
+              });
+
+              return {
+                ...place,
+                place_id: place.restaurant_id || place.place_id,
+                restaurant_id: place.restaurant_id || place.place_id,
+                // 從完整餐廳資料或關聯資料取得詳細資訊
+                name: restaurantData?.name || place.name,
+                address: restaurantData?.address || place.address,
+                rating: restaurantData?.rating || place.rating,
+                latitude: restaurantData?.latitude || place.latitude,
+                longitude: restaurantData?.longitude || place.longitude,
+                category: restaurantData?.category || place.category
+              };
+            })
           })));
         } else {
           console.error('載入收藏清單失敗:', result.error);
@@ -254,9 +339,9 @@ export default function MapPage() {
           // 不顯示錯誤訊息，讓用戶手動點擊定位按鈕
         },
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000 // 5分鐘內的快取位置可接受
+          enableHighAccuracy: true, // 啟用高精度定位
+          timeout: 15000, // 增加超時時間到15秒
+          maximumAge: 0 // 不使用緩存，確保獲得最新位置
         }
       );
     }
@@ -311,8 +396,15 @@ export default function MapPage() {
 
   // 處理清單選擇
   const handleListSelect = useCallback((list) => {
-    setSelectedList(list);
-  }, []);
+    // 如果點擊的是當前選中的清單，取消選擇（只顯示「我的最愛」）
+    if (selectedList && selectedList.id === list.id && list.name !== '我的最愛') {
+      // 找到「我的最愛」清單並切換回去
+      const myFavoriteList = favoriteLists.find(l => l.name === '我的最愛');
+      setSelectedList(myFavoriteList || null);
+    } else {
+      setSelectedList(list);
+    }
+  }, [selectedList, favoriteLists]);
 
   // 處理地點加入清單
   const handlePlaceAdd = useCallback(() => {
@@ -393,6 +485,7 @@ export default function MapPage() {
           favorites={selectedList ? (selectedList.places || selectedList.favorite_list_places || []) : []}
           user={user}
           favoriteLists={favoriteLists}
+          selectedList={selectedList}
         />
       </div>
 

@@ -5,6 +5,7 @@ import RestaurantManager from "./RestaurantManager";
 import DataAnalyticsPage from "./admin/DataAnalyticsPage";
 import RestaurantRatingUpdater from "./admin/RestaurantRatingUpdater";
 import RecommendationTester from "./admin/RecommendationTester";
+import RestaurantGeocoder from "./admin/RestaurantGeocoder";
 import { InputModal, ConfirmModal, NotificationModal, AdminFormModal } from "./CustomModal";
 import "./AdminDashboard.css";
 
@@ -494,6 +495,12 @@ export default function AdminDashboard() {
         >
           推薦測試
         </button>
+        <button
+          className={`tab-button ${activeTab === "geocoder" ? "active" : ""}`}
+          onClick={() => setActiveTab("geocoder")}
+        >
+          經緯度更新
+        </button>
       </div>
 
       {/* 內容區域 */}
@@ -505,7 +512,9 @@ export default function AdminDashboard() {
         {activeTab === "analytics" && <DataAnalyticsPage />}
 
         {activeTab === "testing" && <RecommendationTester />}
-        
+
+        {activeTab === "geocoder" && <RestaurantGeocoder />}
+
         {activeTab === "buddies" && (
           <div className="buddies-section">
             {/* 統計資料區塊 */}

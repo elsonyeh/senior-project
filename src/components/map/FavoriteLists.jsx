@@ -122,21 +122,47 @@ export default function FavoriteLists({
           };
         });
 
-        setFavoriteLists(listsWithPlaces);
+        // 確保「我的最愛」清單有正確的紅色
+        const listsWithCorrectColors = await Promise.all(listsWithPlaces.map(async list => {
+          if (list.name === '我的最愛' && list.color !== '#ef4444') {
+            console.log('🔧 更新「我的最愛」清單顏色為紅色');
+            // 更新資料庫中的顏色
+            try {
+              const updateResult = await userDataService.updateFavoriteList(list.id, { color: '#ef4444' });
+              if (updateResult.success) {
+                console.log('✅ 「我的最愛」顏色已更新到資料庫');
+                return { ...list, color: '#ef4444' };
+              }
+            } catch (error) {
+              console.error('❌ 更新「我的最愛」顏色失敗:', error);
+            }
+          }
+          return list;
+        }));
 
-        // 只在初次載入時自動選擇第一個清單
-        if (isInitialLoad && listsWithPlaces.length > 0) {
-          setSelectedListId(listsWithPlaces[0].id);
-          onListSelect?.(listsWithPlaces[0]);
+        // 將「我的最愛」置頂，其他清單按建立時間排序
+        const sortedLists = listsWithCorrectColors.sort((a, b) => {
+          if (a.name === '我的最愛') return -1;
+          if (b.name === '我的最愛') return 1;
+          return new Date(a.created_at) - new Date(b.created_at);
+        });
+
+        setFavoriteLists(sortedLists);
+
+        // 只在初次載入時自動選擇「我的最愛」清單（如果存在）
+        if (isInitialLoad && sortedLists.length > 0) {
+          const myFavoriteList = sortedLists.find(list => list.name === '我的最愛') || sortedLists[0];
+          setSelectedListId(myFavoriteList.id);
+          onListSelect?.(myFavoriteList);
 
           // 通知父組件清單已更新
           if (onListUpdate) {
-            onListUpdate(listsWithPlaces[0]);
+            onListUpdate(myFavoriteList);
           }
           setIsInitialLoad(false);
         } else if (!isInitialLoad) {
           // 非初次載入時，保持當前選中的清單
-          const currentList = listsWithPlaces.find(
+          const currentList = sortedLists.find(
             (list) => list.id === selectedListId
           );
           if (currentList && onListUpdate) {
@@ -152,7 +178,7 @@ export default function FavoriteLists({
             name: "我的最愛",
             places: [],
             created_at: new Date().toISOString(),
-            color: "#ff6b35",
+            color: "#ef4444", // 紅色
           };
           setFavoriteLists([defaultList]);
           setSelectedListId(defaultList.id);
@@ -175,6 +201,12 @@ export default function FavoriteLists({
 
   const createNewList = async () => {
     if (!newListName.trim() || !user) return;
+
+    // 檢查清單數量限制（最多5個，包含「我的最愛」）
+    if (favoriteLists.length >= 5) {
+      showNotification("最多只能建立 5 個清單（含我的最愛）", "error");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -300,20 +332,29 @@ export default function FavoriteLists({
     }
   };
 
+  // 取得未使用的顏色（避免重複）
   const getRandomColor = () => {
     const colors = [
-      "#ff6b35",
-      "#22c55e",
-      "#3b82f6",
-      "#8b5cf6",
-      "#f59e0b",
-      "#ef4444",
-      "#ec4899",
-      "#06b6d4",
-      "#84cc16",
-      "#f97316",
+      "#ef4444", // 紅色（我的最愛專用）
+      "#22c55e", // 綠色
+      "#3b82f6", // 藍色
+      "#8b5cf6", // 紫色
+      "#f59e0b", // 琥珀色
+      "#ec4899", // 粉紅色
+      "#06b6d4", // 青色
+      "#84cc16", // 萊姆綠
+      "#f97316", // 橙色
     ];
-    return colors[Math.floor(Math.random() * colors.length)];
+
+    // 收集已使用的顏色
+    const usedColors = favoriteLists.map(list => list.color);
+
+    // 找出未使用的顏色
+    const availableColors = colors.filter(color => !usedColors.includes(color));
+
+    // 如果還有未使用的顏色，隨機選一個；否則隨機選任意顏色
+    const colorPool = availableColors.length > 0 ? availableColors : colors;
+    return colorPool[Math.floor(Math.random() * colorPool.length)];
   };
 
   const showNotification = (message, type = "success") => {
