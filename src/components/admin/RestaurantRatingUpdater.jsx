@@ -36,6 +36,9 @@ export default function RestaurantRatingUpdater() {
   const [unmatchedRestaurants, setUnmatchedRestaurants] = useState([]);
   const [isLoadingUnmatched, setIsLoadingUnmatched] = useState(false);
   const [showRestaurantSelector, setShowRestaurantSelector] = useState(false);
+  const [showSearchRestaurant, setShowSearchRestaurant] = useState(false);
+  const [searchRestaurantQuery, setSearchRestaurantQuery] = useState('');
+  const [filteredRestaurants, setFilteredRestaurants] = useState([]);
 
   // 載入餐廳列表
   const loadRestaurants = async () => {
@@ -204,7 +207,11 @@ export default function RestaurantRatingUpdater() {
       );
 
       if (result.success) {
-        alert(`✅ 更新成功！\n餐廳: ${selectedRestaurant.name}\n評分: ${selectedPlace.rating}\n評分數: ${selectedPlace.user_ratings_total}`);
+        const coordsText = selectedPlace.latitude && selectedPlace.longitude
+          ? `\n座標: (${selectedPlace.latitude.toFixed(6)}, ${selectedPlace.longitude.toFixed(6)})`
+          : '';
+
+        alert(`✅ 更新成功！\n餐廳: ${selectedRestaurant.name}\n評分: ${selectedPlace.rating}\n評分數: ${selectedPlace.user_ratings_total}${coordsText}`);
 
         // 從無法匹配列表中移除此餐廳
         const updatedUnmatched = restaurantRatingService.removeFromUnmatchedList(selectedRestaurant.id);
@@ -235,6 +242,73 @@ export default function RestaurantRatingUpdater() {
     if (confirm('確定要清空所有無法匹配的餐廳嗎？')) {
       restaurantRatingService.clearUnmatchedList();
       setUnmatchedRestaurants([]);
+    }
+  };
+
+  // 開啟餐廳搜尋對話框
+  const openSearchRestaurant = () => {
+    setShowSearchRestaurant(true);
+    setSearchRestaurantQuery('');
+    setFilteredRestaurants([]);
+  };
+
+  // 搜尋餐廳
+  const handleSearchRestaurant = (query) => {
+    setSearchRestaurantQuery(query);
+
+    if (!query.trim()) {
+      setFilteredRestaurants([]);
+      return;
+    }
+
+    const filtered = restaurants.filter(r =>
+      r.name.toLowerCase().includes(query.toLowerCase()) ||
+      (r.address && r.address.toLowerCase().includes(query.toLowerCase()))
+    );
+
+    setFilteredRestaurants(filtered.slice(0, 20)); // 限制顯示 20 個結果
+  };
+
+  // 選擇餐廳進行重新匹配
+  const selectRestaurantForRematch = (restaurant) => {
+    setShowSearchRestaurant(false);
+    openManualMatch(restaurant);
+  };
+
+  // 清除餐廳的 Google Places 綁定資料
+  const clearGoogleData = async (clearCoordinates = false) => {
+    if (!selectedRestaurant) return;
+
+    const confirmMessage = clearCoordinates
+      ? `確定要清除「${selectedRestaurant.name}」的以下資料嗎？\n\n• Google Place ID\n• 評分和評分數\n• 經緯度座標\n\n此操作無法復原！`
+      : `確定要清除「${selectedRestaurant.name}」的以下資料嗎？\n\n• Google Place ID\n• 評分和評分數\n\n座標將保留。此操作無法復原！`;
+
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      const result = await restaurantRatingService.clearRestaurantGoogleData(
+        selectedRestaurant.id,
+        clearCoordinates
+      );
+
+      if (result.success) {
+        const clearedItems = clearCoordinates
+          ? 'Place ID、評分和座標'
+          : 'Place ID 和評分';
+
+        alert(`✅ 清除成功！\n餐廳: ${selectedRestaurant.name}\n已清除: ${clearedItems}`);
+
+        // 關閉對話框
+        setShowManualMatch(false);
+        setSelectedRestaurant(null);
+        setSearchResults([]);
+
+        // 重新載入餐廳清單
+        await loadRestaurants();
+      }
+    } catch (error) {
+      console.error('清除 Google 資料失敗:', error);
+      alert(`清除失敗: ${error.message}`);
     }
   };
 
@@ -565,6 +639,16 @@ export default function RestaurantRatingUpdater() {
 
         <button
           className="btn btn-outline"
+          onClick={openSearchRestaurant}
+          disabled={isUpdating || isLoading || restaurants.length === 0}
+          style={{ backgroundColor: '#28a745', borderColor: '#28a745', color: 'white' }}
+        >
+          <IoRestaurantOutline className="btn-icon" />
+          搜尋餐廳重新匹配
+        </button>
+
+        <button
+          className="btn btn-outline"
           onClick={clearPlaceIdCache}
           disabled={isUpdating || isLoading}
           style={{ backgroundColor: '#ffc107', borderColor: '#ffc107', color: '#000' }}
@@ -748,7 +832,60 @@ export default function RestaurantRatingUpdater() {
                   <p><strong>地址:</strong> {selectedRestaurant.address || '無地址'}</p>
                   <p><strong>目前評分:</strong> {selectedRestaurant.rating || 'N/A'}</p>
                   <p><strong>評分數:</strong> {selectedRestaurant.user_ratings_total || 0}</p>
+                  {selectedRestaurant.latitude && selectedRestaurant.longitude && (
+                    <p style={{ fontFamily: 'monospace', color: '#666' }}>
+                      <strong>目前座標:</strong> ({selectedRestaurant.latitude.toFixed(6)}, {selectedRestaurant.longitude.toFixed(6)})
+                    </p>
+                  )}
+                  {selectedRestaurant.google_place_id && (
+                    <p style={{ fontSize: '12px', color: '#999' }}>
+                      <strong>Place ID:</strong> {selectedRestaurant.google_place_id}
+                    </p>
+                  )}
                 </div>
+
+                {/* 清除 Google 資料按鈕 */}
+                {(selectedRestaurant.google_place_id || selectedRestaurant.rating) && (
+                  <div style={{
+                    marginTop: '15px',
+                    padding: '12px',
+                    backgroundColor: '#fff3cd',
+                    borderRadius: '6px',
+                    border: '1px solid #ffc107'
+                  }}>
+                    <div style={{ fontSize: '13px', color: '#856404', marginBottom: '10px' }}>
+                      ⚠️ 如果此餐廳的 Google 資料有誤，可以清除後重新搜尋匹配
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        className="btn btn-outline"
+                        onClick={() => clearGoogleData(false)}
+                        style={{
+                          backgroundColor: '#ffc107',
+                          borderColor: '#ffc107',
+                          color: '#000',
+                          fontSize: '13px',
+                          padding: '8px 12px'
+                        }}
+                      >
+                        🗑️ 清除 Place ID & 評分
+                      </button>
+                      <button
+                        className="btn btn-outline"
+                        onClick={() => clearGoogleData(true)}
+                        style={{
+                          backgroundColor: '#dc3545',
+                          borderColor: '#dc3545',
+                          color: 'white',
+                          fontSize: '13px',
+                          padding: '8px 12px'
+                        }}
+                      >
+                        🗑️ 清除全部（含座標）
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="search-section">
@@ -798,6 +935,16 @@ export default function RestaurantRatingUpdater() {
                               相似度: {(place.nameSimilarity * 100).toFixed(1)}%
                             </span>
                           </div>
+                          {place.latitude && place.longitude && (
+                            <div className="place-coordinates" style={{
+                              marginTop: '8px',
+                              fontSize: '12px',
+                              color: '#666',
+                              fontFamily: 'monospace'
+                            }}>
+                              📍 座標: ({place.latitude.toFixed(6)}, {place.longitude.toFixed(6)})
+                            </div>
+                          )}
                         </div>
                         <button
                           className="btn btn-success"
@@ -819,6 +966,106 @@ export default function RestaurantRatingUpdater() {
                 onClick={() => setShowManualMatch(false)}
               >
                 取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 搜尋餐廳重新匹配模態對話框 */}
+      {showSearchRestaurant && (
+        <div className="results-modal-overlay">
+          <div className="results-modal" style={{ maxWidth: '900px' }}>
+            <div className="modal-header">
+              <h3>搜尋餐廳重新匹配</h3>
+              <button
+                className="close-btn"
+                onClick={() => setShowSearchRestaurant(false)}
+              >
+                <IoCloseOutline />
+              </button>
+            </div>
+
+            <div className="modal-content">
+              <div className="search-section" style={{ marginBottom: '20px' }}>
+                <input
+                  type="text"
+                  value={searchRestaurantQuery}
+                  onChange={(e) => handleSearchRestaurant(e.target.value)}
+                  placeholder="輸入餐廳名稱或地址搜尋..."
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '16px',
+                    border: '2px solid #ddd',
+                    borderRadius: '6px'
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              {searchRestaurantQuery && filteredRestaurants.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                  找不到符合「{searchRestaurantQuery}」的餐廳
+                </div>
+              )}
+
+              {filteredRestaurants.length > 0 && (
+                <div className="unmatched-restaurants-list">
+                  {filteredRestaurants.map((restaurant) => (
+                    <div key={restaurant.id} className="unmatched-restaurant-item">
+                      <div className="restaurant-basic-info">
+                        <div className="restaurant-name">{restaurant.name}</div>
+                        <div className="restaurant-address">
+                          📍 {restaurant.address || '無地址資訊'}
+                        </div>
+                        <div className="restaurant-current-rating">
+                          ⭐ 目前評分: {restaurant.rating || 'N/A'}
+                          ({restaurant.user_ratings_total || 0} 評論)
+                        </div>
+                        {restaurant.latitude && restaurant.longitude && (
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#666',
+                            fontFamily: 'monospace',
+                            marginTop: '4px'
+                          }}>
+                            📍 座標: ({restaurant.latitude.toFixed(6)}, {restaurant.longitude.toFixed(6)})
+                          </div>
+                        )}
+                        {restaurant.google_place_id && (
+                          <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+                            Place ID: {restaurant.google_place_id}
+                          </div>
+                        )}
+                      </div>
+                      <div className="restaurant-actions">
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => selectRestaurantForRematch(restaurant)}
+                        >
+                          <IoStarOutline />
+                          重新匹配
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!searchRestaurantQuery && (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  請輸入餐廳名稱或地址開始搜尋
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowSearchRestaurant(false)}
+              >
+                關閉
               </button>
             </div>
           </div>

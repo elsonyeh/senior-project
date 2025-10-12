@@ -1074,6 +1074,8 @@ class RestaurantRatingService {
           address: place.formattedAddress,
           rating: place.rating,
           user_ratings_total: place.userRatingCount,
+          latitude: lat,  // 新增：回傳座標
+          longitude: lng, // 新增：回傳座標
           distance: distance,
           nameSimilarity: nameSimilarity,
           combinedScore: nameSimilarity * 0.7 + (distance ? Math.max(0, 1 - distance) * 0.3 : 0)
@@ -1082,6 +1084,73 @@ class RestaurantRatingService {
 
     } catch (error) {
       console.error('手動搜尋失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 清除餐廳的 Google Places 綁定資料
+   * @param {string} restaurantId - 餐廳 ID
+   * @param {boolean} clearCoordinates - 是否同時清除座標
+   * @returns {Promise<Object>} 清除結果
+   */
+  async clearRestaurantGoogleData(restaurantId, clearCoordinates = false) {
+    try {
+      const updateData = {
+        google_place_id: null,
+        rating: null,
+        user_ratings_total: null,
+        rating_updated_at: new Date().toISOString()
+      };
+
+      // 如果要清除座標
+      if (clearCoordinates) {
+        updateData.latitude = null;
+        updateData.longitude = null;
+        console.log('🗑️ 將清除座標資料');
+      }
+
+      console.log('🗑️ 清除 Google Places 資料:', updateData);
+
+      // 嘗試使用管理員客戶端進行更新
+      const adminClient = getSupabaseAdmin();
+      let updateResult, error;
+
+      if (adminClient) {
+        const result = await adminClient
+          .from('restaurants')
+          .update(updateData)
+          .eq('id', restaurantId)
+          .select();
+        updateResult = result.data;
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('restaurants')
+          .update(updateData)
+          .eq('id', restaurantId)
+          .select();
+        updateResult = result.data;
+        error = result.error;
+      }
+
+      if (error) {
+        throw new Error(`資料庫更新失敗: ${error.message}`);
+      }
+
+      if (!updateResult || updateResult.length === 0) {
+        throw new Error(`清除失敗：找不到餐廳 ID ${restaurantId}`);
+      }
+
+      console.log(`✅ 成功清除餐廳 ${restaurantId} 的 Google Places 資料`);
+
+      return {
+        success: true,
+        cleared: updateResult[0]
+      };
+
+    } catch (error) {
+      console.error('清除 Google Places 資料失敗:', error);
       throw error;
     }
   }
@@ -1109,6 +1178,13 @@ class RestaurantRatingService {
       // 儲存 Google Place ID 到資料庫
       if (selectedPlace.place_id) {
         updateData.google_place_id = selectedPlace.place_id;
+      }
+
+      // 新增：更新座標（如果有提供）
+      if (selectedPlace.latitude !== undefined && selectedPlace.longitude !== undefined) {
+        updateData.latitude = selectedPlace.latitude;
+        updateData.longitude = selectedPlace.longitude;
+        console.log(`📍 將更新座標: (${selectedPlace.latitude}, ${selectedPlace.longitude})`);
       }
 
 
