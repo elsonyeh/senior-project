@@ -19,7 +19,7 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
     };
   }, []);
 
-  // 位置平滑算法 - 使用加權移動平均
+  // 位置平滑算法 - 使用加權移動平均，過濾低精確度樣本
   const smoothPosition = (newLat, newLng, accuracy) => {
     positionHistoryRef.current.push({ lat: newLat, lng: newLng, accuracy, time: Date.now() });
 
@@ -28,9 +28,17 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
       positionHistoryRef.current.shift();
     }
 
-    // 如果只有一個位置，直接返回
-    if (positionHistoryRef.current.length === 1) {
+    // 過濾掉精確度太差的樣本（>100m），這些通常是 GPS 冷啟動的不準確位置
+    const validSamples = positionHistoryRef.current.filter(pos => pos.accuracy <= 100);
+
+    // 如果沒有有效樣本，使用當前位置
+    if (validSamples.length === 0) {
       return { lat: newLat, lng: newLng };
+    }
+
+    // 如果只有一個有效位置，直接返回
+    if (validSamples.length === 1) {
+      return { lat: validSamples[0].lat, lng: validSamples[0].lng };
     }
 
     // 使用加權平均（精確度越高權重越大）
@@ -38,7 +46,7 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
     let weightedLat = 0;
     let weightedLng = 0;
 
-    positionHistoryRef.current.forEach((pos) => {
+    validSamples.forEach((pos) => {
       // 權重 = 1 / 精確度 (精確度越低數字越大，所以倒數)
       const weight = 1 / (pos.accuracy || 50);
       totalWeight += weight;
@@ -70,8 +78,10 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
 
     let bestAccuracy = Infinity;
     let sampleCount = 0;
-    const maxSamples = 5; // 收集5個樣本
-    const minAccuracy = 20; // 目標精確度20米
+    let goodSampleCount = 0; // 精確度良好的樣本數（<50m）
+    const maxSamples = 8; // 增加到8個樣本
+    const minAccuracy = 15; // 目標精確度15米
+    const goodAccuracy = 50; // 良好精確度50米
 
     // 清除之前的監聽
     if (watchIdRef.current !== null) {
@@ -83,10 +93,16 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
         const { latitude, longitude, accuracy } = position.coords;
         sampleCount++;
 
-        console.log(`📍 位置樣本 ${sampleCount}:`, {
+        // 計算良好樣本數
+        if (accuracy <= goodAccuracy) {
+          goodSampleCount++;
+        }
+
+        console.log(`📍 位置樣本 ${sampleCount}/${maxSamples}:`, {
           lat: latitude.toFixed(6),
           lng: longitude.toFixed(6),
-          accuracy: `${accuracy.toFixed(1)}m`
+          accuracy: `${accuracy.toFixed(1)}m`,
+          status: accuracy > 100 ? '❌ 太差，忽略' : accuracy <= 30 ? '✅ 優秀' : '⚠️ 可接受'
         });
 
         // 記錄最佳精確度
@@ -98,13 +114,15 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
         const smoothedPos = smoothPosition(latitude, longitude, accuracy);
 
         // 當達到以下任一條件時停止：
-        // 1. 達到目標精確度
-        // 2. 收集足夠樣本
-        // 3. 精確度已經很好（<30米）且有至少3個樣本
+        // 1. 達到目標精確度（15m）
+        // 2. 收集足夠良好樣本（至少4個 <50m 的樣本）
+        // 3. 達到最大樣本數
+        // 4. 精確度很好（<25米）且有至少3個良好樣本
         const shouldStop =
           accuracy <= minAccuracy ||
+          goodSampleCount >= 4 ||
           sampleCount >= maxSamples ||
-          (accuracy <= 30 && sampleCount >= 3);
+          (accuracy <= 25 && goodSampleCount >= 3);
 
         if (shouldStop) {
           // 停止監聽
@@ -117,7 +135,12 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
           setIsRelocating(false);
           setHasLocation(true);
 
-          console.log(`✅ 定位完成！最佳精確度: ${bestAccuracy.toFixed(1)}m`);
+          console.log(`✅ 定位完成！`, {
+            最佳精確度: `${bestAccuracy.toFixed(1)}m`,
+            總樣本數: sampleCount,
+            良好樣本數: goodSampleCount,
+            最終位置: `${smoothedPos.lat.toFixed(6)}, ${smoothedPos.lng.toFixed(6)}`
+          });
 
           const finalLocation = {
             lat: smoothedPos.lat,

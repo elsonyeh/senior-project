@@ -1164,10 +1164,16 @@ export default function MapView({
         accuracy: searchLocation.accuracy ? `${searchLocation.accuracy.toFixed(1)}m` : 'N/A'
       });
 
+      // 重新創建餐廳標記，確保地標在新位置仍然可見
+      if (mapLoaded && restaurants.length > 0) {
+        console.log('🔄 重新定位後重新創建餐廳標記');
+        createRestaurantMarkers();
+      }
+
       // 不再搜尋附近餐廳，只顯示資料庫餐廳
       // searchNearbyRestaurants(searchLocation); // 已關閉以節省 API 費用
     }
-  }, [searchLocation]);
+  }, [searchLocation, mapLoaded, restaurants, createRestaurantMarkers]);
 
 
   // 清理函數
