@@ -1179,8 +1179,8 @@ export default function MapView({
         const scale = Math.pow(2, map.getZoom());
         const worldCoordinateCenter = map.getProjection().fromLatLngToPoint(position);
 
-        // 向上移動地圖中心 200 像素，讓 marker 顯示在螢幕偏下的位置
-        const pixelOffset = new window.google.maps.Point(0, -200 / scale);
+        // 向上移動地圖中心 280 像素，讓 marker 顯示在螢幕更靠下的位置
+        const pixelOffset = new window.google.maps.Point(0, -280 / scale);
         const worldCoordinateNewCenter = new window.google.maps.Point(
           worldCoordinateCenter.x + pixelOffset.x,
           worldCoordinateCenter.y + pixelOffset.y
