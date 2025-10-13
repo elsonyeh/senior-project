@@ -321,7 +321,14 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="搜尋餐廳、地點..."
             className="search-input"
-            onFocus={() => setShowSuggestions(suggestions.length > 0)}
+            onFocus={() => {
+              // 如果有任何搜尋結果，顯示建議列表
+              const hasResults = suggestions.length > 0 || restaurantSuggestions.length > 0;
+              if (hasResults) {
+                setShowSuggestions(true);
+                setShowNoResults(false);
+              }
+            }}
           />
           {searchTerm && (
             <button
@@ -342,7 +349,7 @@ export default function MapSearch({ onSearch, onLocationSelect, onRestaurantSele
           {/* 餐廳資料庫結果 */}
           {restaurantSuggestions.length > 0 && (
             <>
-              <div className="suggestion-category">已儲存餐廳</div>
+              <div className="suggestion-category">推薦餐廳</div>
               {restaurantSuggestions.map((restaurant, index) => (
                 <div
                   key={restaurant.id || `restaurant-${index}`}

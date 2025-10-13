@@ -978,6 +978,9 @@ export default function MapView({
           }
         });
 
+        // 儲存餐廳資訊到 marker，以便後續搜尋
+        marker.restaurantData = restaurant;
+
         // 添加點擊事件
         marker.addListener('click', () => {
           const restaurantPlace = {
@@ -1119,24 +1122,27 @@ export default function MapView({
       return;
     }
 
-    // 找到對應的 marker
-    const targetMarker = restaurantMarkers.find(markerData => {
-      const restaurant = markerData.restaurant;
+    // 找到對應的 marker（restaurantMarkers 是 marker 物件的陣列）
+    const targetMarker = restaurantMarkers.find(marker => {
+      const restaurant = marker.restaurantData;
       return restaurant && (
         restaurant.id === selectedRestaurant.id ||
-        restaurant.place_id === selectedRestaurant.place_id
+        restaurant.id === selectedRestaurant.place_id ||
+        restaurant.name === selectedRestaurant.name
       );
     });
 
-    if (targetMarker && targetMarker.marker) {
-      // 觸發 marker 的點擊事件來打開 InfoWindow
-      window.google.maps.event.trigger(targetMarker.marker, 'click');
-
+    if (targetMarker) {
       // 確保地圖中心移動到該 marker 並適當縮放
-      const position = targetMarker.marker.getPosition();
+      const position = targetMarker.getPosition();
       if (position) {
         googleMapRef.current.setCenter(position);
         googleMapRef.current.setZoom(17); // 放大到較近的層級
+
+        // 延遲觸發點擊事件，確保地圖已經移動完成
+        setTimeout(() => {
+          window.google.maps.event.trigger(targetMarker, 'click');
+        }, 300);
       }
     }
   }, [selectedRestaurant, restaurantMarkers]);
