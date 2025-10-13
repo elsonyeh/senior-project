@@ -1173,14 +1173,14 @@ export default function MapView({
         // 設置地圖 zoom
         googleMapRef.current.setZoom(17);
 
-        // 調整地圖中心，讓 marker 顯示在螢幕中心偏上的位置
+        // 調整地圖中心，讓 marker 顯示在螢幕下方位置
         // 這樣 InfoWindow 就會顯示在可見區域內
         const map = googleMapRef.current;
         const scale = Math.pow(2, map.getZoom());
         const worldCoordinateCenter = map.getProjection().fromLatLngToPoint(position);
 
-        // 向下偏移 150 像素（以像素為單位），讓 InfoWindow 有空間顯示
-        const pixelOffset = new window.google.maps.Point(0, -150 / scale);
+        // 向上移動地圖中心 200 像素，讓 marker 顯示在螢幕偏下的位置
+        const pixelOffset = new window.google.maps.Point(0, -200 / scale);
         const worldCoordinateNewCenter = new window.google.maps.Point(
           worldCoordinateCenter.x + pixelOffset.x,
           worldCoordinateCenter.y + pixelOffset.y
