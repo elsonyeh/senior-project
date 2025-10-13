@@ -32,10 +32,22 @@ export default function MapView({
   const infoWindowRef = useRef(null);
   const userLocationMarkerRef = useRef(null); // 用戶定位標記
   const lastSelectedRestaurantRef = useRef(null); // 追蹤上次選中的餐廳，避免重複觸發
+  // 使用 ref 儲存最新的 user 和 favoriteLists 狀態，避免閉包問題
+  const userRef = useRef(user);
+  const favoriteListsRef = useRef(favoriteLists);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [restaurants, setRestaurants] = useState([]);
   const [restaurantMarkers, setRestaurantMarkers] = useState([]);
+
+  // 同步 ref 以確保總是使用最新的狀態
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    favoriteListsRef.current = favoriteLists;
+  }, [favoriteLists]);
 
   // 載入餐廳資料庫
   const loadRestaurants = useCallback(async () => {
@@ -380,6 +392,9 @@ export default function MapView({
       return;
     }
 
+    // 使用 ref 獲取最新的狀態，避免閉包問題
+    const currentUser = userRef.current;
+    const currentFavoriteLists = favoriteListsRef.current;
 
     const isFavorite = favorites.some(fav =>
       fav.place_id === restaurant.id || fav.name === restaurant.name
@@ -393,9 +408,9 @@ export default function MapView({
 
     const rating = restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A';
 
-    // 生成收藏清單選項
-    const favoriteListsOptions = user && favoriteLists.length > 0
-      ? favoriteLists.map(list =>
+    // 生成收藏清單選項 - 使用最新的狀態
+    const favoriteListsOptions = currentUser && currentFavoriteLists.length > 0
+      ? currentFavoriteLists.map(list =>
           `<option value="${list.id}">${list.name} (${list.favorite_list_places?.length || 0})</option>`
         ).join('')
       : '';
@@ -419,7 +434,7 @@ export default function MapView({
           <p class="info-place-address google-places-address">${restaurant.address || '地址未提供'}</p>
 
           <div class="info-place-actions google-places-actions">
-            ${user ? (favoriteLists.length > 0 ? `
+            ${currentUser ? (currentFavoriteLists.length > 0 ? `
               <div class="favorite-section google-places-favorite-section">
                 <div class="restaurant-select-wrapper">
                   <div class="restaurant-select" id="databaseCustomSelect" onclick="toggleDatabaseDropdown()">
@@ -427,7 +442,7 @@ export default function MapView({
                     <span class="restaurant-select-arrow">▼</span>
                   </div>
                   <div class="restaurant-options" id="databaseCustomOptions" style="display: none;">
-                    ${favoriteLists.map(list => {
+                    ${currentFavoriteLists.map(list => {
                       const listPlaces = list.places || list.favorite_list_places || [];
                       const isInList = listPlaces.some(p => p.place_id === restaurant.id.toString() || p.restaurant_id === restaurant.id.toString());
                       return `
@@ -547,7 +562,9 @@ export default function MapView({
         return;
       }
 
-      const selectedList = favoriteLists.find(list => list.id === selectedListId);
+      // 使用最新的 favoriteLists 狀態
+      const currentFavoriteLists = favoriteListsRef.current;
+      const selectedList = currentFavoriteLists.find(list => list.id === selectedListId);
 
       if (selectedList && window.addPlaceToList) {
         // 轉換為Google Places格式
