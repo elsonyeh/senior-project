@@ -35,6 +35,7 @@ export default function MapView({
   // 使用 ref 儲存最新的 user 和 favoriteLists 狀態，避免閉包問題
   const userRef = useRef(user);
   const favoriteListsRef = useRef(favoriteLists);
+  const restaurantMarkersRef = useRef([]); // 使用 ref 儲存 restaurant markers，避免閉包問題
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [restaurants, setRestaurants] = useState([]);
@@ -920,8 +921,13 @@ export default function MapView({
   const createRestaurantMarkers = useCallback(() => {
     if (!googleMapRef.current || restaurants.length === 0) return;
 
-    // 清除現有的餐廳標記
-    restaurantMarkers.forEach(marker => marker.setMap(null));
+    // 清除現有的餐廳標記 - 使用 ref 確保獲取最新的 markers
+    restaurantMarkersRef.current.forEach(marker => {
+      if (marker && marker.setMap) {
+        marker.setMap(null);
+      }
+    });
+    restaurantMarkersRef.current = [];
 
     // 找到「我的最愛」清單
     const myFavoriteList = favoriteLists.find(list => list.name === '我的最愛');
@@ -1025,8 +1031,10 @@ export default function MapView({
         return marker;
       });
 
+    // 同時更新 ref 和 state
+    restaurantMarkersRef.current = newMarkers;
     setRestaurantMarkers(newMarkers);
-  }, [restaurants, favoriteLists, selectedList, onPlaceSelect]);
+  }, [restaurants, favoriteLists, selectedList, onPlaceSelect, showDatabaseRestaurantInfo]);
 
   // 載入 Google Maps API
   useEffect(() => {
