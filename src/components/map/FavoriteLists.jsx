@@ -86,14 +86,9 @@ export default function FavoriteLists({
       if (result.success) {
         // 轉換數據格式以兼容現有的地圖頁邏輯
         const listsWithPlaces = result.lists.map((list) => {
-          console.log('List data from API:', list); // 除錯日誌
-
           return {
             ...list,
             places: (list.favorite_list_places || []).map(place => {
-              console.log('Place from API:', place); // 除錯日誌
-              console.log('Restaurant data:', place.restaurants); // 除錯日誌
-
               return {
                 // 使用 restaurant_id 作為 place_id 以保持相容性
                 place_id: place.restaurant_id,
@@ -125,12 +120,10 @@ export default function FavoriteLists({
         // 確保「我的最愛」清單有正確的紅色
         const listsWithCorrectColors = await Promise.all(listsWithPlaces.map(async list => {
           if (list.name === '我的最愛' && list.color !== '#ef4444') {
-            console.log('🔧 更新「我的最愛」清單顏色為紅色');
             // 更新資料庫中的顏色
             try {
               const updateResult = await userDataService.updateFavoriteList(list.id, { color: '#ef4444' });
               if (updateResult.success) {
-                console.log('✅ 「我的最愛」顏色已更新到資料庫');
                 return { ...list, color: '#ef4444' };
               }
             } catch (error) {
@@ -592,7 +585,6 @@ export default function FavoriteLists({
                 ) : (
                   selectedList.places.map((place) => {
                     // 增加除錯日誌以協助調試
-                    console.log('Place data:', place);
 
                     return (
                       <div key={place.place_id || place.restaurant_id || place.id} className="map-place-item">

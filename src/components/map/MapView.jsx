@@ -40,7 +40,6 @@ export default function MapView({
     try {
       const restaurantData = await restaurantService.getRestaurants();
       setRestaurants(restaurantData);
-      console.log(`載入了 ${restaurantData.length} 間餐廳`);
     } catch (error) {
       console.error('載入餐廳資料失敗:', error);
     }
@@ -134,8 +133,6 @@ export default function MapView({
           try {
             const { places } = await Place.searchNearby(request);
             clearTimeout(timeoutId);
-            console.log('Google Places API (New) Results:', places?.length);
-            console.log('First place object:', places?.[0]);
 
             if (places && places.length > 0) {
               // 轉換為舊格式以保持相容性
@@ -164,7 +161,6 @@ export default function MapView({
                   }
                 }
 
-                console.log('Place coordinates for', place.displayName, ':', { lat, lng, location: place.location });
 
                 if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
                   console.warn('Invalid coordinates for place:', place.displayName, { lat, lng, location: place.location });
@@ -211,15 +207,12 @@ export default function MapView({
             .slice(0, 20);
 
           sortedResults.forEach((place, index) => {
-            console.log(`Creating Google Places marker ${index + 1}:`, place.name, place.place_id);
             createMarker(place, 'google');
           });
 
-          console.log(`Google Places 找到 ${sortedResults.length} 間餐廳`);
         })
         .catch(error => {
           console.warn('Google Places API failed:', error.message);
-          console.log('繼續使用資料庫餐廳');
 
           // 如果是 API 配額或權限問題，不要繼續嘗試
           if (error.message.includes('REQUEST_DENIED') ||
@@ -234,7 +227,6 @@ export default function MapView({
 
     } catch (error) {
       console.error('Error in searchNearbyRestaurants:', error);
-      console.log('使用資料庫餐廳作為備用方案');
     }
   }, []);
 
@@ -256,7 +248,6 @@ export default function MapView({
       };
 
       const { places } = await Place.searchNearby(fallbackRequest);
-      console.log('Fallback search results:', places?.length);
 
       if (places && places.length > 0) {
         places.forEach(place => {
@@ -300,7 +291,6 @@ export default function MapView({
           };
           createMarker(convertedPlace, 'google-fallback');
         });
-        console.log(`備用搜尋找到 ${places.length} 個結果`);
       }
     } catch (error) {
       console.error('Fallback search error:', error);
@@ -326,8 +316,6 @@ export default function MapView({
     validRestaurants.forEach(restaurant => {
       createDatabaseRestaurantMarker(restaurant);
     });
-
-    console.log(`資料庫顯示 ${validRestaurants.length} 間餐廳`);
   }, [restaurants]);
 
   // 計算兩點之間的距離（公里）
@@ -390,7 +378,6 @@ export default function MapView({
       return;
     }
 
-    console.log('showDatabaseRestaurantInfo called:', restaurant.name);
 
     const isFavorite = favorites.some(fav =>
       fav.place_id === restaurant.id || fav.name === restaurant.name
@@ -637,11 +624,7 @@ export default function MapView({
 
     marker.markerType = markerType;
     marker.placeData = place;
-    console.log('Marker created with placeData:', place.name, 'has place_obj:', !!place.place_obj);
-
     marker.addListener('click', () => {
-      console.log('Google Places marker clicked:', place.name, place.place_id);
-      console.log('Marker placeData:', marker.placeData);
       getPlaceDetails(place.place_id, marker);
     });
 
@@ -650,7 +633,6 @@ export default function MapView({
 
   // 取得地點詳細資訊
   const getPlaceDetails = useCallback(async (placeId, marker) => {
-    console.log('getPlaceDetails called with placeId:', placeId);
     if (!googleMapRef.current || !placeId) return;
 
     try {
@@ -664,7 +646,6 @@ export default function MapView({
 
       // 檢查marker是否已經有Place對象
       if (marker.placeData?.place_obj) {
-        console.log('Using existing Place object');
         place = marker.placeData.place_obj;
 
         // 確保已經有必要的字段
@@ -676,7 +657,6 @@ export default function MapView({
           ]
         });
       } else {
-        console.log('Creating new Place object');
         // 使用新版 Places API 獲取詳細資訊
         const { Place } = await window.google.maps.importLibrary("places");
 
@@ -739,7 +719,6 @@ export default function MapView({
       };
 
       setSelectedPlace(convertedPlace);
-      console.log('Calling showInfoWindow with convertedPlace:', convertedPlace.name);
       showInfoWindow(convertedPlace, marker);
     } catch (error) {
       console.error('Error in getPlaceDetails:', error);
@@ -750,7 +729,6 @@ export default function MapView({
   const showInfoWindow = useCallback((place, marker) => {
     if (!infoWindowRef.current || !place) return;
 
-    console.log('showInfoWindow called for Google Places:', place.name);
 
     const isFavorite = favorites.some(fav => fav.place_id === place.place_id);
 
@@ -935,22 +913,6 @@ export default function MapView({
     const activeList = selectedList && selectedList.name !== '我的最愛' ? selectedList : null;
     const activeListPlaces = activeList ? (activeList.places || activeList.favorite_list_places || []) : [];
 
-    console.log('🎨 地標渲染狀態:', {
-      myFavoriteList: myFavoriteList?.name,
-      myFavoritePlaces: myFavoritePlaces.length,
-      myFavoritePlacesData: myFavoritePlaces.map(p => ({
-        place_id: p.place_id,
-        restaurant_id: p.restaurant_id,
-        name: p.name,
-        latitude: p.latitude,
-        longitude: p.longitude
-      })),
-      activeList: activeList?.name || 'null',
-      activeListPlaces: activeListPlaces.length,
-      activeListColor: activeList?.color,
-      totalRestaurants: restaurants.length,
-      restaurantsWithCoords: restaurants.filter(r => r.latitude && r.longitude).length
-    });
 
     const newMarkers = restaurants
       .filter(restaurant => restaurant.latitude && restaurant.longitude)
@@ -964,14 +926,6 @@ export default function MapView({
             fav.restaurant_id === restaurant.id ||
             (fav.name && restaurant.name && fav.name.toLowerCase() === restaurant.name.toLowerCase());
 
-          if (match) {
-            console.log('✅ 找到匹配:', {
-              restaurant: restaurant.name,
-              restaurantId: restaurant.id,
-              favPlaceId: fav.place_id,
-              favRestaurantId: fav.restaurant_id
-            });
-          }
           return match;
         });
 
@@ -1050,7 +1004,6 @@ export default function MapView({
       });
 
     setRestaurantMarkers(newMarkers);
-    console.log(`創建了 ${newMarkers.length} 個餐廳標記`);
   }, [restaurants, favoriteLists, selectedList, onPlaceSelect]);
 
   // 載入 Google Maps API
@@ -1059,17 +1012,9 @@ export default function MapView({
 
     const loadMaps = async () => {
       try {
-        console.log('🗺️ 開始載入 Google Maps API...');
-        console.log('📊 環境檢查:', {
-          apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? '已設定' : '❌ 未設定',
-          domain: window.location.hostname,
-          protocol: window.location.protocol
-        });
-
         await googleMapsLoader.load();
 
         if (isMounted) {
-          console.log('✅ Google Maps API 載入成功');
           initializeMap();
         }
       } catch (error) {
@@ -1102,7 +1047,6 @@ export default function MapView({
 
   // 載入餐廳資料
   useEffect(() => {
-    console.log('📊 開始載入餐廳資料...');
     loadRestaurants();
   }, [loadRestaurants]);
 
@@ -1158,15 +1102,8 @@ export default function MapView({
         });
       }
 
-      console.log('📍 定位標記已顯示在地圖中央:', {
-        lat: searchLocation.lat.toFixed(6),
-        lng: searchLocation.lng.toFixed(6),
-        accuracy: searchLocation.accuracy ? `${searchLocation.accuracy.toFixed(1)}m` : 'N/A'
-      });
-
       // 重新創建餐廳標記，確保地標在新位置仍然可見
       if (mapLoaded && restaurants.length > 0) {
-        console.log('🔄 重新定位後重新創建餐廳標記');
         createRestaurantMarkers();
       }
 

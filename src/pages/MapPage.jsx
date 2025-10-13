@@ -177,12 +177,6 @@ export default function MapPage() {
           notes: ''
         };
 
-        console.log('📌 準備加入收藏:', {
-          name: placeData.name,
-          latitude: placeData.latitude,
-          longitude: placeData.longitude
-        });
-
         const result = await userDataService.addPlaceToList(listId, placeData);
 
         if (result.success) {
@@ -236,7 +230,6 @@ export default function MapPage() {
         const result = await userDataService.getFavoriteLists(user.id, user.email);
 
         if (result.success) {
-          console.log('📦 MapPage 載入清單資料:', result.lists);
 
           // 如果餐廳資料沒有經緯度，從資料庫重新載入完整餐廳資料
           const restaurantIds = [];
@@ -251,24 +244,12 @@ export default function MapPage() {
           // 載入完整餐廳資料
           let fullRestaurantsMap = {};
           if (restaurantIds.length > 0) {
-            console.log('🔄 需要重新載入餐廳資料:', restaurantIds);
             const { restaurantService } = await import('../services/restaurantService');
             const allRestaurants = await restaurantService.getRestaurants();
             fullRestaurantsMap = Object.fromEntries(
               allRestaurants.map(r => [r.id, r])
             );
-            console.log('✅ 已載入完整餐廳資料庫');
 
-            // 檢查這些餐廳在資料庫中的狀態
-            restaurantIds.forEach(id => {
-              const restaurant = fullRestaurantsMap[id];
-              console.log(`🏪 餐廳 ${restaurant?.name || id}:`, {
-                hasData: !!restaurant,
-                latitude: restaurant?.latitude,
-                longitude: restaurant?.longitude,
-                address: restaurant?.address
-              });
-            });
           }
 
           setFavoriteLists(result.lists.map(list => ({
@@ -277,15 +258,6 @@ export default function MapPage() {
               // 優先使用完整餐廳資料
               const fullRestaurant = fullRestaurantsMap[place.restaurant_id];
               const restaurantData = fullRestaurant || place.restaurants;
-
-              console.log('🔍 MapPage 處理餐廳:', {
-                place_id: place.restaurant_id,
-                name: restaurantData?.name,
-                hasRestaurants: !!restaurantData,
-                usingFullData: !!fullRestaurant,
-                latitude: restaurantData?.latitude,
-                longitude: restaurantData?.longitude
-              });
 
               return {
                 ...place,
@@ -350,7 +322,6 @@ export default function MapPage() {
   // 處理搜尋
   const handleSearch = useCallback((searchTerm) => {
     // 這裡可以實現更複雜的搜尋邏輯
-    console.log('Searching for:', searchTerm);
   }, []);
 
   // 處理位置選擇
@@ -413,7 +384,6 @@ export default function MapPage() {
 
   // 處理餐廳選擇
   const handleRestaurantSelect = useCallback((restaurant) => {
-    console.log('選擇餐廳:', restaurant);
     showNotificationMessage(`已選擇餐廳：${restaurant.name}`, 'success');
   }, []);
 
