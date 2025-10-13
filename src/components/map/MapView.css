@@ -426,9 +426,12 @@ div.gm-style div.gm-style-iw-d:has(.google-places-info-window) {
   min-width: 320px !important;
   border-radius: 16px !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18) !important;
-  overflow: hidden !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-height: 70vh !important;
   padding: 0 !important;
   margin: 0 !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 div.gm-style div.gm-style-iw-c:has(.google-places-info-window) {

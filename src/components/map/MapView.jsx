@@ -31,6 +31,7 @@ export default function MapView({
   const markersRef = useRef([]);
   const infoWindowRef = useRef(null);
   const userLocationMarkerRef = useRef(null); // 用戶定位標記
+  const lastSelectedRestaurantRef = useRef(null); // 追蹤上次選中的餐廳，避免重複觸發
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [restaurants, setRestaurants] = useState([]);
@@ -1122,6 +1123,15 @@ export default function MapView({
       return;
     }
 
+    // 檢查是否為同一個餐廳，避免重複觸發
+    const currentRestaurantId = selectedRestaurant.id || selectedRestaurant.place_id;
+    if (lastSelectedRestaurantRef.current === currentRestaurantId) {
+      return;
+    }
+
+    // 更新上次選中的餐廳 ID
+    lastSelectedRestaurantRef.current = currentRestaurantId;
+
     // 找到對應的 marker（restaurantMarkers 是 marker 物件的陣列）
     const targetMarker = restaurantMarkers.find(marker => {
       const restaurant = marker.restaurantData;
@@ -1133,16 +1143,31 @@ export default function MapView({
     });
 
     if (targetMarker) {
-      // 確保地圖中心移動到該 marker 並適當縮放
       const position = targetMarker.getPosition();
       if (position) {
-        googleMapRef.current.setCenter(position);
-        googleMapRef.current.setZoom(17); // 放大到較近的層級
+        // 設置地圖 zoom
+        googleMapRef.current.setZoom(17);
+
+        // 調整地圖中心，讓 marker 顯示在螢幕中心偏上的位置
+        // 這樣 InfoWindow 就會顯示在可見區域內
+        const map = googleMapRef.current;
+        const scale = Math.pow(2, map.getZoom());
+        const worldCoordinateCenter = map.getProjection().fromLatLngToPoint(position);
+
+        // 向下偏移 150 像素（以像素為單位），讓 InfoWindow 有空間顯示
+        const pixelOffset = new window.google.maps.Point(0, -150 / scale);
+        const worldCoordinateNewCenter = new window.google.maps.Point(
+          worldCoordinateCenter.x + pixelOffset.x,
+          worldCoordinateCenter.y + pixelOffset.y
+        );
+
+        const newCenter = map.getProjection().fromPointToLatLng(worldCoordinateNewCenter);
+        map.setCenter(newCenter);
 
         // 延遲觸發點擊事件，確保地圖已經移動完成
         setTimeout(() => {
           window.google.maps.event.trigger(targetMarker, 'click');
-        }, 300);
+        }, 400);
       }
     }
   }, [selectedRestaurant, restaurantMarkers]);
