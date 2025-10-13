@@ -401,6 +401,12 @@ export default function MapPage() {
     }
   }, [selectedList]);
 
+  // 處理清單變更（新增或刪除清單）
+  const handleListsChange = useCallback(() => {
+    // 觸發 MapPage 重新載入清單
+    setRefreshListsTrigger(prev => prev + 1);
+  }, []);
+
   // 取得收藏的地點ID列表（用於地圖標記）
   const getFavoriteIds = () => {
     if (!selectedList) return [];
@@ -474,6 +480,7 @@ export default function MapPage() {
           onListSelect={handleListSelect}
           onPlaceAdd={handlePlaceAdd}
           onListUpdate={handleListUpdate}
+          onListsChange={handleListsChange}
           selectedPlace={selectedPlace}
           isOpen={showFavoriteLists}
           onToggle={() => setShowFavoriteLists(!showFavoriteLists)}

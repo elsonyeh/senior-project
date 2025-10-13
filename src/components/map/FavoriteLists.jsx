@@ -24,6 +24,7 @@ export default function FavoriteLists({
   onListSelect,
   onPlaceAdd,
   onListUpdate,
+  onListsChange,
   selectedPlace,
   isOpen,
   onToggle,
@@ -223,6 +224,8 @@ export default function FavoriteLists({
         onListSelect?.(newList);
         setNewListName("");
         setShowCreateForm(false);
+        // 通知 MapPage 重新載入清單
+        onListsChange?.();
       } else {
         showNotification(result.error || "創建清單失敗", "error");
       }
@@ -255,6 +258,8 @@ export default function FavoriteLists({
             setSelectedListId(updatedLists[0].id);
             onListSelect?.(updatedLists[0]);
           }
+          // 通知 MapPage 重新載入清單
+          onListsChange?.();
         } else {
           showNotification(result.error || "刪除清單失敗", "error");
         }
