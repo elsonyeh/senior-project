@@ -23,7 +23,8 @@ export default function MapView({
   favorites = [],
   user = null,
   favoriteLists = [],
-  selectedList = null // 新增：當前選中的清單
+  selectedList = null, // 新增：當前選中的清單
+  selectedRestaurant = null // 新增：從搜尋選中的餐廳
 }) {
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
@@ -1112,6 +1113,33 @@ export default function MapView({
     }
   }, [searchLocation, mapLoaded, restaurants, createRestaurantMarkers]);
 
+  // 當從搜尋選中餐廳時，打開對應的 marker InfoWindow
+  useEffect(() => {
+    if (!selectedRestaurant || !googleMapRef.current || restaurantMarkers.length === 0) {
+      return;
+    }
+
+    // 找到對應的 marker
+    const targetMarker = restaurantMarkers.find(markerData => {
+      const restaurant = markerData.restaurant;
+      return restaurant && (
+        restaurant.id === selectedRestaurant.id ||
+        restaurant.place_id === selectedRestaurant.place_id
+      );
+    });
+
+    if (targetMarker && targetMarker.marker) {
+      // 觸發 marker 的點擊事件來打開 InfoWindow
+      window.google.maps.event.trigger(targetMarker.marker, 'click');
+
+      // 確保地圖中心移動到該 marker 並適當縮放
+      const position = targetMarker.marker.getPosition();
+      if (position) {
+        googleMapRef.current.setCenter(position);
+        googleMapRef.current.setZoom(17); // 放大到較近的層級
+      }
+    }
+  }, [selectedRestaurant, restaurantMarkers]);
 
   // 清理函數
   useEffect(() => {

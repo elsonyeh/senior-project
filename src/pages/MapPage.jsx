@@ -385,6 +385,13 @@ export default function MapPage() {
   // 處理餐廳選擇
   const handleRestaurantSelect = useCallback((restaurant) => {
     showNotificationMessage(`已選擇餐廳：${restaurant.name}`, 'success');
+    // 將選中的餐廳傳遞給 MapView 以打開其 InfoWindow
+    setSelectedPlace({
+      ...restaurant,
+      place_id: restaurant.id,
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude
+    });
   }, []);
 
   // 處理清單更新
@@ -456,6 +463,7 @@ export default function MapPage() {
           user={user}
           favoriteLists={favoriteLists}
           selectedList={selectedList}
+          selectedRestaurant={selectedPlace}
         />
       </div>
 
