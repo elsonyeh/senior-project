@@ -1090,11 +1090,30 @@ export default function MapView({
   // 當搜尋位置改變時，移動地圖中心並顯示定位標記
   useEffect(() => {
     if (searchLocation && googleMapRef.current && window.google) {
-      const newCenter = new window.google.maps.LatLng(searchLocation.lat, searchLocation.lng);
+      const map = googleMapRef.current;
+      const position = new window.google.maps.LatLng(searchLocation.lat, searchLocation.lng);
 
-      // 移動地圖中心
-      googleMapRef.current.setCenter(newCenter);
-      googleMapRef.current.setZoom(16);
+      // 設置 zoom
+      map.setZoom(16);
+
+      // 如果是餐廳搜尋結果，調整地圖中心讓 marker 顯示在下方
+      if (searchLocation.name && searchLocation.name !== '我的位置') {
+        const scale = Math.pow(2, map.getZoom());
+        const worldCoordinateCenter = map.getProjection().fromLatLngToPoint(position);
+
+        // 向上移動地圖中心 280 像素，讓 marker 顯示在螢幕更靠下的位置
+        const pixelOffset = new window.google.maps.Point(0, -280 / scale);
+        const worldCoordinateNewCenter = new window.google.maps.Point(
+          worldCoordinateCenter.x + pixelOffset.x,
+          worldCoordinateCenter.y + pixelOffset.y
+        );
+
+        const newCenter = map.getProjection().fromPointToLatLng(worldCoordinateNewCenter);
+        map.setCenter(newCenter);
+      } else {
+        // 如果是用戶定位，直接居中顯示
+        map.setCenter(position);
+      }
 
       // 移除舊的定位標記
       if (userLocationMarkerRef.current) {
