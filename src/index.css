@@ -25,9 +25,12 @@ a:hover {
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100dvh;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
+  /* Prevent iOS Safari bounce/overscroll */
+  overflow: hidden;
+  position: fixed;
 }
 
 h1 {
