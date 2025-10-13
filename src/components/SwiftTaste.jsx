@@ -22,8 +22,8 @@ import BuddiesResultPage from "../pages/BuddiesResultPage";
 import LoadingOverlay from "./LoadingOverlay";
 import SwipeOnboarding from "./SwipeOnboarding";
 import IdleHint from "./IdleHint";
-import SponsoredAdModal from "./SponsoredAdModal";
-import { getRandomAd } from "../data/sponsoredAds";
+// import SponsoredAdModal from "./SponsoredAdModal";
+// import { getRandomAd } from "../data/sponsoredAds";
 import "./SwiftTasteCard.css";
 
 export default function SwiftTaste() {
@@ -50,8 +50,8 @@ export default function SwiftTaste() {
   const [funQuestions, setFunQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [sponsoredAd, setSponsoredAd] = useState(null);
-  const [showSponsoredAd, setShowSponsoredAd] = useState(false);
+  // const [sponsoredAd, setSponsoredAd] = useState(null);
+  // const [showSponsoredAd, setShowSponsoredAd] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showIdleHint, setShowIdleHint] = useState(false);
   const idleTimerRef = useRef(null); // 使用 ref 追蹤計時器
@@ -844,12 +844,12 @@ export default function SwiftTaste() {
     }
 
     if (selectedMode === "single") {
-      // 隨機顯示贊助廣告（50% 機率）
-      if (Math.random() > 0.5) {
-        const ad = getRandomAd();
-        setSponsoredAd(ad);
-        setShowSponsoredAd(true);
-      }
+      // 隨機顯示贊助廣告（50% 機率）- 已關閉
+      // if (Math.random() > 0.5) {
+      //   const ad = getRandomAd();
+      //   setSponsoredAd(ad);
+      //   setShowSponsoredAd(true);
+      // }
       console.log("✅ Setting phase to 'result'");
       setPhase("result");
     } else if (selectedMode === "buddies") {
@@ -1090,8 +1090,8 @@ export default function SwiftTaste() {
         </div>
       )}
 
-      {/* 贊助廣告彈窗 */}
-      {showSponsoredAd && sponsoredAd && (
+      {/* 贊助廣告彈窗 - 已關閉 */}
+      {/* {showSponsoredAd && sponsoredAd && (
         <SponsoredAdModal
           ad={sponsoredAd}
           onClose={() => {
@@ -1099,7 +1099,7 @@ export default function SwiftTaste() {
             resetIdleTimer();
           }}
         />
-      )}
+      )} */}
     </div>
   );
 }
