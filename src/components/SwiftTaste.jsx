@@ -82,10 +82,10 @@ export default function SwiftTaste() {
     const phasesWithIdleTimer = ['selectMode', 'questions', 'funQuestions', 'restaurants', 'result', 'buddiesQuestions', 'buddiesRecommendation', 'buddiesResult'];
     const excludedPhases = ['buddiesRoom']; // 只排除房間階段
 
-    console.log(`⏱️ Idle Timer check - phase: ${phase}, showOnboarding: ${showOnboarding}, showSponsoredAd: ${showSponsoredAd}`);
+    console.log(`⏱️ Idle Timer check - phase: ${phase}, showOnboarding: ${showOnboarding}`);
 
-    // 只有在不顯示 onboarding 和廣告時才啟動計時器
-    if (phasesWithIdleTimer.includes(phase) && !showOnboarding && !showSponsoredAd && !excludedPhases.includes(phase)) {
+    // 只有在不顯示 onboarding 時才啟動計時器（廣告已關閉）
+    if (phasesWithIdleTimer.includes(phase) && !showOnboarding && !excludedPhases.includes(phase)) {
       console.log("✅ Starting idle timer for phase:", phase);
       startIdleTimer();
     } else {
@@ -97,7 +97,7 @@ export default function SwiftTaste() {
     return () => {
       clearIdleTimer();
     };
-  }, [phase, showOnboarding, showSponsoredAd]);
+  }, [phase, showOnboarding]);
 
   // 載入餐廳資料和問題
   useEffect(() => {
