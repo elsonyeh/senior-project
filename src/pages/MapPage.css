@@ -400,26 +400,89 @@
   
 }
 
+/* InfoWindow 評論按鈕樣式 */
+.info-place-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.info-place-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-reviews-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  border: 1.5px solid #667eea;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  min-width: 54px;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.08);
+}
+
+.info-reviews-btn svg {
+  color: #667eea;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 1px 2px rgba(102, 126, 234, 0.1));
+}
+
+.info-reviews-btn span {
+  font-size: 10.5px;
+  font-weight: 650;
+  color: #667eea;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.3px;
+}
+
+.info-reviews-btn:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #5a6fd8;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+}
+
+.info-reviews-btn:hover svg,
+.info-reviews-btn:hover span {
+  color: white;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.15));
+}
+
+.info-reviews-btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 3px 8px rgba(102, 126, 234, 0.25);
+}
+
 /* 高對比模式 */
 @media (prefers-contrast: high) {
   .menu-button {
     border: 2px solid #333;
     background: white;
   }
-  
+
   .menu-button.active {
     border-color: #ff6b35;
   }
-  
-  
+
+
   .map-notification {
     border: 2px solid #ccc;
   }
-  
+
   .map-notification.map-success {
     border-color: #22c55e;
   }
-  
+
   .map-notification.map-error {
     border-color: #ef4444;
   }

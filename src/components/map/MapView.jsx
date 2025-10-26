@@ -24,7 +24,8 @@ export default function MapView({
   user = null,
   favoriteLists = [],
   selectedList = null, // 新增：當前選中的清單
-  selectedRestaurant = null // 新增：從搜尋選中的餐廳
+  selectedRestaurant = null, // 新增：從搜尋選中的餐廳
+  onRestaurantClick // 新增：點擊餐廳評論按鈕的回調
 }) {
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
@@ -36,6 +37,7 @@ export default function MapView({
   const userRef = useRef(user);
   const favoriteListsRef = useRef(favoriteLists);
   const restaurantMarkersRef = useRef([]); // 使用 ref 儲存 restaurant markers，避免閉包問題
+  const restaurantsDataRef = useRef([]); // 使用 ref 儲存餐廳資料，供全局函數使用
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [restaurants, setRestaurants] = useState([]);
@@ -45,6 +47,10 @@ export default function MapView({
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+
+  useEffect(() => {
+    restaurantsDataRef.current = restaurants;
+  }, [restaurants]);
 
   useEffect(() => {
     favoriteListsRef.current = favoriteLists;
@@ -425,8 +431,18 @@ export default function MapView({
         </button>
         ${photo ? `<img src="${photo}" alt="${restaurant.name}" class="info-place-photo google-places-photo" />` : ''}
         <div class="info-place-content google-places-content">
-          <h3 class="info-place-name google-places-name">${restaurant.name}</h3>
-          ${restaurant.category ? `<p class="info-place-category google-places-category">${restaurant.category}</p>` : ''}
+          <div class="info-place-header">
+            <div class="info-place-title-section">
+              <h3 class="info-place-name google-places-name">${restaurant.name}</h3>
+              ${restaurant.category ? `<p class="info-place-category google-places-category">${restaurant.category}</p>` : ''}
+            </div>
+            <button class="info-reviews-btn" onclick="openRestaurantReviews('${restaurant.id}', 'database')" title="查看評論">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>評論</span>
+            </button>
+          </div>
           <div class="info-place-rating google-places-rating">
             <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(restaurant.rating || 0))}${'☆'.repeat(5 - Math.floor(restaurant.rating || 0))}</span>
             <span class="info-rating-text google-places-rating-text">${rating}</span>
@@ -607,7 +623,41 @@ export default function MapView({
         infoWindowRef.current.close();
       }
     };
-  }, [favorites, onFavoriteToggle, user, favoriteLists]);
+
+    // 打開餐廳評論 Modal
+    window.openRestaurantReviews = (restaurantId, type) => {
+      if (!onRestaurantClick) return;
+
+      // 根據類型獲取餐廳資料
+      if (type === 'database') {
+        // 從資料庫餐廳找到完整資料 - 使用 restaurantsDataRef
+        const restaurant = restaurantsDataRef.current.find(r => {
+          // 安全檢查,確保 r 和 r.id 存在
+          if (!r || !r.id) return false;
+          return r.id.toString() === restaurantId.toString();
+        });
+
+        if (restaurant) {
+          onRestaurantClick(restaurant);
+        } else {
+          console.warn('找不到餐廳:', restaurantId, '可用餐廳:', restaurantsDataRef.current.length);
+        }
+      } else if (type === 'google') {
+        // 從 Google Places 找到完整資料
+        // 暫時傳遞 place_id,在 Modal 中處理
+        onRestaurantClick({
+          place_id: restaurantId,
+          id: restaurantId,
+          name: '載入中...' // 臨時名稱
+        });
+      }
+
+      // 關閉 InfoWindow
+      if (infoWindowRef.current) {
+        infoWindowRef.current.close();
+      }
+    };
+  }, [favorites, onFavoriteToggle, user, favoriteLists, onRestaurantClick]);
 
   // 創建標記（修改版本以支持類型）
   const createMarker = useCallback((place, markerType = 'google') => {
@@ -794,8 +844,18 @@ export default function MapView({
         </button>
         ${photo ? `<img src="${photo}" alt="${place.name}" class="info-place-photo google-places-photo" />` : ''}
         <div class="info-place-content google-places-content">
-          <h3 class="info-place-name google-places-name">${place.name}</h3>
-          ${place.category ? `<p class="info-place-category google-places-category">${place.category}</p>` : ''}
+          <div class="info-place-header">
+            <div class="info-place-title-section">
+              <h3 class="info-place-name google-places-name">${place.name}</h3>
+              ${place.category ? `<p class="info-place-category google-places-category">${place.category}</p>` : ''}
+            </div>
+            <button class="info-reviews-btn" onclick="openRestaurantReviews('${place.place_id}', 'google')" title="查看評論">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>評論</span>
+            </button>
+          </div>
           <div class="info-place-rating google-places-rating">
             <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
             <span class="info-rating-text google-places-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount})` : ''}</span>

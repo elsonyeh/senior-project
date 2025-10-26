@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AuthModal from '../components/profile/AuthModal';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import MyLists from '../components/profile/MyLists';
+import MyReviews from '../components/profile/MyReviews';
 import SwiftTasteHistory from '../components/profile/SwiftTasteHistory';
 import SettingsPage from '../components/profile/SettingsPage';
 import ProfileMenu from '../components/profile/ProfileMenu';
@@ -20,7 +21,8 @@ import {
   IoSettingsOutline,
   IoListOutline,
   IoTimeOutline,
-  IoCloseOutline
+  IoCloseOutline,
+  IoStarOutline
 } from 'react-icons/io5';
 import './UserProfilePage.css';
 
@@ -64,8 +66,8 @@ export default function UserProfilePage() {
 
   // 滾動檢測 hook
   useEffect(() => {
-    // 在我的清單、選擇紀錄、設定頁面及其子頁面隱藏導航列（像地圖模式一樣）
-    if (['lists', 'history', 'settings', 'faq', 'contact', 'about', 'profileEdit'].includes(currentView)) {
+    // 在我的清單、評論、選擇紀錄、設定頁面及其子頁面隱藏導航列（像地圖模式一樣）
+    if (['lists', 'reviews', 'history', 'settings', 'faq', 'contact', 'about', 'profileEdit'].includes(currentView)) {
       setIsNavVisible(false);
       return;
     }
@@ -102,8 +104,8 @@ export default function UserProfilePage() {
 
   // 頁面切換時重置導航欄顯示狀態
   useEffect(() => {
-    // 在我的清單、選擇紀錄、設定頁面及其子頁面隱藏導航列
-    if (['lists', 'history', 'settings', 'faq', 'contact', 'about', 'profileEdit'].includes(currentView)) {
+    // 在我的清單、評論、選擇紀錄、設定頁面及其子頁面隱藏導航列
+    if (['lists', 'reviews', 'history', 'settings', 'faq', 'contact', 'about', 'profileEdit'].includes(currentView)) {
       setIsNavVisible(false);
     } else {
       setIsNavVisible(true);
@@ -352,6 +354,12 @@ export default function UserProfilePage() {
         return (
           <PageWrapper title="我的清單" onBack={handleBack}>
             <MyLists user={user} />
+          </PageWrapper>
+        );
+      case 'reviews':
+        return (
+          <PageWrapper title="我的評論" onBack={handleBack}>
+            <MyReviews user={user} />
           </PageWrapper>
         );
       case 'history':

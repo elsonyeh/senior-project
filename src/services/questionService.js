@@ -263,14 +263,6 @@ export const getBasicQuestions = async () => {
 };
 
 /**
- * Get questions that are shared between both modes
- * @returns {Promise<Array>} Array of shared questions
- */
-export const getSharedQuestions = async () => {
-  return await getQuestionsByMode('both');
-};
-
-/**
  * Filter questions based on dependencies
  * @param {Array} questions - All questions
  * @param {Object} answers - User answers so far
@@ -288,70 +280,6 @@ export const filterQuestionsByDependencies = (questions, answers = {}) => {
     const userAnswer = answers[dependentQuestion.id] || answers[dependentQuestion.question];
     return userAnswer === question.dependsOn.answer;
   });
-};
-
-/**
- * Create a new question (admin only)
- * @param {Object} questionData - Question data
- * @returns {Promise<Object>} Created question
- */
-export const createQuestion = async (questionData) => {
-  try {
-    const { data, error } = await supabase
-      .from('questions')
-      .insert([questionData])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { success: true, data };
-  } catch (error) {
-    console.error('Failed to create question:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Update a question (admin only)
- * @param {string} questionId - Question ID
- * @param {Object} updates - Question updates
- * @returns {Promise<Object>} Update result
- */
-export const updateQuestion = async (questionId, updates) => {
-  try {
-    const { data, error } = await supabase
-      .from('questions')
-      .update(updates)
-      .eq('id', questionId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { success: true, data };
-  } catch (error) {
-    console.error('Failed to update question:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Delete a question (admin only)
- * @param {string} questionId - Question ID
- * @returns {Promise<Object>} Delete result
- */
-export const deleteQuestion = async (questionId) => {
-  try {
-    const { error } = await supabase
-      .from('questions')
-      .delete()
-      .eq('id', questionId);
-
-    if (error) throw error;
-    return { success: true };
-  } catch (error) {
-    console.error('Failed to delete question:', error);
-    return { success: false, error: error.message };
-  }
 };
 
 // Fallback questions in case Supabase is unavailable
@@ -421,9 +349,5 @@ export default {
   getBasicQuestionsForBuddies,
   getFunQuestions,
   getBasicQuestions,
-  getSharedQuestions,
-  filterQuestionsByDependencies,
-  createQuestion,
-  updateQuestion,
-  deleteQuestion
+  filterQuestionsByDependencies
 };

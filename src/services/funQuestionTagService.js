@@ -213,41 +213,6 @@ export const funQuestionTagService = {
   },
 
   /**
-   * 新增或更新選項標籤映射
-   * @param {string} optionText - 選項文字
-   * @param {Array} tags - 標籤陣列
-   * @returns {Promise<boolean>} 是否成功
-   */
-  async updateOptionTags(optionText, tags) {
-    try {
-      // 先刪除現有映射
-      await supabase
-        .from('fun_question_option_tags')
-        .delete()
-        .eq('option_text', optionText);
-
-      // 插入新映射
-      const insertData = tags.map(tag => ({
-        option_text: optionText,
-        tag_name: typeof tag === 'object' ? tag.name : tag,
-        weight: typeof tag === 'object' ? tag.weight : 1.0
-      }));
-
-      const { error } = await supabase
-        .from('fun_question_option_tags')
-        .insert(insertData);
-
-      if (error) throw error;
-      
-      console.log(`Updated tags for option "${optionText}":`, tags);
-      return true;
-    } catch (error) {
-      console.error(`Failed to update tags for option "${optionText}":`, error);
-      return false;
-    }
-  },
-
-  /**
    * 清除緩存（用於重新載入）
    */
   clearCache() {

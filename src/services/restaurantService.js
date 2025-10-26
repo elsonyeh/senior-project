@@ -911,46 +911,230 @@ export const restaurantImageService = {
 export const restaurantReviewService = {
   /**
    * 新增餐廳評論
-   * @param {Object} reviewData - 評論資料
-   * @returns {Promise<Object>} 新增的評論
    */
-  async addReview(reviewData) {
+  async addReview(restaurantId, rating, comment) {
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error('請先登入才能留言');
+      }
+
       const { data, error } = await supabase
         .from('restaurant_reviews')
         .insert([{
-          ...reviewData,
-          user_id: supabase.auth.getUser()?.id
+          restaurant_id: restaurantId,
+          user_id: user.id,
+          rating,
+          comment
         }])
-        .select()
+        .select(`
+          *,
+          users (
+            id,
+            name,
+            avatar_url
+          )
+        `)
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        success: true,
+        review: data
+      };
     } catch (error) {
       console.error('新增評論失敗:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || '新增評論失敗'
+      };
     }
   },
 
   /**
    * 獲取餐廳評論
-   * @param {string} restaurantId - 餐廳 ID
-   * @returns {Promise<Array>} 評論列表
    */
   async getReviews(restaurantId) {
     try {
       const { data, error } = await supabase
         .from('restaurant_reviews')
-        .select('*')
+        .select(`
+          *,
+          users (
+            id,
+            name,
+            avatar_url
+          )
+        `)
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return {
+        success: true,
+        reviews: data || []
+      };
     } catch (error) {
       console.error('獲取評論失敗:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message || '獲取評論失敗',
+        reviews: []
+      };
+    }
+  },
+
+  /**
+   * 更新評論
+   */
+  async updateReview(reviewId, rating, comment) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error('請先登入');
+      }
+
+      const { data, error } = await supabase
+        .from('restaurant_reviews')
+        .update({
+          rating,
+          comment
+        })
+        .eq('id', reviewId)
+        .eq('user_id', user.id)
+        .select(`
+          *,
+          users (
+            id,
+            name,
+            avatar_url
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+      return {
+        success: true,
+        review: data
+      };
+    } catch (error) {
+      console.error('更新評論失敗:', error);
+      return {
+        success: false,
+        error: error.message || '更新評論失敗'
+      };
+    }
+  },
+
+  /**
+   * 刪除評論
+   */
+  async deleteReview(reviewId) {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error('請先登入');
+      }
+
+      const { error } = await supabase
+        .from('restaurant_reviews')
+        .delete()
+        .eq('id', reviewId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error('刪除評論失敗:', error);
+      return {
+        success: false,
+        error: error.message || '刪除評論失敗'
+      };
+    }
+  },
+
+  /**
+   * 獲取餐廳評分資訊（包含 Google 和 TasteBuddies 評分）
+   */
+  async getRestaurantRating(restaurantId) {
+    try {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('rating')
+        .eq('id', restaurantId)
+        .single();
+
+      if (error) throw error;
+
+      if (!data) {
+        return {
+          success: true,
+          googleRating: 0,
+          googleRatingCount: 0,
+          tastebuddiesRating: 0,
+          tastebuddiesRatingCount: 0,
+          combinedRating: 0
+        };
+      }
+
+      return {
+        success: true,
+        googleRating: data.rating || 0,
+        googleRatingCount: 0,
+        tastebuddiesRating: 0,
+        tastebuddiesRatingCount: 0,
+        combinedRating: data.rating || 0
+      };
+    } catch (error) {
+      console.error('獲取評分失敗:', error);
+      return {
+        success: false,
+        error: error.message || '獲取評分失敗',
+        googleRating: 0,
+        googleRatingCount: 0,
+        tastebuddiesRating: 0,
+        tastebuddiesRatingCount: 0,
+        combinedRating: 0
+      };
+    }
+  },
+
+  /**
+   * 獲取用戶的所有評論（用於個人頁面）
+   */
+  async getUserReviews(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('restaurant_reviews')
+        .select(`
+          *,
+          restaurants (
+            id,
+            name,
+            address,
+            rating
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return {
+        success: true,
+        reviews: data || []
+      };
+    } catch (error) {
+      console.error('獲取用戶評論失敗:', error);
+      return {
+        success: false,
+        error: error.message || '獲取用戶評論失敗',
+        reviews: []
+      };
     }
   }
 };

@@ -1,0 +1,378 @@
+.restaurant-reviews {
+  width: 100%;
+  padding: 16px;
+  background: #fff;
+}
+
+/* Google Maps 風格評分摘要 + TasteBuddies 品牌色 */
+.rating-summary-gmaps {
+  display: flex;
+  align-items: center;
+  padding: 24px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e8eaed;
+  margin-bottom: 20px;
+}
+
+.rating-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-number {
+  font-size: 56px;
+  font-weight: 400;
+  color: #202124;
+  line-height: 1;
+}
+
+.rating-stars-large {
+  display: flex;
+  gap: 2px;
+}
+
+.rating-stars-large .stars {
+  font-size: 20px;
+  gap: 2px;
+}
+
+.rating-stars-large .filled {
+  color: #fbbc04;
+}
+
+.rating-stars-large .empty {
+  color: #e8eaed;
+}
+
+.rating-count-text {
+  font-size: 14px;
+  color: #5f6368;
+  margin-top: 4px;
+}
+
+/* 星星 */
+.stars {
+  display: flex;
+  gap: 4px;
+  font-size: 20px;
+}
+
+.stars.interactive {
+  cursor: pointer;
+}
+
+.stars .filled {
+  color: #ffd700;
+}
+
+.stars .empty {
+  color: #ddd;
+}
+
+.stars.interactive .filled,
+.stars.interactive .empty {
+  transition: all 0.2s;
+}
+
+.stars.interactive span:hover {
+  transform: scale(1.2);
+}
+
+/* Google Maps 風格評論表單 */
+.review-form {
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #e8eaed;
+  border-radius: 8px;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.form-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.cancel-btn {
+  background: none;
+  border: none;
+  color: #1a73e8;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.cancel-btn:hover {
+  background: #e8f0fe;
+}
+
+.rating-input {
+  margin-bottom: 16px;
+}
+
+.rating-input label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.comment-input {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.comment-input textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+  color: #202124;
+  line-height: 1.5;
+}
+
+.comment-input textarea:focus {
+  outline: none;
+  border-color: #1a73e8;
+  border-width: 2px;
+  padding: 11px 15px;
+}
+
+.comment-input textarea::placeholder {
+  color: #5f6368;
+}
+
+.char-count {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-size: 12px;
+  color: #5f6368;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #1765cc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #dadce0;
+  color: #80868b;
+}
+
+/* 登入提示 */
+.login-prompt {
+  text-align: center;
+  padding: 20px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  color: #856404;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* 評論列表 */
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading,
+.no-reviews {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+/* Google Maps 風格評論項目 */
+.review-item {
+  padding: 20px 16px;
+  background: white;
+  border-bottom: 1px solid #e8eaed;
+  transition: background 0.2s;
+}
+
+.review-item:hover {
+  background: #f8f9fa;
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.review-rating {
+  margin-bottom: 8px;
+  margin-left: 44px;
+}
+
+.user-info {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1a73e8;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #202124;
+  font-size: 14px;
+}
+
+.review-date {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.review-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  font-size: 18px;
+  color: #5f6368;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-btn:hover {
+  background: #fce8e6;
+  color: #d93025;
+}
+
+.review-content {
+  margin-top: 8px;
+  margin-left: 44px;
+}
+
+.review-comment {
+  color: #202124;
+  line-height: 1.6;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.show-more-btn {
+  background: none;
+  border: none;
+  color: #1a73e8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-top: 4px;
+  transition: color 0.2s;
+}
+
+.show-more-btn:hover {
+  color: #1765cc;
+  text-decoration: underline;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .restaurant-reviews {
+    padding: 12px;
+  }
+
+  .rating-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .review-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .review-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

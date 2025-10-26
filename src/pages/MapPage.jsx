@@ -3,6 +3,7 @@ import MapView from '../components/map/MapView';
 import MapSearch from '../components/map/MapSearch';
 import LocationButton from '../components/map/LocationButton';
 import FavoriteLists from '../components/map/FavoriteLists';
+import RestaurantDetailModal from '../components/map/RestaurantDetailModal';
 import { authService } from '../services/authService';
 import { useNavContext } from '../App';
 import { IoMenuOutline, IoCloseOutline } from 'react-icons/io5';
@@ -12,6 +13,7 @@ export default function MapPage() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [favoriteLists, setFavoriteLists] = useState([]);
   const [selectedList, setSelectedList] = useState(null);
   const [showFavoriteLists, setShowFavoriteLists] = useState(false);
@@ -349,9 +351,10 @@ export default function MapPage() {
     showNotificationMessage(error, 'error');
   }, []);
 
-  // 處理地點選擇
+  // 處理地點選擇 - 只設置 selectedPlace,不自動打開 Modal
   const handlePlaceSelect = useCallback((place) => {
     setSelectedPlace(place);
+    // 不再自動設置 selectedRestaurant,改由評論按鈕觸發
   }, []);
 
   // 處理收藏切換
@@ -470,6 +473,7 @@ export default function MapPage() {
           favoriteLists={favoriteLists}
           selectedList={selectedList}
           selectedRestaurant={selectedPlace}
+          onRestaurantClick={setSelectedRestaurant}
         />
       </div>
 
@@ -487,6 +491,15 @@ export default function MapPage() {
           refreshTrigger={refreshListsTrigger}
         />
       </div>
+
+      {/* 餐廳詳情模態框 */}
+      {selectedRestaurant && (
+        <RestaurantDetailModal
+          restaurant={selectedRestaurant}
+          user={user}
+          onClose={() => setSelectedRestaurant(null)}
+        />
+      )}
 
     </div>
   );

@@ -109,6 +109,7 @@ const NavProvider = ({ children }) => {
 };
 
 function App() {
+  console.log('🚀 App component rendering...');
   return (
     <Router>
       <NavProvider>

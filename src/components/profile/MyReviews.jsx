@@ -1,0 +1,193 @@
+import React, { useState, useEffect } from 'react';
+import { IoStar, IoStarOutline, IoTrash, IoRestaurantOutline, IoNavigateOutline } from 'react-icons/io5';
+import { restaurantReviewService } from '../../services/restaurantService';
+import './MyReviews.css';
+
+export default function MyReviews({ user }) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedReviews, setExpandedReviews] = useState(new Set());
+
+  const MAX_PREVIEW_LENGTH = 100;
+
+  useEffect(() => {
+    if (user) {
+      loadReviews();
+    }
+  }, [user]);
+
+  const loadReviews = async () => {
+    setLoading(true);
+    const result = await restaurantReviewService.getUserReviews(user.id);
+    if (result.success) {
+      setReviews(result.reviews);
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (reviewId) => {
+    if (!confirm('確定要刪除這則評論嗎？此操作無法復原。')) {
+      return;
+    }
+
+    const result = await restaurantReviewService.deleteReview(reviewId);
+    if (result.success) {
+      await loadReviews();
+    } else {
+      alert(result.error || '刪除失敗');
+    }
+  };
+
+  const toggleExpanded = (reviewId) => {
+    const newExpanded = new Set(expandedReviews);
+    if (newExpanded.has(reviewId)) {
+      newExpanded.delete(reviewId);
+    } else {
+      newExpanded.add(reviewId);
+    }
+    setExpandedReviews(newExpanded);
+  };
+
+  const shouldShowMoreButton = (text) => {
+    return text && text.length > MAX_PREVIEW_LENGTH;
+  };
+
+  const getDisplayText = (review) => {
+    if (!review.comment) return '';
+    if (expandedReviews.has(review.id)) {
+      return review.comment;
+    }
+    if (review.comment.length > MAX_PREVIEW_LENGTH) {
+      return review.comment.substring(0, MAX_PREVIEW_LENGTH) + '...';
+    }
+    return review.comment;
+  };
+
+  const navigateToRestaurant = (restaurant) => {
+    if (!restaurant) return;
+    const query = encodeURIComponent(restaurant.address || restaurant.name);
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${query}`,
+      "_blank"
+    );
+  };
+
+  const renderStars = (rating, interactive = false, onRatingChange = null) => {
+    return (
+      <div className={`stars ${interactive ? 'interactive' : ''}`}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            onClick={() => interactive && onRatingChange && onRatingChange(star)}
+            className={star <= rating ? 'filled' : 'empty'}
+          >
+            {star <= rating ? <IoStar /> : <IoStarOutline />}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-TW', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="my-reviews-loading">
+        <div className="loading-spinner"></div>
+        <p>載入評論中...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="my-reviews-container">
+      <div className="reviews-header">
+        <h2>我的評論</h2>
+        <div className="reviews-count">{reviews.length} 則評論</div>
+      </div>
+
+      <div className="reviews-list">
+        {reviews.length === 0 ? (
+          <div className="no-reviews">
+            <IoRestaurantOutline className="no-reviews-icon" />
+            <h3>還沒有評論</h3>
+            <p>開始探索餐廳並留下您的評論吧！</p>
+          </div>
+        ) : (
+          reviews.map((review) => (
+            <div key={review.id} className="review-card">
+              <div className="card-header">
+                <div className="restaurant-name">
+                  <IoRestaurantOutline />
+                  {review.restaurants?.name || '未知餐廳'}
+                </div>
+                <div className="action-buttons">
+                  <button
+                    className="navigate-btn"
+                    onClick={() => navigateToRestaurant(review.restaurants)}
+                    title="前往餐廳"
+                  >
+                    <IoNavigateOutline />
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDelete(review.id)}
+                    title="刪除"
+                  >
+                    <IoTrash />
+                  </button>
+                </div>
+              </div>
+
+              <div className="card-content">
+                <div className="review-rating-section">
+                  <div className="my-rating">
+                    <span className="rating-label">我的評分</span>
+                    {renderStars(review.rating)}
+                    <span className="rating-number">{review.rating}.0</span>
+                  </div>
+
+                  {review.restaurants?.rating && (
+                    <div className="restaurant-overall-rating">
+                      <span className="overall-label">餐廳評分</span>
+                      <span className="overall-value">{review.restaurants.rating.toFixed(1)}</span>
+                      {renderStars(Math.round(review.restaurants.rating))}
+                    </div>
+                  )}
+                </div>
+
+                {review.comment && (
+                  <div className="review-comment-section">
+                    <div className="review-comment">{getDisplayText(review)}</div>
+                    {shouldShowMoreButton(review.comment) && (
+                      <button
+                        className="show-more-btn"
+                        onClick={() => toggleExpanded(review.id)}
+                      >
+                        {expandedReviews.has(review.id) ? '顯示較少內容' : '顯示完整內容'}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="review-meta">
+                  <span className="review-date">{formatDate(review.created_at)}</span>
+                  {review.updated_at !== review.created_at && (
+                    <span className="updated-badge">已編輯</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

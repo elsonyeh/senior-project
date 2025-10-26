@@ -70,7 +70,7 @@
 
 /* 內容區域 */
 .page-content {
-  padding: 0 0 120px 0;
+  padding: 0 20px 120px 20px; /* 添加左右 20px padding 確保對稱 */
   min-height: calc(100vh - 120px);
   overflow-y: auto;
   max-height: calc(100vh - 120px);
@@ -99,7 +99,7 @@
   }
   
   .page-content {
-    padding: 0 0 100px 0;
+    padding: 0 16px 100px 16px; /* 手機版也添加左右 padding */
     overflow-y: auto;
     max-height: calc(100vh - 100px);
   }

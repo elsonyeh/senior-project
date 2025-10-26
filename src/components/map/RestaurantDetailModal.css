@@ -1,0 +1,189 @@
+.restaurant-detail-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.restaurant-detail-modal {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 24px;
+  color: #333;
+  transition: all 0.2s;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.close-btn:hover {
+  background: white;
+  transform: rotate(90deg);
+}
+
+.restaurant-image {
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+.restaurant-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.restaurant-info {
+  padding: 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.restaurant-name {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.restaurant-address,
+.restaurant-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.restaurant-address svg,
+.restaurant-rating svg {
+  font-size: 18px;
+  color: #667eea;
+}
+
+.navigate-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 16px;
+  width: 100%;
+  justify-content: center;
+}
+
+.navigate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.reviews-section {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .restaurant-detail-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .restaurant-detail-modal {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+    animation: modalSlideUp 0.3s ease-out;
+  }
+
+  @keyframes modalSlideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .restaurant-image {
+    height: 200px;
+  }
+
+  .restaurant-info {
+    padding: 20px;
+  }
+
+  .restaurant-name {
+    font-size: 20px;
+  }
+}
+
+/* 捲軸樣式 */
+.restaurant-detail-modal::-webkit-scrollbar,
+.reviews-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.restaurant-detail-modal::-webkit-scrollbar-track,
+.reviews-section::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.restaurant-detail-modal::-webkit-scrollbar-thumb,
+.reviews-section::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.restaurant-detail-modal::-webkit-scrollbar-thumb:hover,
+.reviews-section::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

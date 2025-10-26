@@ -2,6 +2,7 @@ import React from 'react';
 import {
   IoChevronForwardOutline,
   IoListOutline,
+  IoStarOutline,
   IoTimeOutline,
   IoSettingsOutline,
   IoPersonOutline,
@@ -17,6 +18,11 @@ export default function ProfileMenu({ user, onNavigate, onLogout }) {
       icon: IoListOutline,
       label: '我的清單',
       action: () => onNavigate('lists')
+    },
+    {
+      icon: IoStarOutline,
+      label: '我的評論',
+      action: () => onNavigate('reviews')
     },
     {
       icon: IoTimeOutline,
