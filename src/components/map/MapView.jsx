@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { IoHeartOutline, IoHeart, IoInformationCircleOutline, IoNavigateOutline } from 'react-icons/io5';
 import googleMapsLoader from '../../utils/googleMapsLoader';
-import { restaurantService } from '../../services/restaurantService';
+import { restaurantService, restaurantReviewService } from '../../services/restaurantService';
 import './MapView.css';
 
 // 台北101的座標作為預設中心點
@@ -414,7 +414,7 @@ export default function MapView({
     }
 
     // 獲取綜合評分（包含 TasteBuddies 評論）
-    const ratingResult = await restaurantService.getRestaurantRating(restaurant.id);
+    const ratingResult = await restaurantReviewService.getRestaurantRating(restaurant.id);
     const rating = ratingResult.success && ratingResult.combinedRating > 0
       ? ratingResult.combinedRating.toFixed(1)
       : (restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A');
