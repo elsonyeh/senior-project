@@ -16,16 +16,13 @@ import {
   IoNavigateOutline,
 } from "react-icons/io5";
 import { userDataService } from "../../services/userDataService";
-import { authService } from "../../services/authService";
 import "./FavoriteLists.css";
 
 export default function FavoriteLists({
   user,
   onListSelect,
-  onPlaceAdd,
   onListUpdate,
   onListsChange,
-  selectedPlace,
   isOpen,
   onToggle,
   refreshTrigger = 0,
@@ -37,6 +34,7 @@ export default function FavoriteLists({
   const [editingListId, setEditingListId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [swipedListId, setSwipedListId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({
     show: false,
@@ -59,17 +57,23 @@ export default function FavoriteLists({
     }
   }, [refreshTrigger, user]);
 
-  // 點擊外部關閉菜單
+  // 點擊外部關閉滑動選單
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (openMenuId && !event.target.closest(".map-list-card-menu")) {
-        setOpenMenuId(null);
+      // 確保不會誤判三個點按鈕或滑動按鈕的點擊
+      if (
+        swipedListId &&
+        !event.target.closest(".fav-list-item-wrapper") &&
+        !event.target.closest(".fav-list-menu-trigger") &&
+        !event.target.closest(".fav-swipe-actions")
+      ) {
+        setSwipedListId(null);
       }
     };
 
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [openMenuId]);
+  }, [swipedListId]);
 
   const loadFavoriteLists = async (showLoadingIndicator = true) => {
     if (!user) return;
@@ -196,6 +200,14 @@ export default function FavoriteLists({
   const createNewList = async () => {
     if (!newListName.trim() || !user) return;
 
+    // 檢查是否重名
+    const trimmedName = newListName.trim();
+    const isDuplicate = favoriteLists.some(list => list.name === trimmedName);
+    if (isDuplicate) {
+      showNotification("清單名稱已存在，請使用不同的名稱", "warning");
+      return;
+    }
+
     // 檢查清單數量限制（最多5個，包含「我的最愛」）
     if (favoriteLists.length >= 5) {
       showNotification("最多只能建立 5 個清單（含我的最愛）", "error");
@@ -207,7 +219,7 @@ export default function FavoriteLists({
       const result = await userDataService.createFavoriteList(
         user.id,
         {
-          name: newListName.trim(),
+          name: trimmedName,
           color: getRandomColor(),
         },
         user.email
@@ -238,6 +250,13 @@ export default function FavoriteLists({
   };
 
   const deleteList = async (listId) => {
+    // 檢查是否為預設清單
+    const targetList = favoriteLists.find(list => list.id === listId);
+    if (targetList && targetList.name === '我的最愛') {
+      showNotification("預設清單「我的最愛」不能刪除", "warning");
+      return;
+    }
+
     if (favoriteLists.length === 1) {
       showNotification("至少需要保留一個清單", "warning");
       return;
@@ -274,6 +293,11 @@ export default function FavoriteLists({
 
   // 開始編輯清單
   const startEditList = (list) => {
+    // 檢查是否為預設清單
+    if (list.name === '我的最愛') {
+      showNotification("預設清單「我的最愛」不能改名", "warning");
+      return;
+    }
     setEditingListId(list.id);
     setEditingName(list.name);
     setOpenMenuId(null);
@@ -282,15 +306,25 @@ export default function FavoriteLists({
   const editListName = async (listId, newName) => {
     if (!newName.trim()) return;
 
+    // 檢查是否重名（排除自己）
+    const trimmedName = newName.trim();
+    const isDuplicate = favoriteLists.some(list => list.id !== listId && list.name === trimmedName);
+    if (isDuplicate) {
+      showNotification("清單名稱已存在，請使用不同的名稱", "warning");
+      setEditingListId(null);
+      setEditingName("");
+      return;
+    }
+
     try {
       setLoading(true);
       const result = await userDataService.updateFavoriteList(listId, {
-        name: newName.trim(),
+        name: trimmedName,
       });
 
       if (result.success) {
         const updatedLists = favoriteLists.map((list) =>
-          list.id === listId ? { ...list, name: newName.trim() } : list
+          list.id === listId ? { ...list, name: trimmedName } : list
         );
         setFavoriteLists(updatedLists);
         setEditingListId(null);
@@ -365,6 +399,7 @@ export default function FavoriteLists({
   const dismissNotification = () => {
     setNotification({ show: false, message: "", type: "success" });
   };
+
 
   const selectedList = favoriteLists.find((list) => list.id === selectedListId);
 
@@ -444,96 +479,105 @@ export default function FavoriteLists({
           )}
           {/* 清單選擇器 */}
           <div className="map-lists-selector">
-            {favoriteLists.map((list) => (
-              <div
-                key={list.id}
-                className={`map-list-item ${
-                  selectedListId === list.id ? "selected" : ""
-                }`}
-                onClick={() => {
-                  setSelectedListId(list.id);
-                  onListSelect?.(list);
-                  onListUpdate?.(list);
-                }}
-              >
-                <div className="map-list-card-header">
-                  <div className="map-list-card-info">
-                    <div
-                      className="map-list-color-dot"
-                      style={{ backgroundColor: list.color }}
-                    ></div>
-                    <div className="map-list-card-details">
-                      {editingListId === list.id ? (
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onBlur={() => editListName(list.id, editingName)}
-                          onKeyPress={(e) =>
-                            e.key === "Enter" &&
-                            editListName(list.id, editingName)
-                          }
-                          className="map-edit-input"
-                          autoFocus
-                        />
-                      ) : (
-                        <h5 className="map-list-name">{list.name}</h5>
-                      )}
-                      <p className="map-list-count">
-                        {list.places.length} 個地點
-                      </p>
+            {favoriteLists.map((list) => {
+              const isSwiped = swipedListId === list.id;
+              return (
+              <div key={list.id} className="fav-list-item-wrapper">
+                <div
+                  className={`fav-list-item ${
+                    selectedListId === list.id ? "selected" : ""
+                  } ${isSwiped ? "swiped" : ""}`}
+                  onClick={(e) => {
+                    // 如果點擊的是三個點按鈕或其子元素,不處理清單選擇
+                    if (e.target.closest('.fav-list-menu-trigger')) {
+                      return;
+                    }
+                    setSelectedListId(list.id);
+                    onListSelect?.(list);
+                    onListUpdate?.(list);
+                  }}
+                >
+                  <div className="fav-list-card-header">
+                    <div className="fav-list-card-info">
+                      <div
+                        className="fav-list-color-dot"
+                        style={{ backgroundColor: list.color }}
+                      ></div>
+                      <div className="fav-list-card-details">
+                        {editingListId === list.id ? (
+                          <input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={() => editListName(list.id, editingName)}
+                            onKeyPress={(e) =>
+                              e.key === "Enter" &&
+                              editListName(list.id, editingName)
+                            }
+                            className="fav-edit-input"
+                            autoFocus
+                          />
+                        ) : (
+                          <h5 className="fav-list-name">{list.name}</h5>
+                        )}
+                        <p className="fav-list-count">
+                          {list.places.length} 個地點
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="map-list-card-menu">
-                    <button
-                      className="map-list-menu-trigger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenuId(openMenuId === list.id ? null : list.id);
-                      }}
-                      title="更多選項"
-                    >
-                      <IoEllipsisVertical />
-                    </button>
-
-                    <div
-                      className={`map-list-card-actions ${
-                        openMenuId === list.id ? "show" : ""
-                      }`}
-                    >
-                      <button
-                        className="map-list-action-btn map-edit-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          startEditList(list);
-                        }}
-                      >
-                        <span className="map-action-icon">
-                          <IoCreateOutline />
-                        </span>
-                        編輯清單
-                      </button>
-                      {favoriteLists.length > 1 && (
+                    {list.name !== '我的最愛' && (
+                      <div className="fav-list-card-menu">
                         <button
-                          className="map-list-action-btn map-delete-btn"
-                          onClick={(e) => {
+                          className="fav-list-menu-trigger"
+                          onMouseDown={(e) => {
                             e.stopPropagation();
-                            setOpenMenuId(null);
-                            deleteList(list.id);
+                            e.preventDefault();
+                            setSwipedListId(swipedListId === list.id ? null : list.id);
                           }}
+                          title="更多選項"
                         >
-                          <span className="map-action-icon">
-                            <IoTrashOutline />
-                          </span>
-                          刪除清單
+                          <IoEllipsisVertical />
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* 滑動動作按鈕 - 優化現代風格 */}
+                {list.name !== '我的最愛' && (
+                  <div className="fav-swipe-actions">
+                    <button
+                      className="fav-swipe-btn fav-edit-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSwipedListId(null);
+                        startEditList(list);
+                      }}
+                      title="編輯清單"
+                    >
+                      <IoCreateOutline />
+                      <span>編輯</span>
+                    </button>
+                    {favoriteLists.length > 1 && (
+                      <button
+                        className="fav-swipe-btn fav-delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSwipedListId(null);
+                          deleteList(list.id);
+                        }}
+                        title="刪除清單"
+                      >
+                        <IoTrashOutline />
+                        <span>刪除</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-            ))}
+            );
+            })}
 
             {/* 新增清單 */}
             {showCreateForm ? (

@@ -477,21 +477,43 @@
 .map-lists-selector {
   margin-bottom: 20px;
   padding-top: 8px;
+  overflow-x: hidden;
 }
 
-.map-list-item {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 0 0 12px 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+/* 清單項目包裝器 - 容納清單和滑動按鈕 */
+.fav-list-item-wrapper {
   position: relative;
+  margin: 0 0 14px 0;
+  overflow: hidden; /* 改為 hidden 以裁切超出部分 */
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(255, 255, 255, 0.9) 100%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.map-list-item::before {
+.fav-list-item-wrapper:hover {
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.fav-list-item {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  z-index: 1; /* 降低層級,讓按鈕在上面 */
+  overflow: hidden;
+}
+
+/* 滑動狀態 - 平滑滑動顯示按鈕 */
+.fav-list-item.swiped {
+  transform: translateX(-106px);
+}
+
+.fav-list-item::before {
   content: '';
   position: absolute;
   top: 0;
@@ -500,15 +522,15 @@
   height: 100%;
   background: linear-gradient(90deg,
       transparent 0%,
-      rgba(255, 107, 53, 0.08) 40%,
-      rgba(255, 107, 53, 0.12) 50%,
-      rgba(255, 107, 53, 0.08) 60%,
+      rgba(59, 130, 246, 0.1) 40%,
+      rgba(59, 130, 246, 0.15) 50%,
+      rgba(59, 130, 246, 0.1) 60%,
       transparent 100%);
-  transition: left 0.6s ease;
+  transition: left 0.5s ease;
   pointer-events: none;
 }
 
-.map-list-item::after {
+.fav-list-item::after {
   content: '';
   position: absolute;
   top: 0;
@@ -516,195 +538,230 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg,
-      rgba(255, 107, 53, 0.06) 0%,
-      rgba(255, 107, 53, 0.02) 100%);
+      rgba(59, 130, 246, 0.05) 0%,
+      rgba(59, 130, 246, 0.02) 100%);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.3s ease;
   pointer-events: none;
+  border-radius: 14px;
 }
 
-.map-list-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+.fav-list-item:hover:not(.swiped) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.1);
 }
 
-.map-list-item:hover::before {
+.fav-list-item:hover.swiped {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.1);
+}
+
+.fav-list-item:hover::before {
   left: 100%;
 }
 
-.map-list-item:hover::after {
+.fav-list-item:hover::after {
   opacity: 1;
 }
 
-.map-list-item.selected {
-  border-color: #ff6b35;
-  background: #fff8f5;
-  /* 確保選中狀態不會有變形效果，保持穩定，與設定頁面一致 */
+.fav-list-item.selected:not(.swiped) {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
   opacity: 1 !important;
   transform: none !important;
   animation: none !important;
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 4px 14px rgba(59, 130, 246, 0.2);
 }
 
-.map-list-item.selected::after {
+.fav-list-item.selected.swiped {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  opacity: 1 !important;
+  animation: none !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 4px 14px rgba(59, 130, 246, 0.2);
+  /* 保留 swiped 的 transform */
+}
+
+.fav-list-item.selected::after {
   opacity: 1;
 }
 
-.map-list-card-header {
+.fav-list-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
 }
 
-.map-list-card-info {
+.fav-list-card-info {
   display: flex;
   align-items: center;
   gap: 12px;
   flex: 1;
   min-width: 0;
+  padding-left: 4px;
 }
 
-.map-list-card-details {
+.fav-list-card-details {
   display: flex;
   flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.map-list-color-dot {
-  width: 12px;
-  height: 12px;
+.fav-list-color-dot {
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 0 3px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 3px rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
 }
 
-.map-list-color-dot::before {
+.fav-list-color-dot::before {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
+  inset: 2px;
   border-radius: 50%;
-  background: inherit;
-  opacity: 0;
-  transform: scale(0.8);
-  filter: blur(4px);
-  transition: all 0.4s ease;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 50%, rgba(0, 0, 0, 0.1) 100%);
+  pointer-events: none;
 }
 
-.map-list-item:hover .map-list-color-dot {
-  transform: scale(1.25) rotate(180deg);
+.fav-list-color-dot::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.fav-list-item:hover .fav-list-color-dot {
+  transform: scale(1.2);
   box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    0 0 0 3px rgba(255, 255, 255, 1),
+    0 0 0 4px rgba(0, 0, 0, 0.12),
+    0 6px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.map-list-item:hover .map-list-color-dot::before {
-  opacity: 0.3;
-  transform: scale(1.5);
-}
-
-.map-list-item.selected .map-list-color-dot {
+.fav-list-item.selected .fav-list-color-dot {
   transform: scale(1.15);
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.2),
-    0 2px 8px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    0 0 0 3px rgba(255, 255, 255, 1),
+    0 0 0 4px rgba(59, 130, 246, 0.3),
+    0 6px 18px rgba(0, 0, 0, 0.2),
+    0 0 12px rgba(59, 130, 246, 0.4),
+    inset 0 1px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.map-list-name {
-  margin: 0 0 4px 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
+.fav-list-name {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 650;
+  color: #2d3748;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
-.map-list-item:hover .map-list-name {
+.fav-list-item:hover .fav-list-name {
   color: #1a202c;
 }
 
-.map-list-item.selected .map-list-name {
-  color: #1a202c;
+.fav-list-item.selected .fav-list-name {
+  color: #1e40af;
   font-weight: 700;
 }
 
-.map-list-count {
+.fav-list-count {
   margin: 0;
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
-.map-list-item:hover .map-list-count {
-  background: linear-gradient(135deg,
-      rgba(255, 107, 53, 0.15) 0%,
-      rgba(255, 107, 53, 0.08) 100%);
-  color: #ff6b35;
-  border-color: rgba(255, 107, 53, 0.2);
-  transform: scale(1.05);
+.fav-list-item:hover .fav-list-count {
+  color: #64748b;
 }
 
-.map-list-item.selected .map-list-count {
-  background: linear-gradient(135deg,
-      rgba(255, 107, 53, 0.2) 0%,
-      rgba(255, 107, 53, 0.12) 100%);
-  color: #e55a2b;
-  border-color: rgba(255, 107, 53, 0.3);
-  font-weight: 700;
+.fav-list-item.selected .fav-list-count {
+  color: #3b82f6;
+  font-weight: 600;
 }
 
-.map-edit-input {
+.fav-edit-input {
   border: none;
   outline: none;
-  background: transparent;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #333;
-  padding: 2px 4px;
-  border-bottom: 1px solid #ff6b35;
+  background: rgba(59, 130, 246, 0.05);
+  font-size: 0.98rem;
+  font-weight: 650;
+  color: #2d3748;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 2px solid #3b82f6;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.fav-edit-input:focus {
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 /* 清單三個點導航菜單 */
-.map-list-card-menu {
+.fav-list-card-menu {
   position: relative;
   flex-shrink: 0;
-  z-index: 5;
+  z-index: 2;
 }
 
-.map-list-menu-trigger {
-  background: none;
+.fav-list-menu-trigger {
+  background: transparent;
   border: none;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
-  color: #666;
+  font-size: 1.05rem;
+  color: #94a3b8;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  pointer-events: auto;
+  opacity: 1; /* 永久可見 */
   position: relative;
-  z-index: 10;
+  width: 30px;
+  height: 30px;
 }
 
-.map-list-item:hover .map-list-menu-trigger {
-  opacity: 1;
-}
-
-.map-list-menu-trigger:hover {
+.fav-list-menu-trigger:hover {
   background: rgba(0, 0, 0, 0.05);
-  color: #333;
+  color: #1a1a1a;
+  transform: scale(1.1);
+}
+
+.fav-list-menu-trigger:active {
+  transform: scale(0.95);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .map-list-card-actions {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   right: 0;
   background: white;
   border: 1px solid #e0e0e0;
@@ -712,16 +769,17 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 100;
   min-width: 120px;
+  max-width: 140px;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-4px);
+  transform: translateX(10px);
   transition: all 0.2s ease;
 }
 
 .map-list-card-actions.show {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
 /* 菜單項目圖標 */
@@ -778,6 +836,86 @@
 .map-list-action-btn.map-delete-btn:hover {
   background: rgba(239, 68, 68, 0.1);
   color: #dc2626;
+}
+
+/* 滑動動作按鈕 - 現代精簡風格 */
+.fav-swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 106px;
+  display: flex;
+  gap: 4px;
+  z-index: 0; /* 在卡片下方 */
+  border-radius: 0 14px 14px 0;
+  padding: 10px 3px 10px 9px; /* 左邊多一點,右邊少一點 */
+  align-items: center;
+  justify-content: center;
+}
+
+.fav-swipe-btn {
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 3px;
+  border-radius: 7px;
+  transition: all 0.2s ease;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: white;
+  min-height: 52px;
+  max-width: 45px;
+}
+
+.fav-swipe-btn svg {
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+
+.fav-swipe-btn:hover svg {
+  transform: scale(1.15);
+}
+
+.fav-swipe-btn span {
+  font-size: 0.65rem;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.fav-swipe-btn.fav-edit-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.fav-swipe-btn.fav-edit-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.fav-swipe-btn.fav-edit-btn:active {
+  transform: translateY(0);
+}
+
+.fav-swipe-btn.fav-delete-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.fav-swipe-btn.fav-delete-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.fav-swipe-btn.fav-delete-btn:active {
+  transform: translateY(0);
 }
 
 /* 新增清單 */

@@ -10,7 +10,11 @@ import {
   IoNavigateOutline,
   IoEllipsisVertical,
   IoStarOutline,
-  IoTimeOutline
+  IoTimeOutline,
+  IoCheckmarkCircleOutline,
+  IoAlertCircleOutline,
+  IoWarningOutline,
+  IoCloseOutline
 } from 'react-icons/io5';
 import './MyLists.css';
 
@@ -21,8 +25,14 @@ export default function MyLists({ user }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [swipedListId, setSwipedListId] = useState(null);
   const [editingListId, setEditingListId] = useState(null);
   const [editingListName, setEditingListName] = useState('');
+  const [notification, setNotification] = useState({
+    show: false,
+    message: '',
+    type: 'success'
+  });
 
   // 獲取餐廳圖片的函數，使用與 SwiftTaste 相同的邏輯
   const getRestaurantImage = (restaurant) => {
@@ -51,17 +61,17 @@ export default function MyLists({ user }) {
     loadUserLists();
   }, [user]);
 
-  // 點擊外部關閉菜單
+  // 點擊外部關閉滑動菜單
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (openMenuId && !event.target.closest('.list-card-menu')) {
-        setOpenMenuId(null);
+      if (swipedListId && !event.target.closest('.mylists-card-wrapper')) {
+        setSwipedListId(null);
       }
     };
 
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [openMenuId]);
+  }, [swipedListId]);
 
   // 載入用戶的收藏清單
   const loadUserLists = async () => {
@@ -168,11 +178,19 @@ export default function MyLists({ user }) {
   const createNewList = async () => {
     if (!newListName.trim() || !user) return;
 
+    // 檢查是否重名
+    const trimmedName = newListName.trim();
+    const isDuplicate = lists.some(list => list.name === trimmedName);
+    if (isDuplicate) {
+      showNotification('清單名稱已存在，請使用不同的名稱', 'warning');
+      return;
+    }
+
     try {
       const result = await userDataService.createFavoriteList(
-        user.id, 
+        user.id,
         {
-          name: newListName.trim(),
+          name: trimmedName,
           color: getRandomColor()
         },
         user.email
@@ -184,19 +202,27 @@ export default function MyLists({ user }) {
         setSelectedList({ ...result.list, favorite_list_places: [] });
         setNewListName('');
         setShowCreateForm(false);
+        showNotification('清單已創建', 'success');
       } else {
-        alert(result.error || '創建清單失敗');
+        showNotification(result.error || '創建清單失敗', 'error');
       }
     } catch (error) {
       console.error('創建清單錯誤:', error);
-      alert('創建清單失敗，請重試');
+      showNotification('創建清單失敗，請重試', 'error');
     }
   };
 
   // 刪除清單
   const deleteList = async (listId) => {
+    // 檢查是否為預設清單
+    const targetList = lists.find(list => list.id === listId);
+    if (targetList && targetList.name === '我的最愛') {
+      showNotification('預設清單「我的最愛」不能刪除', 'warning');
+      return;
+    }
+
     if (lists.length === 1) {
-      alert('至少需要保留一個清單');
+      showNotification('至少需要保留一個清單', 'warning');
       return;
     }
 
@@ -211,18 +237,24 @@ export default function MyLists({ user }) {
           if (selectedList?.id === listId && updatedLists.length > 0) {
             setSelectedList(updatedLists[0]);
           }
+          showNotification('清單已刪除', 'success');
         } else {
-          alert(result.error || '刪除清單失敗');
+          showNotification(result.error || '刪除清單失敗', 'error');
         }
       } catch (error) {
         console.error('刪除清單錯誤:', error);
-        alert('刪除清單失敗，請重試');
+        showNotification('刪除清單失敗，請重試', 'error');
       }
     }
   };
 
   // 開始編輯清單
   const startEditList = (list) => {
+    // 檢查是否為預設清單
+    if (list.name === '我的最愛') {
+      showNotification('預設清單「我的最愛」不能改名', 'warning');
+      return;
+    }
     setEditingListId(list.id);
     setEditingListName(list.name);
     setOpenMenuId(null);
@@ -231,35 +263,44 @@ export default function MyLists({ user }) {
   // 確認編輯清單
   const confirmEditList = async () => {
     if (!editingListName.trim()) {
-      alert('清單名稱不能為空');
+      showNotification('清單名稱不能為空', 'warning');
+      return;
+    }
+
+    // 檢查是否重名（排除自己）
+    const trimmedName = editingListName.trim();
+    const isDuplicate = lists.some(list => list.id !== editingListId && list.name === trimmedName);
+    if (isDuplicate) {
+      showNotification('清單名稱已存在，請使用不同的名稱', 'warning');
       return;
     }
 
     try {
       const result = await userDataService.updateFavoriteList(editingListId, {
-        name: editingListName.trim()
+        name: trimmedName
       });
 
       if (result.success) {
         const updatedLists = lists.map(list =>
           list.id === editingListId
-            ? { ...list, name: editingListName.trim() }
+            ? { ...list, name: trimmedName }
             : list
         );
         setLists(updatedLists);
 
         if (selectedList?.id === editingListId) {
-          setSelectedList({ ...selectedList, name: editingListName.trim() });
+          setSelectedList({ ...selectedList, name: trimmedName });
         }
 
         setEditingListId(null);
         setEditingListName('');
+        showNotification('清單已更新', 'success');
       } else {
-        alert(result.error || '更新清單失敗');
+        showNotification(result.error || '更新清單失敗', 'error');
       }
     } catch (error) {
       console.error('更新清單錯誤:', error);
-      alert('更新清單失敗，請重試');
+      showNotification('更新清單失敗，請重試', 'error');
     }
   };
 
@@ -281,13 +322,13 @@ export default function MyLists({ user }) {
       if (result.success) {
         // 重新載入清單以確保數據同步
         await loadUserLists();
-        alert('已移除收藏！');
+        showNotification('已移除收藏', 'success');
       } else {
-        alert(result.error || '移除收藏失敗');
+        showNotification(result.error || '移除收藏失敗', 'error');
       }
     } catch (error) {
       console.error('移除收藏錯誤:', error);
-      alert('移除收藏失敗，請重試');
+      showNotification('移除收藏失敗，請重試', 'error');
     }
   };
 
@@ -310,13 +351,27 @@ export default function MyLists({ user }) {
     const date = new Date(dateString);
     const diffInMs = now - date;
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffInDays === 0) return '今天';
     if (diffInDays === 1) return '昨天';
     if (diffInDays < 7) return `${diffInDays}天前`;
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}週前`;
     return `${Math.floor(diffInDays / 30)}個月前`;
   };
+
+  // 顯示通知
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
+  // 關閉通知
+  const dismissNotification = () => {
+    setNotification({ show: false, message: '', type: 'success' });
+  };
+
 
   if (loading) {
     return (
@@ -329,6 +384,19 @@ export default function MyLists({ user }) {
 
   return (
     <div className="my-lists-container">
+      {/* 通知消息 */}
+      {notification.show && (
+        <div className={`lists-notification ${notification.type}`}>
+          <span>{notification.message}</span>
+          <button
+            className="notification-dismiss"
+            onClick={dismissNotification}
+          >
+            <IoCloseOutline />
+          </button>
+        </div>
+      )}
+
       {/* 標題 */}
       <div className="lists-header">
         <h2 className="lists-title">
@@ -346,80 +414,96 @@ export default function MyLists({ user }) {
         {/* 清單側邊欄 */}
         <div className="lists-sidebar">
           {lists.map(list => (
-            <div
-              key={list.id}
-              className={`list-card ${selectedList?.id === list.id ? 'selected' : ''}`}
-              onClick={() => setSelectedList(list)}
-            >
-              <div className="list-card-header">
-                <div className="list-card-info">
-                  <div
-                    className="list-color-indicator"
-                    style={{ backgroundColor: list.color }}
-                  ></div>
-                  <div className="list-card-details">
-                    {editingListId === list.id ? (
-                      <input
-                        type="text"
-                        value={editingListName}
-                        onChange={(e) => setEditingListName(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            confirmEditList();
-                          } else if (e.key === 'Escape') {
-                            cancelEditList();
-                          }
-                        }}
-                        onBlur={confirmEditList}
-                        className="edit-input"
-                        autoFocus
-                      />
-                    ) : (
-                      <h3 className="list-card-name">{list.name}</h3>
-                    )}
-                    <p className="list-card-count">{list.places?.length || list.favorite_list_places?.length || 0} 個地點</p>
+            <div key={list.id} className="mylists-card-wrapper">
+              <div
+                className={`mylists-card ${selectedList?.id === list.id ? 'selected' : ''} ${swipedListId === list.id ? 'swiped' : ''}`}
+                onClick={(e) => {
+                  // 如果點擊的是三個點按鈕或其子元素,不處理清單選擇
+                  if (e.target.closest('.mylists-menu-trigger')) {
+                    return;
+                  }
+                  setSelectedList(list);
+                }}
+              >
+                <div className="mylists-card-header">
+                  <div className="mylists-card-info">
+                    <div
+                      className="mylists-color-indicator"
+                      style={{ backgroundColor: list.color }}
+                    ></div>
+                    <div className="mylists-card-details">
+                      {editingListId === list.id ? (
+                        <input
+                          type="text"
+                          value={editingListName}
+                          onChange={(e) => setEditingListName(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              confirmEditList();
+                            } else if (e.key === 'Escape') {
+                              cancelEditList();
+                            }
+                          }}
+                          onBlur={confirmEditList}
+                          className="mylists-edit-input"
+                          autoFocus
+                        />
+                      ) : (
+                        <h3 className="mylists-card-name">{list.name}</h3>
+                      )}
+                      <p className="mylists-card-count">{list.places?.length || list.favorite_list_places?.length || 0} 個地點</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="list-card-menu">
-                  <button
-                    className="list-menu-trigger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenMenuId(openMenuId === list.id ? null : list.id);
-                    }}
-                    title="更多選項"
-                  >
-                    <IoEllipsisVertical />
-                  </button>
-
-                  <div className={`list-card-actions ${openMenuId === list.id ? 'show' : ''}`}>
-                    <button
-                      className="list-action-btn edit-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startEditList(list);
-                      }}
-                    >
-                      <span className="action-icon"><IoCreateOutline /></span>
-                      編輯清單
-                    </button>
-                    {lists.length > 1 && (
+                  {list.name !== '我的最愛' && (
+                    <div className="mylists-card-menu">
                       <button
-                        className="list-action-btn delete-btn"
-                        onClick={(e) => {
+                        className="mylists-menu-trigger"
+                        onMouseDown={(e) => {
                           e.stopPropagation();
-                          setOpenMenuId(null);
-                          deleteList(list.id);
+                          e.preventDefault();
+                          setSwipedListId(swipedListId === list.id ? null : list.id);
                         }}
+                        title="更多選項"
                       >
-                        <span className="action-icon"><IoTrashOutline /></span>
-                        刪除清單
+                        <IoEllipsisVertical />
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* 滑動動作按鈕 - 優化現代風格 */}
+              {list.name !== '我的最愛' && (
+                <div className="mylists-swipe-actions">
+                  <button
+                    className="mylists-swipe-btn mylists-edit-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSwipedListId(null);
+                      startEditList(list);
+                    }}
+                    title="編輯清單"
+                  >
+                    <IoCreateOutline />
+                    <span>編輯</span>
+                  </button>
+                  {lists.length > 1 && (
+                    <button
+                      className="mylists-swipe-btn mylists-delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSwipedListId(null);
+                        deleteList(list.id);
+                      }}
+                      title="刪除清單"
+                    >
+                      <IoTrashOutline />
+                      <span>刪除</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 

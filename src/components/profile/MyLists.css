@@ -3,8 +3,117 @@
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  margin-bottom: 24px;
+  overflow: visible;
+  margin: 0;
+  position: relative;
+}
+
+/* 清單通知 - 與 MapPage 定位通知相同的樣式 */
+.lists-notification {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 400px;
+  z-index: 9999;
+  opacity: 1;
+  pointer-events: auto;
+  animation: slideInBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lists-notification.success {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.95) 0%, rgba(220, 252, 231, 0.95) 100%);
+  border-left: 4px solid #22c55e;
+  box-shadow:
+    0 8px 32px rgba(34, 197, 94, 0.15),
+    0 1px 2px rgba(34, 197, 94, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.lists-notification.error {
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.95) 0%, rgba(252, 226, 226, 0.95) 100%);
+  border-left: 4px solid #ef4444;
+  box-shadow:
+    0 8px 32px rgba(239, 68, 68, 0.15),
+    0 1px 2px rgba(239, 68, 68, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.lists-notification.warning {
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.95) 0%, rgba(254, 243, 199, 0.95) 100%);
+  border-left: 4px solid #f59e0b;
+  box-shadow:
+    0 8px 32px rgba(245, 158, 11, 0.15),
+    0 1px 2px rgba(245, 158, 11, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.lists-notification span {
+  color: #1f2937;
+  font-size: 0.9rem;
+  font-weight: 600;
+  flex: 1;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+.notification-dismiss {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  width: 24px;
+  height: 24px;
+}
+
+.notification-dismiss:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #374151;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+@keyframes slideInBounce {
+  0% {
+    transform: translateX(-50%) translateY(-100px) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-50%) translateY(10px) scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 .my-lists-loading {
@@ -31,6 +140,7 @@
   padding: 24px 24px 16px;
   border-bottom: 1px solid #f0f0f0;
   background: #fafbfc;
+  border-radius: 16px 16px 0 0;
 }
 
 .lists-title {
@@ -61,6 +171,8 @@
   display: flex;
   min-height: 500px;
   overflow: visible;
+  border-radius: 0 0 16px 16px;
+  background: white;
 }
 
 /* 清單側邊欄 */
@@ -71,208 +183,283 @@
   padding: 20px;
   background: #fafafa;
   overflow-y: auto;
+  overflow-x: hidden;
   max-height: 500px;
 }
 
-.list-card {
+/* 清單卡片包裝器 - 容納卡片和滑動按鈕 */
+.mylists-card-wrapper {
+  position: relative;
+  margin: 0 0 16px 0;
+  overflow: hidden; /* 改為 hidden 以裁切超出部分 */
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.02) 0%, rgba(255, 255, 255, 0.8) 100%);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mylists-card-wrapper:hover {
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.12);
+  transform: translateY(-2px);
+}
+
+.mylists-card {
   background: white;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 0 16px 12px 16px;
+  border-radius: 16px;
+  padding: 18px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
   border: 2px solid transparent;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  z-index: 1; /* 降低層級,讓按鈕在上面 */
+  overflow: hidden;
 }
 
-.list-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-}
-
-.list-card.selected {
+.mylists-card.selected {
   border-color: #ff6b35;
-  background: #fff8f5;
+  background: linear-gradient(135deg, #fff8f5 0%, #ffffff 100%);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
 }
 
-.list-card-header {
+/* 滑動狀態 - 平滑滑動顯示按鈕 */
+.mylists-card.swiped {
+  transform: translateX(-106px);
+}
+
+.mylists-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
 }
 
-.list-color-indicator {
-  width: 12px;
-  height: 12px;
+.mylists-color-indicator {
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 0 3px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 3px rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
 }
 
-.list-card-info {
+.mylists-color-indicator::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 50%, rgba(0, 0, 0, 0.1) 100%);
+  pointer-events: none;
+}
+
+.mylists-color-indicator::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.mylists-card:hover .mylists-color-indicator {
+  transform: scale(1.2);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 1),
+    0 0 0 4px rgba(0, 0, 0, 0.12),
+    0 6px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.mylists-card.selected .mylists-color-indicator {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 1),
+    0 0 0 4px rgba(255, 107, 53, 0.3),
+    0 6px 18px rgba(0, 0, 0, 0.2),
+    0 0 12px rgba(255, 107, 53, 0.4),
+    inset 0 1px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.mylists-card-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   flex: 1;
   min-width: 0;
+  padding-left: 4px;
 }
 
-.list-card-details {
+.mylists-card-details {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.list-card-name {
-  margin: 0 0 4px 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
+.mylists-card-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a1a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  letter-spacing: -0.02em;
 }
 
-.list-card-count {
+.mylists-card-count {
   margin: 0;
   font-size: 0.8rem;
-  color: #666;
+  color: #999;
+  font-weight: 500;
 }
 
 /* 編輯輸入框 */
-.edit-input {
+.mylists-edit-input {
   border: none;
   outline: none;
-  background: transparent;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
-  padding: 2px 4px;
-  border-bottom: 2px solid #ff6b35;
+  background: rgba(255, 107, 53, 0.05);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 2px solid #ff6b35;
   width: 100%;
-  margin: 0 0 4px 0;
+  transition: all 0.2s ease;
 }
 
-.list-card-menu {
+.mylists-edit-input:focus {
+  background: rgba(255, 107, 53, 0.08);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.15);
+}
+
+.mylists-card-menu {
   position: relative;
   flex-shrink: 0;
-  z-index: 5;
+  z-index: 2;
 }
 
-.list-menu-trigger {
-  background: none;
+.mylists-menu-trigger {
+  background: transparent;
   border: none;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
-  color: #666;
+  font-size: 1.1rem;
+  color: #94a3b8;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  pointer-events: auto;
+  opacity: 1; /* 永久可見 */
   position: relative;
-  z-index: 10;
+  width: 32px;
+  height: 32px;
 }
 
-.list-card:hover .list-menu-trigger {
-  opacity: 1;
-}
-
-.list-menu-trigger:hover {
+.mylists-menu-trigger:hover {
   background: rgba(0, 0, 0, 0.05);
-  color: #333;
+  color: #1a1a1a;
+  transform: scale(1.1);
 }
 
-.list-card-actions {
+.mylists-menu-trigger:active {
+  transform: scale(0.95);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* 滑動動作按鈕 - 現代精簡風格 */
+.mylists-swipe-actions {
   position: absolute;
-  top: 100%;
+  top: 0;
   right: 0;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  min-width: 120px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition: all 0.2s ease;
+  bottom: 0;
+  width: 106px;
+  display: flex;
+  gap: 4px;
+  z-index: 0; /* 在卡片下方 */
+  border-radius: 0 16px 16px 0;
+  padding: 10px 3px 10px 9px; /* 左邊多一點,右邊少一點 */
+  align-items: center;
+  justify-content: center;
 }
 
-.list-card-actions.show {
-  opacity: 1;
-  visibility: visible;
+.mylists-swipe-btn {
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 3px;
+  border-radius: 7px;
+  transition: all 0.2s ease;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: white;
+  min-height: 52px;
+  max-width: 45px;
+}
+
+.mylists-swipe-btn svg {
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+
+.mylists-swipe-btn:hover svg {
+  transform: scale(1.15);
+}
+
+.mylists-swipe-btn span {
+  font-size: 0.65rem;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.mylists-swipe-btn.mylists-edit-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.mylists-swipe-btn.mylists-edit-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.mylists-swipe-btn.mylists-edit-btn:active {
   transform: translateY(0);
 }
 
-/* 菜單項目圖標 */
-.list-action-btn .action-icon {
-  font-size: 0.9rem;
-  width: 16px;
-  text-align: center;
+.mylists-swipe-btn.mylists-delete-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
-/* 菜單背景覆蓋層（用於點擊外部關閉） */
-.menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
-  display: none;
+.mylists-swipe-btn.mylists-delete-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
-.menu-overlay.active {
-  display: block;
-}
-
-.list-action-btn {
-  background: none;
-  border: none;
-  padding: 12px 16px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  text-align: left;
-  border-radius: 0;
-}
-
-.list-action-btn:first-child {
-  border-radius: 8px 8px 0 0;
-}
-
-.list-action-btn:last-child {
-  border-radius: 0 0 8px 8px;
-}
-
-.list-action-btn:only-child {
-  border-radius: 8px;
-}
-
-.list-action-btn:not(:last-child) {
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.edit-btn {
-  color: #666;
-}
-
-.edit-btn:hover {
-  background: rgba(102, 102, 102, 0.1);
-  color: #333;
-}
-
-.delete-btn {
-  color: #ef4444;
-}
-
-.delete-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
+.mylists-swipe-btn.mylists-delete-btn:active {
+  transform: translateY(0);
 }
 
 /* 創建清單表單 */
