@@ -11,6 +11,8 @@
   z-index: 10000;
   padding: 20px;
   overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .restaurant-detail-modal {
@@ -21,8 +23,15 @@
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.3s ease-out;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.restaurant-detail-modal * {
+  -webkit-tap-highlight-color: transparent;
 }
 
 @keyframes modalSlideIn {
@@ -77,6 +86,11 @@
 .restaurant-info {
   padding: 24px;
   border-bottom: 1px solid #e9ecef;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .restaurant-name {
@@ -84,22 +98,111 @@
   font-size: 24px;
   font-weight: 700;
   color: #333;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
-.restaurant-address,
-.restaurant-rating {
+.restaurant-address {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: #6c757d;
   font-size: 14px;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
-.restaurant-address svg,
-.restaurant-rating svg {
+.restaurant-address svg {
   font-size: 18px;
   color: #667eea;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 評分摘要（整合在 restaurant-info 內） */
+.rating-summary-in-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  margin-bottom: 16px;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.rating-summary-in-info .rating-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.rating-summary-in-info .score-number {
+  font-size: 48px;
+  font-weight: 400;
+  color: #202124;
+  line-height: 1;
+  user-select: none;
+}
+
+.rating-summary-in-info .rating-stars-large {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  user-select: none;
+}
+
+.rating-summary-in-info .rating-stars-large .stars {
+  display: flex;
+  gap: 2px;
+  font-size: 20px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.rating-summary-in-info .rating-stars-large .stars span {
+  user-select: none;
+  pointer-events: none;
+}
+
+.rating-summary-in-info .rating-stars-large .filled {
+  color: #ffd700;
+  filter: drop-shadow(0 1px 2px rgba(255, 215, 0, 0.3));
+}
+
+.rating-summary-in-info .rating-stars-large .empty {
+  color: #e0e0e0;
+}
+
+.rating-summary-in-info .rating-count-text {
+  font-size: 14px;
+  color: #5f6368;
+  margin-left: auto;
+  user-select: none;
+}
+
+/* 防止點擊時的視覺反饋 */
+.rating-summary-in-info *:active,
+.rating-summary-in-info *:focus {
+  outline: none;
+  background: transparent;
+}
+
+.rating-summary-in-info::selection,
+.rating-summary-in-info *::selection {
+  background: transparent;
+  color: inherit;
+}
+
+.rating-summary-in-info::-moz-selection,
+.rating-summary-in-info *::-moz-selection {
+  background: transparent;
+  color: inherit;
 }
 
 .navigate-btn {
@@ -115,7 +218,6 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
-  margin-top: 16px;
   width: 100%;
   justify-content: center;
 }

@@ -1,7 +1,10 @@
 .restaurant-reviews {
   width: 100%;
+  max-width: 100%;
   padding: 16px;
   background: #fff;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Google Maps 風格評分摘要 + TasteBuddies 品牌色 */
@@ -12,6 +15,9 @@
   background: #fff;
   border-bottom: 1px solid #e8eaed;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .rating-score {
@@ -56,7 +62,7 @@
 .stars {
   display: flex;
   gap: 4px;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .stars.interactive {
@@ -65,10 +71,11 @@
 
 .stars .filled {
   color: #ffd700;
+  filter: drop-shadow(0 1px 2px rgba(255, 215, 0, 0.3));
 }
 
 .stars .empty {
-  color: #ddd;
+  color: #e0e0e0;
 }
 
 .stars.interactive .filled,
@@ -87,11 +94,14 @@
   margin-bottom: 24px;
   border: 1px solid #e8eaed;
   border-radius: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .form-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 16px;
 }
@@ -101,6 +111,7 @@
   font-size: 16px;
   font-weight: 500;
   color: #202124;
+  text-align: center;
 }
 
 .cancel-btn {
@@ -134,10 +145,13 @@
 .comment-input {
   position: relative;
   margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .comment-input textarea {
   width: 100%;
+  max-width: 100%;
   padding: 12px 16px;
   border: 1px solid #dadce0;
   border-radius: 8px;
@@ -147,6 +161,7 @@
   transition: border-color 0.2s;
   color: #202124;
   line-height: 1.5;
+  box-sizing: border-box;
 }
 
 .comment-input textarea:focus {
@@ -154,6 +169,7 @@
   border-color: #1a73e8;
   border-width: 2px;
   padding: 11px 15px;
+  box-sizing: border-box;
 }
 
 .comment-input textarea::placeholder {
@@ -216,6 +232,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .loading,
@@ -228,56 +247,101 @@
 
 /* Google Maps 風格評論項目 */
 .review-item {
-  padding: 20px 16px;
+  padding: 20px;
   background: white;
-  border-bottom: 1px solid #e8eaed;
-  transition: background 0.2s;
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.12);
+  margin-bottom: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.04);
+  position: relative;
+  overflow: hidden;
 }
 
+/* 移除左邊亮條 */
+.review-item::before {
+  display: none;
+}
+
+/* 新的 hover 特效：縮放 + 光暈 */
 .review-item:hover {
-  background: #f8f9fa;
+  background: white;
+  border-color: rgba(102, 126, 234, 0.35);
+  box-shadow:
+    0 0 0 3px rgba(102, 126, 234, 0.1),
+    0 12px 32px rgba(102, 126, 234, 0.18);
+  transform: scale(1.01);
+}
+
+/* active 狀態：輕微按下效果 */
+.review-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
 }
 
 .review-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .review-header {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
+  width: 100%;
 }
 
-.review-rating {
-  margin-bottom: 8px;
-  margin-left: 44px;
-}
-
-.user-info {
+.review-item .user-info {
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.review-right-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.review-rating {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid rgba(102, 126, 234, 0.15);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
 .user-avatar-placeholder {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #1a73e8;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .user-details {
@@ -287,71 +351,104 @@
 }
 
 .user-name {
-  font-weight: 500;
+  font-weight: 600;
   color: #202124;
-  font-size: 14px;
+  font-size: 14.5px;
+  letter-spacing: -0.1px;
 }
 
 .review-date {
   font-size: 12px;
   color: #5f6368;
+  font-weight: 500;
 }
 
-.review-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.delete-btn {
-  background: none;
-  border: none;
+.review-item .delete-btn {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1.5px solid transparent;
   cursor: pointer;
   padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s;
-  font-size: 18px;
-  color: #5f6368;
-  width: 36px;
-  height: 36px;
+  border-radius: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 24px;
+  color: #ef4444;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.delete-btn:hover {
-  background: #fce8e6;
-  color: #d93025;
+.review-item .delete-btn:hover {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.review-item .delete-btn:active {
+  transform: scale(0.95);
 }
 
 .review-content {
-  margin-top: 8px;
-  margin-left: 44px;
+  margin-top: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(248, 249, 250, 0.6) 0%, rgba(241, 243, 245, 0.6) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.08);
+  position: relative;
+  text-align: center;
+}
+
+.review-content::before {
+  content: '"';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  color: rgba(102, 126, 234, 0.15);
+  font-family: Georgia, serif;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .review-comment {
-  color: #202124;
-  line-height: 1.6;
+  color: #4a5568;
+  line-height: 1.7;
   font-size: 14px;
   white-space: pre-wrap;
   word-break: break-word;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  padding-top: 20px;
 }
 
 .show-more-btn {
-  background: none;
-  border: none;
-  color: #1a73e8;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  color: #667eea;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  padding: 8px 0;
-  margin-top: 4px;
-  transition: color 0.2s;
+  padding: 6px 14px;
+  margin-top: 8px;
+  border-radius: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.2px;
 }
 
 .show-more-btn:hover {
-  color: #1765cc;
-  text-decoration: underline;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+}
+
+.show-more-btn:active {
+  transform: translateY(0);
 }
 
 /* 響應式設計 */
@@ -367,12 +464,33 @@
   }
 
   .review-header {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 8px;
   }
 
-  .review-actions {
-    width: 100%;
-    justify-content: space-between;
+  .review-item .user-info {
+    min-width: 0;
+    flex: 1;
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .review-right-section {
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
+  .review-item .delete-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    padding: 8px;
+  }
+
+  .stars {
+    font-size: 16px;
+    gap: 3px;
   }
 }

@@ -639,6 +639,12 @@ export default function MapView({
 
         if (restaurant) {
           onRestaurantClick(restaurant);
+
+          // 延遲觸發滾動到評論區，確保 modal 已渲染
+          setTimeout(() => {
+            const event = new CustomEvent('scrollToReviews');
+            window.dispatchEvent(event);
+          }, 100);
         } else {
           console.warn('找不到餐廳:', restaurantId, '可用餐廳:', restaurantsDataRef.current.length);
         }
@@ -650,6 +656,12 @@ export default function MapView({
           id: restaurantId,
           name: '載入中...' // 臨時名稱
         });
+
+        // 延遲觸發滾動到評論區
+        setTimeout(() => {
+          const event = new CustomEvent('scrollToReviews');
+          window.dispatchEvent(event);
+        }, 100);
       }
 
       // 關閉 InfoWindow

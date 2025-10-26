@@ -3,7 +3,7 @@ import { IoStar, IoStarOutline, IoTrash, IoSend } from 'react-icons/io5';
 import { restaurantReviewService } from '../../services/restaurantService';
 import './RestaurantReviews.css';
 
-export default function RestaurantReviews({ restaurantId, user }) {
+export default function RestaurantReviews({ restaurantId, user, onRatingLoad, showRatingSummary = false }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(5);
@@ -37,13 +37,19 @@ export default function RestaurantReviews({ restaurantId, user }) {
   const loadRating = async () => {
     const result = await restaurantReviewService.getRestaurantRating(restaurantId);
     if (result.success) {
-      setRatingData({
+      const data = {
         googleRating: result.googleRating,
         googleRatingCount: result.googleRatingCount,
         tastebuddiesRating: result.tastebuddiesRating,
         tastebuddiesRatingCount: result.tastebuddiesRatingCount,
         combinedRating: result.combinedRating
-      });
+      };
+      setRatingData(data);
+
+      // 通知父組件評分資料已載入
+      if (onRatingLoad) {
+        onRatingLoad(data);
+      }
     }
   };
 
@@ -150,20 +156,22 @@ export default function RestaurantReviews({ restaurantId, user }) {
 
   return (
     <div className="restaurant-reviews">
-      {/* Google Maps 風格的評分摘要 */}
-      <div className="rating-summary-gmaps">
-        <div className="rating-score">
-          <div className="score-number">{ratingData.combinedRating.toFixed(1)}</div>
-          <div className="rating-stars-large">
-            {renderStars(Math.round(ratingData.combinedRating))}
-          </div>
-          <div className="rating-count-text">
-            {ratingData.tastebuddiesRatingCount > 0
-              ? `${ratingData.tastebuddiesRatingCount} 則評論`
-              : '尚無評論'}
+      {/* Google Maps 風格的評分摘要 - 僅在 showRatingSummary 為 true 時顯示 */}
+      {showRatingSummary && (
+        <div className="rating-summary-gmaps">
+          <div className="rating-score">
+            <div className="score-number">{ratingData.combinedRating.toFixed(1)}</div>
+            <div className="rating-stars-large">
+              {renderStars(Math.round(ratingData.combinedRating))}
+            </div>
+            <div className="rating-count-text">
+              {ratingData.tastebuddiesRatingCount > 0
+                ? `${ratingData.tastebuddiesRatingCount} 則評論`
+                : '尚無評論'}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 新增評論表單 */}
       {user && (
@@ -237,19 +245,21 @@ export default function RestaurantReviews({ restaurantId, user }) {
                   </div>
                 </div>
 
-                {user && user.id === review.user_id && (
-                  <button
-                    className="delete-btn"
-                    onClick={() => handleDelete(review.id)}
-                    title="刪除評論"
-                  >
-                    <IoTrash />
-                  </button>
-                )}
-              </div>
-
-              <div className="review-rating">
-                {renderStars(review.rating)}
+                {/* 右側區塊：刪除按鈕 + 評分 */}
+                <div className="review-right-section">
+                  {user && user.id === review.user_id && (
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDelete(review.id)}
+                      title="刪除評論"
+                    >
+                      <IoTrash />
+                    </button>
+                  )}
+                  <div className="review-rating">
+                    {renderStars(review.rating)}
+                  </div>
+                </div>
               </div>
 
               {review.comment && (

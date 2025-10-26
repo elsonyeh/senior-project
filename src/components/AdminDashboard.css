@@ -52,7 +52,7 @@
 }
 
 /* 用戶資訊列 */
-.user-info {
+.admin-dashboard .user-info {
   background: white;
   padding: 10px 25px;
   border-bottom: 1px solid #dee2e6;

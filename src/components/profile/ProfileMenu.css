@@ -62,7 +62,7 @@
   color: white;
 }
 
-.user-info {
+.profile-menu .user-info {
   flex: 1;
   min-width: 0;
 }

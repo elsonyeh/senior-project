@@ -920,7 +920,7 @@ export const restaurantReviewService = {
         throw new Error('請先登入才能留言');
       }
 
-      const { data, error } = await supabase
+      const { data: review, error } = await supabase
         .from('restaurant_reviews')
         .insert([{
           restaurant_id: restaurantId,
@@ -928,20 +928,28 @@ export const restaurantReviewService = {
           rating,
           comment
         }])
-        .select(`
-          *,
-          users (
-            id,
-            name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .single();
 
       if (error) throw error;
+
+      // 獲取用戶資料
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('id, name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
       return {
         success: true,
-        review: data
+        review: {
+          ...review,
+          user_profiles: userProfile || {
+            id: user.id,
+            name: '未知用戶',
+            avatar_url: null
+          }
+        }
       };
     } catch (error) {
       console.error('新增評論失敗:', error);
@@ -957,23 +965,54 @@ export const restaurantReviewService = {
    */
   async getReviews(restaurantId) {
     try {
-      const { data, error } = await supabase
+      // 先獲取評論
+      const { data: reviews, error: reviewsError } = await supabase
         .from('restaurant_reviews')
-        .select(`
-          *,
-          users (
-            id,
-            name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (reviewsError) throw reviewsError;
+
+      if (!reviews || reviews.length === 0) {
+        return {
+          success: true,
+          reviews: []
+        };
+      }
+
+      // 獲取所有評論者的 ID
+      const userIds = [...new Set(reviews.map(r => r.user_id))];
+
+      // 獲取用戶資料
+      const { data: users, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('id, name, avatar_url')
+        .in('id', userIds);
+
+      if (usersError) {
+        console.warn('獲取用戶資料失敗，使用預設值:', usersError);
+      }
+
+      // 建立用戶資料映射
+      const usersMap = (users || []).reduce((map, user) => {
+        map[user.id] = user;
+        return map;
+      }, {});
+
+      // 組合評論和用戶資料
+      const reviewsWithUsers = reviews.map(review => ({
+        ...review,
+        user_profiles: usersMap[review.user_id] || {
+          id: review.user_id,
+          name: '未知用戶',
+          avatar_url: null
+        }
+      }));
+
       return {
         success: true,
-        reviews: data || []
+        reviews: reviewsWithUsers
       };
     } catch (error) {
       console.error('獲取評論失敗:', error);
@@ -996,7 +1035,7 @@ export const restaurantReviewService = {
         throw new Error('請先登入');
       }
 
-      const { data, error } = await supabase
+      const { data: review, error } = await supabase
         .from('restaurant_reviews')
         .update({
           rating,
@@ -1004,20 +1043,28 @@ export const restaurantReviewService = {
         })
         .eq('id', reviewId)
         .eq('user_id', user.id)
-        .select(`
-          *,
-          users (
-            id,
-            name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .single();
 
       if (error) throw error;
+
+      // 獲取用戶資料
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('id, name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
       return {
         success: true,
-        review: data
+        review: {
+          ...review,
+          user_profiles: userProfile || {
+            id: user.id,
+            name: '未知用戶',
+            avatar_url: null
+          }
+        }
       };
     } catch (error) {
       console.error('更新評論失敗:', error);

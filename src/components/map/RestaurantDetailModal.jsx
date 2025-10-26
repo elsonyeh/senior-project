@@ -1,16 +1,78 @@
-import React from 'react';
-import { IoClose, IoLocationOutline, IoStarOutline, IoNavigateOutline } from 'react-icons/io5';
+import React, { useState, useEffect, useRef } from 'react';
+import { IoClose, IoLocationOutline, IoStar, IoStarOutline, IoNavigateOutline } from 'react-icons/io5';
 import RestaurantReviews from './RestaurantReviews';
 import './RestaurantDetailModal.css';
 
 export default function RestaurantDetailModal({ restaurant, user, onClose }) {
+  const [ratingData, setRatingData] = useState(null);
+  const reviewsSectionRef = useRef(null);
+
   if (!restaurant) return null;
+
+  // Modal 打開時立即隱藏 navbar，關閉時恢復
+  useEffect(() => {
+    console.log('RestaurantDetailModal mounted, hiding navbar');
+
+    // 使用 setTimeout 確保 DOM 已完全渲染
+    const timer = setTimeout(() => {
+      const hideEvent = new CustomEvent('modalNavChange', {
+        detail: { isVisible: false }
+      });
+      window.dispatchEvent(hideEvent);
+      console.log('Dispatched modalNavChange with isVisible: false');
+    }, 0);
+
+    // 監聽滾動到評論區的事件
+    const handleScrollToReviews = () => {
+      const reviewsSection = reviewsSectionRef.current;
+      if (!reviewsSection) return;
+
+      const modalElement = reviewsSection.closest('.restaurant-detail-modal');
+      if (modalElement) {
+        modalElement.scrollTo({
+          top: reviewsSection.offsetTop - 20,
+          behavior: 'smooth'
+        });
+      }
+    };
+
+    window.addEventListener('scrollToReviews', handleScrollToReviews);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scrollToReviews', handleScrollToReviews);
+
+      console.log('RestaurantDetailModal unmounting, showing navbar');
+      // 組件卸載時恢復 navbar
+      const showEvent = new CustomEvent('modalNavChange', {
+        detail: { isVisible: true }
+      });
+      window.dispatchEvent(showEvent);
+      console.log('Dispatched modalNavChange with isVisible: true');
+    };
+  }, []);
 
   const handleNavigate = () => {
     const query = encodeURIComponent(restaurant.address || restaurant.name);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${query}`,
       "_blank"
+    );
+  };
+
+  const handleRatingLoad = (data) => {
+    setRatingData(data);
+  };
+
+  const renderStars = (rating) => {
+    return (
+      <div className="stars">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span key={star} className={star <= rating ? 'filled' : 'empty'}>
+            {star <= rating ? <IoStar /> : <IoStarOutline />}
+          </span>
+        ))}
+      </div>
     );
   };
 
@@ -29,7 +91,7 @@ export default function RestaurantDetailModal({ restaurant, user, onClose }) {
           </div>
         )}
 
-        {/* 餐廳資訊 */}
+        {/* 餐廳資訊 + 評分摘要 */}
         <div className="restaurant-info">
           <h2 className="restaurant-name">{restaurant.name}</h2>
 
@@ -40,10 +102,20 @@ export default function RestaurantDetailModal({ restaurant, user, onClose }) {
             </div>
           )}
 
-          {restaurant.rating && (
-            <div className="restaurant-rating">
-              <IoStarOutline />
-              <span>{restaurant.rating}</span>
+          {/* 評分摘要 */}
+          {ratingData && (
+            <div className="rating-summary-in-info">
+              <div className="rating-score">
+                <div className="score-number">{ratingData.combinedRating.toFixed(1)}</div>
+                <div className="rating-stars-large">
+                  {renderStars(Math.round(ratingData.combinedRating))}
+                </div>
+              </div>
+              <div className="rating-count-text">
+                {ratingData.tastebuddiesRatingCount > 0
+                  ? `${ratingData.tastebuddiesRatingCount} 則評論`
+                  : '尚無評論'}
+              </div>
             </div>
           )}
 
@@ -54,10 +126,12 @@ export default function RestaurantDetailModal({ restaurant, user, onClose }) {
         </div>
 
         {/* 評論區 */}
-        <div className="reviews-section">
+        <div className="reviews-section" ref={reviewsSectionRef}>
           <RestaurantReviews
             restaurantId={restaurant.place_id || restaurant.id}
             user={user}
+            onRatingLoad={handleRatingLoad}
+            showRatingSummary={false}
           />
         </div>
       </div>

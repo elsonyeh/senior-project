@@ -14,6 +14,11 @@ export default function BottomNav({ isVisible = true, isCollapsed = false, onExp
   const pillBackgroundRef = useRef(null);
   const isMapPage = location.pathname.includes("/map");
 
+  // Debug log
+  useEffect(() => {
+    console.log('BottomNav isVisible prop changed:', isVisible);
+  }, [isVisible]);
+
   // 初始化當前激活的標籤並檢測URL參數中的模式
   useEffect(() => {
     // 從URL獲取模式

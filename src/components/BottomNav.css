@@ -10,13 +10,20 @@
   z-index: 1000;
   pointer-events: none;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  transition: transform 0.3s ease-out;
+  transition: transform 0.2s ease-out;
   touch-action: pan-y; /* 確保導航容器支持垂直滑動手勢 */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: translateY(0);
 }
 
 /* 導航欄隱藏狀態 */
 .floating-nav-container.nav-hidden {
-  transform: translateY(100%);
+  transform: translateY(150%) !important;
+  transition: transform 0.2s ease-out !important;
 }
 
 .floating-bottom-nav {
@@ -34,6 +41,19 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   pointer-events: auto;
   transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.floating-bottom-nav *,
+.floating-bottom-nav *::before,
+.floating-bottom-nav *::after {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* 新增初始化狀態 */
@@ -53,6 +73,26 @@
   transition: all 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
   flex: 1;
   z-index: 2;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-pill:active,
+.nav-pill:focus {
+  outline: none;
+}
+
+.nav-pill::selection,
+.nav-pill *::selection {
+  background: transparent;
+  color: inherit;
+}
+
+.nav-pill::-moz-selection,
+.nav-pill *::-moz-selection {
+  background: transparent;
+  color: inherit;
 }
 
 /* 垂直排列 */

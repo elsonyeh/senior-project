@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, { useState, useEffect, createContext, useContext, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -33,6 +33,7 @@ const BottomNavController = () => {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollTop, setLastScrollTop] = useState(0);
   const { isNavCollapsed, handleNavExpand, isAuthModalOpen } = useNavContext();
+  const modalOpenRef = useRef(false); // 追蹤 modal 是否打開
 
   // 判斷是否是管理頁面
   const isAdminPage = currentPath === '/admin' || currentPath === '/admin-login';
@@ -40,25 +41,41 @@ const BottomNavController = () => {
   const isProfilePage = currentPath === '/profile';
 
   useEffect(() => {
-    // 如果不是個人資料頁面，總是顯示導航欄
-    if (!isProfilePage) {
-      setIsNavVisible(true);
-      return;
-    }
-
-    // 監聽來自 UserProfilePage 的導航欄狀態變化
-    const handleProfileNavChange = (event) => {
+    // 監聽來自 RestaurantDetailModal 的導航欄狀態變化
+    const handleModalNavChange = (event) => {
+      console.log('App received modalNavChange:', event.detail.isVisible);
+      modalOpenRef.current = !event.detail.isVisible; // 更新 modal 狀態
       setIsNavVisible(event.detail.isVisible);
     };
 
-    window.addEventListener('profileNavChange', handleProfileNavChange);
+    // 監聽來自 UserProfilePage 的導航欄狀態變化
+    const handleProfileNavChange = (event) => {
+      console.log('App received profileNavChange:', event.detail.isVisible);
+      setIsNavVisible(event.detail.isVisible);
+    };
 
-    // 初始化狀態
-    if (window.profileNavVisible !== undefined) {
-      setIsNavVisible(window.profileNavVisible);
+    // 總是監聽 modal 事件
+    window.addEventListener('modalNavChange', handleModalNavChange);
+    console.log('App: modalNavChange listener added');
+
+    // 只在個人資料頁面監聽 profile 事件
+    if (isProfilePage) {
+      window.addEventListener('profileNavChange', handleProfileNavChange);
+
+      // 初始化狀態
+      if (window.profileNavVisible !== undefined) {
+        setIsNavVisible(window.profileNavVisible);
+      }
+    } else {
+      // 不在個人資料頁面時，預設顯示導航欄（但如果 modal 已打開則不覆蓋）
+      if (!modalOpenRef.current) {
+        setIsNavVisible(true);
+      }
     }
 
     return () => {
+      console.log('App: Removing event listeners');
+      window.removeEventListener('modalNavChange', handleModalNavChange);
       window.removeEventListener('profileNavChange', handleProfileNavChange);
     };
   }, [isProfilePage]);
