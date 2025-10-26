@@ -1,7 +1,7 @@
 # SwiftTaste 推薦系統邏輯文檔
 
-**版本**: 1.3
-**最後更新**: 2025-02-04
+**版本**: 1.4
+**最後更新**: 2025-10-27
 **狀態**: 生產版本
 
 ---
@@ -13,6 +13,94 @@ SwiftTaste 推薦系統包含兩種核心模式：
 - **Buddies 模式**：多人群體推薦
 
 兩種模式都基於相同的評分機制，但在輸入處理和篩選邏輯上有所差異。
+
+---
+
+## ⭐ 評分系統
+
+### 綜合評分計算方式
+
+SwiftTaste 使用綜合評分系統，結合 Google Places 評分和用戶評論：
+
+```javascript
+// 來源：src/services/restaurantService.js:getRestaurantRating()
+
+async getRestaurantRating(restaurantId) {
+  // 1. 獲取 Google 評分（來自 restaurants 表）
+  const googleRating = restaurant?.rating || 0;
+
+  // 2. 獲取 TasteBuddies 評論（來自 restaurant_reviews 表）
+  const reviews = await supabase
+    .from('restaurant_reviews')
+    .select('rating')
+    .eq('restaurant_id', restaurantId);
+
+  // 3. 計算 TasteBuddies 平均評分
+  const tastebuddiesRatingCount = reviews?.length || 0;
+  const tastebuddiesRating = tastebuddiesRatingCount > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / tastebuddiesRatingCount
+    : 0;
+
+  // 4. 決定綜合評分（優先使用 TasteBuddies）
+  const combinedRating = tastebuddiesRatingCount > 0
+    ? tastebuddiesRating    // 如果有用戶評論，使用平均評分
+    : googleRating;         // 否則使用 Google 評分
+
+  return {
+    googleRating,              // Google 原始評分
+    tastebuddiesRating,        // TasteBuddies 平均評分
+    tastebuddiesRatingCount,   // 評論數量
+    combinedRating             // 綜合評分（顯示用）
+  };
+}
+```
+
+### 評分顯示位置
+
+| 位置 | 顯示內容 | 資料來源 | 更新時機 |
+|------|---------|---------|---------|
+| **地圖 InfoWindow** | `combinedRating` | 動態查詢 | 每次點擊標記 |
+| **餐廳詳細 Modal** | `combinedRating` | 動態查詢 | Modal 打開時 |
+| **評論區標題** | `combinedRating` + 評論數 | 動態查詢 | 載入評論時 |
+
+### 評分優先級邏輯
+
+```
+有 TasteBuddies 評論？
+├─ 是 → 使用 TasteBuddies 平均評分
+│        例如：3 則評論 (5★, 4★, 4★) → 顯示 4.3★
+│
+└─ 否 → 使用 Google 評分
+         例如：Google 評分 4.5★ → 顯示 4.5★
+```
+
+### 範例計算
+
+**情況 1：有用戶評論**
+```javascript
+googleRating = 4.5
+reviews = [
+  { rating: 5 },
+  { rating: 4 },
+  { rating: 4 }
+]
+
+tastebuddiesRating = (5 + 4 + 4) / 3 = 4.33
+combinedRating = 4.33  // 使用 TasteBuddies 評分
+
+顯示：4.3★ (3 則評論)
+```
+
+**情況 2：無用戶評論**
+```javascript
+googleRating = 4.5
+reviews = []
+
+tastebuddiesRating = 0
+combinedRating = 4.5  // 回退到 Google 評分
+
+顯示：4.5★ (尚無評論)
+```
 
 ---
 

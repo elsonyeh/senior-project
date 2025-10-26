@@ -393,7 +393,7 @@ export default function MapView({
   }, [favorites]);
 
   // 顯示資料庫餐廳資訊
-  const showDatabaseRestaurantInfo = useCallback((restaurant, marker) => {
+  const showDatabaseRestaurantInfo = useCallback(async (restaurant, marker) => {
     if (!infoWindowRef.current) {
       console.error('InfoWindow not initialized');
       return;
@@ -413,7 +413,12 @@ export default function MapView({
       photo = restaurant.primaryImage.image_url;
     }
 
-    const rating = restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A';
+    // 獲取綜合評分（包含 TasteBuddies 評論）
+    const ratingResult = await restaurantService.getRestaurantRating(restaurant.id);
+    const rating = ratingResult.success && ratingResult.combinedRating > 0
+      ? ratingResult.combinedRating.toFixed(1)
+      : (restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A');
+    const reviewCount = ratingResult.success ? ratingResult.tastebuddiesRatingCount : 0;
 
     // 生成收藏清單選項 - 使用最新的狀態
     const favoriteListsOptions = currentUser && currentFavoriteLists.length > 0
@@ -444,9 +449,9 @@ export default function MapView({
             </button>
           </div>
           <div class="info-place-rating google-places-rating">
-            <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(restaurant.rating || 0))}${'☆'.repeat(5 - Math.floor(restaurant.rating || 0))}</span>
+            <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(parseFloat(rating) || 0))}${'☆'.repeat(5 - Math.floor(parseFloat(rating) || 0))}</span>
             <span class="info-rating-text google-places-rating-text">${rating}</span>
-            ${restaurant.user_ratings_total ? `<span class="info-rating-count google-places-rating-count"> (${restaurant.user_ratings_total})</span>` : ''}
+            ${reviewCount > 0 ? `<span class="info-rating-count google-places-rating-count"> (${reviewCount} 則評論)</span>` : ''}
           </div>
           <p class="info-place-address google-places-address">${restaurant.address || '地址未提供'}</p>
 
