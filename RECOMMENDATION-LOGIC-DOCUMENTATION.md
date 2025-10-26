@@ -20,37 +20,49 @@ SwiftTaste 推薦系統包含兩種核心模式：
 
 ### 綜合評分計算方式
 
-SwiftTaste 使用綜合評分系統，結合 Google Places 評分和用戶評論：
+SwiftTaste 使用**加權平均**系統，結合 Google Places 評分和 TasteBuddies 用戶評論：
 
 ```javascript
 // 來源：src/services/restaurantService.js:getRestaurantRating()
 
 async getRestaurantRating(restaurantId) {
-  // 1. 獲取 Google 評分（來自 restaurants 表）
+  // 1. 獲取 Google 評分和評論數量
   const googleRating = restaurant?.rating || 0;
+  const googleRatingCount = restaurant?.user_ratings_total || 0;
 
-  // 2. 獲取 TasteBuddies 評論（來自 restaurant_reviews 表）
+  // 2. 獲取 TasteBuddies 評論
   const reviews = await supabase
     .from('restaurant_reviews')
     .select('rating')
     .eq('restaurant_id', restaurantId);
 
-  // 3. 計算 TasteBuddies 平均評分
+  // 3. 計算 TasteBuddies 平均評分和數量
   const tastebuddiesRatingCount = reviews?.length || 0;
   const tastebuddiesRating = tastebuddiesRatingCount > 0
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / tastebuddiesRatingCount
     : 0;
 
-  // 4. 決定綜合評分（優先使用 TasteBuddies）
-  const combinedRating = tastebuddiesRatingCount > 0
-    ? tastebuddiesRating    // 如果有用戶評論，使用平均評分
-    : googleRating;         // 否則使用 Google 評分
+  // 4. 計算綜合評分（加權平均）
+  let combinedRating = 0;
+
+  if (googleRatingCount > 0 && tastebuddiesRatingCount > 0) {
+    // 兩者都有：加權平均
+    combinedRating = (googleRating * googleRatingCount + tastebuddiesRating * tastebuddiesRatingCount)
+                    / (googleRatingCount + tastebuddiesRatingCount);
+  } else if (tastebuddiesRatingCount > 0) {
+    // 只有 TasteBuddies 評論
+    combinedRating = tastebuddiesRating;
+  } else if (googleRatingCount > 0) {
+    // 只有 Google 評分
+    combinedRating = googleRating;
+  }
 
   return {
     googleRating,              // Google 原始評分
+    googleRatingCount,         // Google 評論數量
     tastebuddiesRating,        // TasteBuddies 平均評分
-    tastebuddiesRatingCount,   // 評論數量
-    combinedRating             // 綜合評分（顯示用）
+    tastebuddiesRatingCount,   // TasteBuddies 評論數量
+    combinedRating             // 綜合評分（加權平均）
   };
 }
 ```
@@ -63,41 +75,67 @@ async getRestaurantRating(restaurantId) {
 | **餐廳詳細 Modal** | `combinedRating` | 動態查詢 | Modal 打開時 |
 | **評論區標題** | `combinedRating` + 評論數 | 動態查詢 | 載入評論時 |
 
-### 評分優先級邏輯
+### 加權平均公式
 
 ```
-有 TasteBuddies 評論？
-├─ 是 → 使用 TasteBuddies 平均評分
-│        例如：3 則評論 (5★, 4★, 4★) → 顯示 4.3★
+綜合評分 = (Google評分 × Google數量 + TasteBuddies評分 × TasteBuddies數量)
+          / (Google數量 + TasteBuddies數量)
+```
+
+**決策邏輯**：
+```
+情況判斷：
+├─ Google數量 > 0 且 TasteBuddies數量 > 0
+│   → 使用加權平均公式
 │
-└─ 否 → 使用 Google 評分
-         例如：Google 評分 4.5★ → 顯示 4.5★
+├─ 只有 TasteBuddies評論（Google數量 = 0）
+│   → 使用 TasteBuddies平均評分
+│
+├─ 只有 Google評分（TasteBuddies數量 = 0）
+│   → 使用 Google評分
+│
+└─ 兩者皆無
+    → 評分 = 0
 ```
 
 ### 範例計算
 
-**情況 1：有用戶評論**
+**情況 1：兩者都有（加權平均）**
 ```javascript
+// 你的範例
 googleRating = 4.5
-reviews = [
-  { rating: 5 },
-  { rating: 4 },
-  { rating: 4 }
-]
+googleRatingCount = 10
+tastebuddiesRating = 4.8
+tastebuddiesRatingCount = 4
 
-tastebuddiesRating = (5 + 4 + 4) / 3 = 4.33
-combinedRating = 4.33  // 使用 TasteBuddies 評分
+combinedRating = (4.5 × 10 + 4.8 × 4) / (10 + 4)
+               = (45 + 19.2) / 14
+               = 64.2 / 14
+               = 4.586
 
-顯示：4.3★ (3 則評論)
+顯示：4.6★ (共 14 則評論：Google 10 則 + TasteBuddies 4 則)
 ```
 
-**情況 2：無用戶評論**
+**情況 2：只有 TasteBuddies 評論**
+```javascript
+googleRating = 0
+googleRatingCount = 0
+tastebuddiesRating = 4.8
+tastebuddiesRatingCount = 4
+
+combinedRating = 4.8  // 直接使用 TasteBuddies
+
+顯示：4.8★ (4 則評論)
+```
+
+**情況 3：只有 Google 評分**
 ```javascript
 googleRating = 4.5
-reviews = []
-
+googleRatingCount = 10
 tastebuddiesRating = 0
-combinedRating = 4.5  // 回退到 Google 評分
+tastebuddiesRatingCount = 0
+
+combinedRating = 4.5  // 直接使用 Google
 
 顯示：4.5★ (尚無評論)
 ```

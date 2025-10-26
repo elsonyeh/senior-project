@@ -1113,13 +1113,14 @@ export const restaurantReviewService = {
       // 獲取餐廳基本資料（Google 評分）
       const { data: restaurant, error: restaurantError } = await supabase
         .from('restaurants')
-        .select('rating')
+        .select('rating, user_ratings_total')
         .eq('id', restaurantId)
         .single();
 
       if (restaurantError) throw restaurantError;
 
       const googleRating = restaurant?.rating || 0;
+      const googleRatingCount = restaurant?.user_ratings_total || 0;
 
       // 獲取 TasteBuddies 評論
       const { data: reviews, error: reviewsError } = await supabase
@@ -1137,15 +1138,26 @@ export const restaurantReviewService = {
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / tastebuddiesRatingCount
         : 0;
 
-      // 計算綜合評分（優先使用 TasteBuddies，沒有則用 Google）
-      const combinedRating = tastebuddiesRatingCount > 0
-        ? tastebuddiesRating
-        : googleRating;
+      // 計算綜合評分（加權平均）
+      let combinedRating = 0;
+
+      if (googleRatingCount > 0 && tastebuddiesRatingCount > 0) {
+        // 兩者都有：加權平均
+        // 公式：(Google評分 × Google數量 + TasteBuddies評分 × TasteBuddies數量) / (Google數量 + TasteBuddies數量)
+        combinedRating = (googleRating * googleRatingCount + tastebuddiesRating * tastebuddiesRatingCount)
+                        / (googleRatingCount + tastebuddiesRatingCount);
+      } else if (tastebuddiesRatingCount > 0) {
+        // 只有 TasteBuddies 評論
+        combinedRating = tastebuddiesRating;
+      } else if (googleRatingCount > 0) {
+        // 只有 Google 評分
+        combinedRating = googleRating;
+      }
 
       return {
         success: true,
         googleRating,
-        googleRatingCount: 0, // Google 評論數量目前無法取得
+        googleRatingCount,
         tastebuddiesRating,
         tastebuddiesRatingCount,
         combinedRating
