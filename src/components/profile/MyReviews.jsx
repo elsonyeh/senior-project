@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { IoStar, IoStarOutline, IoTrash, IoRestaurantOutline, IoNavigateOutline } from 'react-icons/io5';
 import { restaurantReviewService } from '../../services/restaurantService';
+import ConfirmDialog from '../common/ConfirmDialog';
 import './MyReviews.css';
 
 export default function MyReviews({ user }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedReviews, setExpandedReviews] = useState(new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
 
   const MAX_PREVIEW_LENGTH = 100;
 
@@ -25,17 +28,28 @@ export default function MyReviews({ user }) {
     setLoading(false);
   };
 
-  const handleDelete = async (reviewId) => {
-    if (!confirm('確定要刪除這則評論嗎？此操作無法復原。')) {
-      return;
-    }
+  const handleDeleteClick = (reviewId) => {
+    setReviewToDelete(reviewId);
+    setDeleteConfirmOpen(true);
+  };
 
-    const result = await restaurantReviewService.deleteReview(reviewId);
+  const handleDeleteConfirm = async () => {
+    if (!reviewToDelete) return;
+
+    const result = await restaurantReviewService.deleteReview(reviewToDelete);
     if (result.success) {
       await loadReviews();
     } else {
       alert(result.error || '刪除失敗');
     }
+
+    setDeleteConfirmOpen(false);
+    setReviewToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmOpen(false);
+    setReviewToDelete(null);
   };
 
   const toggleExpanded = (reviewId) => {
@@ -109,7 +123,6 @@ export default function MyReviews({ user }) {
   return (
     <div className="my-reviews-container">
       <div className="reviews-header">
-        <h2>我的評論</h2>
         <div className="reviews-count">{reviews.length} 則評論</div>
       </div>
 
@@ -128,22 +141,20 @@ export default function MyReviews({ user }) {
                   <IoRestaurantOutline />
                   {review.restaurants?.name || '未知餐廳'}
                 </div>
-                <div className="action-buttons">
-                  <button
-                    className="navigate-btn"
-                    onClick={() => navigateToRestaurant(review.restaurants)}
-                    title="前往餐廳"
-                  >
-                    <IoNavigateOutline />
-                  </button>
-                  <button
-                    className="delete-btn"
-                    onClick={() => handleDelete(review.id)}
-                    title="刪除"
-                  >
-                    <IoTrash />
-                  </button>
-                </div>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDeleteClick(review.id)}
+                  title="刪除"
+                >
+                  <IoTrash />
+                </button>
+                <button
+                  className="navigate-btn"
+                  onClick={() => navigateToRestaurant(review.restaurants)}
+                  title="前往餐廳"
+                >
+                  <IoNavigateOutline />
+                </button>
               </div>
 
               <div className="card-content">
@@ -188,6 +199,18 @@ export default function MyReviews({ user }) {
           ))
         )}
       </div>
+
+      {/* 刪除確認對話框 */}
+      <ConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="刪除評論"
+        message="確定要刪除這則評論嗎？此操作無法復原。"
+        confirmText="刪除"
+        cancelText="取消"
+        type="danger"
+      />
     </div>
   );
 }

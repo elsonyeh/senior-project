@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IoStar, IoStarOutline, IoTrash, IoSend } from 'react-icons/io5';
 import { restaurantReviewService } from '../../services/restaurantService';
+import ConfirmDialog from '../common/ConfirmDialog';
 import './RestaurantReviews.css';
 
 export default function RestaurantReviews({ restaurantId, user, onRatingLoad, showRatingSummary = false }) {
@@ -10,6 +11,9 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState(new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+  const [userHasReviewed, setUserHasReviewed] = useState(false);
   const [ratingData, setRatingData] = useState({
     googleRating: 0,
     googleRatingCount: 0,
@@ -30,6 +34,12 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
     const result = await restaurantReviewService.getReviews(restaurantId);
     if (result.success) {
       setReviews(result.reviews);
+
+      // 檢查當前用戶是否已經評論過
+      if (user) {
+        const hasReviewed = result.reviews.some(review => review.user_id === user.id);
+        setUserHasReviewed(hasReviewed);
+      }
     }
     setLoading(false);
   };
@@ -60,6 +70,11 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
       return;
     }
 
+    if (userHasReviewed) {
+      alert('您已經評論過這間餐廳了！每間餐廳只能留一則評論。');
+      return;
+    }
+
     if (!comment.trim()) {
       alert('請輸入評論內容');
       return;
@@ -80,18 +95,29 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
     setSubmitting(false);
   };
 
-  const handleDelete = async (reviewId) => {
-    if (!confirm('確定要刪除這則評論嗎？此操作無法復原。')) {
-      return;
-    }
+  const handleDeleteClick = (reviewId) => {
+    setReviewToDelete(reviewId);
+    setDeleteConfirmOpen(true);
+  };
 
-    const result = await restaurantReviewService.deleteReview(reviewId);
+  const handleDeleteConfirm = async () => {
+    if (!reviewToDelete) return;
+
+    const result = await restaurantReviewService.deleteReview(reviewToDelete);
     if (result.success) {
       await loadReviews();
       await loadRating();
     } else {
       alert(result.error || '刪除失敗');
     }
+
+    setDeleteConfirmOpen(false);
+    setReviewToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmOpen(false);
+    setReviewToDelete(null);
   };
 
   const toggleExpanded = (reviewId) => {
@@ -143,6 +169,7 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
+    if (diffMins < 1) return '0分鐘前';
     if (diffMins < 60) return `${diffMins}分鐘前`;
     if (diffHours < 24) return `${diffHours}小時前`;
     if (diffDays < 7) return `${diffDays}天前`;
@@ -175,36 +202,46 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
 
       {/* 新增評論表單 */}
       {user && (
-        <form className="review-form" onSubmit={handleSubmit}>
-          <div className="form-header">
-            <h4>撰寫評論</h4>
+        userHasReviewed ? (
+          <div className="already-reviewed-notice">
+            <div className="notice-icon">✓</div>
+            <div className="notice-content">
+              <h4>您已評論過這間餐廳</h4>
+              <p>每間餐廳只能留一則評論，您可以在下方查看或刪除您的評論。</p>
+            </div>
           </div>
+        ) : (
+          <form className="review-form" onSubmit={handleSubmit}>
+            <div className="form-header">
+              <h4>撰寫評論</h4>
+            </div>
 
-          <div className="rating-input">
-            <label>評分</label>
-            {renderStars(rating, true, setRating)}
-          </div>
+            <div className="rating-input">
+              <label>評分</label>
+              {renderStars(rating, true, setRating)}
+            </div>
 
-          <div className="comment-input">
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="分享您的用餐體驗...（最多200字）"
-              rows={4}
-              maxLength={200}
-            />
-            <div className="char-count">{comment.length}/200</div>
-          </div>
+            <div className="comment-input">
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="分享您的用餐體驗...（最多200字）"
+                rows={4}
+                maxLength={200}
+              />
+              <div className="char-count">{comment.length}/200</div>
+            </div>
 
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={submitting || !comment.trim()}
-          >
-            <IoSend />
-            {submitting ? '送出中...' : '送出評論'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="submit-btn"
+              disabled={submitting || !comment.trim()}
+            >
+              <IoSend />
+              {submitting ? '送出中...' : '送出評論'}
+            </button>
+          </form>
+        )
       )}
 
       {!user && (
@@ -250,7 +287,7 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
                   {user && user.id === review.user_id && (
                     <button
                       className="delete-btn"
-                      onClick={() => handleDelete(review.id)}
+                      onClick={() => handleDeleteClick(review.id)}
                       title="刪除評論"
                     >
                       <IoTrash />
@@ -279,6 +316,18 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
           ))
         )}
       </div>
+
+      {/* 刪除確認對話框 */}
+      <ConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="刪除評論"
+        message="確定要刪除這則評論嗎？此操作無法復原。"
+        confirmText="刪除"
+        cancelText="取消"
+        type="danger"
+      />
     </div>
   );
 }

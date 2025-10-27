@@ -418,7 +418,9 @@ export default function MapView({
     const rating = ratingResult.success && ratingResult.combinedRating > 0
       ? ratingResult.combinedRating.toFixed(1)
       : (restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A');
-    const reviewCount = ratingResult.success ? ratingResult.tastebuddiesRatingCount : 0;
+    const reviewCount = ratingResult.success
+      ? (ratingResult.googleRatingCount || 0) + (ratingResult.tastebuddiesRatingCount || 0)
+      : 0;
 
     // 生成收藏清單選項 - 使用最新的狀態
     const favoriteListsOptions = currentUser && currentFavoriteLists.length > 0
@@ -452,8 +454,7 @@ export default function MapView({
           </div>
           <div class="info-place-rating google-places-rating">
             <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(parseFloat(rating) || 0))}${'☆'.repeat(5 - Math.floor(parseFloat(rating) || 0))}</span>
-            <span class="info-rating-text google-places-rating-text">${rating}</span>
-            ${reviewCount > 0 ? `<span class="info-rating-count google-places-rating-count"> (${reviewCount} 則評論)</span>` : ''}
+            <span class="info-rating-text google-places-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount} 則評分)` : ''}</span>
           </div>
           <p class="info-place-address google-places-address">${restaurant.address || '地址未提供'}</p>
 
@@ -879,7 +880,7 @@ export default function MapView({
           </div>
           <div class="info-place-rating google-places-rating">
             <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
-            <span class="info-rating-text google-places-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount})` : ''}</span>
+            <span class="info-rating-text google-places-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount} 則評分)` : ''}</span>
           </div>
           <p class="info-place-address google-places-address">${place.formatted_address || ''}</p>
           ${place.formatted_phone_number ? `<p class="info-place-phone google-places-phone">${place.formatted_phone_number}</p>` : ''}

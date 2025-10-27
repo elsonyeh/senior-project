@@ -21,16 +21,32 @@ export default function ConfirmDialog({
   };
 
   const getIcon = () => {
+    let IconComponent;
+    let iconClass = '';
+
     switch (type) {
       case 'danger':
-        return <IoPersonRemoveOutline className="dialog-icon danger" />;
+        IconComponent = IoTrashOutline;
+        iconClass = 'danger';
+        break;
       case 'info':
-        return <IoCheckmarkOutline className="dialog-icon info" />;
+        IconComponent = IoCheckmarkOutline;
+        iconClass = 'info';
+        break;
       case 'logout':
-        return <IoPowerOutline className="dialog-icon logout-type" />;
+        IconComponent = IoPowerOutline;
+        iconClass = 'logout-type';
+        break;
       default:
-        return <IoWarningOutline className="dialog-icon warning" />;
+        IconComponent = IoWarningOutline;
+        iconClass = 'warning';
     }
+
+    return (
+      <div className={`dialog-icon-wrapper ${iconClass}`}>
+        <IconComponent className="dialog-icon-svg" />
+      </div>
+    );
   };
 
   return (

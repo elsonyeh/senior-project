@@ -49,7 +49,8 @@
   border-radius: 20px 20px 0 0;
 }
 
-.dialog-icon {
+/* 圓形圖示容器 */
+.dialog-icon-wrapper {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -62,10 +63,9 @@
   animation: iconPulse 2s ease-in-out infinite;
 }
 
-.dialog-icon svg {
-  stroke-width: 1.5;
-  width: 20px;
-  height: 20px;
+/* 圖示本身 */
+.dialog-icon-svg {
+  font-size: 30px;
 }
 
 @keyframes iconPulse {
@@ -77,25 +77,25 @@
   }
 }
 
-.dialog-icon.warning {
+.dialog-icon-wrapper.warning {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%);
   color: #d97706;
   border: 2px solid rgba(217, 119, 6, 0.2);
 }
 
-.dialog-icon.danger {
+.dialog-icon-wrapper.danger {
   background: linear-gradient(135deg, #fed7d7 0%, #fecaca 50%, #fca5a5 100%);
   color: #dc2626;
   border: 2px solid rgba(220, 38, 38, 0.2);
 }
 
-.dialog-icon.info {
+.dialog-icon-wrapper.info {
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%);
   color: #2563eb;
   border: 2px solid rgba(37, 99, 235, 0.2);
 }
 
-.dialog-icon.logout-type {
+.dialog-icon-wrapper.logout-type {
   background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%);
   color: #667eea;
   border: 2px solid rgba(102, 126, 234, 0.2);
@@ -251,16 +251,14 @@
     padding: 24px 20px 16px;
   }
 
-  .dialog-icon {
+  .dialog-icon-wrapper {
     width: 48px;
     height: 48px;
     margin-bottom: 10px;
   }
 
-  .dialog-icon svg {
-    stroke-width: 1.5;
-    width: 16px;
-    height: 16px;
+  .dialog-icon-svg {
+    font-size: 24px;
   }
 
   .dialog-title {

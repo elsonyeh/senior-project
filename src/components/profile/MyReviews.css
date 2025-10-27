@@ -33,33 +33,22 @@
 /* Header */
 .reviews-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
   border-bottom: 2px solid transparent;
   background: linear-gradient(white, white) padding-box,
               linear-gradient(90deg, #667eea 0%, #764ba2 100%) border-box;
   border-image-slice: 1;
 }
 
-.reviews-header h2 {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.5px;
-}
-
 .reviews-count {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #667eea;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: 20px;
   border: 1.5px solid rgba(102, 126, 234, 0.2);
   letter-spacing: 0.3px;
@@ -179,11 +168,11 @@
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(102, 126, 234, 0.08);
+  gap: 10px;
 }
 
 .restaurant-name {
@@ -194,6 +183,8 @@
   font-weight: 700;
   color: #2d3748;
   letter-spacing: -0.2px;
+  flex: 1;
+  min-width: 0;
 }
 
 .restaurant-name svg {
@@ -203,27 +194,54 @@
   flex-shrink: 0;
 }
 
-.action-buttons {
+.my-reviews-container .delete-btn {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 24px;
+  color: #ef4444;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
-.navigate-btn,
-.delete-btn {
+.my-reviews-container .delete-btn:hover {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.my-reviews-container .delete-btn:active {
+  transform: scale(0.95);
+}
+
+.my-reviews-container .navigate-btn {
   background: rgba(102, 126, 234, 0.05);
   border: 1.5px solid transparent;
   cursor: pointer;
   padding: 10px;
   border-radius: 10px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 18px;
+  font-size: 20px;
   color: #6c757d;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
 }
 
-.navigate-btn:hover {
+.my-reviews-container .navigate-btn:hover {
   background: linear-gradient(135deg, #e7f3ff 0%, #e0edff 100%);
   border-color: rgba(0, 102, 204, 0.3);
   color: #0066cc;
@@ -231,19 +249,7 @@
   box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
 }
 
-.navigate-btn:active {
-  transform: scale(0.95);
-}
-
-.delete-btn:hover {
-  background: linear-gradient(135deg, #ffe7e7 0%, #ffd6d6 100%);
-  border-color: rgba(220, 53, 69, 0.3);
-  color: #dc3545;
-  transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
-}
-
-.delete-btn:active {
+.my-reviews-container .navigate-btn:active {
   transform: scale(0.95);
 }
 
@@ -400,17 +406,13 @@
   }
 
   .reviews-header {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-  }
-
-  .reviews-header h2 {
-    font-size: 22px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
   }
 
   .reviews-count {
-    font-size: 12px;
-    padding: 6px 14px;
+    font-size: 13px;
+    padding: 8px 16px;
   }
 
   .reviews-list {
@@ -423,30 +425,36 @@
   }
 
   .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    flex-direction: row;
+    flex-wrap: nowrap;
     margin-bottom: 16px;
     padding-bottom: 14px;
+    gap: 10px;
   }
 
   .restaurant-name {
     font-size: 16px;
+    flex: 1;
+    min-width: 0;
   }
 
   .restaurant-name svg {
     font-size: 20px;
   }
 
-  .action-buttons {
-    width: 100%;
-    justify-content: flex-end;
+  .my-reviews-container .delete-btn {
+    padding: 9px;
+    font-size: 22px;
+    width: 40px;
+    height: 40px;
+    margin-left: auto;
   }
 
-  .navigate-btn,
-  .delete-btn {
+  .my-reviews-container .navigate-btn {
     padding: 9px;
-    font-size: 16px;
+    font-size: 18px;
+    width: 40px;
+    height: 40px;
   }
 
   .card-content {
@@ -508,13 +516,9 @@
 }
 
 @media (max-width: 480px) {
-  .reviews-header h2 {
-    font-size: 20px;
-  }
-
   .reviews-count {
-    font-size: 11px;
-    padding: 5px 12px;
+    font-size: 12px;
+    padding: 7px 14px;
   }
 
   .review-card {
