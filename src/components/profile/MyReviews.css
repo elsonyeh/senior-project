@@ -30,29 +30,19 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Header */
-.reviews-header {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid transparent;
-  background: linear-gradient(white, white) padding-box,
-              linear-gradient(90deg, #667eea 0%, #764ba2 100%) border-box;
-  border-image-slice: 1;
-}
-
-.reviews-count {
-  font-size: 14px;
+/* Reviews Count Badge */
+.reviews-count-badge {
+  display: inline-block;
+  font-size: 13px;
   font-weight: 600;
   color: #667eea;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-  padding: 10px 18px;
+  padding: 8px 16px;
   border-radius: 20px;
   border: 1.5px solid rgba(102, 126, 234, 0.2);
   letter-spacing: 0.3px;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+  margin-bottom: 16px;
 }
 
 /* Stars */

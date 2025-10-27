@@ -153,10 +153,6 @@ export default function MyReviews({ user }) {
 
   return (
     <div className="my-reviews-container">
-      <div className="reviews-header">
-        <div className="reviews-count">{reviews.length} 則評論</div>
-      </div>
-
       <div className="reviews-list">
         {reviews.length === 0 ? (
           <div className="no-reviews">
@@ -165,7 +161,9 @@ export default function MyReviews({ user }) {
             <p>開始探索餐廳並留下您的評論吧！</p>
           </div>
         ) : (
-          reviews.map((review) => (
+          <>
+            <div className="reviews-count-badge">{reviews.length} 則評論</div>
+            {reviews.map((review) => (
             <div key={review.id} className="review-card">
               <div className="card-header">
                 <div className="restaurant-name">
@@ -227,7 +225,8 @@ export default function MyReviews({ user }) {
                 </div>
               </div>
             </div>
-          ))
+          ))}
+          </>
         )}
       </div>
 
