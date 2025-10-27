@@ -33,7 +33,19 @@ export default function RestaurantReviews({ restaurantId, user, onRatingLoad, sh
     setLoading(true);
     const result = await restaurantReviewService.getReviews(restaurantId);
     if (result.success) {
-      setReviews(result.reviews);
+      // 將使用者自己的評論排序到最前面
+      const sortedReviews = [...result.reviews].sort((a, b) => {
+        if (user) {
+          const aIsUser = a.user_id === user.id;
+          const bIsUser = b.user_id === user.id;
+          if (aIsUser && !bIsUser) return -1;
+          if (!aIsUser && bIsUser) return 1;
+        }
+        // 其他評論按照時間排序（最新的在前）
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      setReviews(sortedReviews);
 
       // 檢查當前用戶是否已經評論過
       if (user) {

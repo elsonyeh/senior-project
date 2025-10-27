@@ -67,8 +67,8 @@ export default function MapPage() {
 
   // 處理從其他頁面導航過來的餐廳資料
   useEffect(() => {
-    if (location.state?.selectedRestaurant) {
-      setSelectedRestaurant(location.state.selectedRestaurant);
+    if (location.state?.selectedPlace) {
+      setSelectedPlace(location.state.selectedPlace);
       // 清除 location state 以避免重複觸發
       window.history.replaceState({}, document.title);
     }

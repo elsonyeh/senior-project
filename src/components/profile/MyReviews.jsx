@@ -88,11 +88,17 @@ export default function MyReviews({ user, onReviewsCountChange }) {
 
   const navigateToRestaurant = (restaurant) => {
     if (!restaurant) return;
-    // 導航到地圖頁面並傳遞餐廳資料
+    // 導航到地圖頁面並傳遞餐廳資料，打開 Google Places InfoWindow
     navigate('/map', {
       state: {
-        selectedRestaurant: restaurant,
-        openDetailModal: true
+        selectedPlace: {
+          place_id: restaurant.place_id || restaurant.google_place_id,
+          name: restaurant.name,
+          rating: restaurant.rating,
+          address: restaurant.address,
+          lat: restaurant.lat,
+          lng: restaurant.lng
+        }
       }
     });
   };
