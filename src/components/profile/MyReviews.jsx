@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { IoStar, IoStarOutline, IoStarHalf, IoTrash, IoRestaurantOutline, IoNavigateOutline } from 'react-icons/io5';
 import { restaurantReviewService } from '../../services/restaurantService';
 import ConfirmDialog from '../common/ConfirmDialog';
 import './MyReviews.css';
 
 export default function MyReviews({ user, onReviewsCountChange }) {
+  const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedReviews, setExpandedReviews] = useState(new Set());
@@ -86,11 +88,13 @@ export default function MyReviews({ user, onReviewsCountChange }) {
 
   const navigateToRestaurant = (restaurant) => {
     if (!restaurant) return;
-    const query = encodeURIComponent(restaurant.address || restaurant.name);
-    window.open(
-      `https://www.google.com/maps/search/?api=1&query=${query}`,
-      "_blank"
-    );
+    // 導航到地圖頁面並傳遞餐廳資料
+    navigate('/map', {
+      state: {
+        selectedRestaurant: restaurant,
+        openDetailModal: true
+      }
+    });
   };
 
   const renderStars = (rating, interactive = false, onRatingChange = null) => {
@@ -198,14 +202,6 @@ export default function MyReviews({ user, onReviewsCountChange }) {
                     {renderStars(review.rating)}
                     <span className="rating-number">{review.rating}.0</span>
                   </div>
-
-                  {review.restaurants?.rating && (
-                    <div className="restaurant-overall-rating">
-                      <span className="overall-label">餐廳評分</span>
-                      <span className="overall-value">{review.restaurants.rating.toFixed(1)}</span>
-                      {renderStars(review.restaurants.rating)}
-                    </div>
-                  )}
                 </div>
 
                 {review.comment && (

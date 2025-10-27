@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import MapView from '../components/map/MapView';
 import MapSearch from '../components/map/MapSearch';
 import LocationButton from '../components/map/LocationButton';
@@ -10,6 +11,7 @@ import { IoMenuOutline, IoCloseOutline } from 'react-icons/io5';
 import './MapPage.css';
 
 export default function MapPage() {
+  const location = useLocation();
   const [currentLocation, setCurrentLocation] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -62,6 +64,15 @@ export default function MapPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  // 處理從其他頁面導航過來的餐廳資料
+  useEffect(() => {
+    if (location.state?.selectedRestaurant) {
+      setSelectedRestaurant(location.state.selectedRestaurant);
+      // 清除 location state 以避免重複觸發
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // 地圖互動檢測和導航欄自動收合
   useEffect(() => {

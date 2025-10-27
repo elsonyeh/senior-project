@@ -364,7 +364,7 @@ export default function UserProfilePage() {
             onBack={handleBack}
             rightElement={
               reviewsCount > 0 && (
-                <div className="reviews-count-badge">{reviewsCount}</div>
+                <div className="reviews-count-badge">共{reviewsCount}則評論</div>
               )
             }
           >
