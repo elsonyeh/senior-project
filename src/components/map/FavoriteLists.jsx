@@ -368,13 +368,13 @@ export default function FavoriteLists({
   const getRandomColor = () => {
     const colors = [
       "#ef4444", // 紅色（我的最愛專用）
-      "#22c55e", // 綠色
+      "#14b8a6", // 青綠色（Teal）
       "#3b82f6", // 藍色
       "#8b5cf6", // 紫色
       "#f59e0b", // 琥珀色
       "#ec4899", // 粉紅色
       "#06b6d4", // 青色
-      "#84cc16", // 萊姆綠
+      "#a855f7", // 亮紫色
       "#f97316", // 橙色
     ];
 
