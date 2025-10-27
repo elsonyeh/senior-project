@@ -39,6 +39,7 @@ export default function UserProfilePage() {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollTop, setLastScrollTop] = useState(0);
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+  const [reviewsCount, setReviewsCount] = useState(0);
 
   // 處理載入動畫的延遲邏輯
   useEffect(() => {
@@ -358,8 +359,16 @@ export default function UserProfilePage() {
         );
       case 'reviews':
         return (
-          <PageWrapper title="我的評論" onBack={handleBack}>
-            <MyReviews user={user} />
+          <PageWrapper
+            title="我的評論"
+            onBack={handleBack}
+            rightElement={
+              reviewsCount > 0 && (
+                <div className="reviews-count-badge">{reviewsCount}</div>
+              )
+            }
+          >
+            <MyReviews user={user} onReviewsCountChange={setReviewsCount} />
           </PageWrapper>
         );
       case 'history':

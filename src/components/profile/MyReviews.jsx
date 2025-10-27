@@ -4,7 +4,7 @@ import { restaurantReviewService } from '../../services/restaurantService';
 import ConfirmDialog from '../common/ConfirmDialog';
 import './MyReviews.css';
 
-export default function MyReviews({ user }) {
+export default function MyReviews({ user, onReviewsCountChange }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedReviews, setExpandedReviews] = useState(new Set());
@@ -18,6 +18,13 @@ export default function MyReviews({ user }) {
       loadReviews();
     }
   }, [user]);
+
+  // 通知父組件評論數變化
+  useEffect(() => {
+    if (onReviewsCountChange) {
+      onReviewsCountChange(reviews.length);
+    }
+  }, [reviews.length, onReviewsCountChange]);
 
   const loadReviews = async () => {
     setLoading(true);
@@ -161,9 +168,7 @@ export default function MyReviews({ user }) {
             <p>開始探索餐廳並留下您的評論吧！</p>
           </div>
         ) : (
-          <>
-            <div className="reviews-count-badge">{reviews.length} 則評論</div>
-            {reviews.map((review) => (
+          reviews.map((review) => (
             <div key={review.id} className="review-card">
               <div className="card-header">
                 <div className="restaurant-name">
@@ -225,8 +230,7 @@ export default function MyReviews({ user }) {
                 </div>
               </div>
             </div>
-          ))}
-          </>
+          ))
         )}
       </div>
 

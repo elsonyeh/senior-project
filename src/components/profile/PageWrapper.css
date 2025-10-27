@@ -68,6 +68,29 @@
   min-width: 40px; /* 與返回按鈕同寬，保持標題居中 */
 }
 
+.header-right-element {
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* 評論數徽章 */
+.header-right-element .reviews-count-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 6px 12px;
+  border-radius: 16px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  min-width: 32px;
+}
+
 /* 內容區域 */
 .page-content {
   padding: 0 20px 120px 20px; /* 添加左右 20px padding 確保對稱 */
