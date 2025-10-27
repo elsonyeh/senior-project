@@ -250,21 +250,29 @@ export const userDataService = {
 
       // 如果有照片 URL，嘗試存儲餐廳圖片
       if (placeData.photo_url) {
-        const { error: imageError } = await supabase
+        // 先檢查是否已存在相同的圖片
+        const { data: existingImage } = await supabase
           .from('restaurant_images')
-          .upsert({
-            restaurant_id: placeData.place_id,
-            image_url: placeData.photo_url,
-            is_primary: true,
-            display_order: 1,
-            created_at: new Date().toISOString()
-          }, {
-            onConflict: 'restaurant_id,image_url',
-            ignoreDuplicates: true
-          });
+          .select('id')
+          .eq('restaurant_id', placeData.place_id)
+          .eq('image_url', placeData.photo_url)
+          .single();
 
-        if (imageError) {
-          console.warn('餐廳圖片存儲失敗:', imageError);
+        // 如果不存在，才插入
+        if (!existingImage) {
+          const { error: imageError } = await supabase
+            .from('restaurant_images')
+            .insert({
+              restaurant_id: placeData.place_id,
+              image_url: placeData.photo_url,
+              is_primary: true,
+              display_order: 1,
+              created_at: new Date().toISOString()
+            });
+
+          if (imageError) {
+            console.warn('餐廳圖片存儲失敗:', imageError);
+          }
         }
       }
 
