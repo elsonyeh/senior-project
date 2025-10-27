@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { IoHeartOutline, IoHeart, IoInformationCircleOutline, IoNavigateOutline } from 'react-icons/io5';
 import googleMapsLoader from '../../utils/googleMapsLoader';
 import { restaurantService, restaurantReviewService } from '../../services/restaurantService';
+import Toast from '../common/Toast';
 import './MapView.css';
 
 // 台北101的座標作為預設中心點
@@ -42,6 +43,7 @@ export default function MapView({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [restaurants, setRestaurants] = useState([]);
   const [restaurantMarkers, setRestaurantMarkers] = useState([]);
+  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
 
   // 同步 ref 以確保總是使用最新的狀態
   useEffect(() => {
@@ -55,6 +57,19 @@ export default function MapView({
   useEffect(() => {
     favoriteListsRef.current = favoriteLists;
   }, [favoriteLists]);
+
+  // Toast 顯示函數
+  const showToast = useCallback((message, type = 'info') => {
+    setToast({ isOpen: true, message, type });
+  }, []);
+
+  // 將 showToast 掛載到 window 以便在 InfoWindow 中使用
+  useEffect(() => {
+    window.showToast = showToast;
+    return () => {
+      delete window.showToast;
+    };
+  }, [showToast]);
 
   // 載入餐廳資料庫
   const loadRestaurants = useCallback(async () => {
@@ -583,7 +598,9 @@ export default function MapView({
       const selectedListId = selectText?.dataset.value;
 
       if (!selectedListId) {
-        alert('請先選擇一個收藏清單');
+        if (window.showToast) {
+          window.showToast('請先選擇一個收藏清單', 'warning');
+        }
         return;
       }
 
@@ -974,7 +991,9 @@ export default function MapView({
       const selectedListId = selectText?.dataset.value;
 
       if (!selectedListId) {
-        alert('請先選擇一個收藏清單');
+        if (window.showToast) {
+          window.showToast('請先選擇一個收藏清單', 'warning');
+        }
         return;
       }
 
@@ -1327,6 +1346,12 @@ export default function MapView({
         </div>
       )}
 
+      <Toast
+        isOpen={toast.isOpen}
+        onClose={() => setToast({ ...toast, isOpen: false })}
+        message={toast.message}
+        type={toast.type}
+      />
     </div>
   );
 }
