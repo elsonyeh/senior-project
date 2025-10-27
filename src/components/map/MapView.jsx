@@ -444,6 +444,8 @@ export default function MapView({
             <button class="info-reviews-btn" onclick="openRestaurantReviews('${restaurant.id}', 'database')" title="查看評論">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                <line x1="8" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+                <line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
               </svg>
               <span>評論</span>
             </button>
@@ -869,6 +871,8 @@ export default function MapView({
             <button class="info-reviews-btn" onclick="openRestaurantReviews('${place.place_id}', 'google')" title="查看評論">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                <line x1="8" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+                <line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
               </svg>
               <span>評論</span>
             </button>
