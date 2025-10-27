@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IoStar, IoStarOutline, IoTrash, IoRestaurantOutline, IoNavigateOutline } from 'react-icons/io5';
+import { IoStar, IoStarOutline, IoStarHalf, IoTrash, IoRestaurantOutline, IoNavigateOutline } from 'react-icons/io5';
 import { restaurantReviewService } from '../../services/restaurantService';
 import ConfirmDialog from '../common/ConfirmDialog';
 import './MyReviews.css';
@@ -87,15 +87,46 @@ export default function MyReviews({ user }) {
   };
 
   const renderStars = (rating, interactive = false, onRatingChange = null) => {
+    // For interactive mode (user rating input), keep integer ratings
+    if (interactive) {
+      return (
+        <div className={`stars ${interactive ? 'interactive' : ''}`}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <span
+              key={star}
+              onClick={() => interactive && onRatingChange && onRatingChange(star)}
+              className={star <= rating ? 'filled' : 'empty'}
+            >
+              {star <= rating ? <IoStar /> : <IoStarOutline />}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    // For display mode, support half stars
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = (rating % 1) >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
     return (
-      <div className={`stars ${interactive ? 'interactive' : ''}`}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span
-            key={star}
-            onClick={() => interactive && onRatingChange && onRatingChange(star)}
-            className={star <= rating ? 'filled' : 'empty'}
-          >
-            {star <= rating ? <IoStar /> : <IoStarOutline />}
+      <div className="stars">
+        {/* Full stars */}
+        {[...Array(fullStars)].map((_, i) => (
+          <span key={`full-${i}`} className="filled">
+            <IoStar />
+          </span>
+        ))}
+        {/* Half star */}
+        {hasHalfStar && (
+          <span key="half" className="filled">
+            <IoStarHalf />
+          </span>
+        )}
+        {/* Empty stars */}
+        {[...Array(emptyStars)].map((_, i) => (
+          <span key={`empty-${i}`} className="empty">
+            <IoStarOutline />
           </span>
         ))}
       </div>
@@ -169,7 +200,7 @@ export default function MyReviews({ user }) {
                     <div className="restaurant-overall-rating">
                       <span className="overall-label">餐廳評分</span>
                       <span className="overall-value">{review.restaurants.rating.toFixed(1)}</span>
-                      {renderStars(Math.round(review.restaurants.rating))}
+                      {renderStars(review.restaurants.rating)}
                     </div>
                   )}
                 </div>

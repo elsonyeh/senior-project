@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { IoClose, IoLocationOutline, IoStar, IoStarOutline, IoNavigateOutline } from 'react-icons/io5';
+import { IoClose, IoLocationOutline, IoStar, IoStarOutline, IoStarHalf, IoNavigateOutline } from 'react-icons/io5';
 import RestaurantReviews from './RestaurantReviews';
 import './RestaurantDetailModal.css';
 
@@ -65,11 +65,28 @@ export default function RestaurantDetailModal({ restaurant, user, onClose }) {
   };
 
   const renderStars = (rating) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = (rating % 1) >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
     return (
       <div className="stars">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span key={star} className={star <= rating ? 'filled' : 'empty'}>
-            {star <= rating ? <IoStar /> : <IoStarOutline />}
+        {/* Full stars */}
+        {[...Array(fullStars)].map((_, i) => (
+          <span key={`full-${i}`} className="filled">
+            <IoStar />
+          </span>
+        ))}
+        {/* Half star */}
+        {hasHalfStar && (
+          <span key="half" className="filled">
+            <IoStarHalf />
+          </span>
+        )}
+        {/* Empty stars */}
+        {[...Array(emptyStars)].map((_, i) => (
+          <span key={`empty-${i}`} className="empty">
+            <IoStarOutline />
           </span>
         ))}
       </div>
@@ -108,7 +125,7 @@ export default function RestaurantDetailModal({ restaurant, user, onClose }) {
               <div className="rating-score">
                 <div className="score-number">{ratingData.combinedRating.toFixed(1)}</div>
                 <div className="rating-stars-large">
-                  {renderStars(Math.round(ratingData.combinedRating))}
+                  {renderStars(ratingData.combinedRating)}
                 </div>
               </div>
               <div className="rating-count-text">
