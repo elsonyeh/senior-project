@@ -15,6 +15,16 @@ const getListColor = (list) => {
   return list?.color || '#4CAF50';
 };
 
+// 生成半顆星 HTML
+const generateStarsHtml = (rating) => {
+  const numRating = parseFloat(rating) || 0;
+  const fullStars = Math.floor(numRating);
+  const hasHalfStar = (numRating % 1) >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return '★'.repeat(fullStars) + (hasHalfStar ? '⯨' : '') + '☆'.repeat(emptyStars);
+};
+
 export default function MapView({
   center = DEFAULT_CENTER,
   zoom = DEFAULT_ZOOM,
@@ -468,7 +478,7 @@ export default function MapView({
             </button>
           </div>
           <div class="info-place-rating google-places-rating">
-            <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(parseFloat(rating) || 0))}${'☆'.repeat(5 - Math.floor(parseFloat(rating) || 0))}</span>
+            <span class="info-rating-stars google-places-stars">${generateStarsHtml(rating)}</span>
             <span class="info-rating-text google-places-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount} 則評分)` : ''}</span>
           </div>
           <p class="info-place-address google-places-address">${restaurant.address || '地址未提供'}</p>
@@ -896,7 +906,7 @@ export default function MapView({
             </button>
           </div>
           <div class="info-place-rating google-places-rating">
-            <span class="info-rating-stars google-places-stars">${'★'.repeat(Math.floor(place.rating || 0))}${'☆'.repeat(5 - Math.floor(place.rating || 0))}</span>
+            <span class="info-rating-stars google-places-stars">${generateStarsHtml(rating)}</span>
             <span class="info-rating-text google-places-rating-text">${rating}${reviewCount > 0 ? ` (${reviewCount} 則評分)` : ''}</span>
           </div>
           <p class="info-place-address google-places-address">${place.formatted_address || ''}</p>

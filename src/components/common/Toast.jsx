@@ -21,23 +21,30 @@ export default function Toast({
   if (!isOpen) return null;
 
   const getIcon = () => {
+    let IconComponent;
     switch (type) {
       case 'success':
-        return <IoCheckmarkCircleOutline />;
+        IconComponent = IoCheckmarkCircleOutline;
+        break;
       case 'warning':
-        return <IoWarningOutline />;
+        IconComponent = IoWarningOutline;
+        break;
       case 'error':
-        return <IoCloseCircleOutline />;
+        IconComponent = IoCloseCircleOutline;
+        break;
       default:
-        return <IoInformationCircleOutline />;
+        IconComponent = IoInformationCircleOutline;
     }
+    return (
+      <div className="toast-icon-wrapper">
+        <IconComponent className="toast-icon-svg" />
+      </div>
+    );
   };
 
   return (
     <div className={`toast-container ${type}`}>
-      <div className="toast-icon">
-        {getIcon()}
-      </div>
+      {getIcon()}
       <div className="toast-message">{message}</div>
     </div>
   );
