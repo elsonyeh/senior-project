@@ -19,8 +19,8 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
     };
   }, []);
 
-  // 位置平滑算法 - 使用加權移動平均，過濾低精確度樣本
-  const smoothPosition = (newLat, newLng, accuracy) => {
+  // 位置平滑算法 - 使用加權移動平均，智能處理低精確度樣本
+  const smoothPosition = (newLat, newLng, accuracy, forceUseAll = false) => {
     positionHistoryRef.current.push({ lat: newLat, lng: newLng, accuracy, time: Date.now() });
 
     // 只保留最近5個位置
@@ -28,7 +28,38 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
       positionHistoryRef.current.shift();
     }
 
-    // 過濾掉精確度太差的樣本（>100m），這些通常是 GPS 冷啟動的不準確位置
+    // 如果強制使用所有樣本（超時情況），使用所有可用樣本
+    if (forceUseAll) {
+      const allSamples = positionHistoryRef.current;
+
+      if (allSamples.length === 0) {
+        return { lat: newLat, lng: newLng };
+      }
+
+      if (allSamples.length === 1) {
+        return { lat: allSamples[0].lat, lng: allSamples[0].lng };
+      }
+
+      // 使用加權平均，精確度差的權重極低但不完全忽略
+      let totalWeight = 0;
+      let weightedLat = 0;
+      let weightedLng = 0;
+
+      allSamples.forEach((pos) => {
+        // 使用平方倒數降低差樣本的影響
+        const weight = 1 / Math.pow(pos.accuracy || 1000, 2);
+        totalWeight += weight;
+        weightedLat += pos.lat * weight;
+        weightedLng += pos.lng * weight;
+      });
+
+      return {
+        lat: weightedLat / totalWeight,
+        lng: weightedLng / totalWeight
+      };
+    }
+
+    // 正常模式：過濾掉精確度太差的樣本（>100m）
     const validSamples = positionHistoryRef.current.filter(pos => pos.accuracy <= 100);
 
     // 如果沒有有效樣本，使用當前位置
@@ -79,14 +110,69 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
     let bestAccuracy = Infinity;
     let sampleCount = 0;
     let goodSampleCount = 0; // 精確度良好的樣本數（<50m）
-    const maxSamples = 8; // 增加到8個樣本
+    const maxSamples = 8; // 最多8個樣本
     const minAccuracy = 15; // 目標精確度15米
     const goodAccuracy = 50; // 良好精確度50米
+    const forceStopTimeout = 10000; // 10秒強制超時
 
     // 清除之前的監聽
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
     }
+
+    // 設置強制停止超時
+    const forceStopTimer = setTimeout(() => {
+      if (watchIdRef.current !== null) {
+        console.warn('⏱️ 定位超時，使用最佳可用位置');
+
+        // 停止監聽
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+
+        // 使用最佳可用樣本（強制使用所有樣本）
+        if (positionHistoryRef.current.length > 0) {
+          const latestSample = positionHistoryRef.current[positionHistoryRef.current.length - 1];
+          const smoothedPos = smoothPosition(
+            latestSample.lat,
+            latestSample.lng,
+            latestSample.accuracy,
+            true // 強制使用所有樣本
+          );
+
+          setIsLocating(false);
+          setIsRelocating(false);
+          setHasLocation(true);
+
+          console.log(`⚠️ 使用降級定位:`, {
+            最佳精確度: `${bestAccuracy.toFixed(1)}m`,
+            總樣本數: sampleCount,
+            良好樣本數: goodSampleCount,
+            最終位置: `${smoothedPos.lat.toFixed(6)}, ${smoothedPos.lng.toFixed(6)}`
+          });
+
+          const finalLocation = {
+            lat: smoothedPos.lat,
+            lng: smoothedPos.lng,
+            accuracy: bestAccuracy
+          };
+
+          if (forceRelocate) {
+            onRelocate?.(finalLocation);
+          } else {
+            onLocationFound?.(finalLocation);
+          }
+
+          setTimeout(() => {
+            setHasLocation(false);
+          }, 2000);
+        } else {
+          // 完全沒有樣本，報錯
+          setIsLocating(false);
+          setIsRelocating(false);
+          onLocationError?.('定位超時且無可用位置');
+        }
+      }
+    }, forceStopTimeout);
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
@@ -125,6 +211,9 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
           (accuracy <= 25 && goodSampleCount >= 3);
 
         if (shouldStop) {
+          // 清除強制超時定時器
+          clearTimeout(forceStopTimer);
+
           // 停止監聽
           if (watchIdRef.current !== null) {
             navigator.geolocation.clearWatch(watchIdRef.current);
@@ -161,6 +250,9 @@ export default function LocationButton({ onLocationFound, onLocationError, onRel
         }
       },
       (error) => {
+        // 清除強制超時定時器
+        clearTimeout(forceStopTimer);
+
         // 清除監聽
         if (watchIdRef.current !== null) {
           navigator.geolocation.clearWatch(watchIdRef.current);
