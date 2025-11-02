@@ -1229,18 +1229,27 @@ export default function MapView({
 
       // 如果是餐廳搜尋結果，調整地圖中心讓 marker 顯示在下方
       if (searchLocation.name && searchLocation.name !== '我的位置') {
-        const scale = Math.pow(2, map.getZoom());
-        const worldCoordinateCenter = map.getProjection().fromLatLngToPoint(position);
+        // 檢查 projection 是否可用
+        const projection = map.getProjection();
 
-        // 向上移動地圖中心 280 像素，讓 marker 顯示在螢幕更靠下的位置
-        const pixelOffset = new window.google.maps.Point(0, -280 / scale);
-        const worldCoordinateNewCenter = new window.google.maps.Point(
-          worldCoordinateCenter.x + pixelOffset.x,
-          worldCoordinateCenter.y + pixelOffset.y
-        );
+        if (projection && typeof projection.fromLatLngToPoint === 'function') {
+          const scale = Math.pow(2, map.getZoom());
+          const worldCoordinateCenter = projection.fromLatLngToPoint(position);
 
-        const newCenter = map.getProjection().fromPointToLatLng(worldCoordinateNewCenter);
-        map.setCenter(newCenter);
+          // 向上移動地圖中心 280 像素，讓 marker 顯示在螢幕更靠下的位置
+          const pixelOffset = new window.google.maps.Point(0, -280 / scale);
+          const worldCoordinateNewCenter = new window.google.maps.Point(
+            worldCoordinateCenter.x + pixelOffset.x,
+            worldCoordinateCenter.y + pixelOffset.y
+          );
+
+          const newCenter = projection.fromPointToLatLng(worldCoordinateNewCenter);
+          map.setCenter(newCenter);
+        } else {
+          // 如果 projection 不可用，直接居中顯示
+          console.warn('地圖 projection 尚未準備好，使用直接居中');
+          map.setCenter(position);
+        }
       } else {
         // 如果是用戶定位，直接居中顯示
         map.setCenter(position);
@@ -1282,10 +1291,18 @@ export default function MapView({
         });
       }
 
-      // 重新創建餐廳標記，確保地標在新位置仍然可見
-      if (mapLoaded && restaurants.length > 0) {
-        createRestaurantMarkers();
-      }
+      // 延遲重新創建餐廳標記，確保地圖移動動畫完成後再顯示
+      // 使用 setTimeout 等待地圖動畫完成（約500ms）
+      const markersTimeout = setTimeout(() => {
+        if (mapLoaded && restaurants.length > 0) {
+          createRestaurantMarkers();
+        }
+      }, 600);
+
+      // 清理函數：如果 searchLocation 快速改變，清除之前的定時器
+      return () => {
+        clearTimeout(markersTimeout);
+      };
 
       // 不再搜尋附近餐廳，只顯示資料庫餐廳
       // searchNearbyRestaurants(searchLocation); // 已關閉以節省 API 費用
@@ -1326,18 +1343,26 @@ export default function MapView({
         // 調整地圖中心，讓 marker 顯示在螢幕下方位置
         // 這樣 InfoWindow 就會顯示在可見區域內
         const map = googleMapRef.current;
-        const scale = Math.pow(2, map.getZoom());
-        const worldCoordinateCenter = map.getProjection().fromLatLngToPoint(position);
+        const projection = map.getProjection();
 
-        // 向上移動地圖中心 280 像素，讓 marker 顯示在螢幕更靠下的位置
-        const pixelOffset = new window.google.maps.Point(0, -280 / scale);
-        const worldCoordinateNewCenter = new window.google.maps.Point(
-          worldCoordinateCenter.x + pixelOffset.x,
-          worldCoordinateCenter.y + pixelOffset.y
-        );
+        if (projection && typeof projection.fromLatLngToPoint === 'function') {
+          const scale = Math.pow(2, map.getZoom());
+          const worldCoordinateCenter = projection.fromLatLngToPoint(position);
 
-        const newCenter = map.getProjection().fromPointToLatLng(worldCoordinateNewCenter);
-        map.setCenter(newCenter);
+          // 向上移動地圖中心 280 像素，讓 marker 顯示在螢幕更靠下的位置
+          const pixelOffset = new window.google.maps.Point(0, -280 / scale);
+          const worldCoordinateNewCenter = new window.google.maps.Point(
+            worldCoordinateCenter.x + pixelOffset.x,
+            worldCoordinateCenter.y + pixelOffset.y
+          );
+
+          const newCenter = projection.fromPointToLatLng(worldCoordinateNewCenter);
+          map.setCenter(newCenter);
+        } else {
+          // 如果 projection 不可用，直接居中顯示
+          console.warn('地圖 projection 尚未準備好，使用直接居中');
+          map.setCenter(position);
+        }
 
         // 延遲觸發點擊事件，確保地圖已經移動完成
         setTimeout(() => {
