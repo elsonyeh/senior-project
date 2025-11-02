@@ -892,29 +892,44 @@ export default function BuddiesRoom() {
         const allAnswers = await questionService.getAllAnswers(roomId);
         const memberCount = members.length;
 
-        // 計算可見問題數量（排除依賴問題）
-        // 注意：用戶的答案數組長度等於他們實際回答的可見問題數量
-        // 所以我們應該檢查是否所有用戶都完成了答題，而不是比較固定的問題數量
+        console.log('🔍 [DEBUG] getAllAnswers 返回:', {
+          success: allAnswers.success,
+          dataLength: allAnswers.data?.length,
+          data: allAnswers.data,
+          memberCount: memberCount
+        });
 
+        // 使用新的 JSONB 架構：檢查 completed 欄位
         let completedMembers = 0;
         let maxAnswerLength = 0;
 
         if (allAnswers.success && allAnswers.data) {
+          // 計算最大答案長度（用於日誌）
           allAnswers.data.forEach(memberAnswer => {
+            console.log('🔍 [DEBUG] 檢查成員:', {
+              userId: memberAnswer.user_id,
+              answersLength: memberAnswer.answers?.length,
+              completed: memberAnswer.completed,
+              hasAnswers: !!memberAnswer.answers
+            });
+
             if (memberAnswer.answers && memberAnswer.answers.length > 0) {
               maxAnswerLength = Math.max(maxAnswerLength, memberAnswer.answers.length);
             }
           });
 
-          // 檢查每個成員是否都達到了最大答案長度（即完成了所有可見問題）
+          // 新架構：直接檢查 completed 欄位
           allAnswers.data.forEach(memberAnswer => {
-            if (memberAnswer.answers && memberAnswer.answers.length >= maxAnswerLength && maxAnswerLength > 0) {
+            if (memberAnswer.completed === true) {
               completedMembers++;
+              console.log(`✅ 成員 ${memberAnswer.user_id} 已完成`);
+            } else {
+              console.log(`⏳ 成員 ${memberAnswer.user_id} 未完成 (completed: ${memberAnswer.completed})`);
             }
           });
         }
 
-        logger.info(`完成全部問題的成員數: ${completedMembers}, 總成員數: ${memberCount}, 最大答案長度: ${maxAnswerLength}, 原始問題總數: ${questions.length}`);
+        logger.info(`✨ [JSONB] 完成答題的成員數: ${completedMembers}/${memberCount}, 最大答案長度: ${maxAnswerLength}`);
 
         if (completedMembers >= memberCount) {
           // 所有人都已完成全部問題

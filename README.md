@@ -345,30 +345,58 @@ chore: 雜項更新
 
 ## 📚 文檔索引
 
-### 核心文檔
+### 🎯 核心文檔
 
-- **[CLAUDE.md](./CLAUDE.md)** - Claude Code 開發指南
-- **[RECOMMENDATION-LOGIC-DOCUMENTATION.md](./RECOMMENDATION-LOGIC-DOCUMENTATION.md)** - 推薦演算法詳細說明
-- **[COLOR-GUIDE.md](./COLOR-GUIDE.md)** - 完整顏色設計系統
-- **[SUPABASE-SETUP.md](./SUPABASE-SETUP.md)** - 資料庫設定指南
+- **[FEATURES-AND-ARCHITECTURE.md](./docs/FEATURES-AND-ARCHITECTURE.md)** ⭐ **系統功能與架構完整說明**
+  - 所有功能詳細描述（SwiftTaste / Buddies / Map）
+  - UI/UX 設計規範
+  - 完整系統架構圖
+  - 資料流程說明
+  - 推薦優先閱讀此文檔以了解系統全貌
 
-### 功能文檔
+- **[ALGORITHM-SPECIFICATION.md](./docs/ALGORITHM-SPECIFICATION.md)** - 演算法規範文件
+  - 推薦演算法數學形式化定義
+  - 複雜度分析
+  - 實驗結果與評估
 
-- **[BUDDIES-FLOW-DOCUMENTATION.md](./BUDDIES-FLOW-DOCUMENTATION.md)** - Buddies 模式完整流程
-- **[BUDDIES-DATABASE-MIGRATION-GUIDE.md](./BUDDIES-DATABASE-MIGRATION-GUIDE.md)** - Buddies 資料庫遷移
-- **[IMAGE-UPLOAD-FEATURES.md](./IMAGE-UPLOAD-FEATURES.md)** - 圖片上傳功能說明
-- **[FUN-QUESTION-SCORING-LOGIC.md](./FUN-QUESTION-SCORING-LOGIC.md)** - 趣味問題評分邏輯
+- **[THREE-TIER-ARCHITECTURE-FINAL.md](./docs/THREE-TIER-ARCHITECTURE-FINAL.md)** - 三層資料庫架構
+  - 實時互動層（JSONB）
+  - 事件記錄層（Relational）
+  - 分析倉儲層（Views）
 
-### 安全性與遷移
+- **[DOCUMENTATION-SUMMARY.md](./docs/DOCUMENTATION-SUMMARY.md)** - 文檔整理總結
+  - 文檔分類與優先級
+  - 閱讀建議順序
+  - 維護原則
 
-- **[SECURITY.md](./SECURITY.md)** - 安全性政策
-- **[DATABASE-SECURITY-SETUP.md](./DATABASE-SECURITY-SETUP.md)** - 資料庫安全配置
-- **[MIGRATION-GUIDE.md](./MIGRATION-GUIDE.md)** - 系統遷移指南
+### 🎨 設計與 UI
 
-### 故障排除
+- **[COLOR-GUIDE.md](./docs/COLOR-GUIDE.md)** - 完整顏色設計系統
+  - 主色調與輔助色
+  - 收藏清單顏色標準
+  - UI 元件顏色規範
 
-- **[EMAIL-VERIFICATION-TROUBLESHOOTING.md](./EMAIL-VERIFICATION-TROUBLESHOOTING.md)** - 郵件驗證問題排查
-- **[RECOMMENDATION-DIAGNOSIS.md](./RECOMMENDATION-DIAGNOSIS.md)** - 推薦系統診斷工具
+### 📖 功能文檔
+
+- **[BUDDIES-FLOW-DOCUMENTATION.md](./docs/BUDDIES-FLOW-DOCUMENTATION.md)** - Buddies 模式完整流程
+- **[FUN-QUESTION-SCORING-LOGIC.md](./docs/FUN-QUESTION-SCORING-LOGIC.md)** - 趣味問題評分邏輯
+- **[IMAGE-UPLOAD-FEATURES.md](./docs/IMAGE-UPLOAD-FEATURES.md)** - 圖片上傳功能說明
+- **[RECOMMENDATION-LOGIC-DOCUMENTATION.md](./docs/RECOMMENDATION-LOGIC-DOCUMENTATION.md)** - 推薦邏輯詳細說明
+
+### 🔧 開發指南
+
+- **[CLAUDE.md](./docs/CLAUDE.md)** - Claude Code 開發指南
+  - 開發命令
+  - 專案架構
+  - 推薦邏輯一致性
+  - 標籤標準化
+
+### 🔒 安全性
+
+- **[SECURITY.md](./docs/SECURITY.md)** - 安全性政策
+  - Row Level Security (RLS) 政策
+  - 認證機制
+  - 資料驗證
 
 ---
 
@@ -406,6 +434,12 @@ chore: 雜項更新
 
 ---
 
-**最後更新**：2025-10-27
-**版本**：1.0.0
+**最後更新**：2025-10-31
+**版本**：2.0.0
 **狀態**：開發中 🚧
+
+**v2.0.0 更新內容**：
+- ✅ 完成三層資料庫架構（實時互動層 + 事件記錄層 + 分析倉儲層）
+- ✅ 新增完整的系統功能與架構文檔
+- ✅ 整理並刪除臨時開發文檔
+- ✅ 優化文檔索引結構

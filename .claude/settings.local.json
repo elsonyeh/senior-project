@@ -13,7 +13,9 @@
       "Bash(timeout 5 bash -c 'cd \"\"C:\\Projects\\SwiftTaste-demo\"\" && npm run build 2>&1 | head -50')",
       "Bash(npx eslint:*)",
       "Bash(timeout 5 bash:*)",
-      "Bash(timeout 3 bash:*)"
+      "Bash(timeout 3 bash:*)",
+      "WebFetch(domain:chatgpt.com)",
+      "Read(//c/Users/elson/Downloads/**)"
     ],
     "deny": [],
     "ask": []

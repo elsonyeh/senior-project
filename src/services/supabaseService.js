@@ -522,19 +522,15 @@ export const questionService = {
    */
   async saveQuestions(roomId, questions) {
     try {
+      // 修復：使用 buddies_rooms 表的 questions 欄位（JSONB）
+      // 使用 last_updated 欄位（原始 schema 有此欄位）
       const { data, error } = await supabase
-        .from('buddies_questions')
-        .upsert(
-          {
-            room_id: roomId,
-            questions: questions,
-            created_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'room_id', // 指定衝突解決的欄位
-            ignoreDuplicates: false // 更新而不是忽略重複
-          }
-        )
+        .from('buddies_rooms')
+        .update({
+          questions: questions,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', roomId)
         .select()
         .single();
 
@@ -554,10 +550,11 @@ export const questionService = {
    */
   async getQuestions(roomId) {
     try {
+      // 修復：從 buddies_rooms 表的 questions 欄位讀取
       const { data, error } = await supabase
-        .from('buddies_questions')
+        .from('buddies_rooms')
         .select('questions')
-        .eq('room_id', roomId)
+        .eq('id', roomId)
         .maybeSingle(); // 使用 maybeSingle() 處理可能為空的結果
 
       if (error) throw error;
@@ -578,10 +575,11 @@ export const questionService = {
   listenQuestions(roomId, callback) {
     if (!roomId || typeof callback !== 'function') return () => {};
 
+    // 修復：監聽 buddies_rooms 表的 questions 欄位變化
     const subscriptionId = `roomQuestions_${roomId}`;
     return addSubscription(
-      'buddies_questions',
-      `room_id=eq.${roomId}`,
+      'buddies_rooms',
+      `id=eq.${roomId}`,
       (payload) => {
         if (payload.new && payload.new.questions) {
           callback(payload.new.questions);
@@ -602,28 +600,40 @@ export const questionService = {
    */
   async submitAnswers(roomId, userId, answers, questionTexts = [], questionSources = []) {
     try {
-      console.log('📝 提交答案到數據庫:', {
+      console.log('📝 提交答案到數據庫 (JSONB):', {
         roomId,
         userId,
         answersCount: answers.length,
-        answers,
-        questionTexts,
-        questionSources
+        answers
       });
 
+      // 獲取當前房間的 member_answers
+      const { data: room, error: fetchError } = await supabase
+        .from('buddies_rooms')
+        .select('member_answers')
+        .eq('id', roomId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 更新用戶答案到 JSONB
+      const memberAnswers = room?.member_answers || {};
+      memberAnswers[userId] = {
+        answers: answers,
+        completed: true,
+        submitted_at: new Date().toISOString(),
+        question_texts: questionTexts,
+        question_sources: questionSources
+      };
+
+      // 更新房間
       const { data, error } = await supabase
-        .from('buddies_answers')
-        .upsert({
-          room_id: roomId,
-          user_id: userId,
-          answers: answers,
-          question_texts: questionTexts,
-          question_sources: questionSources,
-          submitted_at: new Date().toISOString(),
-        }, {
-          onConflict: 'room_id,user_id', // 指定衝突解決的欄位組合
-          ignoreDuplicates: false // 更新而不是忽略重複
+        .from('buddies_rooms')
+        .update({
+          member_answers: memberAnswers,
+          last_updated: new Date().toISOString()
         })
+        .eq('id', roomId)
         .select()
         .single();
 
@@ -632,8 +642,8 @@ export const questionService = {
         throw error;
       }
 
-      console.log('✅ 答案提交成功:', data);
-      return { success: true, data };
+      console.log('✅ 答案提交成功 (JSONB)');
+      return { success: true, data: memberAnswers[userId] };
     } catch (error) {
       console.error('❌ 提交答案失敗:', error);
       return { success: false, error: error.message };
@@ -647,14 +657,27 @@ export const questionService = {
    */
   async getAllAnswers(roomId) {
     try {
-      const { data, error } = await supabase
-        .from('buddies_answers')
-        .select('*')
-        .eq('room_id', roomId);
+      const { data: room, error } = await supabase
+        .from('buddies_rooms')
+        .select('member_answers')
+        .eq('id', roomId)
+        .single();
 
       if (error) throw error;
 
-      return { success: true, data };
+      // 將 JSONB 轉換為數組格式（相容舊代碼）
+      const memberAnswers = room?.member_answers || {};
+      const answersArray = Object.entries(memberAnswers).map(([userId, userData]) => ({
+        room_id: roomId,
+        user_id: userId,
+        answers: userData.answers,
+        completed: userData.completed,
+        submitted_at: userData.submitted_at,
+        question_texts: userData.question_texts,
+        question_sources: userData.question_sources
+      }));
+
+      return { success: true, data: answersArray };
     } catch (error) {
       console.error('獲取答案失敗:', error);
       return { success: false, error: error.message };
@@ -672,10 +695,10 @@ export const questionService = {
 
     const subscriptionId = `roomAnswers_${roomId}`;
     return addSubscription(
-      'buddies_answers',
-      `room_id=eq.${roomId}`,
+      'buddies_rooms',
+      `id=eq.${roomId}`,
       (payload) => {
-        // 重新獲取所有答案
+        // 當 member_answers 更新時，重新獲取所有答案
         this.getAllAnswers(roomId).then(({ data }) => {
           if (data) {
             callback(data);
@@ -699,44 +722,23 @@ export const recommendationService = {
     try {
       if (!roomId || !recommendations) return { success: false, error: '參數不完整' };
 
-      // 先檢查是否已存在
-      const { data: existing } = await supabase
-        .from('buddies_recommendations')
-        .select('id')
-        .eq('room_id', roomId)
-        .maybeSingle();
+      // 直接更新 buddies_rooms.recommendations JSONB
+      const { data, error } = await supabase
+        .from('buddies_rooms')
+        .update({
+          recommendations: recommendations,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', roomId)
+        .select()
+        .single();
 
-      let result;
-      if (existing) {
-        // 更新現有記錄
-        result = await supabase
-          .from('buddies_recommendations')
-          .update({
-            restaurants: recommendations,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('room_id', roomId)
-          .select()
-          .single();
-      } else {
-        // 插入新記錄
-        result = await supabase
-          .from('buddies_recommendations')
-          .insert({
-            room_id: roomId,
-            restaurants: recommendations,
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-      }
-
-      if (result.error) throw result.error;
+      if (error) throw error;
 
       // 更新房間狀態
       await roomService.updateRoomStatus(roomId, 'recommend');
 
-      return { success: true, data: result.data };
+      return { success: true, data: { recommendations } };
     } catch (error) {
       console.error('保存推薦結果失敗:', error);
       return { success: false, error: error.message };
@@ -753,14 +755,14 @@ export const recommendationService = {
       if (!roomId) return [];
 
       const { data, error } = await supabase
-        .from('buddies_recommendations')
-        .select('restaurants')
-        .eq('room_id', roomId)
-        .maybeSingle(); // 使用 maybeSingle() 處理可能為空的結果
+        .from('buddies_rooms')
+        .select('recommendations')
+        .eq('id', roomId)
+        .single();
 
       if (error) throw error;
 
-      return data?.restaurants || [];
+      return data?.recommendations || [];
     } catch (error) {
       console.error('獲取推薦結果失敗:', error);
       return [];
@@ -778,11 +780,11 @@ export const recommendationService = {
 
     const subscriptionId = `roomRecommendations_${roomId}`;
     return addSubscription(
-      'buddies_recommendations',
-      `room_id=eq.${roomId}`,
+      'buddies_rooms',
+      `id=eq.${roomId}`,
       (payload) => {
-        if (payload.new && payload.new.restaurants) {
-          callback(payload.new.restaurants);
+        if (payload.new && payload.new.recommendations) {
+          callback(payload.new.recommendations);
         } else {
           callback([]);
         }
@@ -807,66 +809,42 @@ export const voteService = {
         return { success: false, error: '參數不完整' };
       }
 
-      // 檢查用戶是否已經為這個餐廳投過票
-      const { data: existingUserVote, error: checkError } = await supabase
-        .from('buddies_votes')
-        .select('id')
-        .eq('room_id', roomId)
-        .eq('user_id', userId)
-        .eq('restaurant_id', restaurantId)
-        .maybeSingle();
+      // 獲取當前房間的 votes
+      const { data: room, error: fetchError } = await supabase
+        .from('buddies_rooms')
+        .select('votes')
+        .eq('id', roomId)
+        .single();
 
-      if (checkError) throw checkError;
+      if (fetchError) throw fetchError;
 
-      // 如果已經投過票，直接返回成功（冪等操作）
-      if (existingUserVote) {
+      // 解析 votes JSONB
+      const votes = room?.votes || {};
+
+      // 檢查用戶是否已投票
+      const restaurantVotes = votes[restaurantId] || { count: 0, voters: [] };
+      if (restaurantVotes.voters && restaurantVotes.voters.includes(userId)) {
         return { success: true, message: '已投過票' };
       }
 
-      // 記錄用戶投票
-      const { error: voteError } = await supabase
-        .from('buddies_votes')
-        .insert({
-          room_id: roomId,
-          user_id: userId,
-          restaurant_id: restaurantId,
-          voted_at: new Date().toISOString(),
-        });
+      // 更新投票數據
+      restaurantVotes.voters = restaurantVotes.voters || [];
+      restaurantVotes.voters.push(userId);
+      restaurantVotes.count = restaurantVotes.voters.length;
+      votes[restaurantId] = restaurantVotes;
 
-      if (voteError) throw voteError;
+      // 更新房間
+      const { error } = await supabase
+        .from('buddies_rooms')
+        .update({
+          votes: votes,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', roomId);
 
-      // 更新餐廳票數 - 使用 RPC 函數確保原子性
-      const { error: updateError } = await supabase.rpc('increment_restaurant_votes', {
-        p_room_id: roomId,
-        p_restaurant_id: restaurantId
-      });
+      if (error) throw error;
 
-      if (updateError) {
-        console.error('RPC increment_restaurant_votes 失敗:', updateError);
-        // 如果 RPC 函數不存在，回退到手動方式
-        const { data: existingVote } = await supabase
-          .from('buddies_restaurant_votes')
-          .select('vote_count')
-          .eq('room_id', roomId)
-          .eq('restaurant_id', restaurantId)
-          .maybeSingle();
-
-        const currentVotes = existingVote?.vote_count || 0;
-
-        const { error: fallbackError } = await supabase
-          .from('buddies_restaurant_votes')
-          .upsert({
-            room_id: roomId,
-            restaurant_id: restaurantId,
-            vote_count: currentVotes + 1,
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'room_id,restaurant_id'
-          });
-
-        if (fallbackError) throw fallbackError;
-      }
-
+      console.log(`✅ 投票成功: ${restaurantId} (${restaurantVotes.count} 票)`);
       return { success: true };
     } catch (error) {
       console.error('餐廳投票失敗:', error);
@@ -885,19 +863,19 @@ export const voteService = {
 
     const subscriptionId = `roomVotes_${roomId}`;
     return addSubscription(
-      'buddies_restaurant_votes',
-      `room_id=eq.${roomId}`,
+      'buddies_rooms',
+      `id=eq.${roomId}`,
       (payload) => {
-        // 重新獲取所有投票數據
-        this.getVotes(roomId).then(({ data }) => {
-          if (data) {
-            const votesObj = {};
-            data.forEach(vote => {
-              votesObj[vote.restaurant_id] = vote.vote_count;
-            });
-            callback(votesObj);
-          }
-        });
+        if (payload.new && payload.new.votes) {
+          // 轉換為舊格式（相容性）
+          const votesObj = {};
+          Object.entries(payload.new.votes).forEach(([restaurantId, voteData]) => {
+            votesObj[restaurantId] = voteData.count || 0;
+          });
+          callback(votesObj);
+        } else {
+          callback({});
+        }
       },
       subscriptionId
     );
@@ -911,15 +889,24 @@ export const voteService = {
    */
   async getUserVotedRestaurants(roomId, userId) {
     try {
-      const { data, error } = await supabase
-        .from('buddies_votes')
-        .select('restaurant_id')
-        .eq('room_id', roomId)
-        .eq('user_id', userId);
+      const { data: room, error } = await supabase
+        .from('buddies_rooms')
+        .select('votes')
+        .eq('id', roomId)
+        .single();
 
       if (error) throw error;
 
-      const restaurantIds = data.map(v => v.restaurant_id);
+      const votes = room?.votes || {};
+      const restaurantIds = [];
+
+      // 檢查每個餐廳的投票者列表
+      Object.entries(votes).forEach(([restaurantId, voteData]) => {
+        if (voteData.voters && voteData.voters.includes(userId)) {
+          restaurantIds.push(restaurantId);
+        }
+      });
+
       return { success: true, restaurantIds };
     } catch (error) {
       console.error('獲取用戶已投票餐廳失敗:', error);
@@ -934,15 +921,25 @@ export const voteService = {
    */
   async getVotedUsersCount(roomId) {
     try {
-      const { data, error } = await supabase
-        .from('buddies_votes')
-        .select('user_id')
-        .eq('room_id', roomId);
+      const { data: room, error } = await supabase
+        .from('buddies_rooms')
+        .select('votes')
+        .eq('id', roomId)
+        .single();
 
       if (error) throw error;
 
-      // 計算唯一用戶數
-      const uniqueUserIds = [...new Set(data.map(v => v.user_id))];
+      const votes = room?.votes || {};
+      const allVoters = new Set();
+
+      // 收集所有投票者
+      Object.values(votes).forEach(voteData => {
+        if (voteData.voters) {
+          voteData.voters.forEach(userId => allVoters.add(userId));
+        }
+      });
+
+      const uniqueUserIds = Array.from(allVoters);
       return { success: true, count: uniqueUserIds.length, userIds: uniqueUserIds };
     } catch (error) {
       console.error('獲取已投票用戶數量失敗:', error);
@@ -957,12 +954,20 @@ export const voteService = {
    */
   async getVotes(roomId) {
     try {
-      const { data, error } = await supabase
-        .from('buddies_restaurant_votes')
-        .select('restaurant_id, vote_count')
-        .eq('room_id', roomId);
+      const { data: room, error } = await supabase
+        .from('buddies_rooms')
+        .select('votes')
+        .eq('id', roomId)
+        .single();
 
       if (error) throw error;
+
+      const votes = room?.votes || {};
+      // 轉換為舊格式（相容性）
+      const data = Object.entries(votes).map(([restaurantId, voteData]) => ({
+        restaurant_id: restaurantId,
+        vote_count: voteData.count || 0
+      }));
 
       return { success: true, data };
     } catch (error) {
@@ -984,14 +989,24 @@ export const voteService = {
         return true;
       }
 
-      const { data, error } = await supabase
-        .from('buddies_votes')
-        .select('id')
-        .eq('room_id', roomId)
-        .eq('user_id', userId)
+      const { data: room, error } = await supabase
+        .from('buddies_rooms')
+        .select('votes')
+        .eq('id', roomId)
         .single();
 
-      return !error && data;
+      if (error) return false;
+
+      const votes = room?.votes || {};
+
+      // 檢查是否有任何餐廳包含該用戶的投票
+      for (const voteData of Object.values(votes)) {
+        if (voteData.voters && voteData.voters.includes(userId)) {
+          return true;
+        }
+      }
+
+      return false;
     } catch (error) {
       console.error('檢查用戶投票狀態失敗:', error);
       return false;
@@ -1014,19 +1029,20 @@ export const finalResultService = {
         return { success: false, error: '參數不完整' };
       }
 
+      // 直接更新 buddies_rooms 的 final_restaurant_id 和 final_restaurant_data
       const { data, error } = await supabase
-        .from('buddies_final_results')
-        .upsert({
-          room_id: roomId,
-          restaurant_id: restaurant.id,
-          restaurant_name: restaurant.name,
-          restaurant_address: restaurant.address,
-          restaurant_photo_url: restaurant.photoURL,
-          restaurant_rating: restaurant.rating,
-          restaurant_type: restaurant.type,
-          selected_at: new Date().toISOString(),
-          selected_by: userId,
+        .from('buddies_rooms')
+        .update({
+          final_restaurant_id: restaurant.id,
+          final_restaurant_data: {
+            ...restaurant,
+            selected_at: new Date().toISOString(),
+            selected_by: userId
+          },
+          completed_at: new Date().toISOString(),
+          last_updated: new Date().toISOString()
         })
+        .eq('id', roomId)
         .select()
         .single();
 
@@ -1035,7 +1051,7 @@ export const finalResultService = {
       // 更新房間狀態
       await roomService.updateRoomStatus(roomId, 'completed');
 
-      return { success: true, data };
+      return { success: true, data: data.final_restaurant_data };
     } catch (error) {
       console.error('確認餐廳選擇失敗:', error);
       return { success: false, error: error.message };
@@ -1053,11 +1069,11 @@ export const finalResultService = {
 
     const subscriptionId = `roomFinal_${roomId}`;
     return addSubscription(
-      'buddies_final_results',
-      `room_id=eq.${roomId}`,
+      'buddies_rooms',
+      `id=eq.${roomId}`,
       (payload) => {
-        if (payload.new) {
-          callback(payload.new);
+        if (payload.new && payload.new.final_restaurant_data) {
+          callback(payload.new.final_restaurant_data);
         } else {
           callback(null);
         }

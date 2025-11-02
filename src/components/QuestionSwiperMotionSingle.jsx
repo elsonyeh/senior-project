@@ -11,6 +11,7 @@ export default function QuestionSwiperMotionSingle({
   voteStats,
   disableClickToVote = false,
   userId,
+  disabled = false, // 新增：禁用滑動
 }) {
   const [lastDirection, setLastDirection] = useState("");
   const [hasVoted, setHasVoted] = useState(false);
@@ -96,8 +97,14 @@ export default function QuestionSwiperMotionSingle({
       dir,
       hasVoted,
       userId,
-      questionId: question?.id
+      questionId: question?.id,
+      disabled
     });
+
+    if (disabled) {
+      console.log("⚠️ 組件已禁用，忽略此次滑動");
+      return; // 禁用時不允許滑動
+    }
 
     if (hasVoted) {
       console.log("⚠️ 用戶已投票，忽略此次滑動");

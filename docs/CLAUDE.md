@@ -129,8 +129,9 @@ The recommendation system uses a sophisticated scoring algorithm:
 
 ### Important Files to Review
 
-- `RECOMMENDATION-LOGIC-DOCUMENTATION.md` - Detailed explanation of recommendation algorithms
-- `SUPABASE-SETUP.md` - Database setup and configuration guide
+- `docs/RECOMMENDATION-LOGIC-DOCUMENTATION.md` - Detailed explanation of recommendation algorithms
+- `docs/THREE-TIER-ARCHITECTURE-FINAL.md` - Database architecture design
+- `docs/FEATURES-AND-ARCHITECTURE.md` - Complete system features and architecture
 - `src/App.jsx` - Navigation and routing structure
 - `src/components/SwiftTaste.jsx` - Main single-user recommendation component
 - `src/components/BuddiesRoom.jsx` - Group recommendation component
