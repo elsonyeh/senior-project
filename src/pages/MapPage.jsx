@@ -29,6 +29,54 @@ export default function MapPage() {
   const mapViewRef = useRef(null);
   const interactionTimeoutRef = useRef(null);
   const lastInteractionRef = useRef(Date.now());
+  const mapPositionSaveTimeoutRef = useRef(null);
+
+  // localStorage 鍵名
+  const MAP_POSITION_KEY = 'swiftTaste_mapPosition';
+  const HAS_AUTO_LOCATED_KEY = 'swiftTaste_hasAutoLocated';
+
+  // 從 localStorage 讀取保存的地圖位置
+  const getSavedMapPosition = () => {
+    try {
+      const saved = localStorage.getItem(MAP_POSITION_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (error) {
+      console.error('讀取地圖位置失敗:', error);
+      return null;
+    }
+  };
+
+  // 保存地圖位置到 localStorage（使用防抖）
+  const saveMapPosition = useCallback((position) => {
+    // 清除之前的定時器
+    if (mapPositionSaveTimeoutRef.current) {
+      clearTimeout(mapPositionSaveTimeoutRef.current);
+    }
+
+    // 設置新的定時器，500ms 後保存（防抖）
+    mapPositionSaveTimeoutRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(MAP_POSITION_KEY, JSON.stringify({
+          lat: position.lat,
+          lng: position.lng,
+          zoom: position.zoom,
+          timestamp: Date.now()
+        }));
+      } catch (error) {
+        console.error('保存地圖位置失敗:', error);
+      }
+    }, 500);
+  }, []);
+
+  // 檢查是否已經自動定位過
+  const hasAutoLocated = () => {
+    return localStorage.getItem(HAS_AUTO_LOCATED_KEY) === 'true';
+  };
+
+  // 標記已自動定位
+  const markAutoLocated = () => {
+    localStorage.setItem(HAS_AUTO_LOCATED_KEY, 'true');
+  };
 
   // 載入用戶認證狀態
   useEffect(() => {
@@ -299,11 +347,40 @@ export default function MapPage() {
     loadFavoriteLists();
   }, [user]);
 
-  // 頁面載入時自動請求定位
+  // 頁面載入時自動請求定位或恢復保存的位置
   useEffect(() => {
     if (!hasRequestedLocation) {
       setHasRequestedLocation(true);
-      requestCurrentLocation();
+
+      // 檢查是否有保存的地圖位置
+      const savedPosition = getSavedMapPosition();
+
+      if (savedPosition) {
+        // 如果有保存的位置，恢復它
+        console.log('📍 恢復保存的地圖位置:', savedPosition);
+        const restoredLocation = {
+          lat: savedPosition.lat,
+          lng: savedPosition.lng,
+          name: '上次位置'
+        };
+        setSearchLocation(restoredLocation);
+        setCurrentLocation(restoredLocation);
+      } else if (!hasAutoLocated()) {
+        // 只有在沒有保存位置且從未自動定位過時，才自動檢測定位
+        console.log('📍 首次訪問，自動請求定位');
+        requestCurrentLocation();
+      } else {
+        // 已經自動定位過但沒有保存位置（可能用戶清除了緩存）
+        // 設置一個默認位置（台北101）
+        console.log('📍 使用地圖默認位置');
+        const defaultLocation = {
+          lat: 25.0330,
+          lng: 121.5654,
+          name: '台北101'
+        };
+        setSearchLocation(defaultLocation);
+        setCurrentLocation(defaultLocation);
+      }
     }
   }, []);
 
@@ -348,6 +425,9 @@ export default function MapPage() {
     setCurrentLocation(location);
     setSearchLocation(location);
     showNotificationMessage('定位成功！', 'success');
+
+    // 標記已自動定位（僅在首次自動定位時標記）
+    markAutoLocated();
   }, []);
 
   // 處理重新定位
@@ -407,6 +487,16 @@ export default function MapPage() {
       longitude: restaurant.longitude
     });
   }, []);
+
+  // 處理地圖位置變化
+  const handleMapMove = useCallback((center, zoom) => {
+    // 保存地圖位置到 localStorage
+    saveMapPosition({
+      lat: center.lat,
+      lng: center.lng,
+      zoom: zoom
+    });
+  }, [saveMapPosition]);
 
   // 處理清單更新
   const handleListUpdate = useCallback((updatedList) => {
@@ -485,6 +575,7 @@ export default function MapPage() {
           selectedList={selectedList}
           selectedRestaurant={selectedPlace}
           onRestaurantClick={setSelectedRestaurant}
+          onMapMove={handleMapMove}
         />
       </div>
 

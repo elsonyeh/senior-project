@@ -36,7 +36,8 @@ export default function MapView({
   favoriteLists = [],
   selectedList = null, // 新增：當前選中的清單
   selectedRestaurant = null, // 新增：從搜尋選中的餐廳
-  onRestaurantClick // 新增：點擊餐廳評論按鈕的回調
+  onRestaurantClick, // 新增：點擊餐廳評論按鈕的回調
+  onMapMove // 新增：地圖位置變化回調
 }) {
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
@@ -135,11 +136,30 @@ export default function MapView({
       }
     });
 
+    // 監聽地圖位置和縮放變化（使用 idle 事件自然防抖）
+    if (onMapMove) {
+      googleMapRef.current.addListener('idle', () => {
+        const map = googleMapRef.current;
+        const newCenter = map.getCenter();
+        const newZoom = map.getZoom();
+
+        if (newCenter) {
+          onMapMove(
+            {
+              lat: newCenter.lat(),
+              lng: newCenter.lng()
+            },
+            newZoom
+          );
+        }
+      });
+    }
+
     // 只顯示資料庫餐廳，不搜尋 Google Places 附近餐廳
     // searchNearbyRestaurants(center); // 已關閉以節省 API 費用
 
     setMapLoaded(true);
-  }, [center, zoom]);
+  }, [center, zoom, onMapMove]);
 
   // 搜尋附近餐廳
   const searchNearbyRestaurants = useCallback(async (location) => {
