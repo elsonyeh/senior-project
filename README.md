@@ -376,6 +376,13 @@ chore: 雜項更新
   - 事件記錄層（Relational）
   - 分析倉儲層（Views）
 
+- **[DATABASE-SCHEMA.md](./docs/DATABASE-SCHEMA.md)** ⭐ NEW - 資料庫結構完整文件
+  - 13 個資料表詳細說明
+  - 欄位類型和用途說明
+  - 關聯關係圖
+  - 三層架構設計原則
+  - 使用腳本自動生成：`node scripts/export-database-schema.js`
+
 - **[DOCUMENTATION-SUMMARY.md](./docs/DOCUMENTATION-SUMMARY.md)** - 文檔整理總結
   - 文檔分類與優先級
   - 閱讀建議順序
