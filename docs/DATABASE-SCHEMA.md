@@ -2,7 +2,7 @@
 
 **生成日期**：2025-11-04
 **資料庫類型**：PostgreSQL (Supabase)
-**表數量**：7
+**表數量**：15
 
 ---
 
@@ -17,10 +17,18 @@
   - [user_favorite_lists](#user_favorite_lists)
   - [favorite_list_places](#favorite_list_places)
 - [SwiftTaste 模式](#swifttaste-模式)
+  - [swifttaste_history](#swifttaste_history)
+  - [selection_history](#selection_history)
 - [Buddies 模式（實時層）](#buddies-模式（實時層）)
   - [buddies_rooms](#buddies_rooms)
+  - [buddies_members](#buddies_members)
+  - [buddies_votes](#buddies_votes)
+  - [buddies_questions](#buddies_questions)
 - [Buddies 模式（記錄層）](#buddies-模式（記錄層）)
+  - [buddies_events](#buddies_events)
 - [問題系統](#問題系統)
+  - [fun_questions](#fun_questions)
+  - [fun_question_tags](#fun_question_tags)
 
 ---
 
@@ -213,6 +221,62 @@
 
 ## SwiftTaste 模式
 
+### swifttaste_history
+
+**用途**：SwiftTaste 歷史記錄
+
+**說明**：記錄用戶每次使用 SwiftTaste 模式的問答答案和推薦結果。用於歷史查詢和未來個人化推薦優化。
+
+**核心功能**：
+- 問答答案記錄（JSONB）
+- 推薦結果記錄（JSONB）
+- 時間序列分析
+- 用戶偏好學習（未來擴展）
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `user_id` | uuid | ✗ | 用戶 ID，關聯到 auth.users |
+| `answers` | jsonb | ✓ | - |
+| `recommendations` | jsonb | ✓ | - |
+| `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+- 外鍵：`user_id`
+
+---
+
+### selection_history
+
+**用途**：餐廳選擇歷史
+
+**說明**：記錄用戶與餐廳的互動行為（查看、收藏、導航等），用於熱門度計算和推薦優化。
+
+**核心功能**：
+- 互動行為追蹤
+- 熱門度計算數據來源
+- 用戶行為分析
+- 推薦系統優化依據
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `user_id` | uuid | ✓ | 用戶 ID，關聯到 auth.users |
+| `restaurant_id` | text | ✗ | 餐廳 ID，關聯到 restaurants 表 |
+| `action_type` | text | ✗ | - |
+| `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+- 外鍵：`user_id`, `restaurant_id`
+
+---
+
 ## Buddies 模式（實時層）
 
 ### buddies_rooms
@@ -249,9 +313,179 @@
 
 ---
 
+### buddies_members
+
+**用途**：Buddies 成員管理
+
+**說明**：記錄 Buddies 房間的所有成員資訊，包括用戶ID、加入時間、在線狀態等。與 buddies_rooms 一對多關聯。
+
+**核心功能**：
+- 成員列表管理
+- 加入時間記錄
+- 在線狀態追蹤
+- 與房間關聯
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `room_id` | uuid | ✗ | - |
+| `user_id` | uuid | ✗ | 用戶 ID，關聯到 auth.users |
+| `username` | text | ✓ | - |
+| `is_host` | boolean | ✓ | - |
+| `joined_at` | timestamptz | ✓ | - |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+- 外鍵：`room_id`, `user_id`
+
+---
+
+### buddies_votes
+
+**用途**：Buddies 投票記錄
+
+**說明**：記錄每個成員對每個問題的投票答案，用於計算群體共識和生成推薦。支援房主 2 倍權重。
+
+**核心功能**：
+- 投票答案記錄
+- 房主權重支援
+- 投票時間追蹤
+- 群體共識計算
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `room_id` | uuid | ✗ | - |
+| `user_id` | uuid | ✗ | 用戶 ID，關聯到 auth.users |
+| `question_index` | integer | ✗ | - |
+| `answer` | text | ✓ | - |
+| `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+- 外鍵：`room_id`, `user_id`
+
+---
+
+### buddies_questions
+
+**用途**：Buddies 問題庫
+
+**說明**：群組決策使用的問題集，與 SwiftTaste 共用基本邏輯但針對多人場景優化。
+
+**核心功能**：
+- 基本問題（人數、預算、餐期、辣度）
+- 趣味問題（選答）
+- 問題順序管理
+- 與 funQuestionTagsMap 整合
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `question_text` | text | ✗ | - |
+| `question_type` | text | ✗ | - |
+| `options` | jsonb | ✓ | - |
+| `order` | integer | ✓ | 排序順序 |
+| `is_active` | boolean | ✓ | 記錄是否啟用 |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+
+---
+
 ## Buddies 模式（記錄層）
 
+### buddies_events
+
+**用途**：Buddies 事件記錄
+
+**說明**：記錄所有 Buddies 房間的事件流（創建、加入、投票、離開等），用於審計、統計和問題追蹤。
+
+**核心功能**：
+- 完整事件流記錄
+- 時間序列分析
+- 用戶行為追蹤
+- 問題調試與審計
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `room_id` | uuid | ✗ | - |
+| `event_type` | text | ✗ | - |
+| `user_id` | uuid | ✓ | 用戶 ID，關聯到 auth.users |
+| `event_data` | jsonb | ✓ | - |
+| `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+- 外鍵：`room_id`, `user_id`
+
+---
+
 ## 問題系統
+
+### fun_questions
+
+**用途**：趣味問題管理
+
+**說明**：SwiftTaste 和 Buddies 模式使用的趣味問題庫，用於捕捉用戶隱性偏好。
+
+**核心功能**：
+- 問題文本管理
+- 選項定義
+- 標籤映射配置
+- 問題啟用/停用
+- 顯示順序控制
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `question_text` | text | ✗ | - |
+| `options` | jsonb | ✓ | - |
+| `order` | integer | ✓ | 排序順序 |
+| `is_active` | boolean | ✓ | 記錄是否啟用 |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+
+---
+
+### fun_question_tags
+
+**用途**：趣味問題標籤映射
+
+**說明**：連接趣味問題選項與餐廳標籤，實現偏好匹配邏輯。一個選項可對應多個標籤。
+
+**核心功能**：
+- 選項 → 標籤映射
+- 支援一對多關聯
+- 標籤權重（未來擴展）
+- 動態標籤管理
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `question_id` | uuid | ✗ | - |
+| `option_value` | text | ✗ | - |
+| `tags` | text[] | ✓ | - |
+
+**關聯關係**：
+- 此表為關聯表，連接多個實體
+- 外鍵：`question_id`
+
+---
 
 ## 附錄：資料庫設計原則
 

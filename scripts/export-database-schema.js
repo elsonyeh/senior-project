@@ -136,6 +136,26 @@ const tableDescriptions = {
       'Socket.IO 即時同步'
     ]
   },
+  'buddies_members': {
+    purpose: 'Buddies 成員管理',
+    description: '記錄 Buddies 房間的所有成員資訊，包括用戶ID、加入時間、在線狀態等。與 buddies_rooms 一對多關聯。',
+    features: [
+      '成員列表管理',
+      '加入時間記錄',
+      '在線狀態追蹤',
+      '與房間關聯'
+    ]
+  },
+  'buddies_votes': {
+    purpose: 'Buddies 投票記錄',
+    description: '記錄每個成員對每個問題的投票答案，用於計算群體共識和生成推薦。支援房主 2 倍權重。',
+    features: [
+      '投票答案記錄',
+      '房主權重支援',
+      '投票時間追蹤',
+      '群體共識計算'
+    ]
+  },
   'buddies_questions': {
     purpose: 'Buddies 問題庫',
     description: '群組決策使用的問題集，與 SwiftTaste 共用基本邏輯但針對多人場景優化。',
@@ -247,6 +267,8 @@ const knownTables = [
   'selection_history',
   // Buddies 模式
   'buddies_rooms',
+  'buddies_members',
+  'buddies_votes',
   'buddies_questions',
   'buddies_events',
   // 問題系統
@@ -259,30 +281,40 @@ const knownTables = [
  */
 async function getTableSchema(tableName) {
   try {
-    // 從表中讀取一條記錄來獲取結構（但使用 limit 0 只獲取結構）
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .limit(1);
-
-    if (error) {
-      console.warn(`⚠️  無法讀取表 ${tableName}: ${error.message}`);
-      return null;
-    }
-
-    // 如果有數據，從第一條記錄推斷結構
-    // 如果沒有數據，嘗試讀取表的元數據
-    const { count, error: countError } = await supabase
+    // 使用 head: true 只查詢 metadata，不獲取實際數據
+    const { count, error } = await supabase
       .from(tableName)
       .select('*', { count: 'exact', head: true });
 
+    // 如果沒有錯誤，表示表存在
+    if (!error) {
+      return {
+        exists: true,
+        rowCount: count || 0
+      };
+    }
+
+    // 檢查錯誤訊息，如果是找不到表，則返回不存在
+    if (error.message.includes('Could not find') ||
+        error.message.includes('does not exist')) {
+      return {
+        exists: false,
+        error: error.message
+      };
+    }
+
+    // 其他錯誤（可能是權限問題），也認為表不存在
+    console.warn(`⚠️  無法讀取表 ${tableName}: ${error.message}`);
     return {
-      exists: true,
-      rowCount: count || 0
+      exists: false,
+      error: error.message
     };
 
   } catch (error) {
-    return null;
+    return {
+      exists: false,
+      error: error.message
+    };
   }
 }
 
@@ -388,6 +420,26 @@ function getManualTableSchema() {
         { column_name: 'current_question_index', data_type: 'integer', is_nullable: 'YES' },
         { column_name: 'created_at', data_type: 'timestamptz', is_nullable: 'YES' },
         { column_name: 'expires_at', data_type: 'timestamptz', is_nullable: 'YES' }
+      ]
+    },
+    'buddies_members': {
+      columns: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: 'NO' },
+        { column_name: 'room_id', data_type: 'uuid', is_nullable: 'NO' },
+        { column_name: 'user_id', data_type: 'uuid', is_nullable: 'NO' },
+        { column_name: 'username', data_type: 'text', is_nullable: 'YES' },
+        { column_name: 'is_host', data_type: 'boolean', is_nullable: 'YES' },
+        { column_name: 'joined_at', data_type: 'timestamptz', is_nullable: 'YES' }
+      ]
+    },
+    'buddies_votes': {
+      columns: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: 'NO' },
+        { column_name: 'room_id', data_type: 'uuid', is_nullable: 'NO' },
+        { column_name: 'user_id', data_type: 'uuid', is_nullable: 'NO' },
+        { column_name: 'question_index', data_type: 'integer', is_nullable: 'NO' },
+        { column_name: 'answer', data_type: 'text', is_nullable: 'YES' },
+        { column_name: 'created_at', data_type: 'timestamptz', is_nullable: 'YES' }
       ]
     },
     'buddies_questions': {
@@ -499,7 +551,7 @@ function generateMarkdown(schemaData) {
     '核心資料表': ['restaurants', 'restaurant_images', 'restaurant_reviews'],
     '用戶系統': ['user_profiles', 'user_favorite_lists', 'favorite_list_places'],
     'SwiftTaste 模式': ['swifttaste_history', 'selection_history'],
-    'Buddies 模式（實時層）': ['buddies_rooms', 'buddies_questions'],
+    'Buddies 模式（實時層）': ['buddies_rooms', 'buddies_members', 'buddies_votes', 'buddies_questions'],
     'Buddies 模式（記錄層）': ['buddies_events'],
     '問題系統': ['fun_questions', 'fun_question_tags'],
     '其他表': []
