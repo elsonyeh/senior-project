@@ -10,6 +10,7 @@ import { funQuestionTagService } from "../services/funQuestionTagService";
 import { getBasicQuestionsForSwiftTaste, getFunQuestions } from "../services/questionService";
 import { dataValidator } from "../utils/dataValidator";
 import selectionHistoryService from "../services/selectionHistoryService";
+import swiftTasteInteractionService from "../services/swiftTasteInteractionService.js";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
@@ -779,8 +780,23 @@ export default function SwiftTaste() {
   const handleSave = async (restaurant) => {
     console.log('Saving restaurant:', restaurant);
 
-    // 記錄用戶喜歡的餐廳
+    // 記錄用戶喜歡的餐廳（舊系統）
     await recordLikedRestaurant(restaurant);
+
+    // 記錄互動：like（新系統）
+    if (currentSessionId && restaurant?.id) {
+      try {
+        await swiftTasteInteractionService.recordLike(
+          currentSessionId,
+          currentUser?.id || null,
+          restaurant.id,
+          restaurant
+        );
+        console.log('✅ 記錄 like 互動:', restaurant.name);
+      } catch (error) {
+        console.warn('記錄 like 互動失敗（非致命）:', error);
+      }
+    }
 
     // 單人模式：直接保存到本地
     if (selectedMode === "single") {
@@ -798,8 +814,22 @@ export default function SwiftTaste() {
     }
   };
 
-  const handleDislike = (restaurant) => {
+  const handleDislike = async (restaurant) => {
     console.log('Disliking restaurant:', restaurant);
+
+    // 記錄互動：skip（新系統）
+    if (currentSessionId && restaurant?.id) {
+      try {
+        await swiftTasteInteractionService.recordSkip(
+          currentSessionId,
+          null, // userId - SwiftTaste 可能沒有 currentUser
+          restaurant.id
+        );
+        console.log('✅ 記錄 skip 互動:', restaurant.name);
+      } catch (error) {
+        console.warn('記錄 skip 互動失敗（非致命）:', error);
+      }
+    }
 
     // 單人模式：保存左滑餐廳到本地
     if (selectedMode === "single") {
@@ -835,6 +865,21 @@ export default function SwiftTaste() {
     // 完成選擇會話，記錄最終選擇的餐廳（如果有的話）
     const savedRestaurants = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
     const finalRestaurant = savedRestaurants.length > 0 ? savedRestaurants[0] : null;
+
+    // 記錄互動：final choice（新系統）
+    if (currentSessionId && finalRestaurant?.id) {
+      try {
+        await swiftTasteInteractionService.recordFinalChoice(
+          currentSessionId,
+          null, // userId
+          finalRestaurant.id,
+          finalRestaurant
+        );
+        console.log('✅ 記錄 final choice 互動:', finalRestaurant.name);
+      } catch (error) {
+        console.warn('記錄 final choice 互動失敗（非致命）:', error);
+      }
+    }
 
     // 使用 try-catch 確保即使 completeSession 失敗也能繼續
     try {
