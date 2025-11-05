@@ -88,19 +88,8 @@ BEGIN
       v_status
     );
 
-    -- 記錄清理事件
-    IF v_deleted_count > 0 THEN
-      PERFORM log_buddies_event(
-        NULL,  -- room_id 為空（系統級事件）
-        'room_cleaned',
-        NULL,
-        jsonb_build_object(
-          'cleanup_type', 'completed_rooms',
-          'rooms_deleted', v_deleted_count,
-          'threshold', '24 hours'
-        )
-      );
-    END IF;
+    -- 註：系統級清理事件已記錄在 cleanup_logs，不需要記錄到 buddies_events
+    -- (buddies_events 專門記錄與特定房間相關的事件)
 
   EXCEPTION WHEN OTHERS THEN
     v_status := 'failed';
@@ -182,19 +171,7 @@ BEGIN
       v_status
     );
 
-    -- 記錄清理事件
-    IF v_deleted_count > 0 THEN
-      PERFORM log_buddies_event(
-        NULL,
-        'room_cleaned',
-        NULL,
-        jsonb_build_object(
-          'cleanup_type', 'abandoned_rooms',
-          'rooms_deleted', v_deleted_count,
-          'threshold', '30 days'
-        )
-      );
-    END IF;
+    -- 註：系統級清理事件已記錄在 cleanup_logs，不需要記錄到 buddies_events
 
   EXCEPTION WHEN OTHERS THEN
     v_status := 'failed';
@@ -218,55 +195,28 @@ $$;
 COMMENT ON FUNCTION cleanup_abandoned_rooms IS '清理30天前創建但未完成的房間';
 
 -- 3.3 歸檔超過1年的事件記錄
+-- 註：目前策略是永久保留所有事件以支援完整審計追蹤
+-- 如果未來需要歸檔舊事件，可以在這裡實施
 CREATE OR REPLACE FUNCTION cleanup_old_events()
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_start_time timestamptz;
-  v_end_time timestamptz;
+  v_status text := 'skipped';
   v_archived_count integer := 0;
-  v_error_message text;
-  v_status text := 'success';
 BEGIN
-  v_start_time := clock_timestamp();
-
-  BEGIN
-    -- 使用已存在的 archive_old_events 函數
-    v_archived_count := archive_old_events(365);
-
-    v_end_time := clock_timestamp();
-
-    -- 記錄日誌
-    INSERT INTO cleanup_logs (
-      cleanup_type, events_archived, execution_time_ms, status
-    ) VALUES (
-      'old_events',
-      v_archived_count,
-      EXTRACT(MILLISECONDS FROM (v_end_time - v_start_time))::integer,
-      v_status
-    );
-
-  EXCEPTION WHEN OTHERS THEN
-    v_status := 'failed';
-    v_error_message := SQLERRM;
-
-    INSERT INTO cleanup_logs (
-      cleanup_type, events_archived, status, error_message
-    ) VALUES (
-      'old_events', v_archived_count, 'failed', v_error_message
-    );
-  END;
+  -- 目前不歸檔事件，保留所有歷史記錄
+  -- 事件表使用索引和分區優化查詢效能
 
   RETURN jsonb_build_object(
     'status', v_status,
     'archived_count', v_archived_count,
-    'error', v_error_message
+    'message', 'Events are retained permanently for audit purposes'
   );
 END;
 $$;
 
-COMMENT ON FUNCTION cleanup_old_events IS '歸檔超過1年的事件記錄';
+COMMENT ON FUNCTION cleanup_old_events IS '事件歸檔函數（目前保留所有事件）';
 
 -- 3.4 綜合清理函數（執行所有清理任務）
 CREATE OR REPLACE FUNCTION run_daily_cleanup()

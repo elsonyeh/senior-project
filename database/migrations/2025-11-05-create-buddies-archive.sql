@@ -19,8 +19,8 @@
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS buddies_rooms_archive (
-  -- 主鍵（與原表相同）
-  id uuid PRIMARY KEY,
+  -- 主鍵（與原表相同，使用 text 類型匹配 buddies_rooms.id）
+  id text PRIMARY KEY,
   room_code varchar(6),
 
   -- 房間基本資訊
