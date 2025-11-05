@@ -63,12 +63,12 @@ export default function RestaurantSwiperMotion({
 
   const renderCard = (r) => (
     <div className="restaurant-info-blur">
-      {/* 收藏按鈕 */}
-      {onLike && (
+      {/* 收藏按鈕 - 只在用戶登入時顯示 */}
+      {onLike && currentUser && (
         <button
           className="restaurant-like-button"
           onClick={(e) => handleLikeClick(e, r)}
-          title={currentUser ? "加入收藏" : "登入後可收藏"}
+          title="加入收藏"
         >
           {saved.some(saved => saved.id === r.id) ? (
             <IoHeart className="heart-icon filled" />

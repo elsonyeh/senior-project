@@ -165,7 +165,7 @@ BEGIN
     )
   LOOP
     -- 檢查是否有 user_profiles 記錄
-    v_profile_exists := v_user_record.profile_id IS NOT NULL;
+    v_profile_exists := (v_user_record.profile_id IS NOT NULL);
 
     -- 提取用戶名
     v_user_name := COALESCE(

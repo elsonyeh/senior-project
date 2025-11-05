@@ -850,13 +850,7 @@ export default function SwiftTaste() {
   const handleLike = async (restaurant) => {
     console.log('點擊收藏按鈕:', restaurant.name);
 
-    // 檢查用戶是否登入
-    if (!currentUser) {
-      alert('請先登入才能使用收藏功能');
-      return;
-    }
-
-    // 檢查是否有默認收藏清單
+    // 檢查是否有默認收藏清單（用戶必定已登入才會看到按鈕）
     if (!defaultFavoriteListId) {
       alert('收藏清單尚未準備好，請稍後再試');
       return;
