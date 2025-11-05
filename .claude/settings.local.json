@@ -15,7 +15,12 @@
       "Bash(timeout 5 bash:*)",
       "Bash(timeout 3 bash:*)",
       "WebFetch(domain:chatgpt.com)",
-      "Read(//c/Users/elson/Downloads/**)"
+      "Read(//c/Users/elson/Downloads/**)",
+      "Bash(cat:*)",
+      "Bash(timeout 60 bash:*)",
+      "Bash(node scripts/export-database-schema.js:*)",
+      "Bash(node scripts/check-tables.js:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

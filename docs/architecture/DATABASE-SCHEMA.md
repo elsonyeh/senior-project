@@ -1,8 +1,8 @@
 # 📊 SwiftTaste 資料庫結構文件
 
-**生成日期**：2025-11-04
+**生成日期**：2025-11-05
 **資料庫類型**：PostgreSQL (Supabase)
-**表數量**：15
+**表數量**：16（活躍表：13，歸檔表：2，系統表：1）
 
 ---
 
@@ -17,18 +17,19 @@
   - [user_favorite_lists](#user_favorite_lists)
   - [favorite_list_places](#favorite_list_places)
 - [SwiftTaste 模式](#swifttaste-模式)
-  - [swifttaste_history](#swifttaste_history)
-  - [selection_history](#selection_history)
-- [Buddies 模式（實時層）](#buddies-模式（實時層）)
+  - [user_selection_history](#user_selection_history)
+- [Buddies 模式（實時層）](#buddies-模式實時層)
   - [buddies_rooms](#buddies_rooms)
   - [buddies_members](#buddies_members)
-  - [buddies_votes](#buddies_votes)
-  - [buddies_questions](#buddies_questions)
-- [Buddies 模式（記錄層）](#buddies-模式（記錄層）)
+- [Buddies 模式（歸檔層）](#buddies-模式歸檔層)
+  - [buddies_rooms_archive](#buddies_rooms_archive)
+- [Buddies 模式（記錄層）](#buddies-模式記錄層)
   - [buddies_events](#buddies_events)
 - [問題系統](#問題系統)
   - [fun_questions](#fun_questions)
   - [fun_question_tags](#fun_question_tags)
+- [系統管理](#系統管理)
+  - [cleanup_logs](#cleanup_logs)
 
 ---
 

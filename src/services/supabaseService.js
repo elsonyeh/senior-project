@@ -2,6 +2,8 @@
 // Supabase 服務 - 替代 Firebase Realtime Database
 
 import { createClient } from '@supabase/supabase-js';
+import { archiveService } from './archiveService';
+import { buddiesEventService, EVENT_TYPES } from './buddiesEventService';
 
 // Supabase 配置
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -1050,6 +1052,32 @@ export const finalResultService = {
 
       // 更新房間狀態
       await roomService.updateRoomStatus(roomId, 'completed');
+
+      // 記錄房間完成事件
+      try {
+        const memberCount = data.members_data?.length || 0;
+        const totalVotes = data.votes
+          ? Object.values(data.votes).reduce((sum, v) => sum + (v.count || 0), 0)
+          : 0;
+
+        await buddiesEventService.logRoomCompleted(
+          roomId,
+          restaurant.id,
+          restaurant,
+          memberCount,
+          totalVotes
+        );
+      } catch (eventError) {
+        console.warn('記錄房間完成事件失敗（非致命錯誤）:', eventError);
+      }
+
+      // 自動歸檔已完成的房間（觸發器也會歸檔，這裡是雙重保險）
+      try {
+        await archiveService.archiveCompletedRoom(roomId);
+        console.log(`✅ 房間 ${roomId} 已自動歸檔`);
+      } catch (archiveError) {
+        console.warn('自動歸檔失敗（非致命錯誤，觸發器會處理）:', archiveError);
+      }
 
       return { success: true, data: data.final_restaurant_data };
     } catch (error) {
