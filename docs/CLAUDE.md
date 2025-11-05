@@ -19,6 +19,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run migrate-firebase` - Migrate data from Firebase to Supabase
 - `npm run migrate-questions` - Migrate questions to Supabase
 
+**Data Lifecycle Management:**
+- `node scripts/check-database-health.js` - Run complete health check for database
+- `node scripts/check-database-health.js --verbose` - Detailed health check with full information
+- `node scripts/export-archive-data.js` - Export archived data to JSON/CSV format
+- `node scripts/export-archive-data.js --format=json` - Export as JSON only
+- `node scripts/export-archive-data.js --since=2025-01-01` - Export data since specific date
+- SQL監控命令 (in Supabase SQL Editor):
+  - `SELECT * FROM cleanup_health_status;` - View cleanup system health status
+  - `SELECT * FROM get_archive_stats();` - View archive statistics
+  - `SELECT manual_cleanup_now();` - Manually trigger immediate cleanup
+  - `SELECT * FROM cleanup_history_stats WHERE cleanup_date >= CURRENT_DATE - interval '7 days';` - View cleanup history
+
 ## Project Architecture
 
 ### Tech Stack
