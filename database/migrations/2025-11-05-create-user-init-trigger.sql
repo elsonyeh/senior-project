@@ -128,7 +128,11 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW
   EXECUTE FUNCTION initialize_new_user();
 
-RAISE NOTICE '✅ 觸發器已創建: on_auth_user_created';
+-- 顯示觸發器創建成功訊息
+DO $$
+BEGIN
+  RAISE NOTICE '✅ 觸發器已創建: on_auth_user_created';
+END $$;
 
 -- ============================================================================
 -- 4. 為現有用戶補充預設清單（可選）
