@@ -161,28 +161,28 @@ GROUP BY session_id, restaurant_id, action_type
 HAVING COUNT(*) > 1;
 
 -- ============================================================================
--- 6. 性能指標
+-- 6. 性能指標（使用安全查詢）
 -- ============================================================================
 
 -- 查看表大小
 SELECT
-  schemaname,
-  tablename,
-  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
-FROM pg_tables
-WHERE tablename IN ('swifttaste_interactions', 'buddies_interactions')
-ORDER BY tablename;
+  t.schemaname,
+  t.tablename,
+  pg_size_pretty(pg_total_relation_size(quote_ident(t.schemaname)||'.'||quote_ident(t.tablename))) AS size
+FROM pg_tables t
+WHERE t.tablename IN ('swifttaste_interactions', 'buddies_interactions')
+  AND t.schemaname = 'public'
+ORDER BY t.tablename;
 
--- 查看索引使用情況
+-- 查看索引數量
 SELECT
   tablename,
-  indexname,
-  idx_scan as index_scans,
-  idx_tup_read as tuples_read,
-  idx_tup_fetch as tuples_fetched
-FROM pg_stat_user_indexes
+  COUNT(*) as index_count
+FROM pg_indexes
 WHERE tablename IN ('swifttaste_interactions', 'buddies_interactions')
-ORDER BY tablename, indexname;
+  AND schemaname = 'public'
+GROUP BY tablename
+ORDER BY tablename;
 
 -- ============================================================================
 -- 完成提示
