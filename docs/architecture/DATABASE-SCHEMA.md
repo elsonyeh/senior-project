@@ -222,17 +222,18 @@
 
 ## SwiftTaste 模式
 
-### swifttaste_history
+### user_selection_history
 
-**用途**：SwiftTaste 歷史記錄
+**用途**：統一選擇歷史記錄
 
-**說明**：記錄用戶每次使用 SwiftTaste 模式的問答答案和推薦結果。用於歷史查詢和未來個人化推薦優化。
+**說明**：記錄用戶在 SwiftTaste 和 Buddies 模式中的所有選擇歷史，用於歷史查詢和未來個人化推薦優化。取代舊的 swifttaste_history 和 selection_history 表。
 
 **核心功能**：
-- 問答答案記錄（JSONB）
-- 推薦結果記錄（JSONB）
+- 統一記錄兩種模式的歷史
+- 會話級別追蹤（session_id）
 - 時間序列分析
 - 用戶偏好學習（未來擴展）
+- 與 selection_history（互動記錄）關聯
 
 **欄位結構**：
 
@@ -240,41 +241,18 @@
 |---------|---------|------|------|
 | `id` | uuid | ✗ | UUID 主鍵，自動生成 |
 | `user_id` | uuid | ✗ | 用戶 ID，關聯到 auth.users |
-| `answers` | jsonb | ✓ | - |
-| `recommendations` | jsonb | ✓ | - |
+| `mode` | text | ✗ | 模式：'swifttaste' 或 'buddies' |
+| `session_id` | uuid | ✓ | 會話 ID（Buddies 模式為 room_id） |
+| `answers` | jsonb | ✓ | 問答答案記錄 |
+| `recommendations` | jsonb | ✓ | 推薦結果記錄 |
+| `final_restaurant_id` | text | ✓ | 最終選擇的餐廳 ID |
+| `final_restaurant_data` | jsonb | ✓ | 最終選擇的餐廳完整數據 |
+| `started_at` | timestamptz | ✓ | 會話開始時間 |
+| `completed_at` | timestamptz | ✓ | 會話完成時間 |
 | `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
 
 **關聯關係**：
-- 此表為關聯表，連接多個實體
-- 外鍵：`user_id`
-
----
-
-### selection_history
-
-**用途**：餐廳選擇歷史
-
-**說明**：記錄用戶與餐廳的互動行為（查看、收藏、導航等），用於熱門度計算和推薦優化。
-
-**核心功能**：
-- 互動行為追蹤
-- 熱門度計算數據來源
-- 用戶行為分析
-- 推薦系統優化依據
-
-**欄位結構**：
-
-| 欄位名稱 | 資料類型 | 可空 | 說明 |
-|---------|---------|------|------|
-| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
-| `user_id` | uuid | ✓ | 用戶 ID，關聯到 auth.users |
-| `restaurant_id` | text | ✗ | 餐廳 ID，關聯到 restaurants 表 |
-| `action_type` | text | ✗ | - |
-| `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
-
-**關聯關係**：
-- 此表為關聯表，連接多個實體
-- 外鍵：`user_id`, `restaurant_id`
+- 外鍵：`user_id`, `final_restaurant_id`
 
 ---
 
@@ -285,6 +263,8 @@
 **用途**：Buddies 房間管理
 
 **說明**：Buddies 群組決策房間，儲存房間狀態、成員資訊、投票數據等。使用 JSONB 格式實現高效能實時互動。
+
+**注意**：投票數據和問題集使用 JSONB 格式直接存儲在本表中（votes, member_answers, questions 欄位），而非使用獨立的 buddies_votes 和 buddies_questions 表。這樣設計可以減少 JOIN 操作，提升實時互動效能。
 
 **核心功能**：
 - 房間生命週期管理
@@ -343,60 +323,63 @@
 
 ---
 
-### buddies_votes
+## Buddies 模式（歸檔層）
 
-**用途**：Buddies 投票記錄
+### buddies_rooms_archive
 
-**說明**：記錄每個成員對每個問題的投票答案，用於計算群體共識和生成推薦。支援房主 2 倍權重。
+**用途**：Buddies 房間歸檔
+
+**說明**：歸檔已完成的 Buddies 房間，保留完整數據供歷史分析使用。當房間狀態變為 'completed' 時，系統會自動將房間數據複製到此表。24小時後，主表（buddies_rooms）會自動清理，但歸檔表永久保留。
 
 **核心功能**：
-- 投票答案記錄
-- 房主權重支援
-- 投票時間追蹤
-- 群體共識計算
+- 完整房間快照（包含所有 JSONB 數據）
+- 預計算統計數據（加速分析查詢）
+- 永久保存歷史記錄
+- 支援數據匯出（防止空間不足）
 
 **欄位結構**：
 
 | 欄位名稱 | 資料類型 | 可空 | 說明 |
 |---------|---------|------|------|
-| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
-| `room_id` | uuid | ✗ | - |
-| `user_id` | uuid | ✗ | 用戶 ID，關聯到 auth.users |
-| `question_index` | integer | ✗ | - |
-| `answer` | text | ✓ | - |
-| `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
+| `id` | text | ✗ | 主鍵（與原房間ID相同） |
+| `room_code` | varchar(6) | ✗ | 6位數房間碼 |
+| `host_id` | uuid | ✗ | 房主 ID |
+| `host_name` | text | ✓ | 房主名稱 |
+| `status` | text | ✓ | 房間狀態（通常為 'completed'） |
+| `members_data` | jsonb | ✓ | JSONB 格式成員列表 |
+| `member_answers` | jsonb | ✓ | JSONB 格式答題記錄 |
+| `collective_answers` | jsonb | ✓ | 群體共識答案 |
+| `recommendations` | jsonb | ✓ | JSONB 格式推薦結果 |
+| `votes` | jsonb | ✓ | JSONB 格式投票統計 |
+| `questions` | jsonb | ✓ | JSONB 格式問題集 |
+| `final_restaurant_id` | text | ✓ | 最終選擇的餐廳 ID |
+| `final_restaurant_data` | jsonb | ✓ | 最終選擇的餐廳完整數據 |
+| `member_count` | integer | ✓ | 參與人數（預計算） |
+| `total_votes` | integer | ✓ | 總投票數（預計算） |
+| `decision_time_seconds` | integer | ✓ | 決策耗時（秒，預計算） |
+| `questions_count` | integer | ✓ | 問題數量（預計算） |
+| `recommendations_count` | integer | ✓ | 推薦餐廳數量（預計算） |
+| `created_at` | timestamptz | ✓ | 房間創建時間 |
+| `questions_started_at` | timestamptz | ✓ | 開始答題時間 |
+| `voting_started_at` | timestamptz | ✓ | 開始投票時間 |
+| `completed_at` | timestamptz | ✓ | 房間完成時間 |
+| `archived_at` | timestamptz | ✓ | 歸檔時間，預設為 now() |
+| `schema_version` | text | ✓ | 數據結構版本，預設 '1.0' |
+| `archived_by` | text | ✓ | 歸檔來源（'trigger', 'app_service', 'manual'） |
 
 **關聯關係**：
-- 此表為關聯表，連接多個實體
-- 外鍵：`room_id`, `user_id`
+- 原 id 關聯到原 buddies_rooms 表（但房間可能已清理）
+- 外鍵：`host_id`, `final_restaurant_id`
 
----
-
-### buddies_questions
-
-**用途**：Buddies 問題庫
-
-**說明**：群組決策使用的問題集，與 SwiftTaste 共用基本邏輯但針對多人場景優化。
-
-**核心功能**：
-- 基本問題（人數、預算、餐期、辣度）
-- 趣味問題（選答）
-- 問題順序管理
-- 與 funQuestionTagsMap 整合
-
-**欄位結構**：
-
-| 欄位名稱 | 資料類型 | 可空 | 說明 |
-|---------|---------|------|------|
-| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
-| `question_text` | text | ✗ | - |
-| `question_type` | text | ✗ | - |
-| `options` | jsonb | ✓ | - |
-| `order` | integer | ✓ | 排序順序 |
-| `is_active` | boolean | ✓ | 記錄是否啟用 |
-
-**關聯關係**：
-- 此表為關聯表，連接多個實體
+**索引**：
+- `idx_archive_completed_at` - 完成時間
+- `idx_archive_created_at` - 創建時間
+- `idx_archive_final_restaurant` - 最終選擇餐廳
+- `idx_archive_member_count` - 成員數
+- `idx_archive_status` - 狀態
+- `idx_archive_host_id` - 房主
+- `idx_archive_votes_gin` - JSONB 投票數據（GIN 索引）
+- `idx_archive_recommendations_gin` - JSONB 推薦數據（GIN 索引）
 
 ---
 
@@ -406,7 +389,7 @@
 
 **用途**：Buddies 事件記錄
 
-**說明**：記錄所有 Buddies 房間的事件流（創建、加入、投票、離開等），用於審計、統計和問題追蹤。
+**說明**：✅ **已實施** - 記錄所有 Buddies 房間的事件流（創建、加入、投票、離開等），用於審計、統計和問題追蹤。系統通過觸發器自動記錄關鍵事件，並提供完整的事件查詢和分析功能。
 
 **核心功能**：
 - 完整事件流記錄
@@ -414,20 +397,47 @@
 - 用戶行為追蹤
 - 問題調試與審計
 
+**支援的事件類型（19種）**：
+- **房間生命週期**（4種）：room_created, room_started, room_completed, room_abandoned
+- **成員操作**（3種）：member_joined, member_left, member_kicked
+- **問題回答**（2種）：question_answered, all_members_completed
+- **推薦生成**（2種）：recommendations_generated, recommendations_refreshed
+- **投票操作**（3種）：vote_cast, vote_changed, vote_removed
+- **最終決策**（2種）：final_selection_made, final_selection_changed
+- **系統事件**（2種）：room_archived, room_cleaned
+- **錯誤事件**（1種）：error_occurred
+
+**自動觸發器**：
+- `trigger_log_room_created` - 房間創建時自動記錄
+- `trigger_room_status_change_event` - 房間狀態變化時自動記錄
+- `trigger_member_joined_event` - 成員加入時自動記錄
+
+**分析視圖**：
+- `buddies_room_timeline` - 房間事件時間線（包含事件間隔時間）
+- `buddies_event_stats` - 事件類型統計
+
 **欄位結構**：
 
 | 欄位名稱 | 資料類型 | 可空 | 說明 |
 |---------|---------|------|------|
 | `id` | uuid | ✗ | UUID 主鍵，自動生成 |
-| `room_id` | uuid | ✗ | - |
-| `event_type` | text | ✗ | - |
+| `room_id` | text | ✗ | 房間 ID（關聯到 buddies_rooms） |
+| `event_type` | text | ✗ | 事件類型（19種之一） |
 | `user_id` | uuid | ✓ | 用戶 ID，關聯到 auth.users |
-| `event_data` | jsonb | ✓ | - |
+| `event_data` | jsonb | ✓ | 事件詳細數據 |
 | `created_at` | timestamptz | ✓ | 記錄創建時間，自動設置為當前時間 |
 
 **關聯關係**：
-- 此表為關聯表，連接多個實體
 - 外鍵：`room_id`, `user_id`
+
+**索引**：
+- `idx_events_room_id` - 房間 ID
+- `idx_events_event_type` - 事件類型
+- `idx_events_created_at` - 創建時間（DESC）
+- `idx_events_user_id` - 用戶 ID
+- `idx_events_event_data_gin` - JSONB 事件數據（GIN 索引）
+- `idx_events_room_created` - 複合索引（room_id + created_at）
+- `idx_events_type_created` - 複合索引（event_type + created_at）
 
 ---
 
@@ -488,6 +498,73 @@
 
 ---
 
+## 系統管理
+
+### cleanup_logs
+
+**用途**：清理系統執行日誌
+
+**說明**：記錄自動清理系統的執行歷史，用於監控清理任務狀態、診斷問題和審計。每次執行清理任務（完成房間、未完成房間、舊事件）都會記錄一筆日誌。
+
+**核心功能**：
+- 記錄清理執行歷史
+- 追蹤清理成功/失敗狀態
+- 記錄執行時間與效能
+- 支援問題診斷
+
+**欄位結構**：
+
+| 欄位名稱 | 資料類型 | 可空 | 說明 |
+|---------|---------|------|------|
+| `id` | uuid | ✗ | UUID 主鍵，自動生成 |
+| `cleanup_type` | text | ✗ | 清理類型：'completed_rooms', 'abandoned_rooms', 'old_events' |
+| `rooms_deleted` | integer | ✓ | 清理的房間數，預設 0 |
+| `events_archived` | integer | ✓ | 歸檔的事件數，預設 0 |
+| `execution_time_ms` | integer | ✓ | 執行時間（毫秒） |
+| `status` | text | ✗ | 狀態：'success', 'partial', 'failed' |
+| `error_message` | text | ✓ | 錯誤訊息（如有） |
+| `created_at` | timestamptz | ✓ | 記錄創建時間，預設為 now() |
+
+**關聯關係**：
+- 無外鍵關聯（系統日誌表）
+
+**索引**：
+- `idx_cleanup_logs_created_at` - 創建時間（DESC）
+- `idx_cleanup_logs_type` - 清理類型
+
+**相關視圖**：
+- `cleanup_health_status` - 清理系統健康狀況（待清理數據、最近清理狀態）
+- `cleanup_history_stats` - 清理歷史統計（按日期和類型聚合）
+
+**清理策略**：
+- 完成的房間：24小時後自動清理（已歸檔）
+- 未完成的房間：30天後自動清理
+- 事件記錄：永久保留
+- 清理日誌：保留90天
+
+**相關函數**：
+- `cleanup_completed_rooms()` - 清理24小時前的完成房間
+- `cleanup_abandoned_rooms()` - 清理30天前的未完成房間
+- `cleanup_old_events()` - 事件保留策略（目前永久保留）
+- `run_daily_cleanup()` - 執行所有清理任務
+- `manual_cleanup_now()` - 手動觸發立即清理
+- `check_cleanup_system()` - 檢查清理系統完整性
+
+**監控命令**：
+```sql
+-- 查看清理健康狀況
+SELECT * FROM cleanup_health_status;
+
+-- 查看清理歷史
+SELECT * FROM cleanup_history_stats
+WHERE cleanup_date >= CURRENT_DATE - interval '7 days';
+
+-- 手動觸發清理
+SELECT manual_cleanup_now();
+```
+
+---
+
 ## 附錄：資料庫設計原則
 
 ### 三層架構設計
@@ -518,6 +595,44 @@ SwiftTaste 採用**三層資料庫架構**，優化不同場景的性能需求�
   - 複雜統計查詢
   - 報表生成
   - 數據挖掘
+
+### 數據生命週期管理
+
+SwiftTaste 實施完整的數據生命週期管理，確保資料庫長期健康運作：
+
+#### 1. 自動歸檔機制
+- **觸發條件**：房間狀態變為 'completed'
+- **執行方式**：資料庫觸發器 + 應用層服務
+- **目標表**：buddies_rooms → buddies_rooms_archive
+- **特點**：完整快照 + 預計算統計數據
+
+#### 2. 自動清理機制
+- **執行頻率**：每天凌晨 3:00（pg_cron）
+- **清理策略**：
+  - 完成房間：24小時後清理（已歸檔）
+  - 未完成房間：30天後清理
+  - 事件記錄：永久保留
+- **安全保障**：只刪除已歸檔的數據
+
+#### 3. 事件流記錄
+- **記錄內容**：19 種事件類型
+- **觸發方式**：自動觸發器 + 應用層調用
+- **用途**：完整審計追蹤、用戶行為分析
+- **特點**：不可變日誌（只能新增，不可修改/刪除）
+
+#### 4. 數據匯出
+- **工具**：export-archive-data.js
+- **格式**：JSON / CSV
+- **用途**：防止 Supabase 空間不足，定期備份
+
+#### 5. 監控與維護
+- **健康檢查**：check-database-health.js
+- **監控視圖**：cleanup_health_status, get_archive_stats()
+- **警報條件**：待清理數據過多、清理任務失敗、空間不足
+
+詳見：`docs/migration-2025-11-05/DATA-LIFECYCLE-MANAGEMENT.md`
+
+---
 
 ### 命名規範
 
