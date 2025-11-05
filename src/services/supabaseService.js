@@ -2,8 +2,8 @@
 // Supabase 服務 - 替代 Firebase Realtime Database
 
 import { createClient } from '@supabase/supabase-js';
-import { archiveService } from './archiveService';
-import { buddiesEventService, EVENT_TYPES } from './buddiesEventService';
+import archiveService from './archiveService.js';
+import buddiesEventService, { EVENT_TYPES } from './buddiesEventService.js';
 
 // Supabase 配置
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
