@@ -13,7 +13,7 @@
  * @module services/archiveService
  */
 
-import { supabase } from './supabaseClient.js';
+import { supabase } from './supabaseService.js';
 
 /**
  * 歸檔服務類

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>測試地圖 localStorage</title>
+</head>
+<body>
+    <h1>地圖 LocalStorage 測試</h1>
+    <button onclick="checkStorage()">檢查 Storage</button>
+    <button onclick="clearStorage()">清除 Storage</button>
+    <pre id="output"></pre>
+
+    <script>
+        function checkStorage() {
+            const mapPosition = localStorage.getItem('swiftTaste_mapPosition');
+            const hasAutoLocated = localStorage.getItem('swiftTaste_hasAutoLocated');
+
+            const output = document.getElementById('output');
+            output.textContent = `地圖位置: ${mapPosition || '無'}\n已自動定位: ${hasAutoLocated || '無'}`;
+        }
+
+        function clearStorage() {
+            localStorage.removeItem('swiftTaste_mapPosition');
+            localStorage.removeItem('swiftTaste_hasAutoLocated');
+            alert('已清除地圖相關 storage');
+            checkStorage();
+        }
+
+        // 自動執行
+        checkStorage();
+    </script>
+</body>
+</html>

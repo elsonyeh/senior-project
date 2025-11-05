@@ -13,7 +13,7 @@
  * @module services/buddiesEventService
  */
 
-import { supabase } from './supabaseClient.js';
+import { supabase } from './supabaseService.js';
 
 /**
  * 事件類型定義

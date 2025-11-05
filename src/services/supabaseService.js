@@ -2,8 +2,7 @@
 // Supabase 服務 - 替代 Firebase Realtime Database
 
 import { createClient } from '@supabase/supabase-js';
-import archiveService from './archiveService.js';
-import buddiesEventService, { EVENT_TYPES } from './buddiesEventService.js';
+// 注意：archiveService 和 buddiesEventService 使用動態導入以避免循環依賴
 
 // Supabase 配置
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -1030,6 +1029,15 @@ export const finalResultService = {
       if (!roomId || !restaurant || !userId) {
         return { success: false, error: '參數不完整' };
       }
+
+      // 動態導入服務以避免循環依賴
+      const [
+        { default: buddiesEventService },
+        { default: archiveService }
+      ] = await Promise.all([
+        import('./buddiesEventService.js'),
+        import('./archiveService.js')
+      ]);
 
       // 直接更新 buddies_rooms 的 final_restaurant_id 和 final_restaurant_data
       const { data, error } = await supabase

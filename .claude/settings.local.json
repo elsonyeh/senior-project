@@ -20,7 +20,9 @@
       "Bash(timeout 60 bash:*)",
       "Bash(node scripts/export-database-schema.js:*)",
       "Bash(node scripts/check-tables.js:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git reset:*)",
+      "Bash(node -c:*)"
     ],
     "deny": [],
     "ask": []
