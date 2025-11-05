@@ -45,7 +45,7 @@ export const userDataService = {
           )
         `)
         .eq('user_id', userId)
-        .order('is_default', { ascending: false }) -- 預設清單排在最前面
+        .order('is_default', { ascending: false }) // 預設清單排在最前面
         .order('created_at', { ascending: false });
 
       if (error) throw error;
