@@ -22,8 +22,8 @@ import { authService } from "../services/authService";
 import { restaurantService } from "../services/restaurantService";
 import { recommendRestaurants } from "../logic/enhancedRecommendLogicFrontend";
 import logger from "../utils/logger";
-import { archiveService } from "../services/archiveService";
-import { buddiesEventService, EVENT_TYPES } from "../services/buddiesEventService";
+import archiveService from "../services/archiveService.js";
+import buddiesEventService, { EVENT_TYPES } from "../services/buddiesEventService.js";
 
 export default function BuddiesRoom() {
   const [roomId, setRoomId] = useState("");
