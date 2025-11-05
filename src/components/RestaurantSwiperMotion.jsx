@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { IoHeartOutline, IoHeart } from "react-icons/io5";
 import CardStack from "./common/CardStack";
 import "./SwiftTasteCard.css";
 
@@ -12,6 +13,8 @@ export default function RestaurantSwiperMotion({
   onNoResults, // 新增：當沒有結果時的回調
   onDislike, // 新增：左滑時的回調
   onSwipe, // 新增：滑動時的回調（用於重置計時器）
+  onLike, // 新增：點擊收藏按鈕的回調
+  currentUser, // 新增：當前用戶信息
 }) {
   const [seen, setSeen] = useState([]);
   const [saved, setSaved] = useState([]);
@@ -51,8 +54,30 @@ export default function RestaurantSwiperMotion({
     }
   };
 
+  const handleLikeClick = (e, restaurant) => {
+    e.stopPropagation(); // 防止觸發卡片滑動
+    if (onLike) {
+      onLike(restaurant);
+    }
+  };
+
   const renderCard = (r) => (
     <div className="restaurant-info-blur">
+      {/* 收藏按鈕 */}
+      {onLike && (
+        <button
+          className="restaurant-like-button"
+          onClick={(e) => handleLikeClick(e, r)}
+          title={currentUser ? "加入收藏" : "登入後可收藏"}
+        >
+          {saved.some(saved => saved.id === r.id) ? (
+            <IoHeart className="heart-icon filled" />
+          ) : (
+            <IoHeartOutline className="heart-icon" />
+          )}
+        </button>
+      )}
+
       <h3>{r.name || "未命名餐廳"}</h3>
       <p>{r.address || "地址未知"}</p>
       <small>{r.category || "類型不明"}</small>

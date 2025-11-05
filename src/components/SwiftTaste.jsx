@@ -11,6 +11,8 @@ import { getBasicQuestionsForSwiftTaste, getFunQuestions } from "../services/que
 import { dataValidator } from "../utils/dataValidator";
 import selectionHistoryService from "../services/selectionHistoryService";
 import swiftTasteInteractionService from "../services/swiftTasteInteractionService.js";
+import { authService } from "../services/authService";
+import { userDataService } from "../services/userDataService";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
@@ -64,8 +66,50 @@ export default function SwiftTaste() {
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [sessionStartTime, setSessionStartTime] = useState(null);
 
+  // 用戶相關狀態
+  const [currentUser, setCurrentUser] = useState(null);
+  const [defaultFavoriteListId, setDefaultFavoriteListId] = useState(null);
+
   // Current questions being shown
   const currentQuestions = phase === 'questions' ? basicQuestions : (phase === 'funQuestions' ? funQuestions : []);
+
+  // 獲取當前用戶
+  useEffect(() => {
+    const initUser = async () => {
+      try {
+        const userResult = await authService.getCurrentUser();
+        if (userResult.success && userResult.user) {
+          setCurrentUser(userResult.user);
+
+          // 獲取或創建默認收藏清單
+          const listsResult = await userDataService.getFavoriteLists(userResult.user.id, userResult.user.email);
+          if (listsResult.success && listsResult.lists.length > 0) {
+            // 使用第一個清單作為默認清單
+            setDefaultFavoriteListId(listsResult.lists[0].id);
+          } else {
+            // 沒有清單，創建一個默認清單
+            const createResult = await userDataService.createFavoriteList(
+              userResult.user.id,
+              {
+                name: '我的最愛',
+                description: 'SwiftTaste 收藏的餐廳',
+                color: '#ff6b35',
+                is_public: false
+              },
+              userResult.user.email
+            );
+            if (createResult.success) {
+              setDefaultFavoriteListId(createResult.list.id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('初始化用戶失敗:', error);
+      }
+    };
+
+    initUser();
+  }, []);
 
   // 從 URL 參數獲取房間ID
   useEffect(() => {
@@ -814,6 +858,66 @@ export default function SwiftTaste() {
     }
   };
 
+  const handleLike = async (restaurant) => {
+    console.log('點擊收藏按鈕:', restaurant.name);
+
+    // 檢查用戶是否登入
+    if (!currentUser) {
+      alert('請先登入才能使用收藏功能');
+      return;
+    }
+
+    // 檢查是否有默認收藏清單
+    if (!defaultFavoriteListId) {
+      alert('收藏清單尚未準備好，請稍後再試');
+      return;
+    }
+
+    try {
+      // 準備餐廳數據
+      const placeData = {
+        place_id: restaurant.id,
+        name: restaurant.name,
+        address: restaurant.address || '',
+        rating: restaurant.rating || null,
+        latitude: restaurant.latitude || null,
+        longitude: restaurant.longitude || null,
+        category: restaurant.category || ''
+      };
+
+      // 加入收藏清單
+      const result = await userDataService.addPlaceToList(defaultFavoriteListId, placeData);
+
+      if (result.success) {
+        alert(`✅ 已將「${restaurant.name}」加入收藏清單`);
+        console.log('✅ 成功加入收藏:', restaurant.name);
+
+        // 也記錄到互動表（可選）
+        if (currentSessionId && restaurant?.id) {
+          try {
+            await swiftTasteInteractionService.recordLike(
+              currentSessionId,
+              currentUser.id,
+              restaurant.id,
+              restaurant
+            );
+          } catch (error) {
+            console.warn('記錄 like 互動失敗（非致命）:', error);
+          }
+        }
+      } else {
+        if (result.error === '此餐廳已在收藏清單中') {
+          alert(`此餐廳已在收藏清單中`);
+        } else {
+          alert(`收藏失敗：${result.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('收藏失敗:', error);
+      alert('收藏失敗，請稍後再試');
+    }
+  };
+
   const handleDislike = async (restaurant) => {
     console.log('Disliking restaurant:', restaurant);
 
@@ -1026,6 +1130,8 @@ export default function SwiftTaste() {
             resetIdleTimer(); // 每次滑動重置計時器
             recordSwipeAction(); // 記錄滑動動作
           }}
+          onLike={handleLike}
+          currentUser={currentUser}
         />
       )}
 
