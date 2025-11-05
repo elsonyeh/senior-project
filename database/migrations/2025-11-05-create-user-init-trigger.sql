@@ -142,13 +142,20 @@ DO $$
 DECLARE
   v_user_record RECORD;
   v_list_id uuid;
+  v_user_name text;
+  v_profile_exists boolean;
 BEGIN
   RAISE NOTICE '======================================';
-  RAISE NOTICE '開始為現有用戶補充預設清單...';
+  RAISE NOTICE '開始為現有用戶補充資料...';
   RAISE NOTICE '======================================';
 
   FOR v_user_record IN
-    SELECT u.id, u.email, up.name
+    SELECT
+      u.id,
+      u.email,
+      u.raw_user_meta_data,
+      up.name as profile_name,
+      up.id as profile_id
     FROM auth.users u
     LEFT JOIN user_profiles up ON u.id = up.id
     WHERE NOT EXISTS (
@@ -157,7 +164,43 @@ BEGIN
       AND is_default = true
     )
   LOOP
-    -- 為沒有預設清單的用戶創建一個
+    -- 檢查是否有 user_profiles 記錄
+    v_profile_exists := v_user_record.profile_id IS NOT NULL;
+
+    -- 提取用戶名
+    v_user_name := COALESCE(
+      v_user_record.profile_name,
+      v_user_record.raw_user_meta_data->>'name',
+      split_part(v_user_record.email, '@', 1)
+    );
+
+    -- 如果沒有 user_profiles 記錄，先創建
+    IF NOT v_profile_exists THEN
+      INSERT INTO user_profiles (
+        id,
+        email,
+        name,
+        avatar_url,
+        bio,
+        favorite_lists_count,
+        swifttaste_count,
+        buddies_count
+      ) VALUES (
+        v_user_record.id,
+        v_user_record.email,
+        v_user_name,
+        v_user_record.raw_user_meta_data->>'avatar_url',
+        COALESCE(v_user_record.raw_user_meta_data->>'bio', ''),
+        1, -- 預設有一個收藏清單
+        0,
+        0
+      )
+      ON CONFLICT (id) DO NOTHING;
+
+      RAISE NOTICE '  → 為用戶 % 創建 user_profiles 記錄', v_user_record.email;
+    END IF;
+
+    -- 創建預設收藏清單
     INSERT INTO user_favorite_lists (
       user_id,
       name,
@@ -177,16 +220,18 @@ BEGIN
     )
     RETURNING id INTO v_list_id;
 
-    -- 更新 user_profiles 的計數
-    UPDATE user_profiles
-    SET favorite_lists_count = favorite_lists_count + 1
-    WHERE id = v_user_record.id;
+    -- 更新 user_profiles 的計數（如果記錄已存在）
+    IF v_profile_exists THEN
+      UPDATE user_profiles
+      SET favorite_lists_count = favorite_lists_count + 1
+      WHERE id = v_user_record.id;
+    END IF;
 
-    RAISE NOTICE '✅ 為用戶 % (%) 創建預設清單', v_user_record.name, v_user_record.email;
+    RAISE NOTICE '✅ 為用戶 % (%) 創建預設清單', v_user_name, v_user_record.email;
   END LOOP;
 
   RAISE NOTICE '======================================';
-  RAISE NOTICE '現有用戶預設清單補充完成！';
+  RAISE NOTICE '現有用戶資料補充完成！';
   RAISE NOTICE '======================================';
 END $$;
 
