@@ -73,7 +73,7 @@ export default function SwiftTaste() {
   // Current questions being shown
   const currentQuestions = phase === 'questions' ? basicQuestions : (phase === 'funQuestions' ? funQuestions : []);
 
-  // 獲取當前用戶
+  // 獲取當前用戶和預設收藏清單
   useEffect(() => {
     const initUser = async () => {
       try {
@@ -81,26 +81,15 @@ export default function SwiftTaste() {
         if (userResult.success && userResult.user) {
           setCurrentUser(userResult.user);
 
-          // 獲取或創建默認收藏清單
+          // 獲取用戶的收藏清單（預設清單應該在註冊時已創建）
           const listsResult = await userDataService.getFavoriteLists(userResult.user.id, userResult.user.email);
           if (listsResult.success && listsResult.lists.length > 0) {
-            // 使用第一個清單作為默認清單
-            setDefaultFavoriteListId(listsResult.lists[0].id);
+            // 優先使用標記為 is_default 的清單，否則使用第一個清單
+            const defaultList = listsResult.lists.find(list => list.is_default) || listsResult.lists[0];
+            setDefaultFavoriteListId(defaultList.id);
+            console.log('✅ 使用預設收藏清單:', defaultList.name, defaultList.id);
           } else {
-            // 沒有清單，創建一個默認清單
-            const createResult = await userDataService.createFavoriteList(
-              userResult.user.id,
-              {
-                name: '我的最愛',
-                description: 'SwiftTaste 收藏的餐廳',
-                color: '#ff6b35',
-                is_public: false
-              },
-              userResult.user.email
-            );
-            if (createResult.success) {
-              setDefaultFavoriteListId(createResult.list.id);
-            }
+            console.warn('⚠️ 用戶沒有收藏清單，請確認資料庫觸發器是否正確設置');
           }
         }
       } catch (error) {

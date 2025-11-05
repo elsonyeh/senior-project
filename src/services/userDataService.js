@@ -18,6 +18,8 @@ export const userDataService = {
           description,
           color,
           is_public,
+          is_default,
+          is_deletable,
           places_count,
           created_at,
           updated_at,
@@ -43,6 +45,7 @@ export const userDataService = {
           )
         `)
         .eq('user_id', userId)
+        .order('is_default', { ascending: false }) -- 預設清單排在最前面
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -180,6 +183,24 @@ export const userDataService = {
   // 刪除收藏清單
   async deleteFavoriteList(listId) {
     try {
+      // 先檢查清單是否可刪除
+      const { data: list, error: checkError } = await supabase
+        .from('user_favorite_lists')
+        .select('is_deletable, is_default, name')
+        .eq('id', listId)
+        .single();
+
+      if (checkError) throw checkError;
+
+      // 如果是不可刪除的清單（如預設清單），拒絕刪除
+      if (list && list.is_deletable === false) {
+        return {
+          success: false,
+          error: `「${list.name}」是預設清單，無法刪除`
+        };
+      }
+
+      // 執行刪除
       const { error } = await supabase
         .from('user_favorite_lists')
         .delete()
