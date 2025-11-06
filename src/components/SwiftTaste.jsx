@@ -877,18 +877,25 @@ export default function SwiftTaste() {
     if (isLiked) {
       // 取消收藏
       try {
-        // TODO: 實現從收藏清單移除的功能
-        // const result = await userDataService.removePlaceFromList(defaultFavoriteListId, restaurant.id);
+        // 從資料庫移除
+        const result = await userDataService.removePlaceFromListByRestaurant(
+          defaultFavoriteListId,
+          restaurant.id
+        );
 
-        // 暫時只更新前端狀態
-        setLikedRestaurants(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(restaurant.id);
-          return newSet;
-        });
+        if (result.success) {
+          // 更新前端狀態
+          setLikedRestaurants(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(restaurant.id);
+            return newSet;
+          });
 
-        showToast(`已取消收藏「${restaurant.name}」`, 'info');
-        console.log('✅ 已取消收藏:', restaurant.name);
+          showToast(`已取消收藏「${restaurant.name}」`, 'info');
+          console.log('✅ 已取消收藏:', restaurant.name);
+        } else {
+          showToast(`取消收藏失敗：${result.error}`, 'error');
+        }
       } catch (error) {
         console.error('取消收藏失敗:', error);
         showToast('取消收藏失敗，請稍後再試', 'error');

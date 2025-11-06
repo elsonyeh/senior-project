@@ -349,6 +349,30 @@ export const userDataService = {
     }
   },
 
+  // 從收藏清單移除地點 (根據清單ID和餐廳ID)
+  async removePlaceFromListByRestaurant(listId, restaurantId) {
+    try {
+      const { error } = await supabase
+        .from('favorite_list_places')
+        .delete()
+        .eq('list_id', listId)
+        .eq('restaurant_id', restaurantId);
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: '餐廳已從收藏清單移除'
+      };
+    } catch (error) {
+      console.error('移除地點失敗:', error);
+      return {
+        success: false,
+        error: this.getErrorMessage(error)
+      };
+    }
+  },
+
   // 從收藏清單移除地點 (根據清單ID和地點ID)
   async removePlaceFromListByPlaceId(listId, placeId) {
     try {
