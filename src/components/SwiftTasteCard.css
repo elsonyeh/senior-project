@@ -612,6 +612,12 @@
   user-select: none;
 }
 
+/* 已收藏狀態 */
+.restaurant-like-button.liked {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.95), rgba(255, 142, 142, 0.95));
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4);
+}
+
 .restaurant-like-button:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
@@ -626,6 +632,11 @@
   font-size: 24px;
   color: #ff6b6b;
   transition: all 0.3s ease;
+}
+
+/* 已收藏狀態的愛心為白色 */
+.restaurant-like-button.liked .heart-icon {
+  color: white;
 }
 
 .restaurant-like-button .heart-icon.filled {

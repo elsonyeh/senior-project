@@ -13,6 +13,7 @@ import selectionHistoryService from "../services/selectionHistoryService";
 import swiftTasteInteractionService from "../services/swiftTasteInteractionService.js";
 import { authService } from "../services/authService";
 import { userDataService } from "../services/userDataService";
+import Toast from "./common/Toast";
 import ModeSwiperMotion from "./ModeSwiperMotion";
 import QuestionSwiperMotion from "./QuestionSwiperMotion";
 import QuestionSwiperMotionSingle from "./QuestionSwiperMotionSingle";
@@ -69,6 +70,10 @@ export default function SwiftTaste() {
   // 用戶相關狀態
   const [currentUser, setCurrentUser] = useState(null);
   const [defaultFavoriteListId, setDefaultFavoriteListId] = useState(null);
+  const [likedRestaurants, setLikedRestaurants] = useState(new Set()); // 追蹤已收藏的餐廳
+
+  // Toast 通知狀態
+  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
 
   // Current questions being shown
   const currentQuestions = phase === 'questions' ? basicQuestions : (phase === 'funQuestions' ? funQuestions : []);
@@ -847,57 +852,97 @@ export default function SwiftTaste() {
     }
   };
 
+  // 顯示 Toast 通知
+  const showToast = (message, type = 'success') => {
+    setToast({ isOpen: true, message, type });
+  };
+
+  // 關閉 Toast
+  const closeToast = () => {
+    setToast({ ...toast, isOpen: false });
+  };
+
   const handleLike = async (restaurant) => {
     console.log('點擊收藏按鈕:', restaurant.name);
 
     // 檢查是否有默認收藏清單（用戶必定已登入才會看到按鈕）
     if (!defaultFavoriteListId) {
-      alert('收藏清單尚未準備好，請稍後再試');
+      showToast('收藏清單尚未準備好，請稍後再試', 'warning');
       return;
     }
 
-    try {
-      // 準備餐廳數據
-      const placeData = {
-        place_id: restaurant.id,
-        name: restaurant.name,
-        address: restaurant.address || '',
-        rating: restaurant.rating || null,
-        latitude: restaurant.latitude || null,
-        longitude: restaurant.longitude || null,
-        category: restaurant.category || ''
-      };
+    // 檢查是否已收藏
+    const isLiked = likedRestaurants.has(restaurant.id);
 
-      // 加入收藏清單
-      const result = await userDataService.addPlaceToList(defaultFavoriteListId, placeData);
+    if (isLiked) {
+      // 取消收藏
+      try {
+        // TODO: 實現從收藏清單移除的功能
+        // const result = await userDataService.removePlaceFromList(defaultFavoriteListId, restaurant.id);
 
-      if (result.success) {
-        alert(`✅ 已將「${restaurant.name}」加入收藏清單`);
-        console.log('✅ 成功加入收藏:', restaurant.name);
+        // 暫時只更新前端狀態
+        setLikedRestaurants(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(restaurant.id);
+          return newSet;
+        });
 
-        // 也記錄到互動表（可選）
-        if (currentSessionId && restaurant?.id) {
-          try {
-            await swiftTasteInteractionService.recordLike(
-              currentSessionId,
-              currentUser.id,
-              restaurant.id,
-              restaurant
-            );
-          } catch (error) {
-            console.warn('記錄 like 互動失敗（非致命）:', error);
+        showToast(`已取消收藏「${restaurant.name}」`, 'info');
+        console.log('✅ 已取消收藏:', restaurant.name);
+      } catch (error) {
+        console.error('取消收藏失敗:', error);
+        showToast('取消收藏失敗，請稍後再試', 'error');
+      }
+    } else {
+      // 加入收藏
+      try {
+        // 準備餐廳數據
+        const placeData = {
+          place_id: restaurant.id,
+          name: restaurant.name,
+          address: restaurant.address || '',
+          rating: restaurant.rating || null,
+          latitude: restaurant.latitude || null,
+          longitude: restaurant.longitude || null,
+          category: restaurant.category || ''
+        };
+
+        // 加入收藏清單
+        const result = await userDataService.addPlaceToList(defaultFavoriteListId, placeData);
+
+        if (result.success) {
+          // 更新已收藏狀態
+          setLikedRestaurants(prev => new Set(prev).add(restaurant.id));
+
+          showToast(`已將「${restaurant.name}」加入收藏`, 'success');
+          console.log('✅ 成功加入收藏:', restaurant.name);
+
+          // 也記錄到互動表（可選）
+          if (currentSessionId && restaurant?.id) {
+            try {
+              await swiftTasteInteractionService.recordLike(
+                currentSessionId,
+                currentUser.id,
+                restaurant.id,
+                restaurant
+              );
+            } catch (error) {
+              console.warn('記錄 like 互動失敗（非致命）:', error);
+            }
+          }
+        } else {
+          if (result.error === '此餐廳已在收藏清單中') {
+            // 即使後端說已存在，也更新前端狀態
+            setLikedRestaurants(prev => new Set(prev).add(restaurant.id));
+            showToast('此餐廳已在收藏清單中', 'info');
+          } else {
+            showToast(`收藏失敗：${result.error}`, 'error');
           }
         }
-      } else {
-        if (result.error === '此餐廳已在收藏清單中') {
-          alert(`此餐廳已在收藏清單中`);
-        } else {
-          alert(`收藏失敗：${result.error}`);
-        }
+      } catch (error) {
+        console.error('收藏失敗:', error);
+        showToast('收藏失敗，請稍後再試', 'error');
       }
-    } catch (error) {
-      console.error('收藏失敗:', error);
-      alert('收藏失敗，請稍後再試');
     }
   };
 
@@ -1115,6 +1160,7 @@ export default function SwiftTaste() {
           }}
           onLike={handleLike}
           currentUser={currentUser}
+          likedRestaurants={likedRestaurants}
         />
       )}
 
@@ -1234,6 +1280,15 @@ export default function SwiftTaste() {
           }}
         />
       )} */}
+
+      {/* Toast 通知 */}
+      <Toast
+        isOpen={toast.isOpen}
+        onClose={closeToast}
+        message={toast.message}
+        type={toast.type}
+        duration={3000}
+      />
     </div>
   );
 }

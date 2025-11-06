@@ -15,6 +15,7 @@ export default function RestaurantSwiperMotion({
   onSwipe, // 新增：滑動時的回調（用於重置計時器）
   onLike, // 新增：點擊收藏按鈕的回調
   currentUser, // 新增：當前用戶信息
+  likedRestaurants = new Set(), // 新增：已收藏的餐廳集合
 }) {
   const [seen, setSeen] = useState([]);
   const [saved, setSaved] = useState([]);
@@ -61,38 +62,43 @@ export default function RestaurantSwiperMotion({
     }
   };
 
-  const renderCard = (r) => (
-    <div className="restaurant-info-blur">
-      {/* 收藏按鈕 - 只在用戶登入時顯示 */}
-      {onLike && currentUser && (
-        <button
-          className="restaurant-like-button"
-          onClick={(e) => handleLikeClick(e, r)}
-          title="加入收藏"
-        >
-          {saved.some(saved => saved.id === r.id) ? (
-            <IoHeart className="heart-icon filled" />
-          ) : (
-            <IoHeartOutline className="heart-icon" />
-          )}
-        </button>
-      )}
+  const renderCard = (r) => {
+    // 檢查此餐廳是否已收藏
+    const isLiked = likedRestaurants.has(r.id);
 
-      <h3>{r.name || "未命名餐廳"}</h3>
-      <p>{r.address || "地址未知"}</p>
-      <small>{r.category || "類型不明"}</small>
-      {typeof r.rating === "number" && r.rating > 0 && (
-        <div className="restaurant-rating">⭐ {r.rating.toFixed(1)} 分</div>
-      )}
-      {r.tags && r.tags.length > 0 && (
-        <div className="restaurant-tags">
-          {r.tags.slice(0, 3).map((tag, index) => (
-            <span key={index} className="tag">{tag}</span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+    return (
+      <div className="restaurant-info-blur">
+        {/* 收藏按鈕 - 只在用戶登入時顯示 */}
+        {onLike && currentUser && (
+          <button
+            className={`restaurant-like-button ${isLiked ? 'liked' : ''}`}
+            onClick={(e) => handleLikeClick(e, r)}
+            title={isLiked ? "取消收藏" : "加入收藏"}
+          >
+            {isLiked ? (
+              <IoHeart className="heart-icon filled" />
+            ) : (
+              <IoHeartOutline className="heart-icon" />
+            )}
+          </button>
+        )}
+
+        <h3>{r.name || "未命名餐廳"}</h3>
+        <p>{r.address || "地址未知"}</p>
+        <small>{r.category || "類型不明"}</small>
+        {typeof r.rating === "number" && r.rating > 0 && (
+          <div className="restaurant-rating">⭐ {r.rating.toFixed(1)} 分</div>
+        )}
+        {r.tags && r.tags.length > 0 && (
+          <div className="restaurant-tags">
+            {r.tags.slice(0, 3).map((tag, index) => (
+              <span key={index} className="tag">{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const background = (r) => {
     // 優先使用 primaryImage，然後是 allImages 中的第一張，最後是預設圖片
