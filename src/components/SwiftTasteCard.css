@@ -595,7 +595,7 @@
 .restaurant-like-button {
   position: absolute;
   top: 16px;
-  right: 16px;
+  left: 16px; /* 改到左上角，避免與 dev_controls 重疊 */
   width: 48px;
   height: 48px;
   border: none;
@@ -656,7 +656,7 @@
     width: 44px;
     height: 44px;
     top: 12px;
-    right: 12px;
+    left: 12px; /* 手機版也在左上角 */
   }
 
   .restaurant-like-button .heart-icon {
