@@ -84,7 +84,6 @@ export class DatabaseChecker {
       userSelectionHistory: await this.checkTableExists('user_selection_history'),
       userProfiles: await this.checkTableExists('user_profiles'),
       buddiesRooms: await this.checkTableExists('buddies_rooms'),
-      buddiesAnswers: await this.checkTableExists('buddies_answers'),
       buddiesRecommendations: await this.checkTableExists('buddies_recommendations')
     };
 

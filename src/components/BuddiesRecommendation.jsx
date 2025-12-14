@@ -29,7 +29,28 @@ export default function BuddiesRecommendation({
   const [votedUsersCount, setVotedUsersCount] = useState(0);
   const [showNoResultsModal, setShowNoResultsModal] = useState(false);
   const [members, setMembers] = useState([]); // 新增：儲存房間成員列表
+  const [waiting, setWaiting] = useState(false); // 新增：等待其他成員完成選擇
+  const [userFinishedSwiping, setUserFinishedSwiping] = useState(false); // 新增：當前用戶是否已完成滑動
   const navigate = useNavigate();
+
+  // 使用 ref 存儲 handleFinishSwiping，避免作為依賴項導致重新訂閱
+  const handleFinishSwipingRef = React.useRef(null);
+
+  // 使用 ref 存儲餐廳列表，避免閉包問題
+  const limitedRestaurantsRef = React.useRef([]);
+  const alternativeRestaurantsRef = React.useRef([]);
+  const restaurantsRef = React.useRef(restaurants);
+  const totalMembersRef = React.useRef(0);
+
+  // 同步 restaurants 到 ref
+  React.useEffect(() => {
+    restaurantsRef.current = restaurants;
+  }, [restaurants]);
+
+  // 同步 totalMembers 到 ref
+  React.useEffect(() => {
+    totalMembersRef.current = totalMembers;
+  }, [totalMembers]);
 
   // 獲取當前用戶ID
   const userId = localStorage.getItem("userId") || roomService.getOrCreateUserId();
@@ -62,6 +83,41 @@ export default function BuddiesRecommendation({
       savedCount: saved.length,
       votes: votes
     });
+
+    // 標記當前用戶已完成滑動
+    setUserFinishedSwiping(true);
+
+    // 🔍 檢查是否所有成員都已完成投票
+    const votedResult = await voteService.getVotedUsersCount(roomId);
+    if (votedResult.success) {
+      const actualVotedCount = votedResult.count;
+
+      logger.debug("📊 投票完成度檢查:", {
+        votedCount: actualVotedCount,
+        totalMembers: totalMembers,
+        votedUsers: votedResult.userIds,
+        allMembersFinished: actualVotedCount >= totalMembers && totalMembers > 0
+      });
+
+      // 如果 totalMembers 還未載入（訂閱中），等待
+      if (totalMembers === 0) {
+        logger.debug("⏳ 成員數據尚未載入，等待訂閱完成...");
+        setWaiting(true); // 顯示等待畫面
+        return;
+      }
+
+      // 如果還有成員未完成投票，進入等待狀態
+      if (actualVotedCount < totalMembers) {
+        logger.debug("⏳ 還有成員未完成投票，進入等待狀態", {
+          remaining: totalMembers - actualVotedCount,
+          waitingFor: totalMembers - actualVotedCount
+        });
+        setWaiting(true); // 顯示等待畫面
+        return; // 提前返回，不執行後續的結果計算
+      }
+
+      logger.debug("✅ 所有成員都已完成投票，開始計算最終結果");
+    }
 
     // 確保在計算結果前，votes 數據已從資料庫載入
     let currentVotes = votes;
@@ -170,6 +226,13 @@ export default function BuddiesRecommendation({
     // 如果找到了最終餐廳，寫入資料庫並廣播
     if (selectedRestaurant) {
       try {
+        logger.debug("💾 準備寫入最終餐廳:", {
+          restaurantId: selectedRestaurant.id,
+          restaurantName: selectedRestaurant.name,
+          roomId,
+          userId
+        });
+
         const result = await finalResultService.finalizeRestaurant(
           roomId,
           selectedRestaurant,
@@ -177,24 +240,30 @@ export default function BuddiesRecommendation({
         );
 
         if (result.success) {
-          console.log("✅ 最終餐廳已自動確認:", selectedRestaurant.name);
+          logger.debug("✅ 最終餐廳已寫入資料庫:", selectedRestaurant.name);
           // 本地也設置，避免延遲
           setFinalResult(selectedRestaurant);
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 3000);
           setPhase("result");
+          logger.debug("✅ 本地狀態已更新: phase=result, finalResult 已設置");
         } else {
-          console.error("❌ 寫入最終餐廳失敗:", result.error);
+          logger.error("❌ 寫入最終餐廳失敗:", result.error);
         }
       } catch (error) {
-        console.error("❌ 確認最終餐廳時發生錯誤:", error);
+        logger.error("❌ 確認最終餐廳時發生錯誤:", error);
       }
     } else {
       // 沒有任何餐廳被選擇，顯示可惜畫面
       logger.warn("😔 沒有任何餐廳被選擇");
       setPhase("no-result");
     }
-  }, [votes, limitedRestaurants, alternativeRestaurants, saved, roomId, userId, members, voteService]);
+  }, [votes, limitedRestaurants, alternativeRestaurants, saved, roomId, userId, members, totalMembers]);
+
+  // 更新 ref
+  React.useEffect(() => {
+    handleFinishSwipingRef.current = handleFinishSwiping;
+  }, [handleFinishSwiping]);
 
   // 限制推薦餐廳數量為10家 - 修改以使用確定性排序
   useEffect(() => {
@@ -235,11 +304,13 @@ export default function BuddiesRecommendation({
 
       // 設置限制後的餐廳列表
       setLimitedRestaurants(shuffledTopTen);
+      limitedRestaurantsRef.current = shuffledTopTen; // 同步更新 ref
 
       // 保留其餘餐廳作為備選（仍按照評分排序）
       if (sortedByScore.length > 10) {
         const alternatives = sortedByScore.slice(10, 15);
         setAlternativeRestaurants(alternatives);
+        alternativeRestaurantsRef.current = alternatives; // 同步更新 ref
       }
 
       // 不要覆蓋現有票數，只為新餐廳初始化
@@ -260,11 +331,13 @@ export default function BuddiesRecommendation({
       // 選取前10個
       const limitedList = shuffled.slice(0, 10);
       setLimitedRestaurants(limitedList);
+      limitedRestaurantsRef.current = limitedList; // 同步更新 ref
 
       // 保留其餘餐廳作為備選
       if (shuffled.length > 10) {
         const alternatives = shuffled.slice(10, 15);
         setAlternativeRestaurants(alternatives);
+        alternativeRestaurantsRef.current = alternatives; // 同步更新 ref
       }
 
       // 不要覆蓋現有票數，只為新餐廳初始化
@@ -299,6 +372,26 @@ export default function BuddiesRecommendation({
     };
     initializeVotingData();
 
+    // 初始載入房間成員（確保 totalMembers 有值）
+    const initializeMembers = async () => {
+      const membersResult = await memberService.getRoomMembers(roomId);
+      if (membersResult.success && membersResult.data) {
+        const membersList = membersResult.data.map(m => ({
+          id: m.user_id,
+          name: m.user_name,
+          isHost: m.is_host || false
+        }));
+        setMembers(membersList);
+        setTotalMembers(membersList.length);
+        totalMembersRef.current = membersList.length; // 同步更新 ref
+        logger.debug("📋 初始成員載入:", {
+          count: membersList.length,
+          members: membersList
+        });
+      }
+    };
+    initializeMembers();
+
     // 監聽房間成員人數和成員資訊
     const unsubscribeMembers = memberService.listenRoomMembers(roomId, (membersObj) => {
       const membersList = Object.values(membersObj).map(m => ({
@@ -308,7 +401,11 @@ export default function BuddiesRecommendation({
       }));
       setMembers(membersList);
       setTotalMembers(membersList.length);
-      logger.debug("📋 房間成員更新:", membersList);
+      totalMembersRef.current = membersList.length; // 同步更新 ref
+      logger.debug("📋 房間成員更新:", {
+        count: membersList.length,
+        members: membersList
+      });
     });
 
     // 監聽投票更新
@@ -324,18 +421,28 @@ export default function BuddiesRecommendation({
           const actualVotedCount = votedResult.count;
           setVotedUsersCount(actualVotedCount);
 
+          const currentTotalMembers = totalMembersRef.current;
           console.log("📊 投票進度檢查:", {
-            totalMembers,
+            totalMembers: currentTotalMembers,
             votedCount: actualVotedCount,
             votedUsers: votedResult.userIds,
             phase,
-            shouldFinish: actualVotedCount >= totalMembers && totalMembers > 0
+            shouldFinish: actualVotedCount >= currentTotalMembers && currentTotalMembers > 0
           });
 
           // 如果所有成員都已投票，切換到結果階段
-          if (actualVotedCount >= totalMembers && totalMembers > 0 && phase === "recommend") {
+          if (actualVotedCount >= currentTotalMembers && currentTotalMembers > 0 && phase === "recommend") {
             console.log("✅ 所有成員已完成投票，進入結果階段");
-            handleFinishSwiping();
+            // 使用 ref 調用
+            if (handleFinishSwipingRef.current) {
+              handleFinishSwipingRef.current();
+            }
+          }
+
+          // 如果當前用戶正在等待，且所有成員都完成了，退出等待狀態
+          if (actualVotedCount >= currentTotalMembers && currentTotalMembers > 0 && waiting) {
+            console.log("✅ 等待結束，所有成員已完成");
+            setWaiting(false);
           }
         }
       }
@@ -347,65 +454,75 @@ export default function BuddiesRecommendation({
 
       if (finalData && finalData.restaurant_id) {
         // 確保切換到結果頁面前，votes 已載入
-        if (Object.keys(votes).length === 0) {
-          logger.warn("⚠️ 最終結果監聽器檢測到 votes 為空，載入票數");
-          const votesResult = await voteService.getVotes(roomId);
-          if (votesResult.success && votesResult.data) {
-            const votesObj = {};
-            votesResult.data.forEach(vote => {
-              votesObj[vote.restaurant_id] = vote.vote_count;
+        const votesResult = await voteService.getVotes(roomId);
+        if (votesResult.success && votesResult.data) {
+          const votesObj = {};
+          votesResult.data.forEach(vote => {
+            votesObj[vote.restaurant_id] = vote.vote_count;
+          });
+          setVotes(votesObj);
+          logger.debug("✅ 最終結果頁面票數已載入:", votesObj);
+        }
+
+        // 使用 setTimeout 和 functional setState 避免閉包問題
+        setTimeout(() => {
+          setFinalResult((prevFinalResult) => {
+            // 如果已經有最終結果了，就不要重複設置
+            if (prevFinalResult && prevFinalResult.id === finalData.restaurant_id) {
+              logger.debug("✅ 最終結果已存在，跳過重複設置");
+              return prevFinalResult;
+            }
+
+            // 使用 ref 避免閉包問題
+            const allRestaurantLists = [
+              ...limitedRestaurantsRef.current,
+              ...alternativeRestaurantsRef.current,
+              ...restaurantsRef.current
+            ];
+
+            const finalRestaurant = allRestaurantLists.find((r) => r && r.id === finalData.restaurant_id);
+
+            logger.debug("🔍 尋找最終餐廳:", {
+              searchingFor: finalData.restaurant_id,
+              foundInList: !!finalRestaurant,
+              finalRestaurantName: finalRestaurant?.name,
+              limitedCount: limitedRestaurantsRef.current.length,
+              alternativeCount: alternativeRestaurantsRef.current.length,
+              allRestaurantsCount: restaurantsRef.current.length
             });
-            setVotes(votesObj);
-            logger.debug("✅ 最終結果頁面票數已載入:", votesObj);
-          }
-        }
-        // 嘗試從所有可用列表中尋找餐廳
-        const allRestaurantLists = [
-          ...limitedRestaurants,
-          ...alternativeRestaurants,
-          ...restaurants
-        ];
 
-        const finalRestaurant = allRestaurantLists.find((r) => r && r.id === finalData.restaurant_id);
+            // 優先使用找到的餐廳物件，否則從資料庫資料重建
+            const restaurantToSet = finalRestaurant || {
+              id: finalData.restaurant_id,
+              name: finalData.restaurant_name,
+              address: finalData.restaurant_address,
+              photoURL: finalData.restaurant_photo_url,
+              rating: finalData.restaurant_rating,
+              type: finalData.restaurant_type,
+            };
 
-        logger.debug("🔍 尋找最終餐廳:", {
-          searchingFor: finalData.restaurant_id,
-          foundInList: !!finalRestaurant,
-          finalRestaurantName: finalRestaurant?.name,
-          limitedCount: limitedRestaurants.length,
-          alternativeCount: alternativeRestaurants.length,
-          allRestaurantsCount: restaurants.length,
-          totalSearchable: allRestaurantLists.length
-        });
+            if (!finalRestaurant) {
+              logger.warn("⚠️ 無法從推薦列表找到餐廳，使用資料庫資料重建");
+            } else {
+              logger.debug("✅ 從推薦列表找到餐廳:", finalRestaurant.name);
+            }
 
-        // 優先使用找到的餐廳物件，否則從資料庫資料重建
-        const restaurantToSet = finalRestaurant || {
-          id: finalData.restaurant_id,
-          name: finalData.restaurant_name,
-          address: finalData.restaurant_address,
-          photoURL: finalData.restaurant_photo_url,
-          rating: finalData.restaurant_rating,
-          type: finalData.restaurant_type,
-        };
+            logger.debug("🎉 設置最終結果:", restaurantToSet.name);
 
-        if (!finalRestaurant) {
-          logger.warn("⚠️ 無法從推薦列表找到餐廳，使用資料庫資料重建");
-        } else {
-          logger.debug("✅ 從推薦列表找到餐廳:", finalRestaurant.name);
-        }
+            // 通知父組件最終結果已確定（用於記錄選擇歷史）
+            if (onFinalResult && typeof onFinalResult === 'function') {
+              onFinalResult(restaurantToSet);
+            }
 
-        // 設置最終結果並切換到結果階段
-        setFinalResult(restaurantToSet);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3000);
-        setPhase("result");
+            return restaurantToSet;
+          });
 
-        logger.debug("🎉 最終結果已設置，phase 已切換至 result");
-
-        // 通知父組件最終結果已確定（用於記錄選擇歷史）
-        if (onFinalResult && typeof onFinalResult === 'function') {
-          onFinalResult(restaurantToSet);
-        }
+          // 在 setState 外部設置其他狀態
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 3000);
+          setPhase("result");
+          logger.debug("✅ Phase 已切換至 result");
+        }, 0);
       }
     });
 
@@ -415,7 +532,8 @@ export default function BuddiesRecommendation({
       unsubscribeVotes();
       unsubscribeFinal();
     };
-  }, [roomId, restaurants, limitedRestaurants, alternativeRestaurants, totalMembers, phase, handleFinishSwiping, onFinalResult]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   // 處理無結果情況
   const handleNoResults = () => {
@@ -602,6 +720,15 @@ export default function BuddiesRecommendation({
 
   // 如果處於結果階段
   if (phase === "result" || phase === "vote-result") {
+    logger.debug("📊 準備渲染結果頁面:", {
+      phase,
+      hasFinalResult: !!finalResult,
+      finalResultName: finalResult?.name,
+      votesCount: Object.keys(votes).length,
+      savedCount: saved.length,
+      limitedRestaurantsCount: limitedRestaurants.length
+    });
+
     logger.debug("📊 結果階段 - 票數數據:", {
       votes,
       votesKeys: Object.keys(votes),
@@ -726,6 +853,132 @@ export default function BuddiesRecommendation({
               👥 回到房間
             </motion.button>
           </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // 如果正在等待其他成員完成選擇，顯示等待畫面
+  if (waiting) {
+    return (
+      <div className="buddies-container">
+        <div className="buddies-card">
+          <div className="waiting-container">
+            <div className="waiting-content">
+              <h2>等待其他成員完成選擇...</h2>
+              <div className="waiting-animation">
+                <div className="waiting-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div className="waiting-text">處理中...</div>
+              </div>
+
+              {/* 投票進度顯示 */}
+              <div className="vote-progress-display">
+                <h3>選擇進度</h3>
+                <div className="progress-info">
+                  <span className="progress-icon">👥</span>
+                  <span className="progress-text">
+                    {votedUsersCount} / {totalMembers} 位成員已完成
+                  </span>
+                </div>
+                <div className="progress-bar-container">
+                  <motion.div
+                    className="progress-bar"
+                    initial={{ width: "0%" }}
+                    animate={{
+                      width: totalMembers > 0 ? `${(votedUsersCount / totalMembers) * 100}%` : "0%",
+                    }}
+                    transition={{ duration: 0.5 }}
+                    style={{
+                      backgroundColor: "#4A90E2",
+                      height: "100%",
+                      borderRadius: "10px",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* 當前投票排行 */}
+              {Object.keys(votes).length > 0 && (
+                <div className="waiting-vote-ranking">
+                  <h3>目前投票排行</h3>
+                  <div className="vote-bars">
+                    {Object.entries(votes)
+                      .filter(([, count]) => count > 0)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 3)
+                      .map(([restaurantId, voteCount], index) => {
+                        const restaurant = [
+                          ...limitedRestaurants,
+                          ...alternativeRestaurants,
+                        ].find((r) => r.id === restaurantId);
+
+                        if (!restaurant) return null;
+
+                        const total = Object.values(votes).reduce(
+                          (sum, count) => sum + count,
+                          0
+                        );
+                        const percentage = Math.round((voteCount / total) * 100);
+
+                        return (
+                          <div key={restaurantId} className="vote-rank-item">
+                            <div className="vote-rank-header">
+                              <div className="vote-rank-name">
+                                <span className="vote-rank-position">
+                                  {index + 1}
+                                </span>
+                                {restaurant.name}
+                              </div>
+                              <div className="vote-rank-count">{voteCount} 票</div>
+                            </div>
+                            <div className="vote-rank-bar-container">
+                              <motion.div
+                                className="vote-rank-bar"
+                                initial={{ width: "0%" }}
+                                animate={{ width: `${percentage}%` }}
+                                transition={{ duration: 0.5 }}
+                                style={{
+                                  backgroundColor:
+                                    index === 0
+                                      ? "#FF6B6B"
+                                      : index === 1
+                                      ? "#FF9F68"
+                                      : "#FFC175",
+                                }}
+                              />
+                              <span className="vote-rank-percentage">
+                                {percentage}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* 已收藏的餐廳列表 */}
+              {saved.length > 0 && (
+                <div className="waiting-saved-section">
+                  <h3>你收藏的餐廳 ⭐</h3>
+                  <ul className="waiting-saved-list">
+                    {saved.map((r) => (
+                      <li key={r.id} className="waiting-saved-item">
+                        <span className="restaurant-name">{r.name}</span>
+                        <span className="restaurant-votes">
+                          {votes[r.id] ? `${votes[r.id]} 票` : "0 票"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );

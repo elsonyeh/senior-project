@@ -786,11 +786,13 @@
   box-shadow: 0 8px 20px rgba(104, 116, 232, 0.4);
 }
 
-.buddies-copy-button-active,
-.buddies-share-button-active {
+.buddies-copy-button:disabled,
+.buddies-share-button:disabled {
   background: #CCCCCC;
+  color: #666;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 .buddies-members-section {
@@ -927,6 +929,45 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   cursor: not-allowed;
   transform: none;
+}
+
+.buddies-host-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.buddies-member-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+}
+
+.buddies-leave-button {
+  background: linear-gradient(135deg, #6874E8 0%, #8B5CF6 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(104, 116, 232, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.buddies-leave-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(104, 116, 232, 0.5);
 }
 
 .buddies-waiting-message {

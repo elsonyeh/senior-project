@@ -39,7 +39,13 @@ export default function BuddiesRoom() {
 
   // 獲取用戶頭貼URL的輔助函數
   const getUserAvatarUrl = (member) => {
-    // 如果用戶已登入，優先通過ID匹配（現在真實用戶使用真實ID）
+    // 優先使用從資料庫獲取的頭貼URL（來自 user_profiles 表）
+    if (member.avatarUrl) {
+      logger.debug(`✅ 找到用戶頭貼 (資料庫): ${member.name} -> ${member.avatarUrl.substring(0, 50)}...`);
+      return member.avatarUrl;
+    }
+
+    // 如果用戶已登入，通過ID匹配（現在真實用戶使用真實ID）
     if (currentUser && (member.id === currentUser.id || member.user_id === currentUser.id)) {
       const avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.avatar_url;
       if (avatarUrl) {
@@ -461,7 +467,7 @@ export default function BuddiesRoom() {
         const membersResult = await memberService.getRoomMembers(response.roomId);
         if (membersResult.success) {
           const membersList = membersResult.data.map(member => {
-            const memberObj = { id: member.user_id, name: member.user_name };
+            const memberObj = { id: member.user_id, name: member.user_name, avatarUrl: member.avatar_url };
             const avatarUrl = getUserAvatarUrl(memberObj);
             return {
               id: member.user_id,
@@ -525,7 +531,25 @@ export default function BuddiesRoom() {
 
     try {
       localStorage.setItem("userName", nameInput);
-      
+
+      // 先檢查房間狀態，防止加入已經開始的房間
+      const roomStatusResult = await roomService.getRoomStatus(roomIdInput.toUpperCase());
+      if (roomStatusResult.success) {
+        const currentStatus = roomStatusResult.status;
+        if (currentStatus === 'questions' || currentStatus === 'recommend' || currentStatus === 'completed') {
+          setError("此房間已經開始答題，無法加入。請創建新房間或加入其他等待中的房間。");
+          setLoading(false);
+
+          setTimeout(() => {
+            if (window.confirm("此房間已經開始，是否要創建一個新房間？")) {
+              setRoomId("");
+              setError("");
+            }
+          }, 500);
+          return;
+        }
+      }
+
       const response = await memberService.joinRoom(
         roomIdInput.toUpperCase(),
         userId,
@@ -545,7 +569,7 @@ export default function BuddiesRoom() {
         const membersResult = await memberService.getRoomMembers(roomIdInput.toUpperCase());
         if (membersResult.success) {
           const membersList = membersResult.data.map(member => {
-            const memberObj = { id: member.user_id, name: member.user_name };
+            const memberObj = { id: member.user_id, name: member.user_name, avatarUrl: member.avatar_url };
             const avatarUrl = getUserAvatarUrl(memberObj);
             return {
               id: member.user_id,
@@ -572,31 +596,9 @@ export default function BuddiesRoom() {
           // 不在這裡設置 phase，讓房間狀態監聽器來決定
         }
 
-        // 獲取房間當前狀態並設置對應的 phase
-        const roomStatusResult = await roomService.getRoomStatus(roomIdInput.toUpperCase());
-        if (roomStatusResult.success) {
-          const currentStatus = roomStatusResult.status;
-          logger.debug("🔍 加入房間時檢查狀態:", {
-            roomId: roomIdInput.toUpperCase(),
-            currentStatus,
-            willSetPhase: currentStatus
-          });
-
-          // 根據房間狀態設置對應的 phase
-          if (currentStatus === 'questions') {
-            logger.warn("⚠️ 房間狀態是 'questions'，將自動進入答題階段");
-            setPhase('questions');
-          } else if (currentStatus === 'recommend') {
-            logger.warn("⚠️ 房間狀態是 'recommend'，將自動進入推薦階段");
-            setPhase('recommend');
-          } else if (currentStatus === 'completed') {
-            logger.warn("⚠️ 房間狀態是 'completed'，將自動進入完成階段");
-            setPhase('completed');
-          } else {
-            logger.debug("✅ 房間狀態正常，設置為 waiting");
-            setPhase('waiting'); // 默認狀態
-          }
-        }
+        // 房間狀態已在加入前檢查過，這裡只是確認
+        logger.debug("✅ 成功加入房間，設置為 waiting");
+        setPhase('waiting');
 
         // 不需要跳轉，直接更新 URL 狀態
         window.history.replaceState({}, '', `/buddies?roomId=${roomIdInput.toUpperCase()}`);
@@ -1046,6 +1048,71 @@ export default function BuddiesRoom() {
     navigate("/");
   };
 
+  // 離開房間
+  const handleLeaveRoom = async () => {
+    try {
+      // 從成員列表中移除自己
+      await memberService.leaveRoom(roomId, userId);
+
+      // 重置所有狀態
+      setJoined(false);
+      setRoomId("");
+      setPhase("input");
+      setMembers([]);
+      setQuestions([]);
+      setRecommendations([]);
+      setIsHost(false);
+
+      // 清理 URL
+      window.history.replaceState({}, '', '/buddies');
+
+      logger.info("已離開房間");
+    } catch (error) {
+      console.error("離開房間失敗:", error);
+      setError("離開房間失敗");
+    }
+  };
+
+  // 重新開始（重置房間到等待狀態）
+  const handleRestartRoom = async () => {
+    try {
+      setLoading(true);
+
+      // 更新房間狀態為 waiting
+      await roomService.updateRoomStatus(roomId, 'waiting');
+
+      // 清空房間的答案和推薦數據
+      const { supabase } = await import('../services/supabaseService');
+      await supabase
+        .from('buddies_rooms')
+        .update({
+          member_answers: {},
+          collective_answers: null,
+          recommendations: null,
+          votes: null,
+          final_restaurant_id: null,
+          final_restaurant_data: null,
+          current_question_index: 0,
+          questions_started_at: null,
+          voting_started_at: null,
+          completed_at: null
+        })
+        .eq('id', roomId);
+
+      // 重置前端狀態
+      setPhase('waiting');
+      setQuestions([]);
+      setRecommendations([]);
+
+      logger.info("房間已重置，回到等待狀態");
+    } catch (error) {
+      console.error("重置房間失敗:", error);
+      setError("重置房間失敗");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 格式化問題
   const formatQuestionsForSwiper = (questions) =>
     questions.map((q, index) => ({
@@ -1081,14 +1148,14 @@ export default function BuddiesRoom() {
               <button
                 onClick={copyToClipboard}
                 disabled={copyingRoom}
-                className={copyingRoom ? "buddies-copy-button-active" : "buddies-copy-button"}
+                className="buddies-copy-button"
               >
                 {copyingRoom ? "複製中..." : "📋 複製房號"}
               </button>
               <button
                 onClick={shareRoom}
                 disabled={sharing}
-                className={sharing ? "buddies-share-button-active" : "buddies-share-button"}
+                className="buddies-share-button"
               >
                 {sharing ? "分享中..." : "🔗 分享連結"}
               </button>
@@ -1138,18 +1205,35 @@ export default function BuddiesRoom() {
               </div>
             </div>
             <div className="buddies-action-section">
-              {isHost && (
-                <button
-                  onClick={handleStartQuestions}
-                  disabled={loading || members.length < 1}
-                  className="buddies-start-button"
-                >
-                  🚀 開始答題
-                </button>
-              )}
-              {!isHost && members.length > 0 && (
-                <div className="buddies-waiting-message">
-                  <p>⏳ 等待主持人開始答題...</p>
+              {isHost ? (
+                <div className="buddies-host-actions">
+                  <button
+                    onClick={handleLeaveRoom}
+                    className="buddies-leave-button"
+                  >
+                    🚪 離開房間
+                  </button>
+                  <button
+                    onClick={handleStartQuestions}
+                    disabled={loading || members.length < 1}
+                    className="buddies-start-button"
+                  >
+                    🚀 開始答題
+                  </button>
+                </div>
+              ) : (
+                <div className="buddies-member-actions">
+                  {members.length > 0 && (
+                    <div className="buddies-waiting-message">
+                      <p>⏳ 等待主持人開始答題...</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleLeaveRoom}
+                    className="buddies-leave-button"
+                  >
+                    🚪 離開房間
+                  </button>
                 </div>
               )}
             </div>
@@ -1173,7 +1257,7 @@ export default function BuddiesRoom() {
           <BuddiesRecommendation
             roomId={roomId}
             restaurants={recommendations}
-            onBack={() => setPhase("waiting")}
+            onBack={handleRestartRoom}
             onFinalResult={(finalRestaurant) => {
               // 記錄最終選擇的餐廳到選擇歷史
               logger.info('最終結果確定，記錄到選擇歷史:', finalRestaurant);

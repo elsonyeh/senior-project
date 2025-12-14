@@ -351,10 +351,11 @@ export const roomService = {
    * @return {String} 用戶ID
    */
   getOrCreateUserId() {
-    let userId = localStorage.getItem('userId');
+    let userId = localStorage.getItem('swifttaste_user_id');
     if (!userId) {
-      userId = `user_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-      localStorage.setItem('userId', userId);
+      // 生成 UUID v4
+      userId = crypto.randomUUID();
+      localStorage.setItem('swifttaste_user_id', userId);
     }
     return userId;
   },
@@ -417,6 +418,7 @@ export const memberService = {
                 name: member.user_name,
                 isHost: member.is_host,
                 joinedAt: member.joined_at,
+                avatarUrl: member.avatar_url,
               };
             });
             callback(membersObj);
@@ -441,6 +443,31 @@ export const memberService = {
         .order('joined_at', { ascending: true });
 
       if (error) throw error;
+
+      // 獲取成員的頭像資訊
+      if (data && data.length > 0) {
+        const userIds = data.map(m => m.user_id).filter(id => id);
+
+        if (userIds.length > 0) {
+          // 從 user_profiles 獲取頭像
+          const { data: profiles } = await supabase
+            .from('user_profiles')
+            .select('id, avatar_url')
+            .in('id', userIds);
+
+          // 將頭像資訊合併到成員數據
+          if (profiles) {
+            const profileMap = {};
+            profiles.forEach(p => {
+              profileMap[p.id] = p.avatar_url;
+            });
+
+            data.forEach(member => {
+              member.avatar_url = profileMap[member.user_id] || null;
+            });
+          }
+        }
+      }
 
       return { success: true, data };
     } catch (error) {
@@ -1397,7 +1424,6 @@ export const adminService = {
         'buddies_restaurant_votes',
         'buddies_final_results',
         'buddies_recommendations',
-        'buddies_answers',
         'buddies_questions',
         'buddies_members',
         'buddies_rooms'

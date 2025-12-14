@@ -71,6 +71,7 @@ export default function SwiftTaste() {
   const [currentUser, setCurrentUser] = useState(null);
   const [defaultFavoriteListId, setDefaultFavoriteListId] = useState(null);
   const [likedRestaurants, setLikedRestaurants] = useState(new Set()); // 追蹤已收藏的餐廳
+  const [likedVersion, setLikedVersion] = useState(0); // 用於強制重新渲染
 
   // Toast 通知狀態
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
@@ -890,6 +891,7 @@ export default function SwiftTaste() {
             newSet.delete(restaurant.id);
             return newSet;
           });
+          setLikedVersion(v => v + 1); // 強制重新渲染
 
           showToast(`已取消收藏「${restaurant.name}」`, 'info');
           console.log('✅ 已取消收藏:', restaurant.name);
@@ -920,6 +922,7 @@ export default function SwiftTaste() {
         if (result.success) {
           // 更新已收藏狀態
           setLikedRestaurants(prev => new Set(prev).add(restaurant.id));
+          setLikedVersion(v => v + 1); // 強制重新渲染
 
           showToast(`已將「${restaurant.name}」加入收藏`, 'success');
           console.log('✅ 成功加入收藏:', restaurant.name);
@@ -941,6 +944,7 @@ export default function SwiftTaste() {
           if (result.error === '此餐廳已在收藏清單中') {
             // 即使後端說已存在，也更新前端狀態
             setLikedRestaurants(prev => new Set(prev).add(restaurant.id));
+            setLikedVersion(v => v + 1); // 強制重新渲染
             showToast('此餐廳已在收藏清單中', 'info');
           } else {
             showToast(`收藏失敗：${result.error}`, 'error');
@@ -1168,6 +1172,7 @@ export default function SwiftTaste() {
           onLike={handleLike}
           currentUser={currentUser}
           likedRestaurants={likedRestaurants}
+          likedVersion={likedVersion}
         />
       )}
 

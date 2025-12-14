@@ -325,11 +325,6 @@ class DataAnalyticsService {
         .select('basic_answers, fun_answers')
         .eq('mode', 'swifttaste');
 
-      // 從 Buddies 系統獲取問題統計
-      const { data: buddiesAnswersData } = await supabase
-        .from('buddies_answers')
-        .select('answers, question_texts');
-
       // 處理基本問題統計
       const basicAnswers = swiftTasteData?.filter(d => d.basic_answers && Array.isArray(d.basic_answers)).map(d => d.basic_answers) || [];
       const basicQuestionStats = this.processQuestionAnswers(basicAnswers);
@@ -338,16 +333,11 @@ class DataAnalyticsService {
       const funAnswers = swiftTasteData?.filter(d => d.fun_answers && Array.isArray(d.fun_answers)).map(d => d.fun_answers) || [];
       const funQuestionStats = this.processQuestionAnswers(funAnswers);
 
-      // 處理 Buddies 問題統計
-      const buddiesQuestionStats = this.processBuddiesAnswers(buddiesAnswersData || []);
-
       return {
         basicQuestions: basicQuestionStats,
         funQuestions: funQuestionStats,
-        buddiesQuestions: buddiesQuestionStats,
         totalBasicAnswers: basicAnswers.length,
-        totalFunAnswers: funAnswers.length,
-        totalBuddiesAnswers: buddiesAnswersData?.length || 0
+        totalFunAnswers: funAnswers.length
       };
     });
   }

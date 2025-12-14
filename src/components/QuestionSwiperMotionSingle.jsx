@@ -6,7 +6,8 @@ import "./SwiftTasteCard.css";
 
 // 單題同步答題組件 - 專為多人模式設計（移除點擊投票功能）
 export default function QuestionSwiperMotionSingle({
-  question,
+  question, // 單個問題（向後相容）
+  questions, // 新增：問題數組（提升流暢度）
   onAnswer,
   voteStats,
   disableClickToVote = false,
@@ -16,6 +17,10 @@ export default function QuestionSwiperMotionSingle({
   const [lastDirection, setLastDirection] = useState("");
   const [hasVoted, setHasVoted] = useState(false);
   const [voteData, setVoteData] = useState({ left: 0, right: 0, total: 0 });
+
+  // 使用 questions 數組（如果提供）或單個 question
+  const questionList = questions || (question ? [question] : []);
+  const currentQuestion = questionList[0]; // 總是使用第一個問題作為當前問題
 
   // 使用ref存儲voteStats以避免無限循環更新
   const voteStatsRef = useRef(voteStats);
@@ -29,16 +34,16 @@ export default function QuestionSwiperMotionSingle({
       voteStatsRef.current = voteStats;
 
       // 提取左右選項的票數，考慮所有用戶的投票
-      if (question) {
+      if (currentQuestion) {
         let leftCount = 0;
         let rightCount = 0;
 
         // 計算所有用戶的投票（包括房主）
         if (voteStats.userData && Array.isArray(voteStats.userData)) {
           voteStats.userData.forEach((vote) => {
-            if (vote.option === question.leftOption) {
+            if (vote.option === currentQuestion.leftOption) {
               leftCount++;
-            } else if (vote.option === question.rightOption) {
+            } else if (vote.option === currentQuestion.rightOption) {
               rightCount++;
             }
           });
@@ -46,17 +51,17 @@ export default function QuestionSwiperMotionSingle({
 
         // 如果有房主投票，確保計入
         if (voteStats.hostVote) {
-          if (voteStats.hostVote === question.leftOption) {
+          if (voteStats.hostVote === currentQuestion.leftOption) {
             // 檢查是否已經在 userData 中計算過
             const hostInUserData = voteStats.userData?.some(
-              (vote) => vote.isHost && vote.option === question.leftOption
+              (vote) => vote.isHost && vote.option === currentQuestion.leftOption
             );
             if (!hostInUserData) {
               leftCount++;
             }
-          } else if (voteStats.hostVote === question.rightOption) {
+          } else if (voteStats.hostVote === currentQuestion.rightOption) {
             const hostInUserData = voteStats.userData?.some(
-              (vote) => vote.isHost && vote.option === question.rightOption
+              (vote) => vote.isHost && vote.option === currentQuestion.rightOption
             );
             if (!hostInUserData) {
               rightCount++;
@@ -84,7 +89,7 @@ export default function QuestionSwiperMotionSingle({
         setHasVoted(hasUserVoted);
       }
     }
-  }, [voteStats, question, userId]);
+  }, [voteStats, currentQuestion, userId]);
 
   // 處理滑動時的視覺反饋
   const handleLocalSwipe = (dir) => {
@@ -97,7 +102,7 @@ export default function QuestionSwiperMotionSingle({
       dir,
       hasVoted,
       userId,
-      questionId: question?.id,
+      questionId: currentQuestion?.id,
       disabled
     });
 
@@ -106,24 +111,25 @@ export default function QuestionSwiperMotionSingle({
       return; // 禁用時不允許滑動
     }
 
-    if (hasVoted) {
-      console.log("⚠️ 用戶已投票，忽略此次滑動");
-      return; // 防止重複投票
-    }
+    // 移除 hasVoted 本地檢查，避免快速滑動時被阻止
+    // 父組件會通過 disabled prop 控制是否允許滑動
+    // if (hasVoted) {
+    //   console.log("⚠️ 用戶已投票，忽略此次滑動");
+    //   return;
+    // }
 
     // 提交答案
     const answer =
       dir === "right"
         ? item
           ? item.rightOption
-          : question.rightOption
+          : currentQuestion.rightOption
         : item
         ? item.leftOption
-        : question.leftOption;
+        : currentQuestion.leftOption;
 
     console.log("📝 提交答案:", { answer, userId });
 
-    setHasVoted(true);
     // 調用父組件的答案處理函數
     onAnswer(answer);
   };
@@ -146,20 +152,22 @@ export default function QuestionSwiperMotionSingle({
     return q.text;
   };
 
-  // 確保 question 對象格式正確
-  const safeQuestion = question
-    ? {
-        id: question.id || `question-${Date.now()}`,
-        text: question.text || "",
-        leftOption: question.leftOption || "選項 A",
-        rightOption: question.rightOption || "選項 B",
-        hasVS: question.hasVS || false,
-      }
-    : null;
+  // 確保 question 對象格式正確，並轉換為數組供 CardStack 使用
+  const safeQuestions = questionList
+    .filter(q => q) // 移除 null/undefined
+    .map((q, index) => ({
+      id: q.id || `question-${Date.now()}-${index}`,
+      text: q.text || "",
+      leftOption: q.leftOption || "選項 A",
+      rightOption: q.rightOption || "選項 B",
+      hasVS: q.hasVS || false,
+    }));
 
-  if (!safeQuestion) {
+  if (safeQuestions.length === 0) {
     return <div>無法載入問題...</div>;
   }
+
+  const currentSafeQuestion = safeQuestions[0]; // 當前要顯示的問題
 
   // 計算投票百分比
   const calculatePercentage = (count, total) => {
@@ -181,9 +189,9 @@ export default function QuestionSwiperMotionSingle({
 
   return (
     <div className="question-swiper-container">
-      {/* 使用CardStack來實現滑動效果 */}
+      {/* 使用CardStack來實現滑動效果，傳入數組以支持多張卡片 */}
       <CardStack
-        cards={[safeQuestion]}
+        cards={safeQuestions}
         badgeType="none"
         onSwipe={handleSwipe}
         onLocalSwipe={handleLocalSwipe}
@@ -205,8 +213,9 @@ export default function QuestionSwiperMotionSingle({
                 >
                   {q.leftOption}
                 </p>
-                {renderVoteCount(voteData.left, voteData.total)}
-                {voteData.total > 0 && (
+                {/* 只在非等待狀態時顯示投票統計 */}
+                {!disabled && renderVoteCount(voteData.left, voteData.total)}
+                {!disabled && voteData.total > 0 && (
                   <motion.div
                     className="vote-percentage-bar"
                     initial={{ width: "0%" }}
@@ -233,8 +242,9 @@ export default function QuestionSwiperMotionSingle({
                 >
                   {q.rightOption}
                 </p>
-                {renderVoteCount(voteData.right, voteData.total)}
-                {voteData.total > 0 && (
+                {/* 只在非等待狀態時顯示投票統計 */}
+                {!disabled && renderVoteCount(voteData.right, voteData.total)}
+                {!disabled && voteData.total > 0 && (
                   <motion.div
                     className="vote-percentage-bar"
                     initial={{ width: "0%" }}
@@ -250,7 +260,8 @@ export default function QuestionSwiperMotionSingle({
               </div>
             </div>
 
-            {hasVoted && (
+            {/* 只在非等待狀態時顯示已投票提示 */}
+            {!disabled && hasVoted && (
               <motion.div
                 className="vote-hint"
                 initial={{ opacity: 0 }}
@@ -266,7 +277,8 @@ export default function QuestionSwiperMotionSingle({
               </motion.div>
             )}
 
-            {!hasVoted && voteData.total > 0 && (
+            {/* 只在非等待狀態時顯示投票人數指示器 */}
+            {!disabled && !hasVoted && voteData.total > 0 && (
               <motion.div
                 className="live-votes-indicator"
                 initial={{ opacity: 0 }}

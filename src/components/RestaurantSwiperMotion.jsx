@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IoHeartOutline, IoHeart } from "react-icons/io5";
 import CardStack from "./common/CardStack";
 import "./SwiftTasteCard.css";
@@ -16,10 +16,17 @@ export default function RestaurantSwiperMotion({
   onLike, // 新增：點擊收藏按鈕的回調
   currentUser, // 新增：當前用戶信息
   likedRestaurants = new Set(), // 新增：已收藏的餐廳集合
+  likedVersion = 0, // 新增：用於強制重新渲染
 }) {
   const [seen, setSeen] = useState([]);
   const [saved, setSaved] = useState([]);
   const [disliked, setDisliked] = useState([]);
+  const [renderKey, setRenderKey] = useState(0);
+
+  // 監聽 likedVersion 變化，強制重新渲染
+  useEffect(() => {
+    setRenderKey(prev => prev + 1);
+  }, [likedVersion]);
 
   const handleSwipe = (dir, r) => {
     // 觸發 onSwipe 回調（用於重置計時器）
@@ -65,6 +72,7 @@ export default function RestaurantSwiperMotion({
   const renderCard = (r) => {
     // 檢查此餐廳是否已收藏
     const isLiked = likedRestaurants.has(r.id);
+    console.log(`🎨 Rendering card for ${r.name}, isLiked: ${isLiked}, likedVersion: ${likedVersion}, renderKey: ${renderKey}`);
 
     return (
       <div className="restaurant-info-blur">

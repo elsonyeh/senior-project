@@ -22,7 +22,10 @@
       "Bash(node scripts/check-tables.js:*)",
       "Bash(grep:*)",
       "Bash(git reset:*)",
-      "Bash(node -c:*)"
+      "Bash(node -c:*)",
+      "Bash(timeout 30 bash -c \"cd ''C:\\Projects\\SwiftTaste-demo'' && npm run build 2>&1 | head -100\")",
+      "Bash(timeout 30 bash -c \"cd ''C:\\Projects\\SwiftTaste-demo'' && npm run build 2>&1 | head -50\")",
+      "Bash(node -e \"\nconst { createClient } = require(''@supabase/supabase-js'');\nconst supabase = createClient(\n  process.env.VITE_SUPABASE_URL || ''https://ijgelbxfrahtrrcjijqf.supabase.co'',\n  process.env.VITE_SUPABASE_ANON_KEY || ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZ2VsYnhmcmFodHJyY2ppanFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA0NDg1NjcsImV4cCI6MjA0NjAyNDU2N30.HlNg6RkFP3ioKdaZOTTlZN8l42ZP5v2m8ZcxO2vt0Fc''\n);\n\nasync function checkTable() {\n  // Try to query the table\n  const { data, error } = await supabase\n    .from(''buddies_members'')\n    .select(''*'')\n    .limit(1);\n  \n  console.log(''Query result:'', { data, error });\n  \n  if (error) {\n    console.log(''Error code:'', error.code);\n    console.log(''Error message:'', error.message);\n    console.log(''Error details:'', error.details);\n    console.log(''Error hint:'', error.hint);\n  }\n}\n\ncheckTable().catch(console.error);\n\")"
     ],
     "deny": [],
     "ask": []

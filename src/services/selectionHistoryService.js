@@ -451,16 +451,12 @@ class OptimizedSelectionHistoryService {
         started_at: buddiesData.startTime || new Date().toISOString(),
         completed_at: new Date().toISOString(),
         basic_answers: buddiesData.answers || {},
-        question_texts: buddiesData.questionTexts || [],
         fun_answers: buddiesData.funAnswers || {},
         recommended_restaurants: buddiesData.recommendations || [],
         final_restaurant: buddiesData.selectedRestaurant || null,
-        recommendation_reason: buddiesData.recommendationReason || null,
-        // Buddies 特有資料
-        room_id: buddiesData.roomId || null,
-        room_members: buddiesData.roomMembers || [],
-        is_host: buddiesData.isHost || false,
-        participant_count: buddiesData.roomMembers?.length || 0
+        // Buddies 特有資料（使用正確的欄位名）
+        buddies_room_id: buddiesData.roomId || null,
+        buddies_role: buddiesData.isHost ? 'host' : 'member'
       };
 
       const { data, error } = await supabase

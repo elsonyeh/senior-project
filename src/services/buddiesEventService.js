@@ -67,11 +67,9 @@ class BuddiesEventService {
    * @param {string} params.eventType - 事件類型
    * @param {string} [params.userId] - 用戶 ID（可選）
    * @param {Object} [params.eventData] - 事件數據（可選）
-   * @param {string} [params.ipAddress] - IP 地址（可選）
-   * @param {string} [params.userAgent] - 用戶代理（可選）
    * @returns {Promise<{success: boolean, eventId?: string, message?: string}>}
    */
-  async logEvent({ roomId, eventType, userId = null, eventData = null, ipAddress = null, userAgent = null }) {
+  async logEvent({ roomId, eventType, userId = null, eventData = null }) {
     try {
       // 使用資料庫函數記錄事件
       const { data, error } = await supabase
@@ -79,14 +77,12 @@ class BuddiesEventService {
           p_room_id: roomId,
           p_event_type: eventType,
           p_user_id: userId,
-          p_event_data: eventData,
-          p_ip_address: ipAddress,
-          p_user_agent: userAgent
+          p_event_data: eventData
         });
 
       if (error) {
         // 如果 RPC 函數不可用，降級到直接插入
-        return await this._logEventDirect({ roomId, eventType, userId, eventData, ipAddress, userAgent });
+        return await this._logEventDirect({ roomId, eventType, userId, eventData });
       }
 
       return {
@@ -106,7 +102,7 @@ class BuddiesEventService {
    * 直接插入事件（降級方案）
    * @private
    */
-  async _logEventDirect({ roomId, eventType, userId, eventData, ipAddress, userAgent }) {
+  async _logEventDirect({ roomId, eventType, userId, eventData }) {
     const { data, error } = await supabase
       .from('buddies_events')
       .insert({
@@ -114,8 +110,6 @@ class BuddiesEventService {
         event_type: eventType,
         user_id: userId,
         event_data: eventData,
-        ip_address: ipAddress,
-        user_agent: userAgent,
         created_at: new Date().toISOString()
       })
       .select('id')
