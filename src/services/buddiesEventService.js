@@ -38,6 +38,9 @@ export const EVENT_TYPES = {
   RECOMMENDATIONS_GENERATED: 'recommendations_generated',
   RECOMMENDATIONS_REFRESHED: 'recommendations_refreshed',
 
+  // 滑動操作
+  SWIPING_COMPLETED: 'swiping_completed',
+
   // 投票操作
   VOTE_CAST: 'vote_cast',
   VOTE_CHANGED: 'vote_changed',
@@ -287,6 +290,20 @@ class BuddiesEventService {
       userId,
       eventData: {
         new_recommendations_count: newCount
+      }
+    });
+  }
+
+  /**
+   * 記錄用戶完成滑動事件
+   */
+  async logSwipingCompleted(roomId, userId, swipedCount) {
+    return this.logEvent({
+      roomId,
+      eventType: EVENT_TYPES.SWIPING_COMPLETED,
+      userId,
+      eventData: {
+        swiped_count: swipedCount
       }
     });
   }
@@ -563,6 +580,41 @@ class BuddiesEventService {
         success: false,
         message: error.message,
         stats: []
+      };
+    }
+  }
+
+  /**
+   * 獲取完成滑動的用戶數量
+   *
+   * @param {string} roomId - 房間 ID
+   * @returns {Promise<{success: boolean, count: number, userIds: string[]}>}
+   */
+  async getSwipingCompletedCount(roomId) {
+    try {
+      const { data, error } = await supabase
+        .from('buddies_events')
+        .select('user_id')
+        .eq('room_id', roomId)
+        .eq('event_type', EVENT_TYPES.SWIPING_COMPLETED);
+
+      if (error) throw error;
+
+      // 去重，因為可能有重複的記錄
+      const uniqueUserIds = [...new Set((data || []).map(e => e.user_id).filter(Boolean))];
+
+      return {
+        success: true,
+        count: uniqueUserIds.length,
+        userIds: uniqueUserIds
+      };
+    } catch (error) {
+      console.error('獲取滑動完成數量失敗:', error);
+      return {
+        success: false,
+        count: 0,
+        userIds: [],
+        message: error.message
       };
     }
   }

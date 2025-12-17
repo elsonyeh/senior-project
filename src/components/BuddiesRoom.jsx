@@ -735,53 +735,26 @@ export default function BuddiesRoom() {
         throw new Error("無法獲取餐廳數據");
       }
 
-      // 轉換 Buddies 答案數據為適合推薦算法的格式
-      const groupAnswers = {};
+      // 🔧 從資料庫讀取集體答案（已經過平票處理的多數決結果）
+      const { supabase } = await import('../services/supabaseService');
+      const { data: roomData, error: roomError } = await supabase
+        .from('buddies_rooms')
+        .select('collective_answers')
+        .eq('id', roomId)
+        .single();
 
-      // 處理群組答案數據，取得多數用戶的選擇
-      if (Array.isArray(allAnswersData)) {
-        allAnswersData.forEach((userAnswer, index) => {
-          if (userAnswer && userAnswer.answers && Array.isArray(userAnswer.answers)) {
-            userAnswer.answers.forEach((answer, answerIndex) => {
-              if (!groupAnswers[answerIndex]) {
-                groupAnswers[answerIndex] = [];
-              }
-              groupAnswers[answerIndex].push(answer);
-            });
-          }
-        });
-
-        // 對每個問題取多數決
-        Object.keys(groupAnswers).forEach(questionIndex => {
-          const answers = groupAnswers[questionIndex];
-
-          // 統計每個答案的出現次數
-          const answerCounts = {};
-          answers.forEach(answer => {
-            answerCounts[answer] = (answerCounts[answer] || 0) + 1;
-          });
-
-          // 找出出現次數最多的答案
-          let maxCount = 0;
-          let mostCommonAnswer = answers[0]; // 預設值
-
-          Object.entries(answerCounts).forEach(([answer, count]) => {
-            if (count > maxCount) {
-              maxCount = count;
-              mostCommonAnswer = answer;
-            }
-          });
-
-          groupAnswers[questionIndex] = mostCommonAnswer;
-          logger.debug(`📊 問題 ${questionIndex} 多數決結果: ${mostCommonAnswer} (${maxCount}/${answers.length} 票)`);
-        });
+      if (roomError) {
+        throw new Error(`無法獲取集體答案: ${roomError.message}`);
       }
+
+      const collectiveAnswers = roomData?.collective_answers || {};
+      logger.debug("📊 從資料庫讀取的集體答案:", collectiveAnswers);
 
       // 將物件轉換為陣列格式，給推薦算法使用
       const groupAnswersArray = [];
-      const maxIndex = Math.max(...Object.keys(groupAnswers).map(k => parseInt(k)));
+      const maxIndex = Math.max(...Object.keys(collectiveAnswers).map(k => parseInt(k)), 0);
       for (let i = 0; i <= maxIndex; i++) {
-        groupAnswersArray[i] = groupAnswers[i] || '';
+        groupAnswersArray[i] = collectiveAnswers[i.toString()] || '';
       }
 
       logger.debug("🔄 轉換後的群組答案陣列:", groupAnswersArray);
@@ -982,23 +955,39 @@ export default function BuddiesRoom() {
       const basicWithSource = buddiesBasicQuestions.map((q) => {
         let dependsOnConverted = null;
 
-        // 如果有依賴，需要將 questionId 轉換為問題文本
-        if (q.dependsOn && q.dependsOn.questionId) {
-          const dependentQ = buddiesBasicQuestions.find(
-            dq => dq.id === q.dependsOn.questionId
-          );
+        // 如果有依賴，處理兩種格式：questionId 或直接使用 question 文本
+        if (q.dependsOn) {
+          if (q.dependsOn.questionId) {
+            // 格式 1: 使用 questionId 引用
+            const dependentQ = buddiesBasicQuestions.find(
+              dq => dq.id === q.dependsOn.questionId
+            );
 
-          if (dependentQ) {
+            if (dependentQ) {
+              dependsOnConverted = {
+                question: dependentQ.question_text || dependentQ.question,
+                answer: q.dependsOn.answer
+              };
+            }
+          } else if (q.dependsOn.question) {
+            // 格式 2: 直接使用問題文本（buddiesBasicQuestions.js 的格式）
             dependsOnConverted = {
-              question: dependentQ.question_text || dependentQ.question,
+              question: q.dependsOn.question,
               answer: q.dependsOn.answer
             };
           }
         }
 
+        // 提取 leftOption 和 rightOption
+        const leftOpt = q.leftOption || q.options?.[0];
+        const rightOpt = q.rightOption || q.options?.[1];
+
         return {
           question: q.question_text || q.question,
-          options: [q.leftOption, q.rightOption],
+          text: q.question_text || q.question, // 添加 text 屬性
+          leftOption: leftOpt,
+          rightOption: rightOpt,
+          options: [leftOpt, rightOpt], // 保持兼容性
           source: "basic",
           dependsOn: dependsOnConverted
         };
@@ -1007,7 +996,10 @@ export default function BuddiesRoom() {
       // 格式化趣味問題
       const funWithSource = randomFun.map((q) => ({
         question: q.question_text || q.question || q.text,
-        options: [q.leftOption, q.rightOption],
+        text: q.question_text || q.question || q.text, // 添加 text 屬性
+        leftOption: q.leftOption,
+        rightOption: q.rightOption,
+        options: [q.leftOption, q.rightOption], // 保持兼容性
         source: "fun",
         dependsOn: null // 趣味問題通常沒有依賴
       }));

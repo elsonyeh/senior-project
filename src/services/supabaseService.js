@@ -975,6 +975,189 @@ export const voteService = {
     }
   },
 
+
+  /**
+   * 為餐廳左滑（不喜歡）
+   * @param {String} roomId - 房間ID
+   * @param {String} restaurantId - 餐廳ID
+   * @param {String} userId - 用戶ID
+   * @return {Promise<Object>} 操作結果
+   */
+  async dislikeRestaurant(roomId, restaurantId, userId) {
+    try {
+      if (!roomId || !restaurantId || !userId) {
+        return { success: false, error: '參數不完整' };
+      }
+
+      // 獲取當前房間的 dislikes
+      const { data: room, error: fetchError } = await supabase
+        .from('buddies_rooms')
+        .select('dislikes')
+        .eq('id', roomId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 解析 dislikes JSONB
+      const dislikes = room?.dislikes || {};
+
+      // 檢查用戶是否已左滑過此餐廳
+      const restaurantDislikes = dislikes[restaurantId] || { count: 0, voters: [] };
+      if (restaurantDislikes.voters && restaurantDislikes.voters.includes(userId)) {
+        return { success: true, message: '已左滑過' };
+      }
+
+      // 更新左滑數據
+      restaurantDislikes.voters = restaurantDislikes.voters || [];
+      restaurantDislikes.voters.push(userId);
+      restaurantDislikes.count = restaurantDislikes.voters.length;
+      dislikes[restaurantId] = restaurantDislikes;
+
+      // 更新房間
+      const { error } = await supabase
+        .from('buddies_rooms')
+        .update({
+          dislikes: dislikes,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', roomId);
+
+      if (error) throw error;
+
+      console.log(`👎 左滑記錄: ${restaurantId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('餐廳左滑記錄失敗:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * 獲取用戶的滑動總數（likes + dislikes）
+   * @param {String} roomId - 房間ID
+   * @param {String} userId - 用戶ID
+   * @return {Promise<Object>} 滑動總數
+   */
+  async getUserSwipeCount(roomId, userId) {
+    try {
+      const { data: room, error } = await supabase
+        .from('buddies_rooms')
+        .select('votes, dislikes')
+        .eq('id', roomId)
+        .single();
+
+      if (error) throw error;
+
+      const votes = room?.votes || {};
+      const dislikes = room?.dislikes || {};
+
+      let likeCount = 0;
+      let dislikeCount = 0;
+
+      // 計算用戶的右滑次數
+      Object.values(votes).forEach(voteData => {
+        if (voteData.voters && voteData.voters.includes(userId)) {
+          likeCount++;
+        }
+      });
+
+      // 計算用戶的左滑次數
+      Object.values(dislikes).forEach(dislikeData => {
+        if (dislikeData.voters && dislikeData.voters.includes(userId)) {
+          dislikeCount++;
+        }
+      });
+
+      const totalSwipes = likeCount + dislikeCount;
+
+      return {
+        success: true,
+        likeCount,
+        dislikeCount,
+        totalSwipes
+      };
+    } catch (error) {
+      console.error('獲取用戶滑動數量失敗:', error);
+      return { success: false, error: error.message, totalSwipes: 0 };
+    }
+  },
+
+  /**
+   * 獲取所有用戶的滑動進度
+   * @param {String} roomId - 房間ID
+   * @return {Promise<Object>} 用戶滑動進度映射
+   */
+  async getAllUsersSwipeProgress(roomId) {
+    try {
+      const { data: room, error } = await supabase
+        .from('buddies_rooms')
+        .select('votes, dislikes')
+        .eq('id', roomId)
+        .single();
+
+      if (error) throw error;
+
+      const votes = room?.votes || {};
+      const dislikes = room?.dislikes || {};
+      const userProgress = {};
+
+      // 收集所有投票過的用戶
+      Object.values(votes).forEach(voteData => {
+        if (voteData.voters) {
+          voteData.voters.forEach(userId => {
+            if (!userProgress[userId]) {
+              userProgress[userId] = { likes: 0, dislikes: 0, total: 0 };
+            }
+            userProgress[userId].likes++;
+            userProgress[userId].total++;
+          });
+        }
+      });
+
+      // 收集所有左滑過的用戶
+      Object.values(dislikes).forEach(dislikeData => {
+        if (dislikeData.voters) {
+          dislikeData.voters.forEach(userId => {
+            if (!userProgress[userId]) {
+              userProgress[userId] = { likes: 0, dislikes: 0, total: 0 };
+            }
+            userProgress[userId].dislikes++;
+            userProgress[userId].total++;
+          });
+        }
+      });
+
+      return { success: true, userProgress };
+    } catch (error) {
+      console.error('獲取用戶滑動進度失敗:', error);
+      return { success: false, error: error.message, userProgress: {} };
+    }
+  },
+
+  /**
+   * 監聽左滑記錄
+   * @param {String} roomId - 房間ID
+   * @param {Function} callback - 回調函數
+   * @return {Function} 清理函數
+   */
+  listenDislikes(roomId, callback) {
+    if (!roomId || typeof callback !== 'function') return () => {};
+
+    const subscriptionId = `roomDislikes_${roomId}`;
+    return addSubscription(
+      'buddies_rooms',
+      `id=eq.${roomId}`,
+      (payload) => {
+        if (payload.new && payload.new.dislikes) {
+          callback(payload.new.dislikes);
+        } else {
+          callback({});
+        }
+      },
+      subscriptionId
+    );
+  },
+
   /**
    * 獲取投票結果
    * @param {String} roomId - 房間ID
@@ -1090,7 +1273,14 @@ export const finalResultService = {
 
       // 記錄房間完成事件
       try {
-        const memberCount = data.members_data?.length || 0;
+        // 從 buddies_members 表查詢成員數量
+        const { data: members, error: membersError } = await supabase
+          .from('buddies_members')
+          .select('id')
+          .eq('room_id', roomId)
+          .eq('status', 'active');
+
+        const memberCount = membersError ? 0 : (members?.length || 0);
         const totalVotes = data.votes
           ? Object.values(data.votes).reduce((sum, v) => sum + (v.count || 0), 0)
           : 0;

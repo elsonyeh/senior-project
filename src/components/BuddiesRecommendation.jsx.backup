@@ -5,7 +5,6 @@ import { memberService, roomService } from "../services/supabaseService";
 import RestaurantSwiperMotion from "./RestaurantSwiperMotion";
 import RecommendationResult from "./RecommendationResult";
 import { voteService, finalResultService } from "../services/supabaseService";
-import buddiesEventService from "../services/buddiesEventService";
 import logger from "../utils/logger";
 import "./RecommendationResult.css";
 import "./SwiftTasteCard.css";
@@ -88,19 +87,16 @@ export default function BuddiesRecommendation({
     // 標記當前用戶已完成滑動
     setUserFinishedSwiping(true);
 
-    // 記錄用戶完成滑動事件
-    await buddiesEventService.logSwipingCompleted(roomId, userId, limitedRestaurants.length);
+    // 🔍 檢查是否所有成員都已完成投票
+    const votedResult = await voteService.getVotedUsersCount(roomId);
+    if (votedResult.success) {
+      const actualVotedCount = votedResult.count;
 
-    // 🔍 檢查是否所有成員都已完成滑動
-    const completedResult = await buddiesEventService.getSwipingCompletedCount(roomId);
-    if (completedResult.success) {
-      const actualCompletedCount = completedResult.count;
-
-      logger.debug("📊 滑動完成度檢查:", {
-        completedCount: actualCompletedCount,
+      logger.debug("📊 投票完成度檢查:", {
+        votedCount: actualVotedCount,
         totalMembers: totalMembers,
-        completedUsers: completedResult.userIds,
-        allMembersFinished: actualCompletedCount >= totalMembers && totalMembers > 0
+        votedUsers: votedResult.userIds,
+        allMembersFinished: actualVotedCount >= totalMembers && totalMembers > 0
       });
 
       // 如果 totalMembers 還未載入（訂閱中），等待
@@ -110,17 +106,17 @@ export default function BuddiesRecommendation({
         return;
       }
 
-      // 如果還有成員未完成滑動，進入等待狀態
-      if (actualCompletedCount < totalMembers) {
-        logger.debug("⏳ 還有成員未完成滑動，進入等待狀態", {
-          remaining: totalMembers - actualCompletedCount,
-          waitingFor: totalMembers - actualCompletedCount
+      // 如果還有成員未完成投票，進入等待狀態
+      if (actualVotedCount < totalMembers) {
+        logger.debug("⏳ 還有成員未完成投票，進入等待狀態", {
+          remaining: totalMembers - actualVotedCount,
+          waitingFor: totalMembers - actualVotedCount
         });
         setWaiting(true); // 顯示等待畫面
         return; // 提前返回，不執行後續的結果計算
       }
 
-      logger.debug("✅ 所有成員都已完成滑動，開始計算最終結果");
+      logger.debug("✅ 所有成員都已完成投票，開始計算最終結果");
     }
 
     // 確保在計算結果前，votes 數據已從資料庫載入
@@ -434,26 +430,19 @@ export default function BuddiesRecommendation({
             shouldFinish: actualVotedCount >= currentTotalMembers && currentTotalMembers > 0
           });
 
-          // 檢查滑動完成度（用於等待中的用戶）
-          const swipingResult = await buddiesEventService.getSwipingCompletedCount(roomId);
-          if (swipingResult.success) {
-            const swipingCompletedCount = swipingResult.count;
-
-            logger.debug("🎯 滑動完成度更新:", {
-              completedCount: swipingCompletedCount,
-              totalMembers: currentTotalMembers,
-              completedUsers: swipingResult.userIds
-            });
-
-            // 如果當前用戶正在等待，且所有成員都完成滑動了，觸發結果計算
-            if (waiting && swipingCompletedCount >= currentTotalMembers && currentTotalMembers > 0) {
-              logger.debug("✅ 等待結束，所有成員已完成滑動");
-              setWaiting(false);
-              // 使用 ref 調用 handleFinishSwiping
-              if (handleFinishSwipingRef.current) {
-                handleFinishSwipingRef.current();
-              }
+          // 如果所有成員都已投票，切換到結果階段
+          if (actualVotedCount >= currentTotalMembers && currentTotalMembers > 0 && phase === "recommend") {
+            console.log("✅ 所有成員已完成投票，進入結果階段");
+            // 使用 ref 調用
+            if (handleFinishSwipingRef.current) {
+              handleFinishSwipingRef.current();
             }
+          }
+
+          // 如果當前用戶正在等待，且所有成員都完成了，退出等待狀態
+          if (actualVotedCount >= currentTotalMembers && currentTotalMembers > 0 && waiting) {
+            console.log("✅ 等待結束，所有成員已完成");
+            setWaiting(false);
           }
         }
       }
@@ -729,12 +718,8 @@ export default function BuddiesRecommendation({
     );
   }
 
-  // 使用 useMemo 計算最終顯示的餐廳列表，避免每次渲染都重新計算
-  const finalDisplayData = React.useMemo(() => {
-    if (phase !== "result" && phase !== "vote-result") {
-      return null;
-    }
-
+  // 如果處於結果階段
+  if (phase === "result" || phase === "vote-result") {
     logger.debug("📊 準備渲染結果頁面:", {
       phase,
       hasFinalResult: !!finalResult,
@@ -806,13 +791,6 @@ export default function BuddiesRecommendation({
     } else {
       logger.warn("⚠️ 沒有最終結果，使用票數最高的餐廳");
     }
-
-    return { finalSaved };
-  }, [phase, finalResult, votes, saved, limitedRestaurants]);
-
-  // 如果處於結果階段
-  if (finalDisplayData) {
-    const { finalSaved } = finalDisplayData;
 
     return (
       <>
@@ -894,10 +872,12 @@ export default function BuddiesRecommendation({
                   <span></span>
                   <span></span>
                 </div>
+                <div className="waiting-text">處理中...</div>
               </div>
 
-              {/* 簡化的進度顯示 */}
+              {/* 投票進度顯示 */}
               <div className="vote-progress-display">
+                <h3>選擇進度</h3>
                 <div className="progress-info">
                   <span className="progress-icon">👥</span>
                   <span className="progress-text">
@@ -920,6 +900,83 @@ export default function BuddiesRecommendation({
                   />
                 </div>
               </div>
+
+              {/* 當前投票排行 */}
+              {Object.keys(votes).length > 0 && (
+                <div className="waiting-vote-ranking">
+                  <h3>目前投票排行</h3>
+                  <div className="vote-bars">
+                    {Object.entries(votes)
+                      .filter(([, count]) => count > 0)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 3)
+                      .map(([restaurantId, voteCount], index) => {
+                        const restaurant = [
+                          ...limitedRestaurants,
+                          ...alternativeRestaurants,
+                        ].find((r) => r.id === restaurantId);
+
+                        if (!restaurant) return null;
+
+                        const total = Object.values(votes).reduce(
+                          (sum, count) => sum + count,
+                          0
+                        );
+                        const percentage = Math.round((voteCount / total) * 100);
+
+                        return (
+                          <div key={restaurantId} className="vote-rank-item">
+                            <div className="vote-rank-header">
+                              <div className="vote-rank-name">
+                                <span className="vote-rank-position">
+                                  {index + 1}
+                                </span>
+                                {restaurant.name}
+                              </div>
+                              <div className="vote-rank-count">{voteCount} 票</div>
+                            </div>
+                            <div className="vote-rank-bar-container">
+                              <motion.div
+                                className="vote-rank-bar"
+                                initial={{ width: "0%" }}
+                                animate={{ width: `${percentage}%` }}
+                                transition={{ duration: 0.5 }}
+                                style={{
+                                  backgroundColor:
+                                    index === 0
+                                      ? "#FF6B6B"
+                                      : index === 1
+                                      ? "#FF9F68"
+                                      : "#FFC175",
+                                }}
+                              />
+                              <span className="vote-rank-percentage">
+                                {percentage}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* 已收藏的餐廳列表 */}
+              {saved.length > 0 && (
+                <div className="waiting-saved-section">
+                  <h3>你收藏的餐廳 ⭐</h3>
+                  <ul className="waiting-saved-list">
+                    {saved.map((r) => (
+                      <li key={r.id} className="waiting-saved-item">
+                        <span className="restaurant-name">{r.name}</span>
+                        <span className="restaurant-votes">
+                          {votes[r.id] ? `${votes[r.id]} 票` : "0 票"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>

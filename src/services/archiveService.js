@@ -53,7 +53,14 @@ class ArchiveService {
       }
 
       // 2. 計算統計數據
-      const memberCount = room.members_data?.length || 0;
+      // 從 buddies_members 表查詢成員數量
+      const { data: members } = await supabase
+        .from('buddies_members')
+        .select('id')
+        .eq('room_id', roomId)
+        .eq('status', 'active');
+
+      const memberCount = members?.length || 0;
 
       const totalVotes = room.votes
         ? Object.values(room.votes).reduce((sum, v) => sum + (v.count || 0), 0)
@@ -67,10 +74,10 @@ class ArchiveService {
 
       const recommendationsCount = room.recommendations?.length || 0;
 
-      // 3. 插入歸檔表
+      // 3. 插入或更新歸檔表（使用 UPSERT 避免主鍵衝突）
       const { data: archived, error: archiveError } = await supabase
         .from('buddies_rooms_archive')
-        .insert({
+        .upsert({
           // 基本資訊
           id: room.id,
           room_code: room.room_code,
@@ -79,7 +86,7 @@ class ArchiveService {
           status: room.status,
 
           // JSONB 數據
-          members_data: room.members_data,
+          members_data: [], // 不再使用 room.members_data，成員數據在 buddies_members 表
           member_answers: room.member_answers,
           collective_answers: room.collective_answers,
           recommendations: room.recommendations,
@@ -107,20 +114,14 @@ class ArchiveService {
           // 元數據
           schema_version: '1.0',
           archived_by: 'app_service'
+        }, {
+          onConflict: 'id', // 指定衝突時使用 id 欄位判斷
+          ignoreDuplicates: false // 發生衝突時更新而不是忽略
         })
         .select()
         .single();
 
       if (archiveError) {
-        // 如果是重複鍵錯誤（already archived），視為成功
-        if (archiveError.code === '23505') {
-          console.log(`房間 ${room.room_code} 已經歸檔過`);
-          return {
-            success: true,
-            message: `房間 ${room.room_code} 已經歸檔`,
-            data: { roomId, roomCode: room.room_code, alreadyArchived: true }
-          };
-        }
         throw new Error(`歸檔失敗: ${archiveError.message}`);
       }
 
@@ -388,7 +389,7 @@ class ArchiveService {
           host_id: archivedRoom.host_id,
           host_name: archivedRoom.host_name,
           status: archivedRoom.status,
-          members_data: archivedRoom.members_data,
+          // members_data 不再使用，成員數據在 buddies_members 表
           member_answers: archivedRoom.member_answers,
           collective_answers: archivedRoom.collective_answers,
           recommendations: archivedRoom.recommendations,
