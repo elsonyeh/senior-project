@@ -104,10 +104,10 @@ export default function BuddiesQuestionSwiper({
     }
   }, [waiting]);
 
-  // 同步 questionIndex 到 ref
-  useEffect(() => {
-    currentQuestionIndexRef.current = questionIndex;
-  }, [questionIndex]);
+  // 注意：不要同步 questionIndex 到 currentQuestionIndexRef
+  // currentQuestionIndexRef.current 用於保存原始索引（original index）
+  // questionIndex 是可見問題的索引（visible index）
+  // 這兩者不應該混淆
 
   // Use Supabase questions if no questions provided via props
   useEffect(() => {
@@ -837,17 +837,33 @@ export default function BuddiesQuestionSwiper({
         });
       } else {
         // 進入下一題
-        logger.debug("⏭️ 動畫系統觸發進入下一題:", nextQuestionOriginalIndex);
+        // 關鍵修復：找出原始索引在可見問題中的位置
+        const nextVisibleIndex = visibleQuestions.findIndex(
+          vq => vq.originalIndex === nextQuestionOriginalIndex
+        );
+
+        logger.debug("⏭️ 動畫系統觸發進入下一題:", {
+          nextQuestionOriginalIndex,
+          nextVisibleIndex,
+          visibleQuestionsLength: visibleQuestions.length
+        });
+
+        if (nextVisibleIndex === -1) {
+          logger.error("❌ 找不到下一個問題在可見問題中的位置:", nextQuestionOriginalIndex);
+          return;
+        }
 
         // 重置動畫狀態
         animationCompleteRef.current = false;
         animationStartTimeRef.current = null;
 
         // 立即更新 questionIndex ref，避免重複處理
+        // 注意：這裡應該保存原始索引，因為其他地方會用到
         currentQuestionIndexRef.current = nextQuestionOriginalIndex;
 
-        // 批次更新狀態（不在這裡重置 isWaitingRef，讓 useEffect 處理）
-        setQuestionIndex(nextQuestionOriginalIndex);
+        // 批次更新狀態
+        // 關鍵：questionIndex 應該是可見問題的索引！
+        setQuestionIndex(nextVisibleIndex);
         setWaiting(false);
         setActiveQuestion(null); // 重置 activeQuestion，讓下一題重新設置
         activeQuestionRef.current = null; // 同步清理 ref
@@ -1038,9 +1054,14 @@ export default function BuddiesQuestionSwiper({
         // 檢查是否還有更多問題（修復：正確計算下一個可見問題）
         const visibleQuestions = getVisibleQuestions(safeQuestions);
 
+        // 關鍵修復：使用當前問題的原始索引，而不是 questionIndex（questionIndex 是可見索引）
+        const currentOriginalIndex = questionToAnswer.originalIndex !== undefined
+          ? questionToAnswer.originalIndex
+          : questionIndex; // 降級方案：如果沒有 originalIndex，假設 questionIndex 就是原始索引
+
         // 找出當前問題在 visibleQuestions 中的索引
         const currentVisibleIndex = visibleQuestions.findIndex(
-          vq => vq.originalIndex === questionIndex
+          vq => vq.originalIndex === currentOriginalIndex
         );
 
         // 計算下一個可見問題
@@ -1092,9 +1113,13 @@ export default function BuddiesQuestionSwiper({
               });
             } else {
               // 非最後一題，進入下一個可見問題
-              logger.warn("⚠️ 強制進入下一題:", nextQuestionOriginalIndex);
+              logger.warn("⚠️ 強制進入下一題:", {
+                nextQuestionOriginalIndex,
+                nextVisibleIndex
+              });
               isWaitingRef.current = false;
-              setQuestionIndex(nextQuestionOriginalIndex);
+              currentQuestionIndexRef.current = nextQuestionOriginalIndex; // 保存原始索引
+              setQuestionIndex(nextVisibleIndex); // 設置可見問題索引
               setWaiting(false);
               setActiveQuestion(null);
               activeQuestionRef.current = null; // 同步清理 ref
