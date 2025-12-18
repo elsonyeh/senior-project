@@ -523,24 +523,55 @@ export default function BuddiesQuestionSwiper({
                       // 使用 ref 避免競態條件（React state 可能還沒更新）
                       const currentQuestionIndex = currentQuestionIndexRef.current;
 
-                      // 修復：找出當前問題在 visibleQuestions 中的位置
-                      const currentVisibleIndex = currentVisibleQuestions.findIndex(
+                      // 關鍵修復：使用更新後的集體答案重新計算可見問題
+                      const updatedCollectiveAnswers = {
+                        ...collectiveAnswers,
+                        [originalIndex.toString()]: majorityAnswer
+                      };
+
+                      // 重新計算可見問題（使用更新後的集體答案）
+                      const updatedVisibleQuestions = safeQuestionsRef.current.reduce((visible, q, idx) => {
+                        if (!q.dependsOn) {
+                          visible.push({ ...q, originalIndex: idx });
+                          return visible;
+                        }
+
+                        const dependentQuestionIndex = safeQuestionsRef.current.findIndex(
+                          dq => (dq.text === q.dependsOn.question || dq.question === q.dependsOn.question)
+                        );
+
+                        const dependentAnswer = updatedCollectiveAnswers[dependentQuestionIndex.toString()];
+                        if (dependentAnswer && dependentAnswer === q.dependsOn.answer) {
+                          visible.push({ ...q, originalIndex: idx });
+                        }
+
+                        return visible;
+                      }, []);
+
+                      logger.debug("📋 重新計算可見問題:", {
+                        原始長度: currentVisibleQuestions.length,
+                        更新後長度: updatedVisibleQuestions.length,
+                        更新的集體答案: updatedCollectiveAnswers
+                      });
+
+                      // 修復：找出當前問題在更新後的 visibleQuestions 中的位置
+                      const currentVisibleIndex = updatedVisibleQuestions.findIndex(
                         vq => vq.originalIndex === currentQuestionIndex
                       );
 
                       // 計算下一個可見問題
                       const nextVisibleIndex = currentVisibleIndex + 1;
-                      const isLastQuestion = nextVisibleIndex >= currentVisibleQuestions.length;
+                      const isLastQuestion = nextVisibleIndex >= updatedVisibleQuestions.length;
                       const nextQuestionOriginalIndex = isLastQuestion
                         ? null
-                        : currentVisibleQuestions[nextVisibleIndex].originalIndex;
+                        : updatedVisibleQuestions[nextVisibleIndex].originalIndex;
 
                       logger.debug("🔍 下一題檢查詳情（集體答案已確定）:", {
                         currentQuestionIndex,
                         currentVisibleIndex,
                         nextVisibleIndex,
                         nextQuestionOriginalIndex,
-                        visibleQuestionsLength: currentVisibleQuestions.length,
+                        visibleQuestionsLength: updatedVisibleQuestions.length,
                         isLastQuestion,
                         collectiveAnswer: majorityAnswer,
                         isMountedRef: isMountedRef.current,
@@ -582,23 +613,47 @@ export default function BuddiesQuestionSwiper({
                       } else {
                         // 不是最後一題，正常進入下一題
                         logger.debug("🎬 設置動畫偵測，等待所有成員看完動畫");
-                        setupAnimationDetection(nextQuestionOriginalIndex, currentVisibleQuestions);
+                        setupAnimationDetection(nextQuestionOriginalIndex, updatedVisibleQuestions);
                       }
                     }, 100); // 給狀態更新一點時間
                   } else {
                     logger.error("❌ 更新集體答案失敗:", result.error);
-                    // 即使失敗也要繼續（避免卡住）
+                    // 即使失敗也要繼續（避免卡住），使用多數決結果計算下一題
                     const currentQuestionIndex = currentQuestionIndexRef.current;
 
-                    // 修復：找出當前問題在 visibleQuestions 中的位置
-                    const currentVisibleIndex = currentVisibleQuestions.findIndex(
+                    // 關鍵修復：即使資料庫更新失敗，也使用多數決答案重新計算可見問題
+                    const updatedCollectiveAnswers = {
+                      ...collectiveAnswers,
+                      [originalIndex.toString()]: majorityAnswer
+                    };
+
+                    const updatedVisibleQuestions = safeQuestionsRef.current.reduce((visible, q, idx) => {
+                      if (!q.dependsOn) {
+                        visible.push({ ...q, originalIndex: idx });
+                        return visible;
+                      }
+
+                      const dependentQuestionIndex = safeQuestionsRef.current.findIndex(
+                        dq => (dq.text === q.dependsOn.question || dq.question === q.dependsOn.question)
+                      );
+
+                      const dependentAnswer = updatedCollectiveAnswers[dependentQuestionIndex.toString()];
+                      if (dependentAnswer && dependentAnswer === q.dependsOn.answer) {
+                        visible.push({ ...q, originalIndex: idx });
+                      }
+
+                      return visible;
+                    }, []);
+
+                    // 修復：找出當前問題在更新後的 visibleQuestions 中的位置
+                    const currentVisibleIndex = updatedVisibleQuestions.findIndex(
                       vq => vq.originalIndex === currentQuestionIndex
                     );
                     const nextVisibleIndex = currentVisibleIndex + 1;
-                    const isLastQuestion = nextVisibleIndex >= currentVisibleQuestions.length;
+                    const isLastQuestion = nextVisibleIndex >= updatedVisibleQuestions.length;
                     const nextQuestionOriginalIndex = isLastQuestion
                       ? null
-                      : currentVisibleQuestions[nextVisibleIndex].originalIndex;
+                      : updatedVisibleQuestions[nextVisibleIndex].originalIndex;
 
                     // 檢查是否已經處理過
                     if (currentQuestionIndex !== questionIndex) {
@@ -624,24 +679,48 @@ export default function BuddiesQuestionSwiper({
                         }
                       }, 2500);
                     } else {
-                      setupAnimationDetection(nextQuestionOriginalIndex, currentVisibleQuestions);
+                      setupAnimationDetection(nextQuestionOriginalIndex, updatedVisibleQuestions);
                     }
                   }
                 })
                 .catch(error => {
                   logger.error("❌ 更新集體答案異常:", error);
-                  // 即使異常也要繼續（避免卡住）
+                  // 即使異常也要繼續（避免卡住），使用多數決結果計算下一題
                   const currentQuestionIndex = currentQuestionIndexRef.current;
 
-                  // 修復：找出當前問題在 visibleQuestions 中的位置
-                  const currentVisibleIndex = currentVisibleQuestions.findIndex(
+                  // 關鍵修復：即使發生異常，也使用多數決答案重新計算可見問題
+                  const updatedCollectiveAnswers = {
+                    ...collectiveAnswers,
+                    [originalIndex.toString()]: majorityAnswer
+                  };
+
+                  const updatedVisibleQuestions = safeQuestionsRef.current.reduce((visible, q, idx) => {
+                    if (!q.dependsOn) {
+                      visible.push({ ...q, originalIndex: idx });
+                      return visible;
+                    }
+
+                    const dependentQuestionIndex = safeQuestionsRef.current.findIndex(
+                      dq => (dq.text === q.dependsOn.question || dq.question === q.dependsOn.question)
+                    );
+
+                    const dependentAnswer = updatedCollectiveAnswers[dependentQuestionIndex.toString()];
+                    if (dependentAnswer && dependentAnswer === q.dependsOn.answer) {
+                      visible.push({ ...q, originalIndex: idx });
+                    }
+
+                    return visible;
+                  }, []);
+
+                  // 修復：找出當前問題在更新後的 visibleQuestions 中的位置
+                  const currentVisibleIndex = updatedVisibleQuestions.findIndex(
                     vq => vq.originalIndex === currentQuestionIndex
                   );
                   const nextVisibleIndex = currentVisibleIndex + 1;
-                  const isLastQuestion = nextVisibleIndex >= currentVisibleQuestions.length;
+                  const isLastQuestion = nextVisibleIndex >= updatedVisibleQuestions.length;
                   const nextQuestionOriginalIndex = isLastQuestion
                     ? null
-                    : currentVisibleQuestions[nextVisibleIndex].originalIndex;
+                    : updatedVisibleQuestions[nextVisibleIndex].originalIndex;
 
                   // 檢查是否已經處理過
                   if (currentQuestionIndex !== questionIndex) {
@@ -667,7 +746,7 @@ export default function BuddiesQuestionSwiper({
                       }
                     }, 2500);
                   } else {
-                    setupAnimationDetection(nextQuestionOriginalIndex, currentVisibleQuestions);
+                    setupAnimationDetection(nextQuestionOriginalIndex, updatedVisibleQuestions);
                   }
                 });
             }
@@ -676,7 +755,7 @@ export default function BuddiesQuestionSwiper({
             logger.warn("⚠️ 沒有投票數據，直接進入下一題");
             const currentQuestionIndex = currentQuestionIndexRef.current;
 
-            // 修復：找出當前問題在 visibleQuestions 中的位置
+            // 注意：這裡沒有集體答案更新，使用原始的 currentVisibleQuestions
             const currentVisibleIndex = currentVisibleQuestions.findIndex(
               vq => vq.originalIndex === currentQuestionIndex
             );
