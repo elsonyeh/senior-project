@@ -406,10 +406,11 @@ class DataAnalyticsService {
         .from('user_selection_history')
         .select('liked_restaurants');
 
-      // 從 Buddies 推薦統計
-      const { data: buddiesRecommendedData } = await supabase
-        .from('buddies_recommendations')
-        .select('restaurants');
+      // 從 Buddies 房間獲取推薦餐廳
+      const { data: buddiesRoomsData } = await supabase
+        .from('buddies_rooms')
+        .select('recommendations')
+        .not('recommendations', 'is', null);
 
       // 處理推薦餐廳統計
       const recommendedRestaurants = swiftTasteData?.filter(d => d.recommended_restaurants).map(d => d.recommended_restaurants) || [];
@@ -424,7 +425,7 @@ class DataAnalyticsService {
       const likedStats = this.processRestaurantData(likedRestaurants);
 
       // 處理 Buddies 推薦統計
-      const buddiesRecommended = buddiesRecommendedData?.map(d => d.restaurants) || [];
+      const buddiesRecommended = buddiesRoomsData?.map(d => d.recommendations).filter(r => r) || [];
       const buddiesRecommendedStats = this.processRestaurantData(buddiesRecommended);
 
       return {

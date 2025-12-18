@@ -192,9 +192,13 @@ export default function DataAnalyticsPage() {
         .from('buddies_members')
         .select('room_id');
 
-      const { data: votes } = await supabase
-        .from('buddies_votes')
-        .select('room_id');
+      // 從 buddies_rooms 的 votes 欄位統計投票數
+      const totalVotesCount = rooms?.reduce((sum, room) => {
+        if (room.votes && typeof room.votes === 'object') {
+          return sum + Object.keys(room.votes).length;
+        }
+        return sum;
+      }, 0) || 0;
 
       const totalRooms = rooms?.length || 0;
 
@@ -212,8 +216,7 @@ export default function DataAnalyticsPage() {
         ? Object.values(roomMemberCounts).reduce((sum, c) => sum + c, 0) / Object.keys(roomMemberCounts).length
         : 0;
 
-      const totalVotes = votes?.length || 0;
-      const avgVotes = totalRooms > 0 ? totalVotes / totalRooms : 0;
+      const avgVotes = totalRooms > 0 ? totalVotesCount / totalRooms : 0;
 
       // 計算已完成會話的總時長
       const completedDuration = completedSessions.reduce((sum, s) => sum + (s.session_duration || 0), 0);
