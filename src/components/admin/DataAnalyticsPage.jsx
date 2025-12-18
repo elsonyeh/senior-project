@@ -233,7 +233,7 @@ export default function DataAnalyticsPage() {
         avgMembersPerRoom: parseFloat(avgMembers.toFixed(1)),
         avgSessionDuration: Math.round(avgDuration),
         completionRate: parseFloat(completionRate.toFixed(1)),
-        totalVotes,
+        totalVotes: totalVotesCount,
         avgVotesPerRoom: parseFloat(avgVotes.toFixed(1))
       };
     } catch (error) {
