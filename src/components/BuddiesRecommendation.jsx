@@ -640,12 +640,6 @@ export default function BuddiesRecommendation({
     }
   };
 
-
-  // 返回房間
-  const handleBackToRoom = () => {
-    navigate(`/buddies?roomId=${roomId}`);
-  };
-
   // 重新開始
   const handleRestart = () => {
     if (onBack) {
@@ -705,15 +699,6 @@ export default function BuddiesRecommendation({
                 }}
               >
                 🔄 再試一次
-              </motion.button>
-              <motion.button
-                className="btn-restart"
-                style={{ background: "#6874E8" }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleBackToRoom}
-              >
-                👥 回到房間
               </motion.button>
               <motion.button
                 className="btn-restart"
@@ -825,21 +810,6 @@ export default function BuddiesRecommendation({
           alternatives={alternativeRestaurants}
           onRetry={handleRestart}
           votes={votes} // 傳遞投票數據給結果組件
-          // 添加Buddies模式特有的信息和按鈕
-          extraButton={
-            <div className="buddies-extra-info">
-              {/* 返回房間按鈕 */}
-              <motion.button
-                className="btn-restart"
-                style={{ background: "#6874E8", width: "100%" }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleBackToRoom}
-              >
-                👥 回到房間
-              </motion.button>
-            </div>
-          }
           // 將roomMode設為false，使其與SwiftTaste模式保持一致的顯示效果
           roomMode={false}
         />
@@ -866,15 +836,6 @@ export default function BuddiesRecommendation({
               onClick={handleRestart}
             >
               🔄 回到首頁
-            </motion.button>
-            <motion.button
-              className="btn-restart"
-              style={{ background: "#6874E8", marginLeft: "1rem" }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleBackToRoom}
-            >
-              👥 回到房間
             </motion.button>
           </motion.div>
         </div>
@@ -1101,17 +1062,9 @@ export default function BuddiesRecommendation({
         <div className="action-buttons">
           <button
             className="btn-restart"
-            style={{ marginRight: "0.5rem" }}
             onClick={handleRestart}
           >
             🔄 回到首頁
-          </button>
-          <button
-            className="btn-restart"
-            style={{ background: "#6874E8" }}
-            onClick={handleBackToRoom}
-          >
-            👥 回到房間
           </button>
         </div>
       </div>

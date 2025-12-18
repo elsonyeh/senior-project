@@ -1078,46 +1078,6 @@ export default function BuddiesRoom({ initialRoomId }) {
     }
   };
 
-  // 重新開始（重置房間到等待狀態）
-  const handleRestartRoom = async () => {
-    try {
-      setLoading(true);
-
-      // 更新房間狀態為 waiting
-      await roomService.updateRoomStatus(roomId, 'waiting');
-
-      // 清空房間的答案和推薦數據
-      const { supabase } = await import('../services/supabaseService');
-      await supabase
-        .from('buddies_rooms')
-        .update({
-          member_answers: {},
-          collective_answers: null,
-          recommendations: null,
-          votes: null,
-          final_restaurant_id: null,
-          final_restaurant_data: null,
-          current_question_index: 0,
-          questions_started_at: null,
-          voting_started_at: null,
-          completed_at: null
-        })
-        .eq('id', roomId);
-
-      // 重置前端狀態
-      setPhase('waiting');
-      setQuestions([]);
-      setRecommendations([]);
-
-      logger.info("房間已重置，回到等待狀態");
-    } catch (error) {
-      console.error("重置房間失敗:", error);
-      setError("重置房間失敗");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // 格式化問題
   const formatQuestionsForSwiper = (questions) =>
     questions.map((q, index) => ({
@@ -1262,7 +1222,6 @@ export default function BuddiesRoom({ initialRoomId }) {
           <BuddiesRecommendation
             roomId={roomId}
             restaurants={recommendations}
-            onBack={handleRestartRoom}
             onFinalResult={(finalRestaurant) => {
               // 記錄最終選擇的餐廳到選擇歷史
               logger.info('最終結果確定，記錄到選擇歷史:', finalRestaurant);
@@ -1392,10 +1351,12 @@ export default function BuddiesRoom({ initialRoomId }) {
         onClose={() => {
           setShowRoomStartedConfirm(false);
         }}
-        onConfirm={() => {
+        onConfirm={async () => {
           setShowRoomStartedConfirm(false);
           setRoomId("");
           setError("");
+          // 直接建立新房間
+          await handleCreateRoom();
         }}
         title="房間已開始"
         message="此房間已經開始，是否要創建一個新房間？"
