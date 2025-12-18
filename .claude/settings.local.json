@@ -30,7 +30,8 @@
       "Bash(git check-ignore:*)",
       "Bash(ls:*)",
       "Bash(git checkout:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: 優化 Buddies 模式滑動完成檢測與等待頁面\n\n## 主要修改\n\n### 1. 修復趣味問題完成度偵測\n- 問題: 依賴問題的可見性計算不一致，導致完成度判斷錯誤\n- 解決: 在回調開始時計算一次 visibleQuestions，整個流程使用同一個值\n- 檔案: src/components/BuddiesQuestionSwiper.jsx\n\n### 2. 修復最終結果閉包迴圈\n- 問題: \"⚠️ 沒有最終結果\" 警告重複出現，造成渲染迴圈\n- 解決: 使用 React.useMemo 包裝結果計算邏輯\n- 檔案: src/components/BuddiesRecommendation.jsx:722-803\n\n### 3. 使用 buddies_events 記錄滑動完成\n- 問題: 需要追蹤滑動完成狀態但不想修改資料庫結構\n- 解決: 利用現有 buddies_events 表記錄 swiping_completed 事件\n- 新增方法:\n  - buddiesEventService.logSwipingCompleted(roomId, userId, swipedCount)\n  - buddiesEventService.getSwipingCompletedCount(roomId)\n- 檔案: \n  - src/services/buddiesEventService.js\n  - src/components/BuddiesRecommendation.jsx\n  - database/migrations/2025-12-18-add-swiping-completed-event.sql\n\n### 4. 簡化等待頁面顯示\n- 移除: 投票排行榜、收藏餐廳列表、詳細統計\n- 保留: 基本進度條和成員完成數\n- 檔案: src/components/BuddiesRecommendation.jsx:875-920\n\n### 5. 資料庫遷移\n- 添加 swiping_completed 到 buddies_events.check_event_type 約束\n- 檔案: database/migrations/2025-12-18-add-swiping-completed-event.sql\n\n## 技術細節\n- 使用事件驅動架構追蹤滑動完成\n- 投票監聽回調檢查滑動完成度，自動退出等待狀態\n- 保持完整的審計追蹤記錄\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

@@ -28,6 +28,7 @@ export default function BuddiesRecommendation({
   const [voteAnimation, setVoteAnimation] = useState(null);
   const [totalMembers, setTotalMembers] = useState(0);
   const [votedUsersCount, setVotedUsersCount] = useState(0);
+  const [swipingCompletedCount, setSwipingCompletedCount] = useState(0); // 新增：滑動完成的用戶數
   const [showNoResultsModal, setShowNoResultsModal] = useState(false);
   const [members, setMembers] = useState([]); // 新增：儲存房間成員列表
   const [waiting, setWaiting] = useState(false); // 新增：等待其他成員完成選擇
@@ -95,6 +96,9 @@ export default function BuddiesRecommendation({
     const completedResult = await buddiesEventService.getSwipingCompletedCount(roomId);
     if (completedResult.success) {
       const actualCompletedCount = completedResult.count;
+
+      // 更新滑動完成數狀態
+      setSwipingCompletedCount(actualCompletedCount);
 
       logger.debug("📊 滑動完成度檢查:", {
         completedCount: actualCompletedCount,
@@ -437,16 +441,19 @@ export default function BuddiesRecommendation({
           // 檢查滑動完成度（用於等待中的用戶）
           const swipingResult = await buddiesEventService.getSwipingCompletedCount(roomId);
           if (swipingResult.success) {
-            const swipingCompletedCount = swipingResult.count;
+            const actualSwipingCompletedCount = swipingResult.count;
+
+            // 更新滑動完成數狀態（用於等待頁面顯示）
+            setSwipingCompletedCount(actualSwipingCompletedCount);
 
             logger.debug("🎯 滑動完成度更新:", {
-              completedCount: swipingCompletedCount,
+              completedCount: actualSwipingCompletedCount,
               totalMembers: currentTotalMembers,
               completedUsers: swipingResult.userIds
             });
 
             // 如果當前用戶正在等待，且所有成員都完成滑動了，觸發結果計算
-            if (waiting && swipingCompletedCount >= currentTotalMembers && currentTotalMembers > 0) {
+            if (waiting && actualSwipingCompletedCount >= currentTotalMembers && currentTotalMembers > 0) {
               logger.debug("✅ 等待結束，所有成員已完成滑動");
               setWaiting(false);
               // 使用 ref 調用 handleFinishSwiping
@@ -901,7 +908,7 @@ export default function BuddiesRecommendation({
                 <div className="progress-info">
                   <span className="progress-icon">👥</span>
                   <span className="progress-text">
-                    {votedUsersCount} / {totalMembers} 位成員已完成
+                    {swipingCompletedCount} / {totalMembers} 位成員已完成滑動
                   </span>
                 </div>
                 <div className="progress-bar-container">
@@ -909,7 +916,7 @@ export default function BuddiesRecommendation({
                     className="progress-bar"
                     initial={{ width: "0%" }}
                     animate={{
-                      width: totalMembers > 0 ? `${(votedUsersCount / totalMembers) * 100}%` : "0%",
+                      width: totalMembers > 0 ? `${(swipingCompletedCount / totalMembers) * 100}%` : "0%",
                     }}
                     transition={{ duration: 0.5 }}
                     style={{
@@ -1036,7 +1043,8 @@ export default function BuddiesRecommendation({
                       {votes[r.id] ? `🗳️ ${votes[r.id]} 票` : ""}
                     </span>
                   </div>
-                  {!votedRestaurants.has(r.id) && (
+                  {/* 收藏的餐廳右滑時已自動投票，不需要額外投票按鈕 */}
+                  {!votedRestaurants.has(r.id) && userFinishedSwiping && (
                     <button
                       className="vote-button"
                       onClick={() => handleVote(r.id)}
@@ -1050,10 +1058,13 @@ export default function BuddiesRecommendation({
           </div>
         )}
 
-        {/* 備選餐廳顯示 */}
+        {/* 備選餐廳顯示 - 只有完成滑動後才能投票 */}
         {alternativeRestaurants.length > 0 && (
           <div className="buddies-alternatives-section">
             <h3>可能也適合的餐廳 🔍</h3>
+            {!userFinishedSwiping && (
+              <p className="alternatives-hint">完成滑動後即可投票給這些餐廳</p>
+            )}
             <ul className="buddies-alternative-restaurant-list">
               {alternativeRestaurants.map((r) => (
                 <li key={r.id} className="buddies-alternative-restaurant-item">
@@ -1070,16 +1081,20 @@ export default function BuddiesRecommendation({
                       )}
                     </div>
                   </div>
-                  {!votedRestaurants.has(r.id) ? (
+                  {userFinishedSwiping && !votedRestaurants.has(r.id) ? (
                     <button
                       className="vote-button alternative"
                       onClick={() => handleVote(r.id)}
                     >
                       投票
                     </button>
-                  ) : (
+                  ) : votedRestaurants.has(r.id) ? (
                     <div className="vote-count">
                       {votes[r.id] ? `${votes[r.id]} 票` : "0 票"}
+                    </div>
+                  ) : (
+                    <div className="vote-disabled">
+                      完成滑動後可投票
                     </div>
                   )}
                 </li>
