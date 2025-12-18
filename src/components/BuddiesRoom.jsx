@@ -25,8 +25,8 @@ import logger from "../utils/logger";
 import archiveService from "../services/archiveService.js";
 import buddiesEventService, { EVENT_TYPES } from "../services/buddiesEventService.js";
 
-export default function BuddiesRoom() {
-  const [roomId, setRoomId] = useState("");
+export default function BuddiesRoom({ initialRoomId }) {
+  const [roomId, setRoomId] = useState(initialRoomId || "");
   const [userName, setUserName] = useState("");
   const [members, setMembers] = useState([]);
   const [error, setError] = useState("");
@@ -224,9 +224,9 @@ export default function BuddiesRoom() {
 
     initUserName();
 
-    // 處理URL參數
+    // 處理URL參數（包含 initialRoomId）
     const params = new URLSearchParams(location.search);
-    const roomParam = params.get("room") || params.get("roomId");
+    const roomParam = params.get("room") || params.get("roomId") || initialRoomId;
 
     if (roomParam) {
       setRoomId(roomParam.toUpperCase());
@@ -234,7 +234,7 @@ export default function BuddiesRoom() {
       // 更新URL
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("room");
-      newUrl.searchParams.delete("roomId");
+      newUrl.searchParams.set("roomId", roomParam.toUpperCase());
       window.history.replaceState({}, "", newUrl);
     }
 
@@ -243,7 +243,20 @@ export default function BuddiesRoom() {
       cleanupAllSubscriptions();
       subscriptionCleanups.forEach(cleanup => cleanup());
     };
-  }, [location.search, currentUser]);
+  }, [location.search, currentUser, initialRoomId]);
+
+  // 自動加入房間（當從其他頁面返回時）
+  useEffect(() => {
+    const autoJoinRoom = async () => {
+      // 如果有 initialRoomId 且尚未加入房間，且有用戶名稱
+      if (initialRoomId && !joined && userName && userId) {
+        logger.info("檢測到 initialRoomId，嘗試自動加入房間:", initialRoomId);
+        await handleJoinRoom(initialRoomId, userName);
+      }
+    };
+
+    autoJoinRoom();
+  }, [initialRoomId, joined, userName, userId]);
 
   // 監聽房間成員變化
   useEffect(() => {

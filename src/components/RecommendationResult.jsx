@@ -285,8 +285,8 @@ export default function RecommendationResult({
 
           <motion.button
             className="btn-navigate"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => goToGoogleMaps(selected.address || selected.name)}
           >
             <span className="nav-icon">🧭</span> 出發去這裡
@@ -366,8 +366,8 @@ export default function RecommendationResult({
                     </div>
                     <motion.button
                       className="btn-mini-navigate"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => goToGoogleMaps(r.address || r.name)}
                     >
                       🧭 出發
