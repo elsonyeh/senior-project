@@ -351,8 +351,8 @@ export default function RecommendationResult({
 
                   <div className="alternative-content">
                     <div className="alternative-info">
-                      <h4>{r.name || "未命名"}</h4>
-                      <p>{r.address || "地址未知"}</p>
+                      <h4 className="alternative-restaurant-name">{r.name || "未命名"}</h4>
+                      <p className="alternative-restaurant-address">{r.address || "地址未知"}</p>
                       <div className="alternative-badges">
                         {typeof r.rating === "number" && (
                           <span className="mini-badge rating">
