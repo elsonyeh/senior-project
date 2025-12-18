@@ -3,7 +3,7 @@ import { restaurantService, restaurantImageService } from '../services/restauran
 import RestaurantImageUpload from './RestaurantImageUpload';
 import QuickAddRestaurant from './QuickAddRestaurant';
 import Toast from './Toast';
-import ConfirmDialog from './ConfirmDialog';
+import ConfirmDialog from './common/ConfirmDialog';
 import './RestaurantManager.css';
 
 const RestaurantManager = () => {
@@ -1000,11 +1000,11 @@ const RestaurantManager = () => {
         isOpen={confirmDialog.show}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        type="error"
+        type="danger"
         confirmText="刪除"
         cancelText="取消"
         onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog({ show: false, title: '', message: '', onConfirm: null })}
+        onClose={() => setConfirmDialog({ show: false, title: '', message: '', onConfirm: null })}
       />
     </div>
   );

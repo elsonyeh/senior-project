@@ -700,6 +700,7 @@
   height: 100%;
   margin: 0;
   padding: 2rem;
+  padding-bottom: 100px; /* 為底部導航欄留白 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1056,6 +1057,7 @@
 
   .buddies-waiting-container {
     padding: 1.5rem 1rem;
+    padding-bottom: 120px; /* 小螢幕時增加底部留白 */
     width: 100%;
     min-height: calc(100vh - 100px);
     justify-content: center;

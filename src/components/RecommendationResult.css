@@ -1,6 +1,7 @@
 /* 基本推薦結果頁面樣式 */
 .recommend-screen {
   padding: 1rem;
+  padding-bottom: 100px; /* 為底部導航欄留白 */
   width: 52%; /* 左右各留24%留白 */
   max-width: 900px;
   margin: 0 auto; /* 寬螢幕時置中 */
@@ -12,6 +13,7 @@
 @media (max-width: 1024px) {
   .recommend-screen {
     width: 90%;
+    padding-bottom: 100px; /* 為底部導航欄留白 */
   }
 }
 
@@ -19,6 +21,7 @@
   .recommend-screen {
     width: 100%;
     padding: 1rem;
+    padding-bottom: 120px; /* 小螢幕時增加底部留白 */
   }
 }
 

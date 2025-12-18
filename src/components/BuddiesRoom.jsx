@@ -9,6 +9,7 @@ import BuddiesRecommendation from "./BuddiesRecommendation";
 import QRScannerModal from "./QRScannerModal";
 import BuddiesQuestionSwiper from "./BuddiesQuestionSwiper";
 import LoadingOverlay from "./LoadingOverlay";
+import ConfirmDialog from "./common/ConfirmDialog";
 import {
   roomService,
   memberService,
@@ -36,6 +37,7 @@ export default function BuddiesRoom({ initialRoomId }) {
   const [phase, setPhaseState] = useState("lobby");
   const [currentUser, setCurrentUser] = useState(null); // 當前登入用戶
   const [loadingRecommendations, setLoadingRecommendations] = useState(false); // 載入推薦動畫
+  const [showRoomStartedConfirm, setShowRoomStartedConfirm] = useState(false); // 房間已開始確認框
 
   // 獲取用戶頭貼URL的輔助函數
   const getUserAvatarUrl = (member) => {
@@ -553,11 +555,9 @@ export default function BuddiesRoom({ initialRoomId }) {
           setError("此房間已經開始答題，無法加入。請創建新房間或加入其他等待中的房間。");
           setLoading(false);
 
+          // 顯示確認框詢問是否創建新房間
           setTimeout(() => {
-            if (window.confirm("此房間已經開始，是否要創建一個新房間？")) {
-              setRoomId("");
-              setError("");
-            }
+            setShowRoomStartedConfirm(true);
           }, 500);
           return;
         }
@@ -1384,6 +1384,24 @@ export default function BuddiesRoom({ initialRoomId }) {
         show={loadingRecommendations}
         message="分析大家的喜好中"
         subMessage="正在根據所有成員的答案生成最適合的餐廳推薦..."
+      />
+
+      {/* 房間已開始確認框 */}
+      <ConfirmDialog
+        isOpen={showRoomStartedConfirm}
+        onClose={() => {
+          setShowRoomStartedConfirm(false);
+        }}
+        onConfirm={() => {
+          setShowRoomStartedConfirm(false);
+          setRoomId("");
+          setError("");
+        }}
+        title="房間已開始"
+        message="此房間已經開始，是否要創建一個新房間？"
+        confirmText="創建新房間"
+        cancelText="取消"
+        type="info"
       />
     </div>
   );
