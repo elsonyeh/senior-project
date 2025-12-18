@@ -239,9 +239,17 @@ export default function BuddiesQuestionSwiper({
     if (currentQuestion && !waiting) {
       setActiveQuestion(currentQuestion);
       activeQuestionRef.current = currentQuestion; // 同步更新 ref
+
+      // 修復：同步更新 currentQuestionIndexRef，確保索引正確
+      if (currentQuestion.originalIndex !== undefined) {
+        currentQuestionIndexRef.current = currentQuestion.originalIndex;
+      }
+
       logger.debug("🔄 更新 activeQuestion:", {
         questionText: currentQuestion.text,
         questionIndex,
+        originalIndex: currentQuestion.originalIndex,
+        currentQuestionIndexRef: currentQuestionIndexRef.current,
         waiting
       });
     }
@@ -480,17 +488,34 @@ export default function BuddiesQuestionSwiper({
               // 策略1: 找出房主的答案作為平票決勝
               const hostMember = members.find(m => m.isHost);
               if (hostMember) {
-                const hostAnswer = voteStats.userData?.find(u => u.id === hostMember.id);
-                if (hostAnswer && candidateAnswers.includes(hostAnswer.option)) {
-                  majorityAnswer = hostAnswer.option;
+                // 修復：直接從原始答案數據中查找房主的答案，而不是依賴 voteStats.userData
+                const hostAnswerData = answers.find(a => a.user_id === hostMember.id);
+                const checkIndex = currentQ?.originalIndex !== undefined ? currentQ.originalIndex : questionIndex;
+                const hostAnswerValue = hostAnswerData?.answers?.[checkIndex];
+
+                logger.debug("🔍 查找房主答案:", {
+                  hostId: hostMember.id,
+                  hostName: hostMember.name,
+                  checkIndex,
+                  hostAnswerValue,
+                  candidateAnswers,
+                  hasHostAnswer: !!hostAnswerValue,
+                  isInCandidates: candidateAnswers.includes(hostAnswerValue)
+                });
+
+                if (hostAnswerValue && candidateAnswers.includes(hostAnswerValue)) {
+                  majorityAnswer = hostAnswerValue;
                   logger.debug("👑 平票由房主決定:", {
                     hostName: hostMember.name,
                     hostAnswer: majorityAnswer
                   });
                 } else {
-                  // 房主答案不在平票選項中，使用第一個候選答案
+                  // 房主答案不在平票選項中或找不到，使用第一個候選答案
                   majorityAnswer = candidateAnswers[0];
-                  logger.debug("⚖️ 房主答案不在候選中，使用第一個選項:", majorityAnswer);
+                  logger.debug("⚖️ 房主答案不可用，使用第一個選項:", {
+                    selectedAnswer: majorityAnswer,
+                    reason: !hostAnswerValue ? "找不到房主答案" : "房主答案不在候選中"
+                  });
                 }
               } else {
                 // 沒有房主資訊，使用第一個候選答案
@@ -579,10 +604,15 @@ export default function BuddiesQuestionSwiper({
                       });
 
                       // 檢查是否已經處理過這個題目（避免重複設置動畫）
-                      if (currentQuestionIndex !== questionIndex) {
+                      // 修復：需要比較原始索引，而不是可見問題索引
+                      const currentVisibleQuestion = updatedVisibleQuestions[questionIndex];
+                      const currentVisibleOriginalIndex = currentVisibleQuestion?.originalIndex;
+
+                      if (currentQuestionIndex !== currentVisibleOriginalIndex) {
                         logger.debug("⏭️ 題目已變更，跳過動畫設置:", {
-                          refIndex: currentQuestionIndex,
-                          stateIndex: questionIndex
+                          refOriginalIndex: currentQuestionIndex,
+                          stateVisibleIndex: questionIndex,
+                          stateOriginalIndex: currentVisibleOriginalIndex
                         });
                         return;
                       }
@@ -656,8 +686,15 @@ export default function BuddiesQuestionSwiper({
                       : updatedVisibleQuestions[nextVisibleIndex].originalIndex;
 
                     // 檢查是否已經處理過
-                    if (currentQuestionIndex !== questionIndex) {
-                      logger.debug("⏭️ 題目已變更，跳過錯誤恢復動畫設置");
+                    // 修復：需要比較原始索引，而不是可見問題索引
+                    const currentVisibleQuestion2 = updatedVisibleQuestions[questionIndex];
+                    const currentVisibleOriginalIndex2 = currentVisibleQuestion2?.originalIndex;
+
+                    if (currentQuestionIndex !== currentVisibleOriginalIndex2) {
+                      logger.debug("⏭️ 題目已變更，跳過錯誤恢復動畫設置:", {
+                        refOriginalIndex: currentQuestionIndex,
+                        stateOriginalIndex: currentVisibleOriginalIndex2
+                      });
                       return;
                     }
 
@@ -723,8 +760,15 @@ export default function BuddiesQuestionSwiper({
                     : updatedVisibleQuestions[nextVisibleIndex].originalIndex;
 
                   // 檢查是否已經處理過
-                  if (currentQuestionIndex !== questionIndex) {
-                    logger.debug("⏭️ 題目已變更，跳過異常恢復動畫設置");
+                  // 修復：需要比較原始索引，而不是可見問題索引
+                  const currentVisibleQuestion3 = updatedVisibleQuestions[questionIndex];
+                  const currentVisibleOriginalIndex3 = currentVisibleQuestion3?.originalIndex;
+
+                  if (currentQuestionIndex !== currentVisibleOriginalIndex3) {
+                    logger.debug("⏭️ 題目已變更，跳過異常恢復動畫設置:", {
+                      refOriginalIndex: currentQuestionIndex,
+                      stateOriginalIndex: currentVisibleOriginalIndex3
+                    });
                     return;
                   }
 
@@ -766,8 +810,15 @@ export default function BuddiesQuestionSwiper({
               : currentVisibleQuestions[nextVisibleIndex].originalIndex;
 
             // 檢查是否已經處理過
-            if (currentQuestionIndex !== questionIndex) {
-              logger.debug("⏭️ 題目已變更，跳過無投票數據恢復動畫設置");
+            // 修復：需要比較原始索引，而不是可見問題索引
+            const currentVisibleQuestion4 = currentVisibleQuestions[questionIndex];
+            const currentVisibleOriginalIndex4 = currentVisibleQuestion4?.originalIndex;
+
+            if (currentQuestionIndex !== currentVisibleOriginalIndex4) {
+              logger.debug("⏭️ 題目已變更，跳過無投票數據恢復動畫設置:", {
+                refOriginalIndex: currentQuestionIndex,
+                stateOriginalIndex: currentVisibleOriginalIndex4
+              });
               return;
             }
 

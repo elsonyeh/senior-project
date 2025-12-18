@@ -470,7 +470,8 @@ export default function BuddiesRecommendation({
     const unsubscribeFinal = finalResultService.listenFinalRestaurant(roomId, async (finalData) => {
       logger.debug("🎯 收到最終結果更新:", finalData);
 
-      if (finalData && finalData.restaurant_id) {
+      // 修復：final_restaurant_data 結構是 {id, name, ...} 而不是 {restaurant_id, restaurant_name, ...}
+      if (finalData && finalData.id) {
         // 確保切換到結果頁面前，votes 已載入
         const votesResult = await voteService.getVotes(roomId);
         if (votesResult.success && votesResult.data) {
@@ -486,7 +487,7 @@ export default function BuddiesRecommendation({
         setTimeout(() => {
           setFinalResult((prevFinalResult) => {
             // 如果已經有最終結果了，就不要重複設置
-            if (prevFinalResult && prevFinalResult.id === finalData.restaurant_id) {
+            if (prevFinalResult && prevFinalResult.id === finalData.id) {
               logger.debug("✅ 最終結果已存在，跳過重複設置");
               return prevFinalResult;
             }
@@ -498,10 +499,10 @@ export default function BuddiesRecommendation({
               ...restaurantsRef.current
             ];
 
-            const finalRestaurant = allRestaurantLists.find((r) => r && r.id === finalData.restaurant_id);
+            const finalRestaurant = allRestaurantLists.find((r) => r && r.id === finalData.id);
 
             logger.debug("🔍 尋找最終餐廳:", {
-              searchingFor: finalData.restaurant_id,
+              searchingFor: finalData.id,
               foundInList: !!finalRestaurant,
               finalRestaurantName: finalRestaurant?.name,
               limitedCount: limitedRestaurantsRef.current.length,
@@ -509,18 +510,12 @@ export default function BuddiesRecommendation({
               allRestaurantsCount: restaurantsRef.current.length
             });
 
-            // 優先使用找到的餐廳物件，否則從資料庫資料重建
-            const restaurantToSet = finalRestaurant || {
-              id: finalData.restaurant_id,
-              name: finalData.restaurant_name,
-              address: finalData.restaurant_address,
-              photoURL: finalData.restaurant_photo_url,
-              rating: finalData.restaurant_rating,
-              type: finalData.restaurant_type,
-            };
+            // 優先使用找到的餐廳物件，否則直接使用資料庫返回的完整資料
+            // finalData 已經包含完整的餐廳資料 (id, name, address, photoURL, rating, type 等)
+            const restaurantToSet = finalRestaurant || finalData;
 
             if (!finalRestaurant) {
-              logger.warn("⚠️ 無法從推薦列表找到餐廳，使用資料庫資料重建");
+              logger.warn("⚠️ 無法從推薦列表找到餐廳，直接使用資料庫資料:", finalData.name);
             } else {
               logger.debug("✅ 從推薦列表找到餐廳:", finalRestaurant.name);
             }
