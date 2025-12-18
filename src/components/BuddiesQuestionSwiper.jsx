@@ -208,14 +208,6 @@ export default function BuddiesQuestionSwiper({
       // 使用集體答案（多數決結果）而非個人答案
       const dependentAnswer = collectiveAnswers[dependentQuestionIndex.toString()];
 
-      logger.debug('🔍 檢查依賴條件:', {
-        currentQuestion: q.text,
-        dependsOn: q.dependsOn,
-        dependentQuestionIndex,
-        collectiveAnswer: dependentAnswer,
-        shouldShow: dependentAnswer === q.dependsOn.answer
-      });
-
       // 只有當集體答案已確定且符合條件時，才顯示該問題
       if (dependentAnswer && dependentAnswer === q.dependsOn.answer) {
         questionIndexMap.set(originalIndex, visibleQuestions.length);
@@ -259,21 +251,7 @@ export default function BuddiesQuestionSwiper({
   useEffect(() => {
     if (!roomId) return;
 
-    logger.debug("🔄 設置答案監聽器，當前狀態:", {
-      roomId,
-      questionIndex,
-      waiting,
-      membersCount: members.length
-    });
-
     const cleanup = questionService.listenAnswers(roomId, (answers) => {
-      logger.debug("📬 收到答案更新:", answers);
-      logger.debug("🎯 當前狀態快照:", {
-        waiting,
-        questionIndex,
-        hasCompleted: hasCompletedRef.current,
-        members: members.length
-      });
       setAllAnswers(answers);
 
       // 檢測新答案並顯示氣泡通知（其他成員的答案）
@@ -291,14 +269,6 @@ export default function BuddiesQuestionSwiper({
           // 找出最新的答案
           const latestAnswer = newAnswers[newAnswers.length - 1];
           const memberInfo = members.find(m => m.id === currentUserId);
-
-          logger.debug("📢 檢測到其他成員新答案:", {
-            userId: currentUserId,
-            memberName: memberInfo?.name,
-            latestAnswer,
-            previousCount: previousAnswers.length,
-            newCount: newAnswers.length
-          });
 
           // 顯示氣泡通知
           if (showVoteBubbleRef.current && typeof showVoteBubbleRef.current === 'function') {
@@ -332,42 +302,15 @@ export default function BuddiesQuestionSwiper({
       if (activeQuestionRef.current) {
         // 如果有鎖定的問題，直接使用（避免重新計算 visibleQuestions）
         currentQ = activeQuestionRef.current;
-        logger.debug("🔒 使用鎖定的 activeQuestionRef:", {
-          questionText: currentQ.text,
-          originalIndex: currentQ.originalIndex
-        });
       } else {
         // 否則重新計算（初始狀態）
         const visibleQuestions = getVisibleQuestions(safeQuestionsRef.current);
         currentQ = visibleQuestions[questionIndex];
-        logger.debug("🔄 重新計算 currentQ:", {
-          questionIndex,
-          questionText: currentQ?.text,
-          visibleQuestionsLength: visibleQuestions.length
-        });
       }
-
-      logger.debug("🔍 索引檢查詳情:", {
-        questionIndex,
-        currentQText: currentQ?.text,
-        currentQId: currentQ?.id,
-        currentQOriginalIndex: currentQ?.originalIndex,
-        totalAnswers: answers.length
-      });
 
       answers.forEach(answer => {
         // 使用原始索引而不是可見問題索引
         const checkIndex = currentQ?.originalIndex !== undefined ? currentQ.originalIndex : questionIndex;
-
-        logger.debug("🔍 檢查單個答案:", {
-          userId: answer.user_id,
-          answersLength: answer.answers?.length,
-          questionIndex,
-          originalIndex: currentQ?.originalIndex,
-          checkIndex,
-          hasAnswer: answer.answers?.[checkIndex],
-          answerValue: answer.answers?.[checkIndex]
-        });
 
         if (answer.answers && Array.isArray(answer.answers)) {
           // 使用原始索引檢查該用戶是否已回答當前題目
@@ -396,31 +339,12 @@ export default function BuddiesQuestionSwiper({
       setVoteStats({ ...stats, userData, answeredUserIds: Array.from(answeredUserIds) });
 
       // 優化的下一題檢查機制 - 強制檢查進度，不管 waiting 狀態
-      logger.debug("🔍 檢查是否需要進入下一題:", {
-        waiting,
-        hasCompleted: hasCompletedRef.current,
-        answersLength: answers.length,
-        shouldCheck: !hasCompletedRef.current
-      });
-
       if (!hasCompletedRef.current) {
         const totalActiveMembers = Math.max(1, activeMembers.length); // 至少為1，避免除零錯誤
         const answeredCount = answeredUserIds.size;
 
         // 關鍵修復：在這裡計算一次 visibleQuestions，後續都使用這個結果
         const currentVisibleQuestions = getVisibleQuestions(safeQuestionsRef.current);
-
-        logger.debug("📊 優化後的答題進度檢查:", {
-          questionIndex,
-          totalActiveMembers,
-          answeredCount,
-          answeredUserIds: Array.from(answeredUserIds),
-          activeMemberIds: activeMembers.map(m => m.id),
-          allMembersData: members.map(m => ({ id: m.id, name: m.name, status: m.status })),
-          waiting,
-          progressPercentage: Math.round((answeredCount / totalActiveMembers) * 100) + '%',
-          visibleQuestionsLength: currentVisibleQuestions.length
-        });
 
         // 強化的智能完成檢查：
         // 1. 如果沒有其他成員（單用戶），該用戶答題後立即進入下一題
@@ -431,29 +355,8 @@ export default function BuddiesQuestionSwiper({
           (totalActiveMembers === 1 && answeredCount >= 1) || // 只有一個活躍成員
           (totalActiveMembers > 1 && answeredCount >= totalActiveMembers); // 多用戶全部完成
 
-        logger.debug("🤔 進入下一題條件檢查:", {
-          membersLength: members.length,
-          totalActiveMembers,
-          answeredCount,
-          condition1_singleUser: members.length <= 1 && answeredCount >= 1,
-          condition2_singleActive: totalActiveMembers === 1 && answeredCount >= 1,
-          condition3_multiComplete: totalActiveMembers > 1 && answeredCount >= totalActiveMembers,
-          shouldProceed,
-          waitingState: waiting
-        });
-
         // 修改條件：不管 waiting 狀態，只要答題條件滿足就進入下一題
         if (shouldProceed && answeredCount > 0) {
-          logger.debug("✅ 答題條件滿足，準備進入下一題");
-          let triggerReason = "未知原因";
-          if (members.length <= 1 && answeredCount >= 1) {
-            triggerReason = "單用戶模式（成員數≤1）";
-          } else if (totalActiveMembers === 1 && answeredCount >= 1) {
-            triggerReason = "單活躍成員模式";
-          } else if (totalActiveMembers > 1 && answeredCount >= totalActiveMembers) {
-            triggerReason = "多用戶全部完成";
-          }
-          logger.debug("🎯 觸發條件:", triggerReason);
 
           // 計算多數決答案並更新集體答案
           if (Object.keys(stats).length > 0) {
@@ -493,16 +396,6 @@ export default function BuddiesQuestionSwiper({
                 const checkIndex = currentQ?.originalIndex !== undefined ? currentQ.originalIndex : questionIndex;
                 const hostAnswerValue = hostAnswerData?.answers?.[checkIndex];
 
-                logger.debug("🔍 查找房主答案:", {
-                  hostId: hostMember.id,
-                  hostName: hostMember.name,
-                  checkIndex,
-                  hostAnswerValue,
-                  candidateAnswers,
-                  hasHostAnswer: !!hostAnswerValue,
-                  isInCandidates: candidateAnswers.includes(hostAnswerValue)
-                });
-
                 if (hostAnswerValue && candidateAnswers.includes(hostAnswerValue)) {
                   majorityAnswer = hostAnswerValue;
                   logger.debug("👑 平票由房主決定:", {
@@ -541,8 +434,6 @@ export default function BuddiesQuestionSwiper({
               roomService.updateCollectiveAnswer(roomId, originalIndex, majorityAnswer)
                 .then(result => {
                   if (result.success) {
-                    logger.debug("✅ 集體答案已更新到資料庫，現在可以決定下一題");
-
                     // 等待集體答案狀態更新（給 React 一點時間同步狀態）
                     setTimeout(() => {
                       // 使用 ref 避免競態條件（React state 可能還沒更新）
@@ -573,12 +464,6 @@ export default function BuddiesQuestionSwiper({
                         return visible;
                       }, []);
 
-                      logger.debug("📋 重新計算可見問題:", {
-                        原始長度: currentVisibleQuestions.length,
-                        更新後長度: updatedVisibleQuestions.length,
-                        更新的集體答案: updatedCollectiveAnswers
-                      });
-
                       // 修復：找出當前問題在更新後的 visibleQuestions 中的位置
                       const currentVisibleIndex = updatedVisibleQuestions.findIndex(
                         vq => vq.originalIndex === currentQuestionIndex
@@ -591,36 +476,18 @@ export default function BuddiesQuestionSwiper({
                         ? null
                         : updatedVisibleQuestions[nextVisibleIndex].originalIndex;
 
-                      logger.debug("🔍 下一題檢查詳情（集體答案已確定）:", {
-                        currentQuestionIndex,
-                        currentVisibleIndex,
-                        nextVisibleIndex,
-                        nextQuestionOriginalIndex,
-                        visibleQuestionsLength: updatedVisibleQuestions.length,
-                        isLastQuestion,
-                        collectiveAnswer: majorityAnswer,
-                        isMountedRef: isMountedRef.current,
-                        reactQuestionIndex: questionIndex  // 加入 React state 用於比較
-                      });
-
                       // 檢查是否已經處理過這個題目（避免重複設置動畫）
                       // 修復：需要比較原始索引，而不是可見問題索引
                       const currentVisibleQuestion = updatedVisibleQuestions[questionIndex];
                       const currentVisibleOriginalIndex = currentVisibleQuestion?.originalIndex;
 
                       if (currentQuestionIndex !== currentVisibleOriginalIndex) {
-                        logger.debug("⏭️ 題目已變更，跳過動畫設置:", {
-                          refOriginalIndex: currentQuestionIndex,
-                          stateVisibleIndex: questionIndex,
-                          stateOriginalIndex: currentVisibleOriginalIndex
-                        });
                         return;
                       }
 
                       // 檢查是否為最後一題
                       if (isLastQuestion) {
                         // 最後一題，所有人都完成了，調用 onComplete
-                        logger.debug("🎉 最後一題且所有成員都已完成，準備完成問答");
                         hasCompletedRef.current = true;
 
                         // 等待動畫播放
@@ -632,7 +499,6 @@ export default function BuddiesQuestionSwiper({
                             const finalQuestionTexts = questionTextsRef.current;
                             const finalQuestionSources = questionSourcesRef.current;
 
-                            logger.debug("🎯 調用 onComplete，提交最終答案");
                             onCompleteRef.current({
                               answers: finalAnswers,
                               questionTexts: finalQuestionTexts,
@@ -642,7 +508,6 @@ export default function BuddiesQuestionSwiper({
                         }, 2500); // 等待動畫播放完成
                       } else {
                         // 不是最後一題，正常進入下一題
-                        logger.debug("🎬 設置動畫偵測，等待所有成員看完動畫");
                         setupAnimationDetection(nextQuestionOriginalIndex, updatedVisibleQuestions);
                       }
                     }, 100); // 給狀態更新一點時間
@@ -691,10 +556,6 @@ export default function BuddiesQuestionSwiper({
                     const currentVisibleOriginalIndex2 = currentVisibleQuestion2?.originalIndex;
 
                     if (currentQuestionIndex !== currentVisibleOriginalIndex2) {
-                      logger.debug("⏭️ 題目已變更，跳過錯誤恢復動畫設置:", {
-                        refOriginalIndex: currentQuestionIndex,
-                        stateOriginalIndex: currentVisibleOriginalIndex2
-                      });
                       return;
                     }
 
@@ -765,10 +626,6 @@ export default function BuddiesQuestionSwiper({
                   const currentVisibleOriginalIndex3 = currentVisibleQuestion3?.originalIndex;
 
                   if (currentQuestionIndex !== currentVisibleOriginalIndex3) {
-                    logger.debug("⏭️ 題目已變更，跳過異常恢復動畫設置:", {
-                      refOriginalIndex: currentQuestionIndex,
-                      stateOriginalIndex: currentVisibleOriginalIndex3
-                    });
                     return;
                   }
 
@@ -815,10 +672,6 @@ export default function BuddiesQuestionSwiper({
             const currentVisibleOriginalIndex4 = currentVisibleQuestion4?.originalIndex;
 
             if (currentQuestionIndex !== currentVisibleOriginalIndex4) {
-              logger.debug("⏭️ 題目已變更，跳過無投票數據恢復動畫設置:", {
-                refOriginalIndex: currentQuestionIndex,
-                stateOriginalIndex: currentVisibleOriginalIndex4
-              });
               return;
             }
 
@@ -863,8 +716,6 @@ export default function BuddiesQuestionSwiper({
 
   // 智能動畫完成偵測系統
   const handleAnimationComplete = useCallback((nextQuestionOriginalIndex, visibleQuestions) => {
-    logger.debug("🎬 動畫完成，準備進入下一題:", nextQuestionOriginalIndex);
-
     if (isMountedRef.current && !hasCompletedRef.current) {
       // 檢查是否為最後一題（nextQuestionOriginalIndex 為 null 或找不到對應的可見問題）
       const isLastQuestion = nextQuestionOriginalIndex === null ||
@@ -872,7 +723,6 @@ export default function BuddiesQuestionSwiper({
 
       if (isLastQuestion) {
         // 所有問題已完成
-        logger.debug("🎉 所有問題已完成，提交最終答案");
         hasCompletedRef.current = true;
 
         // 保留數組索引，不壓縮
@@ -892,12 +742,6 @@ export default function BuddiesQuestionSwiper({
         const nextVisibleIndex = visibleQuestions.findIndex(
           vq => vq.originalIndex === nextQuestionOriginalIndex
         );
-
-        logger.debug("⏭️ 動畫系統觸發進入下一題:", {
-          nextQuestionOriginalIndex,
-          nextVisibleIndex,
-          visibleQuestionsLength: visibleQuestions.length
-        });
 
         if (nextVisibleIndex === -1) {
           logger.error("❌ 找不到下一個問題在可見問題中的位置:", nextQuestionOriginalIndex);
@@ -926,11 +770,8 @@ export default function BuddiesQuestionSwiper({
   const setupAnimationDetection = useCallback((nextQuestionOriginalIndex, visibleQuestions) => {
     // 如果動畫偵測已經在執行，直接返回避免重複設置
     if (animationDetectionActiveRef.current) {
-      logger.debug("⏭️ 動畫偵測已在執行中，跳過重複設置");
       return;
     }
-
-    logger.debug("🎭 設置智能動畫偵測系統，下一題原始索引:", nextQuestionOriginalIndex);
 
     // 標記為正在執行
     animationDetectionActiveRef.current = true;
@@ -957,7 +798,6 @@ export default function BuddiesQuestionSwiper({
 
       // 檢查是否達到一個完整的動畫週期 + 額外觀看時間
       if (elapsedTime >= animationCycleTime + 800) {
-        logger.debug("⏰ 動畫週期完成，自動進入下一題 (等待了", elapsedTime, "ms)");
         animationCompleteRef.current = true;
 
         // 清理 timeout ref
@@ -975,13 +815,6 @@ export default function BuddiesQuestionSwiper({
 
     // 開始檢查 - 存儲 timeout ID
     animationCheckTimeoutRef.current = setTimeout(checkAnimationComplete, minWaitTime);
-
-    logger.debug("🎯 動畫偵測配置:", {
-      最小等待時間: minWaitTime + "ms",
-      動畫週期: animationCycleTime + "ms",
-      總最大等待: (animationCycleTime + 800) + "ms"
-    });
-
   }, [handleAnimationComplete]);
 
   // 清理所有計時器和事件監聽器的函數
@@ -1073,7 +906,6 @@ export default function BuddiesQuestionSwiper({
         lastAnsweredQuestionRef.current = questionToAnswer;
 
         // 立即提交當前進度到數據庫，用於實時同步
-        logger.debug("📝 立即提交當前答題進度到數據庫");
         // 關鍵修復：保留數組索引，不要壓縮成密集數組
         // 找出最大的索引來確定數組長度
         const maxIndex = Math.max(...Object.keys(answersRef.current).map(Number), 0);
@@ -1100,8 +932,6 @@ export default function BuddiesQuestionSwiper({
         });
 
         // 在 Buddies 模式下，無論是否為最後一題，都要等待所有人完成
-        logger.debug("🔄 等待其他成員完成答題，當前題目索引:", questionIndex);
-
         // 檢查是否還有更多問題（修復：正確計算下一個可見問題）
         const visibleQuestions = getVisibleQuestions(safeQuestions);
 
@@ -1122,30 +952,11 @@ export default function BuddiesQuestionSwiper({
           ? null
           : visibleQuestions[nextVisibleIndex].originalIndex;
 
-        logger.debug("📝 答題狀態:", {
-          questionIndex,
-          currentVisibleIndex,
-          nextVisibleIndex,
-          nextQuestionOriginalIndex,
-          visibleQuestionsLength: visibleQuestions.length,
-          isLastQuestion,
-          willWaitForOthers: true
-        });
-
         // 設置備用超時機制，防止永遠卡住（30秒後自動進入下一題或完成）
         const fallbackTimeout = setTimeout(() => {
           // 修復：如果已經完成所有問題，不要觸發備用超時
           if (isMountedRef.current && (waiting || isWaitingRef.current) && !hasCompletedRef.current) {
             logger.warn("⚠️ 備用超時觸發");
-            logger.debug("📊 超時時的狀態:", {
-              questionIndex,
-              currentVisibleIndex,
-              nextQuestionOriginalIndex,
-              isLastQuestion,
-              members: members.length,
-              answersReceived: allAnswers.length,
-              currentAnswers: Object.keys(answersRef.current)
-            });
 
             if (isLastQuestion) {
               // 最後一題超時，強制完成
@@ -1165,10 +976,7 @@ export default function BuddiesQuestionSwiper({
               });
             } else {
               // 非最後一題，進入下一個可見問題
-              logger.warn("⚠️ 強制進入下一題:", {
-                nextQuestionOriginalIndex,
-                nextVisibleIndex
-              });
+              logger.warn("⚠️ 強制進入下一題");
               isWaitingRef.current = false;
               currentQuestionIndexRef.current = nextQuestionOriginalIndex; // 保存原始索引
               setQuestionIndex(nextVisibleIndex); // 設置可見問題索引
@@ -1176,9 +984,6 @@ export default function BuddiesQuestionSwiper({
               setActiveQuestion(null);
               activeQuestionRef.current = null; // 同步清理 ref
             }
-          } else if (hasCompletedRef.current) {
-            // 已完成所有問題，備用超時被正確跳過
-            logger.debug("✅ 所有問題已完成，備用超時被跳過");
           }
         }, 30000); // 30秒備用超時
 
