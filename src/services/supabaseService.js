@@ -635,18 +635,7 @@ export const questionService = {
         answers
       });
 
-      // 獲取當前房間的 member_answers
-      const { data: room, error: fetchError } = await supabase
-        .from('buddies_rooms')
-        .select('member_answers')
-        .eq('id', roomId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // 更新用戶答案到 JSONB
-      const memberAnswers = room?.member_answers || {};
-      memberAnswers[userId] = {
+      const userAnswerData = {
         answers: answers,
         completed: true,
         submitted_at: new Date().toISOString(),
@@ -654,24 +643,50 @@ export const questionService = {
         question_sources: questionSources
       };
 
-      // 更新房間
+      // 使用 RPC 函數原子性地更新 JSONB，避免競態條件
       const { data, error } = await supabase
-        .from('buddies_rooms')
-        .update({
-          member_answers: memberAnswers,
-          last_updated: new Date().toISOString()
-        })
-        .eq('id', roomId)
-        .select()
-        .single();
+        .rpc('update_member_answer', {
+          p_room_id: roomId,
+          p_user_id: userId,
+          p_answer_data: userAnswerData
+        });
 
       if (error) {
-        console.error('❌ Supabase 提交答案錯誤:', error);
-        throw error;
+        console.error('❌ RPC 函數調用失敗，降級到傳統方法:', error);
+
+        // 降級方案：使用傳統的先讀後寫方法（有競態條件風險，但至少能工作）
+        const { data: room, error: fetchError } = await supabase
+          .from('buddies_rooms')
+          .select('member_answers')
+          .eq('id', roomId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const memberAnswers = room?.member_answers || {};
+        memberAnswers[userId] = userAnswerData;
+
+        const { data: updateData, error: updateError } = await supabase
+          .from('buddies_rooms')
+          .update({
+            member_answers: memberAnswers,
+            last_updated: new Date().toISOString()
+          })
+          .eq('id', roomId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('❌ Supabase 提交答案錯誤:', updateError);
+          throw updateError;
+        }
+
+        console.log('✅ 答案提交成功 (降級方法)');
+        return { success: true, data: userAnswerData };
       }
 
-      console.log('✅ 答案提交成功 (JSONB)');
-      return { success: true, data: memberAnswers[userId] };
+      console.log('✅ 答案提交成功 (RPC 原子操作)');
+      return { success: true, data: userAnswerData };
     } catch (error) {
       console.error('❌ 提交答案失敗:', error);
       return { success: false, error: error.message };
