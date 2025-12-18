@@ -505,7 +505,7 @@ export default function BuddiesQuestionSwiper({
                               questionSources: finalQuestionSources,
                             });
                           }
-                        }, 2500); // 等待動畫播放完成
+                        }, 2000); // 等待動畫播放完成
                       } else {
                         // 不是最後一題，正常進入下一題
                         setupAnimationDetection(nextQuestionOriginalIndex, updatedVisibleQuestions);
@@ -575,7 +575,7 @@ export default function BuddiesQuestionSwiper({
                             questionSources: finalQuestionSources,
                           });
                         }
-                      }, 2500);
+                      }, 2000);
                     } else {
                       setupAnimationDetection(nextQuestionOriginalIndex, updatedVisibleQuestions);
                     }
@@ -645,7 +645,7 @@ export default function BuddiesQuestionSwiper({
                           questionSources: finalQuestionSources,
                         });
                       }
-                    }, 2500);
+                    }, 2000);
                   } else {
                     setupAnimationDetection(nextQuestionOriginalIndex, updatedVisibleQuestions);
                   }
@@ -691,7 +691,7 @@ export default function BuddiesQuestionSwiper({
                     questionSources: finalQuestionSources,
                   });
                 }
-              }, 2500);
+              }, 2000);
             } else {
               setupAnimationDetection(nextQuestionOriginalIndex, currentVisibleQuestions);
             }
