@@ -1134,7 +1134,8 @@ export default function BuddiesQuestionSwiper({
 
         // 設置備用超時機制，防止永遠卡住（30秒後自動進入下一題或完成）
         const fallbackTimeout = setTimeout(() => {
-          if (isMountedRef.current && (waiting || isWaitingRef.current)) {
+          // 修復：如果已經完成所有問題，不要觸發備用超時
+          if (isMountedRef.current && (waiting || isWaitingRef.current) && !hasCompletedRef.current) {
             logger.warn("⚠️ 備用超時觸發");
             logger.debug("📊 超時時的狀態:", {
               questionIndex,
@@ -1175,6 +1176,9 @@ export default function BuddiesQuestionSwiper({
               setActiveQuestion(null);
               activeQuestionRef.current = null; // 同步清理 ref
             }
+          } else if (hasCompletedRef.current) {
+            // 已完成所有問題，備用超時被正確跳過
+            logger.debug("✅ 所有問題已完成，備用超時被跳過");
           }
         }, 30000); // 30秒備用超時
 
