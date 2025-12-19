@@ -59,6 +59,8 @@ export default function DataAnalyticsPage() {
   });
 
   const [timeTrendData, setTimeTrendData] = useState([]);
+  const [showSwiftTasteModal, setShowSwiftTasteModal] = useState(false);
+  const [showBuddiesModal, setShowBuddiesModal] = useState(false);
 
   // 載入所有數據
   const loadData = async () => {
@@ -839,7 +841,16 @@ export default function DataAnalyticsPage() {
       {/* SwiftTaste 模式 */}
       <div className="section-divider">
         <div className="section-divider-line"></div>
-        <div className="section-divider-text">🎯 SwiftTaste 模式數據</div>
+        <div className="section-divider-text">
+          🎯 SwiftTaste 模式數據
+          <button
+            className="detail-view-button"
+            onClick={() => setShowSwiftTasteModal(true)}
+            style={{ marginLeft: '1rem', fontSize: '0.9rem', padding: '0.3rem 0.8rem' }}
+          >
+            📊 查看詳情
+          </button>
+        </div>
         <div className="section-divider-line"></div>
       </div>
 
@@ -881,7 +892,16 @@ export default function DataAnalyticsPage() {
       {/* Buddies 模式 */}
       <div className="section-divider">
         <div className="section-divider-line"></div>
-        <div className="section-divider-text">👥 Buddies 模式數據</div>
+        <div className="section-divider-text">
+          👥 Buddies 模式數據
+          <button
+            className="detail-view-button"
+            onClick={() => setShowBuddiesModal(true)}
+            style={{ marginLeft: '1rem', fontSize: '0.9rem', padding: '0.3rem 0.8rem' }}
+          >
+            📊 查看詳情
+          </button>
+        </div>
         <div className="section-divider-line"></div>
       </div>
 
@@ -1286,6 +1306,157 @@ export default function DataAnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* SwiftTaste 詳細數據 Modal */}
+      {showSwiftTasteModal && (
+        <div className="modal-overlay" onClick={() => setShowSwiftTasteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}>
+            <div className="modal-header">
+              <h2>🎯 SwiftTaste 模式詳細數據</h2>
+              <button className="modal-close" onClick={() => setShowSwiftTasteModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-metrics-grid">
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>總選擇流程</strong>
+                    <span className="metric-description">用戶啟動 SwiftTaste 的總次數</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.totalSessions}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>完成次數</strong>
+                    <span className="metric-description">用戶成功選擇到最終餐廳的次數</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.completedSessions}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>未完成次數</strong>
+                    <span className="metric-description">用戶中途離開未完成選擇的次數</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.incompleteSessions}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>完成率</strong>
+                    <span className="metric-description">完成次數 ÷ 總選擇流程 × 100%</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.completionRate}%</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>總滑動次數</strong>
+                    <span className="metric-description">所有用戶滑動餐廳卡片的總次數</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.totalSwipes}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>平均滑動次數</strong>
+                    <span className="metric-description">每個用戶平均滑動的卡片數量</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.avgSwipes}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>平均決策時長</strong>
+                    <span className="metric-description">從開始到完成選擇的平均時間</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.avgDuration} 秒</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>平均每次滑動時長</strong>
+                    <span className="metric-description">用戶在每張卡片上的平均思考時間</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.avgDecisionSpeed} 秒</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>選擇成功率</strong>
+                    <span className="metric-description">用戶獲得推薦餐廳的成功比例</span>
+                  </div>
+                  <div className="detail-metric-value">{swiftTasteMetrics.conversionRate}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Buddies 詳細數據 Modal */}
+      {showBuddiesModal && (
+        <div className="modal-overlay" onClick={() => setShowBuddiesModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}>
+            <div className="modal-header">
+              <h2>👥 Buddies 模式詳細數據</h2>
+              <button className="modal-close" onClick={() => setShowBuddiesModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-metrics-grid">
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>總房間數</strong>
+                    <span className="metric-description">創建的 Buddies 房間總數</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.totalRooms}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>完成次數</strong>
+                    <span className="metric-description">房間內成員完成選擇的次數</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.completedRooms}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>未完成次數</strong>
+                    <span className="metric-description">房間內成員未完成選擇的次數</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.incompleteRooms}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>完成率</strong>
+                    <span className="metric-description">完成次數 ÷ 總房間數 × 100%</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.completionRate}%</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>平均房間人數</strong>
+                    <span className="metric-description">每個房間的平均參與人數</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.avgMembersPerRoom}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>平均決策時長</strong>
+                    <span className="metric-description">房間從創建到完成選擇的平均時間</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.avgSessionDuration} 秒</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>總投票數</strong>
+                    <span className="metric-description">所有房間成員的投票總數</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.totalVotes}</div>
+                </div>
+                <div className="detail-metric-item">
+                  <div className="detail-metric-label">
+                    <strong>平均每房投票數</strong>
+                    <span className="metric-description">每個房間的平均投票次數</span>
+                  </div>
+                  <div className="detail-metric-value">{buddiesMetrics.avgVotesPerRoom}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

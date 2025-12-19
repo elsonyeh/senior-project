@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { adminService } from "../services/supabaseService";
 import RestaurantManager from "./RestaurantManager";
 import DataAnalyticsPage from "./admin/DataAnalyticsPage";
@@ -10,7 +10,11 @@ import { InputModal, ConfirmModal, NotificationModal, AdminFormModal } from "./C
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("restaurants");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // 從 URL 參數讀取當前 tab，如果沒有則默認為 "restaurants"
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || "restaurants");
   const [adminList, setAdminList] = useState([]);
   const [currentAdmin, setCurrentAdmin] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -26,7 +30,20 @@ export default function AdminDashboard() {
   const [addingAdmin, setAddingAdmin] = useState(false);
   const [buddiesStats, setBuddiesStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
-  const navigate = useNavigate();
+
+  // 處理 tab 切換，同時更新 URL
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
+  // 監聽 URL 參數變化
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   // 獲取管理員列表和當前管理員資訊
   useEffect(() => {
@@ -461,43 +478,43 @@ export default function AdminDashboard() {
       <div className="dashboard-tabs">
         <button
           className={`tab-button ${activeTab === "restaurants" ? "active" : ""}`}
-          onClick={() => setActiveTab("restaurants")}
+          onClick={() => handleTabChange("restaurants")}
         >
           餐廳資料
         </button>
         <button
           className={`tab-button ${activeTab === "buddies" ? "active" : ""}`}
-          onClick={() => setActiveTab("buddies")}
+          onClick={() => handleTabChange("buddies")}
         >
           房間管理
         </button>
         <button
           className={`tab-button ${activeTab === "admins" ? "active" : ""}`}
-          onClick={() => setActiveTab("admins")}
+          onClick={() => handleTabChange("admins")}
         >
           管理員管理
         </button>
         <button
           className={`tab-button ${activeTab === "ratings" ? "active" : ""}`}
-          onClick={() => setActiveTab("ratings")}
+          onClick={() => handleTabChange("ratings")}
         >
           評分更新
         </button>
         <button
           className={`tab-button ${activeTab === "analytics" ? "active" : ""}`}
-          onClick={() => setActiveTab("analytics")}
+          onClick={() => handleTabChange("analytics")}
         >
           資料分析
         </button>
         <button
           className={`tab-button ${activeTab === "testing" ? "active" : ""}`}
-          onClick={() => setActiveTab("testing")}
+          onClick={() => handleTabChange("testing")}
         >
           推薦測試
         </button>
         <button
           className={`tab-button ${activeTab === "geocoder" ? "active" : ""}`}
-          onClick={() => setActiveTab("geocoder")}
+          onClick={() => handleTabChange("geocoder")}
         >
           經緯度更新
         </button>
