@@ -404,24 +404,53 @@ export default function BuddiesRoom({ initialRoomId }) {
 
   const getCurrentLocation = async () => {
     return new Promise((resolve) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              timestamp: new Date().toISOString()
-            });
-          },
-          (error) => {
-            logger.warn('Location access denied:', error);
-            resolve(null);
-          },
-          { timeout: 10000 }
-        );
-      } else {
+      if (!navigator.geolocation) {
         resolve(null);
+        return;
       }
+
+      // 首先嘗試高精度定位
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            timestamp: new Date().toISOString()
+          });
+        },
+        (error) => {
+          logger.warn('高精度定位失敗:', error);
+
+          // 如果高精度定位超時或失敗，自動降級到低精度模式
+          if (error.code === 3 || error.code === 2) { // TIMEOUT or POSITION_UNAVAILABLE
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                resolve({
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                  timestamp: new Date().toISOString()
+                });
+              },
+              (fallbackError) => {
+                logger.warn('低精度定位也失敗:', fallbackError);
+                resolve(null);
+              },
+              {
+                enableHighAccuracy: false,
+                timeout: 8000,
+                maximumAge: 60000
+              }
+            );
+          } else {
+            resolve(null);
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 0
+        }
+      );
     });
   };
 

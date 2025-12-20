@@ -384,29 +384,57 @@ export default function MapPage() {
     }
   }, []);
 
-  // 請求當前位置
+  // 請求當前位置（帶降級策略）
   const requestCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            name: '我的位置'
-          };
-          handleLocationFound(location);
-        },
-        (error) => {
-          console.warn('自動定位失敗:', error);
-          // 不顯示錯誤訊息，讓用戶手動點擊定位按鈕
-        },
-        {
-          enableHighAccuracy: true, // 啟用高精度定位
-          timeout: 15000, // 增加超時時間到15秒
-          maximumAge: 0 // 不使用緩存，確保獲得最新位置
-        }
-      );
+    if (!navigator.geolocation) {
+      return;
     }
+
+    // 首先嘗試高精度定位
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          name: '我的位置'
+        };
+        handleLocationFound(location);
+      },
+      (error) => {
+        console.warn('高精度定位失敗:', error);
+
+        // 如果高精度定位超時或失敗，自動降級到低精度模式
+        if (error.code === 3 || error.code === 2) { // TIMEOUT or POSITION_UNAVAILABLE
+          console.log('嘗試低精度定位...');
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const location = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                name: '我的位置'
+              };
+              handleLocationFound(location);
+            },
+            (fallbackError) => {
+              console.warn('低精度定位也失敗:', fallbackError);
+              // 靜默失敗，讓用戶手動點擊定位按鈕
+            },
+            {
+              enableHighAccuracy: false, // 使用低精度模式
+              timeout: 10000, // 低精度模式超時時間較短
+              maximumAge: 60000 // 允許使用1分鐘內的緩存位置
+            }
+          );
+        }
+        // 如果是權限被拒絕，不嘗試降級，讓用戶手動點擊定位按鈕
+      },
+      {
+        enableHighAccuracy: true, // 首先嘗試高精度定位
+        timeout: 25000, // 增加超時時間到25秒
+        maximumAge: 0 // 不使用緩存，確保獲得最新位置
+      }
+    );
   };
 
   // 處理搜尋
