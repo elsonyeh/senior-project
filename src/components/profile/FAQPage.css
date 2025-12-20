@@ -86,8 +86,10 @@
 .faq-answer p {
   font-size: 15px;
   color: #4a5568;
-  line-height: 1.6;
+  line-height: 1.8;
   margin: 0;
+  white-space: pre-line;
+  word-wrap: break-word;
 }
 
 /* 底部提示 */
