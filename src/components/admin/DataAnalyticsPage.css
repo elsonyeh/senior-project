@@ -203,6 +203,9 @@
 .stat-card.teal .stat-icon-wrapper { background: rgba(32, 201, 151, 0.1); color: #20c997; }
 .stat-card.indigo .stat-icon-wrapper { background: rgba(102, 16, 242, 0.1); color: #6610f2; }
 
+/* Info card text colors */
+.stat-card.info .stat-value { color: #17a2b8; }
+
 .stat-change {
   font-size: 0.85rem;
   padding: 4px 10px;
@@ -713,6 +716,43 @@
 .detail-metric-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* 可點擊的指標項目特殊樣式 */
+.detail-metric-item.clickable {
+  cursor: pointer;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.detail-metric-item.clickable::before {
+  content: '👆';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.2rem;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.detail-metric-item.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+  border-color: #2196F3;
+}
+
+.detail-metric-item.clickable:hover::before {
+  opacity: 1;
+}
+
+.detail-metric-item.clickable:active {
+  transform: translateY(-2px);
+}
+
+.detail-metric-item.clickable .metric-description {
+  color: #1976D2;
+  font-weight: 500;
 }
 
 .detail-metric-label {

@@ -11,7 +11,6 @@ class DataAnalyticsService {
   // 清除快取
   clearCache() {
     this.cache.clear();
-    console.log('Analytics cache cleared');
   }
 
   // 強制重新載入所有統計數據
@@ -20,12 +19,6 @@ class DataAnalyticsService {
     const userStats = await this.getUserStats();
     const modeStats = await this.getModeStats();
     const interactionStats = await this.getInteractionStats();
-
-    console.log('Refreshed analytics data:', {
-      userStats,
-      modeStats,
-      interactionStats
-    });
 
     return {
       userStats,
@@ -100,28 +93,27 @@ class DataAnalyticsService {
           newUsers = 0;
         }
 
-        // 獲取匿名會話數（從 user_selection_history 中沒有 user_id 的記錄）
+        // 獲取匿名用戶數（使用 Supabase 函數繞過 RLS）
         try {
-          const { count: anonymousCount } = await supabase
-            .from('user_selection_history')
-            .select('*', { count: 'exact', head: true })
-            .is('user_id', null);
+          const { data: anonymousStats, error: anonymousError } = await supabase
+            .rpc('get_anonymous_user_stats');
 
-          anonymousSessions = anonymousCount || 0;
+          if (anonymousError) {
+            console.error('調用 get_anonymous_user_stats 失敗:', anonymousError);
+            anonymousSessions = 0;
+          } else if (anonymousStats && anonymousStats.length > 0) {
+            const stats = anonymousStats[0];
+            anonymousSessions = stats.total_anonymous || 0;
+            console.log('✅ 成功獲取匿名用戶統計:', stats);
+          } else {
+            anonymousSessions = 0;
+          }
         } catch (historyError) {
-          console.warn('user_selection_history not available:', historyError);
+          console.error('獲取匿名用戶數據失敗:', historyError);
           anonymousSessions = 0;
         }
 
         const totalUsers = registeredUsers + anonymousSessions;
-
-        console.log('User stats:', {
-          registeredUsers,
-          activeUsers,
-          anonymousSessions,
-          newUsers,
-          totalUsers
-        });
 
         return {
           registeredUsers,
