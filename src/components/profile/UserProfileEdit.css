@@ -277,8 +277,8 @@
   font-style: italic;
 }
 
-/* 統計數據網格 */
-.stats-grid {
+/* 統計數據網格（個人資料頁面專用） */
+.profile-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 16px;
@@ -292,6 +292,8 @@
   color: white;
   box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
   transition: transform 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .stat-item:hover {
@@ -301,7 +303,7 @@
 .stat-value {
   font-size: 28px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   line-height: 1;
 }
 
@@ -309,7 +311,9 @@
   font-size: 12px;
   opacity: 0.9;
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.4;
+  word-break: keep-all;
+  white-space: normal;
 }
 
 /* 表單操作區域 */
@@ -392,17 +396,40 @@
     height: 70px;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
+  .profile-stats-grid {
+    grid-template-columns: 1fr;
     gap: 12px;
+    width: 100%;
   }
 
-  .stat-item {
-    padding: 16px;
+  .profile-stats-grid .stat-item {
+    padding: 18px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .stat-value {
-    font-size: 24px;
+  .profile-stats-grid .stat-value {
+    font-size: 32px;
+    margin-bottom: 0;
+    order: 2;
+    min-width: 60px;
+    max-width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .profile-stats-grid .stat-label {
+    font-size: 14px;
+    order: 1;
+    flex: 1;
+    text-align: left;
+    line-height: 1.3;
+    padding-right: 12px;
+    overflow-wrap: break-word;
   }
 
   /* 性別選擇器響應式 */
@@ -476,8 +503,28 @@
     font-size: 12px;
   }
 
-  .stats-grid {
+  .profile-stats-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .profile-stats-grid .stat-item {
+    padding: 16px 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .profile-stats-grid .stat-value {
+    font-size: 28px;
+    min-width: 50px;
+    max-width: 70px;
+    flex-shrink: 0;
+  }
+
+  .profile-stats-grid .stat-label {
+    font-size: 13px;
+    padding-right: 10px;
   }
 
   .form-section {

@@ -725,7 +725,7 @@ export default function UserProfileEdit() {
         <div className="form-section">
           <h3>使用統計</h3>
 
-          <div className="stats-grid">
+          <div className="profile-stats-grid">
             <div className="stat-item">
               <div className="stat-value">{userProfile.favorite_lists_count}</div>
               <div className="stat-label">收藏清單</div>
