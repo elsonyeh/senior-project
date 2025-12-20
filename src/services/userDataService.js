@@ -477,14 +477,14 @@ export const userDataService = {
   // 獲取用戶統計數據
   async getUserStats(userId) {
     try {
-      // 從 selection_sessions 表動態計算使用次數
+      // 從 user_selection_history 表動態計算使用次數
       const { data: sessions, error: sessionsError } = await supabase
-        .from('selection_sessions')
+        .from('user_selection_history')
         .select('mode')
         .eq('user_id', userId);
 
       if (sessionsError) {
-        console.error('查詢 selection_sessions 失敗:', sessionsError);
+        console.error('查詢 user_selection_history 失敗:', sessionsError);
       }
 
       // 計算各模式的使用次數
