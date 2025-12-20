@@ -477,20 +477,51 @@ export const userDataService = {
   // 獲取用戶統計數據
   async getUserStats(userId) {
     try {
-      const { data, error } = await supabase
+      // 從 selection_sessions 表動態計算使用次數
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('selection_sessions')
+        .select('mode')
+        .eq('user_id', userId);
+
+      if (sessionsError) {
+        console.error('查詢 selection_sessions 失敗:', sessionsError);
+      }
+
+      // 計算各模式的使用次數
+      const swifttaste_count = sessions?.filter(s => s.mode === 'swifttaste').length || 0;
+      const buddies_count = sessions?.filter(s => s.mode === 'buddies').length || 0;
+
+      // 獲取收藏清單數量（保持原有邏輯）
+      const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
-        .select('favorite_lists_count, swifttaste_count, buddies_count')
+        .select('favorite_lists_count')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      const favorite_lists_count = profileData?.favorite_lists_count || 0;
+
+      // 更新 user_profiles 表中的統計數據（異步更新，不阻塞返回）
+      supabase
+        .from('user_profiles')
+        .update({
+          swifttaste_count,
+          buddies_count
+        })
+        .eq('id', userId)
+        .then(({ error: updateError }) => {
+          if (updateError) {
+            console.error('更新統計數據失敗:', updateError);
+          }
+        });
 
       return {
         success: true,
-        stats: data || {
-          favorite_lists_count: 0,
-          swifttaste_count: 0,
-          buddies_count: 0
+        stats: {
+          favorite_lists_count,
+          swifttaste_count,
+          buddies_count
         }
       };
     } catch (error) {
