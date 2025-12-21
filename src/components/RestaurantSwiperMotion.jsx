@@ -76,21 +76,6 @@ export default function RestaurantSwiperMotion({
 
     return (
       <div className="restaurant-info-blur">
-        {/* 收藏按鈕 - 只在用戶登入時顯示 */}
-        {onLike && currentUser && (
-          <button
-            className={`restaurant-like-button ${isLiked ? 'liked' : ''}`}
-            onClick={(e) => handleLikeClick(e, r)}
-            title={isLiked ? "取消收藏" : "加入收藏"}
-          >
-            {isLiked ? (
-              <IoHeart className="heart-icon filled" />
-            ) : (
-              <IoHeartOutline className="heart-icon" />
-            )}
-          </button>
-        )}
-
         <h3>{r.name || "未命名餐廳"}</h3>
         <p>{r.address || "地址未知"}</p>
         <small>{r.category || "類型不明"}</small>

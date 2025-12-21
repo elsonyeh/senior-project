@@ -18,7 +18,7 @@ import './SwiftTasteHistory.css';
 export default function SwiftTasteHistory({ user }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, solo, group
+  const [filter, setFilter] = useState('all'); // all, swifttaste, buddies
 
   useEffect(() => {
     loadSwiftTasteHistory();
@@ -34,10 +34,20 @@ export default function SwiftTasteHistory({ user }) {
       const result = await selectionHistoryService.getUserHistory(50);
 
       if (result.success) {
-        // 轉換資料格式以相容現有UI
-        const formattedHistory = result.data.map(record => convertRecordToDisplayFormat(record));
+        console.log('Raw history data:', result.data);
+
+        // 轉換資料格式以相容現有UI，並過濾未完成的記錄
+        const formattedHistory = result.data
+          .filter(record => {
+            console.log(`Record ${record.id}: mode=${record.mode}, completed_at=${record.completed_at}`);
+
+            // 只顯示已完成的記錄（SwiftTaste 和 Buddies 都要檢查）
+            return record.completed_at != null;
+          })
+          .map(record => convertRecordToDisplayFormat(record));
+
         setHistory(formattedHistory);
-        console.log(`Loaded ${formattedHistory.length} history records`);
+        console.log(`Loaded ${formattedHistory.length} history records (SwiftTaste: ${formattedHistory.filter(r => r.mode === 'swifttaste').length}, Buddies: ${formattedHistory.filter(r => r.mode === 'buddies').length})`);
       } else {
         console.error('Failed to load history:', result.error);
         // 如果載入失敗，顯示空陣列
@@ -57,47 +67,121 @@ export default function SwiftTasteHistory({ user }) {
     const answers = {};
     const basicAnswers = record.basic_answers || [];
 
-    // 根據答案內容推斷欄位
-    basicAnswers.forEach(answer => {
-      if (['單人', '多人'].includes(answer)) {
-        answers.dining_companions = answer;
-      } else if (['平價美食', '奢華美食'].includes(answer)) {
-        answers.price_level = answer;
-      } else if (['吃', '喝'].includes(answer)) {
-        answers.meal_type = answer;
-      } else if (['吃一點', '吃飽'].includes(answer)) {
-        answers.portion_size = answer;
-      } else if (['辣', '不辣'].includes(answer)) {
-        answers.spice_level = answer;
-      }
-    });
+    // 處理不同格式的 basic_answers
+    // 如果是物件格式（來自 Buddies 模式），直接使用
+    if (basicAnswers && typeof basicAnswers === 'object' && !Array.isArray(basicAnswers)) {
+      Object.assign(answers, basicAnswers);
+    }
+    // 如果是陣列格式（來自 SwiftTaste 模式），解析內容
+    else if (Array.isArray(basicAnswers)) {
+      basicAnswers.forEach(answer => {
+        if (['單人', '多人'].includes(answer)) {
+          answers.dining_companions = answer;
+        } else if (['平價美食', '奢華美食'].includes(answer)) {
+          answers.price_level = answer;
+        } else if (['吃', '喝'].includes(answer)) {
+          answers.meal_type = answer;
+        } else if (['吃一點', '吃飽'].includes(answer)) {
+          answers.portion_size = answer;
+        } else if (['辣', '不辣'].includes(answer)) {
+          answers.spice_level = answer;
+        }
+      });
+    }
 
     // 轉換趣味問題答案
-    const funAnswers = (record.fun_answers || []).map((answer, index) => ({
-      question: `趣味問題 ${index + 1}`,
-      answer: answer
-    }));
+    const rawFunAnswers = record.fun_answers || [];
+    let funAnswers = [];
+
+    // 處理不同格式的 fun_answers
+    if (Array.isArray(rawFunAnswers)) {
+      funAnswers = rawFunAnswers.map((answer, index) => ({
+        question: `趣味問題 ${index + 1}`,
+        answer: answer
+      }));
+    } else if (typeof rawFunAnswers === 'object') {
+      // 如果是物件格式，轉換為陣列
+      funAnswers = Object.entries(rawFunAnswers).map(([key, value], index) => ({
+        question: key || `趣味問題 ${index + 1}`,
+        answer: value
+      }));
+    }
 
     // 找到推薦的餐廳（優先使用final_restaurant，否則使用第一個推薦餐廳）
     let recommendedRestaurant = null;
+
+    // 輔助函數：從餐廳資料中提取照片 URL
+    const getPhotoUrl = (restaurant) => {
+      if (!restaurant) return null;
+
+      // 優先檢查 primaryImage 物件（Supabase 資料庫格式）
+      if (restaurant.primaryImage?.image_url) {
+        return restaurant.primaryImage.image_url;
+      }
+
+      // 檢查 allImages 陣列
+      if (restaurant.allImages && Array.isArray(restaurant.allImages) && restaurant.allImages.length > 0) {
+        const firstImage = restaurant.allImages[0];
+        if (typeof firstImage === 'string') return firstImage;
+        if (firstImage?.image_url) return firstImage.image_url;
+      }
+
+      // 檢查 restaurant_images 陣列
+      if (restaurant.restaurant_images && Array.isArray(restaurant.restaurant_images) && restaurant.restaurant_images.length > 0) {
+        const firstImage = restaurant.restaurant_images[0];
+        if (typeof firstImage === 'string') return firstImage;
+        if (firstImage?.image_url) return firstImage.image_url;
+      }
+
+      // 檢查其他可能的照片欄位
+      if (restaurant.photo_url) return restaurant.photo_url;
+      if (restaurant.photoURL) return restaurant.photoURL;
+      if (restaurant.photo) return restaurant.photo;
+
+      // 處理 photos 陣列
+      if (restaurant.photos && Array.isArray(restaurant.photos)) {
+        if (restaurant.photos.length > 0) {
+          const firstPhoto = restaurant.photos[0];
+          if (typeof firstPhoto === 'string') return firstPhoto;
+          if (firstPhoto && typeof firstPhoto === 'object') {
+            return firstPhoto.photo_url || firstPhoto.photoURL || firstPhoto.url || firstPhoto.image_url;
+          }
+        }
+      }
+
+      // 處理 photos 物件
+      if (restaurant.photos && typeof restaurant.photos === 'object' && !Array.isArray(restaurant.photos)) {
+        return restaurant.photos.photo_url || restaurant.photos.photoURL || restaurant.photos.url || restaurant.photos.image_url;
+      }
+
+      return null;
+    };
+
     if (record.final_restaurant) {
+      console.log(`[Record ${record.id}] final_restaurant:`, JSON.parse(JSON.stringify(record.final_restaurant)));
+      const photoUrl = getPhotoUrl(record.final_restaurant);
+      console.log(`Restaurant ${record.final_restaurant.name} photo URL:`, photoUrl);
+      console.log(`Restaurant ${record.final_restaurant.name} keys:`, Object.keys(record.final_restaurant));
+
       recommendedRestaurant = {
         name: record.final_restaurant.name || '未知餐廳',
         address: record.final_restaurant.address || record.final_restaurant.vicinity || '地址未提供',
         rating: record.final_restaurant.rating || record.final_restaurant.user_ratings_total || 4.0,
-        photo: record.final_restaurant.photos?.[0] || record.final_restaurant.photo ||
-               record.final_restaurant.photoURL || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=150&fit=crop',
-        reason: '根據您的喜好推薦'
+        photo: photoUrl,
+        place_id: record.final_restaurant.place_id || record.final_restaurant.id
       };
     } else if (record.recommended_restaurants && record.recommended_restaurants.length > 0) {
+      console.log(`[Record ${record.id}] recommended_restaurants[0]:`, record.recommended_restaurants[0]);
       const firstRec = record.recommended_restaurants[0];
+      const photoUrl = getPhotoUrl(firstRec);
+      console.log(`Restaurant ${firstRec.name} photo:`, photoUrl);
+
       recommendedRestaurant = {
         name: firstRec.name || '未知餐廳',
         address: firstRec.address || firstRec.vicinity || '地址未提供',
         rating: firstRec.rating || firstRec.user_ratings_total || 4.0,
-        photo: firstRec.photos?.[0] || firstRec.photo || firstRec.photoURL ||
-               'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=150&fit=crop',
-        reason: '根據您的喜好推薦'
+        photo: photoUrl,
+        place_id: firstRec.place_id || firstRec.id
       };
     }
 
@@ -208,10 +292,29 @@ export default function SwiftTasteHistory({ user }) {
   // 過濾記錄
   const filteredHistory = history.filter(record => {
     if (filter === 'all') return true;
-    if (filter === 'solo') return record.answers.dining_companions === '單人';
-    if (filter === 'group') return record.answers.dining_companions === '多人';
+    if (filter === 'swifttaste') return record.mode === 'swifttaste';
+    if (filter === 'buddies') return record.mode === 'buddies';
     return true;
   });
+
+  // 計算當前篩選的統計資訊
+  const getFilteredStats = () => {
+    const count = filteredHistory.length;
+    const avgDuration = count > 0
+      ? Math.round(filteredHistory.reduce((sum, record) => sum + record.session_duration, 0) / count)
+      : 0;
+
+    let title = '選擇記錄';
+    if (filter === 'swifttaste') {
+      title = 'SwiftTaste 記錄';
+    } else if (filter === 'buddies') {
+      title = 'Buddies 記錄';
+    }
+
+    return { count, avgDuration, title };
+  };
+
+  const stats = getFilteredStats();
 
   if (loading) {
     return (
@@ -229,12 +332,12 @@ export default function SwiftTasteHistory({ user }) {
         <div className="header-left">
           <h2 className="history-title">
             <IoTimeOutline className="title-icon" />
-            SwiftTaste 記錄
+            {stats.title}
           </h2>
           <div className="history-stats">
-            <span>{history.length} 次選擇</span>
+            <span>{stats.count} 次選擇</span>
             <span>•</span>
-            <span>{Math.round(history.reduce((sum, record) => sum + record.session_duration, 0) / history.length) || 0} 秒平均</span>
+            <span>{stats.avgDuration} 秒平均</span>
           </div>
         </div>
         
@@ -248,16 +351,16 @@ export default function SwiftTasteHistory({ user }) {
               全部
             </button>
             <button
-              className={`filter-btn ${filter === 'solo' ? 'active' : ''}`}
-              onClick={() => setFilter('solo')}
+              className={`filter-btn ${filter === 'swifttaste' ? 'active' : ''}`}
+              onClick={() => setFilter('swifttaste')}
             >
-              單人
+              SwiftTaste
             </button>
             <button
-              className={`filter-btn ${filter === 'group' ? 'active' : ''}`}
-              onClick={() => setFilter('group')}
+              className={`filter-btn ${filter === 'buddies' ? 'active' : ''}`}
+              onClick={() => setFilter('buddies')}
             >
-              多人
+              Buddies
             </button>
           </div>
           
@@ -280,7 +383,11 @@ export default function SwiftTasteHistory({ user }) {
           <div className="empty-history">
             <IoRestaurantOutline className="empty-icon" />
             <h3>還沒有記錄</h3>
-            <p>開始使用 SwiftTaste 來記錄您的美食選擇吧！</p>
+            <p>
+              {filter === 'swifttaste' && '開始使用 SwiftTaste 來記錄您的美食選擇吧！'}
+              {filter === 'buddies' && '開始使用 Buddies 模式與朋友一起選擇餐廳吧！'}
+              {filter === 'all' && '開始使用 SwiftTaste 或 Buddies 來記錄您的美食選擇吧！'}
+            </p>
           </div>
         ) : (
           <div className="history-list">
@@ -303,13 +410,6 @@ export default function SwiftTasteHistory({ user }) {
                   
                   <div className="record-actions">
                     <button
-                      className="retry-btn"
-                      onClick={() => retrySwiftTaste(record)}
-                      title="再次選擇"
-                    >
-                      <IoRefreshOutline />
-                    </button>
-                    <button
                       className="delete-record-btn"
                       onClick={() => deleteRecord(record.id)}
                       title="刪除記錄"
@@ -320,54 +420,33 @@ export default function SwiftTasteHistory({ user }) {
                 </div>
 
                 <div className="record-content">
-                  {/* 答案摘要 */}
-                  <div className="answers-summary">
-                    <h4 className="summary-title">您的選擇</h4>
-                    <div className="answers-grid">
-                      {Object.entries(record.answers).map(([key, value]) => 
-                        value && (
-                          <div key={key} className="answer-item">
-                            {getAnswerIcon(key, value)}
-                            <span className="answer-text">{value}</span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                    
-                    {/* 趣味問題答案 */}
-                    {record.fun_answers && record.fun_answers.length > 0 && (
-                      <div className="fun-answers">
-                        <div className="fun-answers-header">趣味選擇</div>
-                        <div className="fun-answers-list">
-                          {record.fun_answers.map((funAnswer, index) => (
-                            <div key={index} className="fun-answer-item">
-                              <span className="fun-question">{funAnswer.question}</span>
-                              <span className="fun-answer">{funAnswer.answer}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
                   {/* 推薦結果 */}
                   {record.recommended_restaurant && (
                     <div className="recommendation-result">
                       <h4 className="result-title">推薦餐廳</h4>
                       <div className="restaurant-card">
                         <div className="restaurant-image-container">
-                          <img
-                            src={record.recommended_restaurant.photo || '/default-restaurant.jpg'}
-                            alt={record.recommended_restaurant.name || '餐廳'}
-                            className="restaurant-image"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextElementSibling.style.display = 'flex';
-                            }}
-                          />
-                          <div className="restaurant-image-fallback">
-                            <IoRestaurantOutline />
-                          </div>
+                          {record.recommended_restaurant.photo ? (
+                            <>
+                              <img
+                                src={record.recommended_restaurant.photo}
+                                alt={record.recommended_restaurant.name || '餐廳'}
+                                className="restaurant-image"
+                                onError={(e) => {
+                                  console.error(`Failed to load image for ${record.recommended_restaurant.name}:`, record.recommended_restaurant.photo);
+                                  e.target.style.display = 'none';
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
+                              <div className="restaurant-image-fallback" style={{ display: 'none' }}>
+                                <IoRestaurantOutline />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="restaurant-image-fallback" style={{ display: 'flex' }}>
+                              <IoRestaurantOutline />
+                            </div>
+                          )}
                         </div>
 
                         <div className="restaurant-info">
@@ -381,9 +460,6 @@ export default function SwiftTasteHistory({ user }) {
                               </span>
                               <span className="rating-value">{record.recommended_restaurant.rating}</span>
                             </div>
-                          )}
-                          {record.recommended_restaurant.reason && (
-                            <p className="recommendation-reason">{record.recommended_restaurant.reason}</p>
                           )}
                         </div>
 

@@ -1211,6 +1211,10 @@ export default function SwiftTaste() {
           alternatives={filteredRestaurants}
           onRetry={handleBackToStart}
           onInteraction={resetIdleTimer} // 添加互動回調
+          onLike={handleLike} // 添加收藏功能
+          currentUser={currentUser} // 傳遞當前用戶
+          likedRestaurants={likedRestaurants} // 傳遞已收藏的餐廳集合
+          likedVersion={likedVersion} // 傳遞版本號以強制重新渲染
         />
       )}
 

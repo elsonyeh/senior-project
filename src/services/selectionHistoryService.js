@@ -450,8 +450,9 @@ class OptimizedSelectionHistoryService {
         source_type: 'buddies_room',
         started_at: buddiesData.startTime || new Date().toISOString(),
         completed_at: new Date().toISOString(),
-        basic_answers: buddiesData.answers || {},
-        fun_answers: buddiesData.funAnswers || {},
+        // 確保 basic_answers 和 fun_answers 儲存為一致的格式
+        basic_answers: buddiesData.answers || [],
+        fun_answers: buddiesData.funAnswers || [],
         recommended_restaurants: buddiesData.recommendations || [],
         final_restaurant: buddiesData.selectedRestaurant || null,
         // Buddies 特有資料（使用正確的欄位名）

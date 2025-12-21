@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { IoHeartOutline, IoHeart } from "react-icons/io5";
 import "./RecommendationResult.css";
 
 export default function RecommendationResult({
@@ -10,6 +11,10 @@ export default function RecommendationResult({
   votes = {}, // 新增投票數據
   roomMode = false,
   onInteraction, // 新增互動回調
+  onLike, // 新增收藏功能
+  currentUser, // 當前用戶信息
+  likedRestaurants = new Set(), // 已收藏的餐廳集合
+  likedVersion = 0, // 用於強制重新渲染
 }) {
   console.log("🎯 RecommendationResult 接收到的 votes:", votes);
   console.log("🎯 RecommendationResult 接收到的 saved:", saved.map(r => ({ id: r.id, name: r.name })));
@@ -106,6 +111,13 @@ export default function RecommendationResult({
   }, [showConfetti]); // 只依賴showConfetti
 
   // 移除自動彈出問卷的邏輯，改為只在特定動作時顯示
+
+  const handleLikeClick = (e, restaurant) => {
+    e.stopPropagation(); // 防止觸發其他事件
+    if (onLike) {
+      onLike(restaurant);
+    }
+  };
 
   const goToGoogleMaps = (place) => {
     onInteraction?.(); // 觸發互動回調
@@ -243,29 +255,48 @@ export default function RecommendationResult({
           })`,
         }}
       >
-        {/* 右上角顯示投票數量 */}
-        {(() => {
-          console.log("🔍 票數顯示檢查:", {
-            hasVotes: !!votes,
-            votesKeys: Object.keys(votes || {}),
-            selectedId: selected?.id,
-            selectedName: selected?.name,
-            voteCount: votes?.[selected?.id],
-            shouldShow: votes && selected?.id && votes[selected.id]
-          });
+        {/* 右上角顯示投票數量和收藏按鈕 */}
+        <div className="top-right-badges">
+          {(() => {
+            console.log("🔍 票數顯示檢查:", {
+              hasVotes: !!votes,
+              votesKeys: Object.keys(votes || {}),
+              selectedId: selected?.id,
+              selectedName: selected?.name,
+              voteCount: votes?.[selected?.id],
+              shouldShow: votes && selected?.id && votes[selected.id]
+            });
 
-          // 只有當 votes 對象不為空時才顯示票數
-          const hasVotesData = votes && Object.keys(votes).length > 0;
-          if (hasVotesData && selected?.id) {
-            const voteCount = votes[selected.id] || 0;
-            return (
-              <div className="votes-badge-top-right">
-                <span className="vote-icon">🗳️</span> {voteCount} 票
-              </div>
-            );
-          }
-          return null;
-        })()}
+            // 只有當 votes 對象不為空時才顯示票數
+            const hasVotesData = votes && Object.keys(votes).length > 0;
+            if (hasVotesData && selected?.id) {
+              const voteCount = votes[selected.id] || 0;
+              return (
+                <div className="votes-badge-top-right">
+                  <span className="vote-icon">🗳️</span> {voteCount} 票
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* 收藏按鈕 - 只在用戶登入時顯示 */}
+          {onLike && currentUser && (
+            <motion.button
+              className={`btn-like-result ${likedRestaurants.has(selected.id) ? 'liked' : ''}`}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => handleLikeClick(e, selected)}
+              title={likedRestaurants.has(selected.id) ? "取消收藏" : "加入收藏"}
+            >
+              {likedRestaurants.has(selected.id) ? (
+                <IoHeart className="heart-icon" />
+              ) : (
+                <IoHeartOutline className="heart-icon" />
+              )}
+            </motion.button>
+          )}
+        </div>
 
         <div className="featured-content">
           <h3>{selected.name || "未命名餐廳"}</h3>
@@ -335,19 +366,38 @@ export default function RecommendationResult({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  {/* 右上角顯示投票數量 - 只有當有投票數據時才顯示 */}
-                  {(() => {
-                    const hasVotesData = votes && Object.keys(votes).length > 0;
-                    if (hasVotesData && r.id) {
-                      const voteCount = votes[r.id] || 0;
-                      return (
-                        <div className="alternative-votes-badge-top-right">
-                          <span className="vote-icon">🗳️</span> {voteCount}
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                  {/* 右上角顯示投票數量和收藏按鈕 */}
+                  <div className="alternative-top-right-badges">
+                    {(() => {
+                      const hasVotesData = votes && Object.keys(votes).length > 0;
+                      if (hasVotesData && r.id) {
+                        const voteCount = votes[r.id] || 0;
+                        return (
+                          <div className="alternative-votes-badge-top-right">
+                            <span className="vote-icon">🗳️</span> {voteCount}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* 收藏按鈕 - 只在用戶登入時顯示 */}
+                    {onLike && currentUser && (
+                      <motion.button
+                        className={`btn-mini-like ${likedRestaurants.has(r.id) ? 'liked' : ''}`}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => handleLikeClick(e, r)}
+                        title={likedRestaurants.has(r.id) ? "取消收藏" : "加入收藏"}
+                      >
+                        {likedRestaurants.has(r.id) ? (
+                          <IoHeart style={{ fontSize: '1.25rem' }} />
+                        ) : (
+                          <IoHeartOutline style={{ fontSize: '1.25rem' }} />
+                        )}
+                      </motion.button>
+                    )}
+                  </div>
 
                   <div className="alternative-content">
                     <div className="alternative-info">

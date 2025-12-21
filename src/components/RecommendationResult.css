@@ -575,3 +575,93 @@ h2.result-title {
     height: 600px;
   }
 }
+
+/* 右上角徽章容器 */
+.top-right-badges {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  z-index: 10;
+}
+
+/* 主餐廳收藏按鈕樣式 */
+.btn-like-result {
+  background: rgba(255, 255, 255, 0.95);
+  color: #ff6b6b;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-like-result:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.btn-like-result.liked {
+  background: rgba(255, 107, 107, 0.95);
+  color: white;
+}
+
+.btn-like-result.liked:hover {
+  background: rgba(255, 82, 82, 1);
+}
+
+.btn-like-result .heart-icon {
+  font-size: 1.5rem;
+}
+
+/* 備選餐廳右上角徽章容器 */
+.alternative-top-right-badges {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  z-index: 10;
+}
+
+/* 備選餐廳收藏按鈕樣式 */
+.btn-mini-like {
+  background: rgba(255, 255, 255, 0.95);
+  color: #ff6b6b;
+  border: none;
+  padding: 0.4rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-mini-like:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.btn-mini-like.liked {
+  background: rgba(255, 107, 107, 0.95);
+  color: white;
+}
+
+.btn-mini-like.liked:hover {
+  background: rgba(255, 82, 82, 1);
+}
