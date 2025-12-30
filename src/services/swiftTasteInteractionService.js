@@ -19,6 +19,22 @@ class SwiftTasteInteractionService {
    */
   async recordInteraction(sessionId, userId, restaurantId, actionType, metadata = {}) {
     try {
+      // 先檢查是否已存在相同的記錄
+      const { data: existingRecord } = await supabase
+        .from('swifttaste_interactions')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('restaurant_id', restaurantId)
+        .eq('action_type', actionType)
+        .maybeSingle();
+
+      // 如果已存在，直接返回成功（避免 409 錯誤）
+      if (existingRecord) {
+        logger.debug(`互動已記錄：${actionType} - ${restaurantId}`);
+        return { success: true, duplicate: true };
+      }
+
+      // 不存在則插入新記錄
       const { data, error } = await supabase
         .from('swifttaste_interactions')
         .insert({
@@ -33,9 +49,9 @@ class SwiftTasteInteractionService {
         .single();
 
       if (error) {
-        // 如果是 UNIQUE 約束錯誤，表示已記錄過，可以忽略
-        if (error.code === '23505') {
-          logger.debug(`互動已記錄：${actionType} - ${restaurantId}`);
+        // 如果仍然遇到重複錯誤（可能是併發情況），也視為成功
+        if (error.code === '23505' || error.message?.includes('duplicate')) {
+          logger.debug(`互動已記錄（並發插入）：${actionType} - ${restaurantId}`);
           return { success: true, duplicate: true };
         }
         throw error;
@@ -44,6 +60,7 @@ class SwiftTasteInteractionService {
       logger.debug(`✅ 記錄互動：${actionType} - ${restaurantId}`, data);
       return { success: true, data, duplicate: false };
     } catch (error) {
+      // 處理其他錯誤
       console.error('記錄互動失敗:', error);
       return { success: false, error: error.message };
     }

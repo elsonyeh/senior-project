@@ -1,66 +1,136 @@
 import { supabase, supabaseAdmin } from './supabaseService.js';
+import { restaurantCache } from '../utils/dataCache.js';
 
 // 餐廳服務函數
 export const restaurantService = {
   // ===== 餐廳基本操作 =====
-  
+
   /**
    * 獲取所有活躍餐廳
    * @param {Object} filters - 篩選條件
    * @param {string} filters.category - 餐廳類別
    * @param {number} filters.priceRange - 價格範圍 (1-4)
    * @param {number} filters.minRating - 最低評分
+   * @param {number} filters.limit - 返回數量限制 (默認: 無限制，傳入數字啟用分頁)
+   * @param {number} filters.offset - 分頁偏移量 (默認: 0)
+   * @param {boolean} filters.includeImages - 是否包含圖片 (默認: true)
+   * @param {boolean} filters.useCache - 是否使用緩存 (默認: true)
    * @returns {Promise<Array>} 餐廳列表
    */
   async getRestaurants(filters = {}) {
     try {
-      let query = supabase
-        .from('restaurants')
-        .select(`
-          *,
+      const {
+        category,
+        priceRange,
+        minRating,
+        limit,
+        offset = 0,
+        includeImages = true,
+        useCache = true
+      } = filters;
+
+      // 生成緩存鍵
+      const cacheKey = `restaurants_${JSON.stringify(filters)}`;
+
+      // 檢查緩存
+      if (useCache) {
+        const cached = restaurantCache.get(cacheKey);
+        if (cached) {
+          return cached;
+        }
+      }
+
+      // 構建查詢 - 只選擇必要字段
+      let selectFields = `
+        id,
+        name,
+        address,
+        phone,
+        category,
+        price_range,
+        rating,
+        latitude,
+        longitude,
+        tags,
+        suggested_people,
+        is_spicy,
+        created_at
+      `;
+
+      // 只在需要時包含圖片
+      if (includeImages) {
+        selectFields += `,
           restaurant_images(
             image_url,
             alt_text,
             is_primary,
             display_order
           )
-        `)
+        `;
+      }
+
+      let query = supabase
+        .from('restaurants')
+        .select(selectFields)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       // 應用篩選條件
-      if (filters.category) {
-        query = query.eq('category', filters.category);
+      if (category) {
+        query = query.eq('category', category);
       }
-      
-      if (filters.priceRange) {
-        query = query.eq('price_range', filters.priceRange);
+
+      if (priceRange) {
+        query = query.eq('price_range', priceRange);
       }
-      
-      if (filters.minRating) {
-        query = query.gte('rating', filters.minRating);
+
+      if (minRating) {
+        query = query.gte('rating', minRating);
       }
-      
+
+      // 應用分頁（如果指定）
+      if (typeof limit === 'number' && limit > 0) {
+        query = query.range(offset, offset + limit - 1);
+        console.log(`📊 分頁查詢: limit=${limit}, offset=${offset}`);
+      }
 
       const { data, error } = await query;
-      
+
       if (error) throw error;
-      
+
       // 處理餐廳圖片，包括沒有圖片的餐廳
       const processedData = data.map(restaurant => {
-        const images = restaurant.restaurant_images || [];
+        // 只在包含圖片時處理圖片數據
+        if (includeImages && restaurant.restaurant_images) {
+          const images = restaurant.restaurant_images || [];
 
-        // 按照 display_order 排序圖片
-        const sortedImages = images.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+          // 按照 display_order 排序圖片
+          const sortedImages = images.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
+          return {
+            ...restaurant,
+            primaryImage: sortedImages.find(img => img.is_primary) || sortedImages[0] || null,
+            allImages: sortedImages,
+            hasImages: images.length > 0
+          };
+        }
+
+        // 不包含圖片時，返回簡化數據
         return {
           ...restaurant,
-          primaryImage: sortedImages.find(img => img.is_primary) || sortedImages[0] || null,
-          allImages: sortedImages,
-          hasImages: images.length > 0
+          primaryImage: null,
+          allImages: [],
+          hasImages: false
         };
       });
-      
+
+      // 存入緩存
+      if (useCache) {
+        restaurantCache.set(cacheKey, processedData);
+      }
+
+      console.log(`✅ 查詢完成: 返回 ${processedData.length} 個餐廳${useCache ? '（已緩存）' : ''}`);
+
       return processedData;
     } catch (error) {
       console.error('獲取餐廳列表失敗:', error);

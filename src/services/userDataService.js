@@ -3,52 +3,92 @@ import { supabase } from './supabaseService.js';
 
 export const userDataService = {
   // 獲取用戶的收藏清單
-  async getFavoriteLists(userId, userEmail = null) {
+  async getFavoriteLists(userId, userEmail = null, options = {}) {
     try {
+      const {
+        includeRestaurants = true,  // 是否包含餐廳資訊
+        includeImages = false        // 是否包含餐廳圖片（減少流量）
+      } = options;
+
       // 確保用戶檔案存在
       if (userEmail) {
         await this.ensureUserProfile(userId, userEmail);
       }
 
-      const { data, error } = await supabase
-        .from('user_favorite_lists')
-        .select(`
-          id,
-          name,
-          description,
-          color,
-          is_public,
-          is_default,
-          is_deletable,
-          places_count,
-          created_at,
-          updated_at,
+      // 基礎查詢 - 只獲取清單資訊
+      let selectQuery = `
+        id,
+        name,
+        description,
+        color,
+        is_public,
+        is_default,
+        is_deletable,
+        places_count,
+        created_at,
+        updated_at
+      `;
+
+      // 根據需求添加餐廳資訊
+      if (includeRestaurants) {
+        selectQuery += `,
           favorite_list_places (
             id,
             restaurant_id,
             notes,
-            added_at,
-            restaurants (
+            added_at
+          )
+        `;
+
+        // 只在需要完整資訊時加載餐廳詳情和圖片
+        if (includeImages) {
+          selectQuery = `
+            id,
+            name,
+            description,
+            color,
+            is_public,
+            is_default,
+            is_deletable,
+            places_count,
+            created_at,
+            updated_at,
+            favorite_list_places (
               id,
-              name,
-              address,
-              rating,
-              latitude,
-              longitude,
-              category,
-              restaurant_images (
-                image_url,
-                is_primary,
-                display_order
+              restaurant_id,
+              notes,
+              added_at,
+              restaurants (
+                id,
+                name,
+                address,
+                rating,
+                latitude,
+                longitude,
+                category,
+                restaurant_images (
+                  image_url,
+                  is_primary,
+                  display_order
+                )
               )
             )
-          )
-        `)
+          `;
+        }
+      }
+
+      console.log(`📊 收藏清單查詢: 餐廳=${includeRestaurants}, 圖片=${includeImages}`);
+
+      const { data, error } = await supabase
+        .from('user_favorite_lists')
+        .select(selectQuery)
         .eq('user_id', userId)
         .order('is_default', { ascending: false }) // 預設清單排在最前面
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      console.log(`✅ 查詢完成: ${data?.length || 0} 個收藏清單`);
 
       return {
         success: true,
