@@ -138,8 +138,31 @@ export default function FavoriteLists({
           return list;
         }));
 
+        // 去除重複的"我的最愛"清單（保留 is_default 為 true 的，或第一個）
+        const myFavoriteLists = listsWithCorrectColors.filter(list => list.name === '我的最愛');
+        const otherLists = listsWithCorrectColors.filter(list => list.name !== '我的最愛');
+
+        let deduplicatedLists = [...otherLists];
+
+        if (myFavoriteLists.length > 0) {
+          // 優先保留 is_default 為 true 的"我的最愛"清單
+          const defaultList = myFavoriteLists.find(list => list.is_default);
+          if (defaultList) {
+            deduplicatedLists.unshift(defaultList);
+            console.log('✅ 保留預設的「我的最愛」清單');
+          } else {
+            // 否則保留第一個
+            deduplicatedLists.unshift(myFavoriteLists[0]);
+            console.log('✅ 保留第一個「我的最愛」清單');
+          }
+
+          if (myFavoriteLists.length > 1) {
+            console.warn(`⚠️ 發現 ${myFavoriteLists.length} 個「我的最愛」清單，已去重`);
+          }
+        }
+
         // 將「我的最愛」置頂，其他清單按建立時間排序
-        const sortedLists = listsWithCorrectColors.sort((a, b) => {
+        const sortedLists = deduplicatedLists.sort((a, b) => {
           if (a.name === '我的最愛') return -1;
           if (b.name === '我的最愛') return 1;
           return new Date(a.created_at) - new Date(b.created_at);

@@ -242,8 +242,8 @@ export default function MapPage() {
 
         if (result.success) {
           showNotificationMessage('已加入收藏清單！', 'success');
-          // 重新載入清單數據
-          const favListsResult = await userDataService.getFavoriteLists(user.id, user.email);
+          // 重新載入清單數據（包含圖片）
+          const favListsResult = await userDataService.getFavoriteLists(user.id, user.email, { includeImages: true });
           if (favListsResult.success) {
             // 保持與初始載入相同的資料格式轉換
             setFavoriteLists(favListsResult.lists.map(list => ({
@@ -288,7 +288,7 @@ export default function MapPage() {
 
       try {
         const { userDataService } = await import('../services/userDataService');
-        const result = await userDataService.getFavoriteLists(user.id, user.email);
+        const result = await userDataService.getFavoriteLists(user.id, user.email, { includeImages: true });
 
         if (result.success) {
 
