@@ -74,7 +74,7 @@ const SwipeOnboarding = ({
   const [isInteractiveMode, setIsInteractiveMode] = useState(false);
   const [tutorialRestaurants, setTutorialRestaurants] = useState([]);
 
-  // 載入教學用的隨機餐廳資料
+  // 載入教學用的隨機餐廳資料並預載入圖片
   useEffect(() => {
     const loadTutorialRestaurants = async () => {
       try {
@@ -92,6 +92,17 @@ const SwipeOnboarding = ({
             primaryImage: r.primaryImage?.image_url,
             allImages: r.allImages?.length || 0
           })));
+
+          // 預載入圖片以加快顯示速度
+          selected.forEach(r => {
+            const imageUrl = r.primaryImage?.image_url || r.photo;
+            if (imageUrl && imageUrl !== 'null') {
+              const img = new Image();
+              img.src = imageUrl;
+              console.log('Preloading image for', r.name, ':', imageUrl);
+            }
+          });
+
           setTutorialRestaurants(selected);
         }
       } catch (error) {

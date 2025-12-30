@@ -548,23 +548,33 @@
   font-weight: 500;
 }
 
-.tutorial-swiper-container .motion-card .restaurant-name {
-  color: #333;
+/* 餐廳卡片文字樣式 - 全部使用白色以配合背景圖片 */
+.tutorial-swiper-container .motion-card .restaurant-info-blur h3,
+.tutorial-swiper-container .motion-card .restaurant-info-blur .restaurant-name {
+  color: #ffffff !important;
   font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-.tutorial-swiper-container .motion-card .restaurant-category,
-.tutorial-swiper-container .motion-card .restaurant-address {
-  color: #ffffff;
+.tutorial-swiper-container .motion-card .restaurant-info-blur p,
+.tutorial-swiper-container .motion-card .restaurant-info-blur small,
+.tutorial-swiper-container .motion-card .restaurant-info-blur .restaurant-category,
+.tutorial-swiper-container .motion-card .restaurant-info-blur .restaurant-address {
+  color: #ffffff !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
-.tutorial-swiper-container .motion-card .restaurant-rating {
-  color: #ffc107;
+.tutorial-swiper-container .motion-card .restaurant-info-blur .restaurant-rating {
+  color: #ffd700 !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
-.tutorial-swiper-container .motion-card .tag {
-  background: #e9ecef;
-  color: #495057;
+.tutorial-swiper-container .motion-card .restaurant-info-blur .tag {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 /* 為教學卡片添加特殊提示 */
