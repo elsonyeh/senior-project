@@ -76,6 +76,17 @@ export default function SwiftTaste() {
   // Toast 通知狀態
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
 
+  // 保存的餐廳狀態（從 localStorage 初始化，解決 Safari 異步寫入問題）
+  const [savedRestaurantsState, setSavedRestaurantsState] = useState(() => {
+    try {
+      const saved = localStorage.getItem("savedRestaurants");
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.warn("Failed to load savedRestaurants from localStorage:", error);
+      return [];
+    }
+  });
+
   // Current questions being shown
   const currentQuestions = phase === 'questions' ? basicQuestions : (phase === 'funQuestions' ? funQuestions : []);
 
@@ -87,13 +98,28 @@ export default function SwiftTaste() {
         if (userResult.success && userResult.user) {
           setCurrentUser(userResult.user);
 
-          // 獲取用戶的收藏清單（預設清單應該在註冊時已創建）
-          const listsResult = await userDataService.getFavoriteLists(userResult.user.id, userResult.user.email);
+          // 獲取用戶的收藏清單（只需要餐廳ID，不需要完整資訊和圖片）
+          const listsResult = await userDataService.getFavoriteLists(
+            userResult.user.id,
+            userResult.user.email,
+            { includeRestaurants: true, includeImages: false }  // 減少流量
+          );
+
           if (listsResult.success && listsResult.lists.length > 0) {
             // 優先使用標記為 is_default 的清單，否則使用第一個清單
             const defaultList = listsResult.lists.find(list => list.is_default) || listsResult.lists[0];
             setDefaultFavoriteListId(defaultList.id);
             console.log('✅ 使用預設收藏清單:', defaultList.name, defaultList.id);
+
+            // 初始化已收藏的餐廳集合
+            const likedSet = new Set();
+            defaultList.favorite_list_places?.forEach(place => {
+              if (place.restaurant_id) {
+                likedSet.add(place.restaurant_id);
+              }
+            });
+            setLikedRestaurants(likedSet);
+            console.log(`✅ 已載入 ${likedSet.size} 個已收藏的餐廳`);
           } else {
             console.warn('⚠️ 用戶沒有收藏清單，請確認資料庫觸發器是否正確設置');
           }
@@ -241,7 +267,8 @@ export default function SwiftTaste() {
         setLoadingModeSelection(false);
         setPhase("buddiesRoom");
       } else {
-        // 清理之前的保存餐廳記錄
+        // 清理之前的保存餐廳記錄（同時清除 state 和 localStorage）
+        setSavedRestaurantsState([]);
         localStorage.removeItem("savedRestaurants");
         console.log("Cleared previous saved restaurants");
 
@@ -866,19 +893,26 @@ export default function SwiftTaste() {
       }
     }
 
-    // 單人模式：直接保存到本地
+    // 單人模式：同時更新 state 和 localStorage（解決 Safari 異步問題）
     if (selectedMode === "single") {
-      const saved = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
-
-      // 避免重複保存相同餐廳
-      const alreadySaved = saved.some(r => r.id === restaurant.id || r.name === restaurant.name);
-      if (!alreadySaved) {
-        const newSaved = [...saved, restaurant];
-        localStorage.setItem("savedRestaurants", JSON.stringify(newSaved));
-        console.log(`✓ Saved ${restaurant.name} to localStorage. Total saved: ${newSaved.length}`);
-      } else {
-        console.log(`Restaurant ${restaurant.name} already saved, skipping.`);
-      }
+      setSavedRestaurantsState(prev => {
+        // 避免重複保存相同餐廳
+        const alreadySaved = prev.some(r => r.id === restaurant.id || r.name === restaurant.name);
+        if (!alreadySaved) {
+          const newSaved = [...prev, restaurant];
+          // 同步寫入 localStorage 作為備份（刷新頁面時恢復用）
+          try {
+            localStorage.setItem("savedRestaurants", JSON.stringify(newSaved));
+            console.log(`✓ Saved ${restaurant.name} to state & localStorage. Total saved: ${newSaved.length}`);
+          } catch (error) {
+            console.warn("Failed to save to localStorage (non-fatal):", error);
+          }
+          return newSaved;
+        } else {
+          console.log(`Restaurant ${restaurant.name} already saved, skipping.`);
+          return prev;
+        }
+      });
     }
   };
 
@@ -895,7 +929,13 @@ export default function SwiftTaste() {
   const handleLike = async (restaurant) => {
     console.log('點擊收藏按鈕:', restaurant.name);
 
-    // 檢查是否有默認收藏清單（用戶必定已登入才會看到按鈕）
+    // 檢查用戶是否已登入
+    if (!currentUser) {
+      showToast('請先登入才能使用收藏功能', 'warning');
+      return;
+    }
+
+    // 檢查是否有默認收藏清單
     if (!defaultFavoriteListId) {
       showToast('收藏清單尚未準備好，請稍後再試', 'warning');
       return;
@@ -1034,9 +1074,8 @@ export default function SwiftTaste() {
   const handleRestaurantFinish = async () => {
     console.log("🎯 handleRestaurantFinish called, selectedMode:", selectedMode);
 
-    // 完成選擇會話，記錄最終選擇的餐廳（如果有的話）
-    const savedRestaurants = JSON.parse(localStorage.getItem("savedRestaurants") || "[]");
-    const finalRestaurant = savedRestaurants.length > 0 ? savedRestaurants[0] : null;
+    // 完成選擇會話，記錄最終選擇的餐廳（從 state 讀取而非 localStorage）
+    const finalRestaurant = savedRestaurantsState.length > 0 ? savedRestaurantsState[0] : null;
 
     // 記錄互動：final choice（新系統）
     if (currentSessionId && finalRestaurant?.id) {
@@ -1087,7 +1126,9 @@ export default function SwiftTaste() {
     setLoadingModeSelection(false);
     basicAnswersRef.current = [];
 
-    // 清除左滑餐廳記錄
+    // 清除餐廳記錄（state 和 localStorage）
+    setSavedRestaurantsState([]);
+    localStorage.removeItem("savedRestaurants");
     localStorage.removeItem("dislikedRestaurants");
 
     // 如果是多人模式，回到房間而不是回到起點
@@ -1207,7 +1248,7 @@ export default function SwiftTaste() {
 
       {phase === "result" && (
         <RecommendationResult
-          saved={JSON.parse(localStorage.getItem("savedRestaurants") || "[]")}
+          saved={savedRestaurantsState}
           alternatives={filteredRestaurants}
           onRetry={handleBackToStart}
           onInteraction={resetIdleTimer} // 添加互動回調
