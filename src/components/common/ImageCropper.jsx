@@ -222,6 +222,22 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
     return () => container.removeEventListener('wheel', handleWheel);
   }, [imageLoaded]);
 
+  // 觸摸事件監聽（使用原生事件以支持 preventDefault）
+  useEffect(() => {
+    const img = imageRef.current;
+    if (!img) return;
+
+    img.addEventListener('touchstart', handleTouchStart, { passive: false });
+    img.addEventListener('touchmove', handleTouchMove, { passive: false });
+    img.addEventListener('touchend', handleDragEnd, { passive: false });
+
+    return () => {
+      img.removeEventListener('touchstart', handleTouchStart);
+      img.removeEventListener('touchmove', handleTouchMove);
+      img.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleDragEnd]);
+
   // 全域拖拽監聽
   useEffect(() => {
     if (!isDragging) return;
@@ -277,9 +293,6 @@ export default function ImageCropper({ image, onCrop, onCancel }) {
               alt="待裁切"
               onLoad={handleImageLoad}
               onMouseDown={handleDragStart}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleDragEnd}
               draggable={false}
               style={imageStyle}
             />

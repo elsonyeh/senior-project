@@ -54,6 +54,7 @@ export const restaurantService = {
         tags,
         suggested_people,
         is_spicy,
+        is_active,
         created_at
       `;
 

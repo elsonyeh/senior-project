@@ -289,6 +289,8 @@ export default function SwiftTaste() {
     setShowOnboarding(false);
     setHasSeenOnboarding(true);
     localStorage.setItem("hasSeenSwipeOnboarding", "true");
+    // 教學模式完成後，設置為單人模式
+    setSelectedMode("single");
     setPhase("questions");
   };
 
@@ -1099,7 +1101,11 @@ export default function SwiftTaste() {
       console.error("Failed to complete session, but continuing:", error);
     }
 
-    if (selectedMode === "single") {
+    // 如果 selectedMode 未設置，默認為 single 模式（容錯處理）
+    const mode = selectedMode || "single";
+    console.log("📍 Using mode:", mode);
+
+    if (mode === "single") {
       // 隨機顯示贊助廣告（50% 機率）- 已關閉
       // if (Math.random() > 0.5) {
       //   const ad = getRandomAd();
@@ -1108,11 +1114,9 @@ export default function SwiftTaste() {
       // }
       console.log("✅ Setting phase to 'result'");
       setPhase("result");
-    } else if (selectedMode === "buddies") {
+    } else if (mode === "buddies") {
       console.log("✅ Setting phase to 'buddiesRecommendation'");
       setPhase("buddiesRecommendation");
-    } else {
-      console.warn("⚠️ selectedMode is not set:", selectedMode);
     }
   };
 
